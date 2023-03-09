@@ -1,7 +1,7 @@
 // Source: environment.lisp  
-// Build Time: 2023-03-03 06:25:22
-// Version: 2023.03.03.06.25
-export const DLISP_ENV_VERSION='2023.03.03.06.25';
+// Build Time: 2023-03-09 12:01:14
+// Version: 2023.03.09.12.01
+export const DLISP_ENV_VERSION='2023.03.09.12.01';
 
 
 
@@ -56,7 +56,7 @@ export async function init_dlisp(Environment)  {
                 mode=0;
                 name_acc=[];
                  ( function() {
-                    let __for_body__17=function(c) {
+                    let __for_body__18=function(c) {
                         return   (function(){
                             if (check_true (((c===".")&& (mode===0)))) {
                                 {
@@ -88,16 +88,16 @@ export async function init_dlisp(Environment)  {
                             }
                         } )()
                     };
-                    let __array__18=[],__elements__16=chars;
+                    let __array__19=[],__elements__17=chars;
                     let __BREAK__FLAG__=false;
-                    for(let __iter__15 in __elements__16) {
-                        __array__18.push( __for_body__17(__elements__16[__iter__15]));
+                    for(let __iter__16 in __elements__17) {
+                        __array__19.push( __for_body__18(__elements__17[__iter__16]));
                         if(__BREAK__FLAG__) {
-                             __array__18.pop();
+                             __array__19.pop();
                             break;
                             
                         }
-                    }return __array__18;
+                    }return __array__19;
                      
                 })();
                 if (check_true (((name_acc && name_acc.length)>0))){
@@ -107,11 +107,11 @@ export async function init_dlisp(Environment)  {
             }
         } else {
             return  ( function(){
-                let __array_op_rval__19=refname;
-                 if (__array_op_rval__19 instanceof Function){
-                    return  __array_op_rval__19() 
+                let __array_op_rval__20=refname;
+                 if (__array_op_rval__20 instanceof Function){
+                    return  __array_op_rval__20() 
                 } else {
-                    return [__array_op_rval__19]
+                    return [__array_op_rval__20]
                 }
             })()
         }
@@ -1369,26 +1369,26 @@ export async function init_dlisp(Environment)  {
                     }()];
                     let indirect_new=function(...args) {
                         
-                                        {
-                                          let targetClass = args[0];
-                                          if (subtype(targetClass)==="String") {
-                                               let tmpf=new Function("{ return "+targetClass+" }");
-                                               targetClass = tmpf();
-                                               }
-                                          if (args.length==1) {
-                                               let f = function(Class) {
-                                                                 return new (Function.prototype.bind.apply(Class, args));
-                                                                 }
-                                               let rval = f.apply(this,[targetClass]);
-                                               return rval;
-                                               } else {
-                                                let f = function(Class) {
-                                                                  return new (Function.prototype.bind.apply(Class, args));
-                                                                  }
-                                                let rval = f.apply(this,[targetClass].concat(args.slice(1)));
-                                                return rval;
-                                                }
-                                          } 
+                             {
+                               let targetClass = args[0];
+                               if (subtype(targetClass)==="String") {
+                                    let tmpf=new Function("{ return "+targetClass+" }");
+                                    targetClass = tmpf();
+                                    }
+                               if (args.length==1) {
+                                    let f = function(Class) {
+                                                      return new (Function.prototype.bind.apply(Class, args));
+                                                      }
+                                    let rval = f.apply(this,[targetClass]);
+                                    return rval;
+                                    } else {
+                                     let f = function(Class) {
+                                                       return new (Function.prototype.bind.apply(Class, args));
+                                                       }
+                                     let rval = f.apply(this,[targetClass].concat(args.slice(1)));
+                                     return rval;
+                                     }
+                               } 
                     };
                     ;
                     await async function(){
@@ -1459,7 +1459,7 @@ export async function init_dlisp(Environment)  {
                         return Environment.definitions;
                         
                     }()];
-                    let add=new Function("...args","{\n                              let acc;\n                              if (typeof args[0]===\"number\") {\n                                   acc = 0;\n                                   } else if (args[0] instanceof Array) {\n                                    return args[0].concat(args.slice(1));\n                                    } else if (typeof args[0]==='object') {\n                                     let rval = {};\n                                     for (let i in args) {\n                                            if (typeof args[i] === 'object') {\n                                                 for (let k in args[i]) {\n                                                        rval[k] = args[i][k];\n                                                        }\n                                                 }\n                                            }\n                                     return rval;\n                                     } else {\n                                      acc = \"\";\n                                      }\n                              for (let i in args) {\n                                     acc += args[i];\n                                     }\n                              return acc;\n                              }");
+                    let add=new Function("...args","{\n                   let acc;\n                   if (typeof args[0]===\"number\") {\n                        acc = 0;\n                        } else if (args[0] instanceof Array) {\n                         return args[0].concat(args.slice(1));\n                         } else if (typeof args[0]==='object') {\n                          let rval = {};\n                          for (let i in args) {\n                                 if (typeof args[i] === 'object') {\n                                      for (let k in args[i]) {\n                                             rval[k] = args[i][k];\n                                             }\n                                      }\n                                 }\n                          return rval;\n                          } else {\n                           acc = \"\";\n                           }\n                   for (let i in args) {\n                          acc += args[i];\n                          }\n                   return acc;\n                   }");
                     ;
                     await async function(){
                         Environment.global_ctx.scope["add"]=add;
@@ -1473,7 +1473,7 @@ export async function init_dlisp(Environment)  {
                         return Environment.definitions;
                         
                     }()];
-                    let merge_objects=new Function("x","{\n                                        let rval = {};\n                                        for (let i in x) {\n                                               if (typeof i === 'object') {\n                                                    for (let k in x[i]) {\n                                                           rval[k] = x[i][k];\n                                                           }\n                                                    }\n                                               }\n                                        return rval;\n                                        }");
+                    let merge_objects=new Function("x","{\n                             let rval = {};\n                             for (let i in x) {\n                                    if (typeof i === 'object') {\n                                         for (let k in x[i]) {\n                                                rval[k] = x[i][k];\n                                                }\n                                         }\n                                    }\n                             return rval;\n                             }");
                     ;
                     await async function(){
                         Environment.global_ctx.scope["merge_objects"]=merge_objects;
@@ -1501,7 +1501,7 @@ export async function init_dlisp(Environment)  {
                         return Environment.definitions;
                         
                     }()];
-                    let resolve_path=new Function("path,obj","{\n                                       if (typeof path==='string') {\n                                            path = path.split(\".\");\n                                            }\n                                       let s=obj;\n                                       return path.reduce(function(prev, curr) {\n                                                                    return prev ? prev[curr] : undefined\n                                                                    }, obj || {})\n                                       }");
+                    let resolve_path=new Function("path,obj","{\n                            if (typeof path==='string') {\n                                 path = path.split(\".\");\n                                 }\n                            let s=obj;\n                            return path.reduce(function(prev, curr) {\n                                                         return prev ? prev[curr] : undefined\n                                                         }, obj || {})\n                            }");
                     ;
                     await async function(){
                         Environment.global_ctx.scope["resolve_path"]=resolve_path;
@@ -4797,10 +4797,10 @@ export async function init_dlisp(Environment)  {
             {
                 rval=[];
                 await (async function(){
-                     let __test_condition__20=async function() {
+                     let __test_condition__21=async function() {
                         return (idx<(tree && tree.length))
                     };
-                    let __body_ref__21=async function() {
+                    let __body_ref__22=async function() {
                         tval=tree[idx];
                         if (check_true ((tval===deferred_operator))){
                             {
@@ -4818,8 +4818,8 @@ export async function init_dlisp(Environment)  {
                         return idx+=1
                     };
                     let __BREAK__FLAG__=false;
-                    while(await __test_condition__20()) {
-                         await __body_ref__21();
+                    while(await __test_condition__21()) {
+                         await __body_ref__22();
                          if(__BREAK__FLAG__) {
                              break;
                             
@@ -4833,7 +4833,7 @@ export async function init_dlisp(Environment)  {
             {
                 rval=new Object();
                 await (async function() {
-                    let __for_body__24=async function(pset) {
+                    let __for_body__25=async function(pset) {
                         return await async function(){
                             rval[(pset && pset["0"])]=await (async function(){
                                  return await do_deferred_splice((pset && pset["1"])) 
@@ -4842,16 +4842,16 @@ export async function init_dlisp(Environment)  {
                             
                         }()
                     };
-                    let __array__25=[],__elements__23=await (await Environment.get_global("pairs"))(tree);
+                    let __array__26=[],__elements__24=await (await Environment.get_global("pairs"))(tree);
                     let __BREAK__FLAG__=false;
-                    for(let __iter__22 in __elements__23) {
-                        __array__25.push(await __for_body__24(__elements__23[__iter__22]));
+                    for(let __iter__23 in __elements__24) {
+                        __array__26.push(await __for_body__25(__elements__24[__iter__23]));
                         if(__BREAK__FLAG__) {
-                             __array__25.pop();
+                             __array__26.pop();
                             break;
                             
                         }
-                    }return __array__25;
+                    }return __array__26;
                      
                 })();
                 return rval
@@ -4878,29 +4878,29 @@ export async function init_dlisp(Environment)  {
         {
             await async function(){
                 comps[0]=await (async function(){
-                    let __array_op_rval__204=sanitizer_fn;
-                     if (__array_op_rval__204 instanceof Function){
-                        return await __array_op_rval__204((comps && comps["0"])) 
+                    let __array_op_rval__205=sanitizer_fn;
+                     if (__array_op_rval__205 instanceof Function){
+                        return await __array_op_rval__205((comps && comps["0"])) 
                     } else {
-                        return [__array_op_rval__204,(comps && comps["0"])]
+                        return [__array_op_rval__205,(comps && comps["0"])]
                     }
                 })();
                 return comps;
                 
             }();
             await (async function(){
-                 let __test_condition__205=async function() {
+                 let __test_condition__206=async function() {
                     return ((comps && comps.length)>0)
                 };
-                let __body_ref__206=async function() {
+                let __body_ref__207=async function() {
                     (acc).push((comps).shift());
                     return (acc_full).push(await (async function(){
                          return await (await Environment.get_global("expand_dot_accessor"))((acc).join("."),ctx) 
                     })())
                 };
                 let __BREAK__FLAG__=false;
-                while(await __test_condition__205()) {
-                     await __body_ref__206();
+                while(await __test_condition__206()) {
+                     await __body_ref__207();
                      if(__BREAK__FLAG__) {
                          break;
                         

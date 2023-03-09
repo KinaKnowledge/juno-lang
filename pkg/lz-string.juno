@@ -14,8 +14,7 @@
 
 
 (defglobal *lz_string_contents* (read_text_file "js_lib/lz-string-mod.js"))
-   
-
+  
 
 ;(use_quoted_initializer
 ;  (defglobal LZString (eval (eval `(function () 
@@ -24,6 +23,13 @@
 (defglobal LZString (eval (eval `(function () (javascript ,#(+ " {" *lz_string_contents* "}")))))
    {
        `initializer: `(eval (function () (javascript ,#(+ " {" (-> Environment `get_global `*lz_string_contents*) "}"))))
+       `license: (join "\n" ["Copyright (c) 2013 Pieroxy <pieroxy@pieroxy.net>"
+                      "This work is free. You can redistribute it and/or modify it"
+                       "under the terms of the WTFPL, Version 2"
+                       "For more information see LICENSE.txt or http://www.wtfpl.net/"
+                       ""
+                       "For more information, the home page:"
+                       "http://pieroxy.net/blog/pages/lz-string/testing.html"])
    })
 
 

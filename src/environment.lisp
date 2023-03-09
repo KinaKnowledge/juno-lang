@@ -1,7 +1,7 @@
 ;; Environment -- Facilitates and organizes the lisp top level and resources
 ;; Author: Alex Nygren
 
-;; Copyright (c) 2022, Kina, LLC
+;; Copyright (c) 2022-2023, Kina, LLC
 
 ;; Permission is hereby granted, free of charge, to any person obtaining a copy
 ;; of this software and associated documentation files (the "Software"), to deal
@@ -723,993 +723,993 @@
                            `usage: ["value:*" "container:array|set|string"]
                            })
                     
-                    (make_set (function (vals)
-                                 (if (instanceof vals Array)
-                                     (new Set vals)
-                                     (let
-                                        ((`vtype (sub_type vals)))
-                                        (cond
-                                           (== vtype "Set")
-                                           (new Set vals)
-                                           (== vtype "object")
-                                           (new Set (values vals))))))
-                              {
-                                `description: (+ "If given an array, a new Set is returned containing the elements of the array. "
-                                                 "If given an object, a new Set is returned containing the values of the object, and the keys are discarded. "
-                                                 "If given a set, new Set is created and returend  from the values of the old set.")
-                                `usage: ["vals:array|object|set"]
-                                `tags: [`array `set `object `values `convert ]
-                                })
-                    
-                    (meta_for_symbol (function (quoted_symbol search_mode)
-                                        (when (is_string? quoted_symbol)
-                                           ;; if we have been given a string, get any local data we have in our global context
-                                           (defvar local_data (or (prop Environment.global_ctx.scope quoted_symbol)
-                                                                  (prop Environment.definitions quoted_symbol)))
-                                           (defvar acc [])
-                                           (if search_mode
-                                              (do
-                                                 (when local_data
-                                                    (push acc
-                                                       (+ { `namespace: namespace
-                                                            `name: quoted_symbol
-                                                            `type: (subtype local_data) }
-                                                         ;; include any symbols we need
-                                                         (aif (prop Environment.definitions quoted_symbol)
-                                                              it
-                                                              {}))))
-                                                 (when parent_environment
-                                                    (reduce_sync (info (-> (-> parent_environment `meta_for_symbol quoted_symbol true) `flat 1))
-                                                       (push acc info)))
-                                                 (when (> (length (keys children)) 0)  ;; we don't have a parent, but we have children
-                                                    (reduce_sync (`details (reduce_sync (`child_data (pairs children))
-                                                                              (when (not (== child_data.0 (current_namespace)))
-                                                                                 (-> child_data.1 `meta_for_symbol quoted_symbol))))
-                                                       (push acc details)))
-                                                 acc)
-                                              (do
-                                                 (= quoted_symbol (if (starts_with? (quote "=:") quoted_symbol)
-                                                                      (-> quoted_symbol `substr 2)
-                                                                      quoted_symbol))
-                                                 (aif (prop Environment.definitions quoted_symbol)
-                                                      (+ { `namespace: namespace
-                                                           `type: (sub_type local_data)
-                                                           `name: quoted_symbol }
-                                                        it)
-                                                      nil)))))
-                                     {
-                                       `description: (+ "Given a quoted symbol and a boolean indicating whether or not all namespaces should be searched, returns "
-                                                        "the meta data associated with the symbol for each environment.  If search mode is requested, the value returned "
-                                                        "is an array, since there can be symbols with the same name in different environments. If no values are found "
-                                                        "an empty array is returned.  If not in search mode, meta_for_symbol searches the current namespace "
-                                                        "only, and if a matching symbol is found, returns an object with all found metadata, otherwise nil is returned.")
-                                       
-                                       `usage: ["quoted_symbol:string" "search_mode:boolean"]
-                                       `tags: [`describe `meta `help `definition `symbol `metadata ]
-                                       })
-                    
-                    
-                    (describe (fn (quoted_symbol search_mode)
-                                 (progn
-                                    (defvar internal_results (meta_for_symbol quoted_symbol true))
-                                    (if (and (is_array? internal_results)
-                                             internal_results.0)
-                                        (if search_mode
-                                           internal_results          ;; if we found something internal, return all results
-                                           (first internal_results)) ;; we are interested in the first result onlu
-                                        (do
-                                           (defvar external_results (get_outside_global quoted_symbol))
-                                           
-                                           (if external_results
-                                              (progn
-                                                 (defvar detail 
-                                                    {
-                                                      `location: "external"
-                                                      `type: (subtype external_results)
-                                                      `name: quoted_symbol
-                                                      `namespace: "EXTERNAL"
-                                                      `description: (+  "This is not a bound symbol within the Juno Environment.  "
-                                                                       "If it is to be used, it is recommended to create a reference to it with "
-                                                                       "`(defglobal " quoted_symbol " " quoted_symbol " { `description: \"...\" })`")
-                                                      })
-                                                 (if search_mode
-                                                    [ detail ]
-                                                    detail))
-                                              nil)))))
-                              {
-                                `description: "Given a quoted symbol returns the relevant metadata pertinent to the current namespace context."
-                                `usage: ["quoted_symbol:string" "search_mode:boolean"]
-                                `tags: [ `meta `help `definition `symbol `metadata `info `meta_for_symbol ]
-                                })
-                    
-                    (undefine (function (quoted_symbol)
-                                 (if (is_string? quoted_symbol)
-                                     (let
-                                        ((`namespace_identity (split_by "/" quoted_symbol))   ;;  split..namespace_identity may only have 1 component though
-                                         (`parent_call nil)
-                                         (`child_call nil)
-                                         (`target_symbol nil))
-                                        (declare (function parent_call))
-                                        (cond
-                                           (or (and (== namespace_identity.length 1)
-                                                    (prop Environment.global_ctx.scope namespace_identity.0))
-                                               (and (> namespace_identity.length 1)
-                                                    (== namespace_identity.0 namespace)))
-                                           ;; it's not qualified and in our local environment
-                                           (progn
-                                              (= target_symbol (if (> namespace_identity.length 1)
-                                                                   namespace_identity.1
-                                                                   namespace_identity.0))
-                                              (delete_prop Environment.definitions target_symbol)
-                                              (if (prop Environment.global_ctx.scope target_symbol)
-                                                  (delete_prop Environment.global_ctx.scope target_symbol)
-                                                  false))
-                                           
-                                           (and (> namespace_identity.length 1)
-                                                parent_environment)
-                                           (progn
-                                              (setq parent_call (-> parent_environment `get_global "undefine"))
-                                              (parent_call quoted_symbol))
-                                           
-                                           (and (> namespace_identity.length 1)
-                                                (prop children namespace_identity.0))
-                                           ;; child namespace, send it there
-                                           (progn
-                                              (setq child_call (-> (prop children namespace_identity.0) `get_global "undefine"))
-                                              (child_call quoted_symbol))
-                                           
-                                           else
-                                           false))
-                                     (throw SyntaxError "undefine requires a quoted symbol")))
-                              {
-                                `description: (+ "Given a quoted symbol removes the symbol and any definition information from the namespace. "
-                                                 "If the namespace is fully-qualified, then the symbol will be removed from the specified namespace "
-                                                 "instead of the currently active namespace. If the symbol is successfully removed, the function "
-                                                 "will return true, otherwise if it is not found, false will be returned.  Note that if the "
-                                                 "specified symbol is non-qualified, but exists in a different, accessible namespace, but the "
-                                                 "symbol isn't present in the current namespace, the symbol will not be deleted.  The environment "
-                                                 "is not searched and therefore symbols have to be explicitly fully-qualified for any effect "
-                                                 "of this function outside the current namespace.")
-                                `usage: ["quoted_symbol:string"]
-                                `tags: [ `symbol `delete `remove `unintern `reference `value ]
-                                })
-                    
-                    (eval_exp (fn (expression)
-                                 (do
-                                    (expression)))
-                              {
-                                `description: (+ "Evaluates the given expression and returns the value.")
-                                `usage: ["expression:*"]
-                                `tags: [ `eval `evaluation `expression ]
-                                })
-                    
-                    (indirect_new (function (`& args)
-                                     (javascript |
-                                        {
-                                          let targetClass = args[0];
-                                          if (subtype(targetClass)==="String") {
-                                               let tmpf=new Function("{ return "+targetClass+" }");
-                                               targetClass = tmpf();
-                                               }
-                                          if (args.length==1) {
-                                               let f = function(Class) {
-                                                                 return new (Function.prototype.bind.apply(Class, args));
-                                                                 }
-                                               let rval = f.apply(this,[targetClass]);
-                                               return rval;
-                                               } else {
-                                                let f = function(Class) {
-                                                                  return new (Function.prototype.bind.apply(Class, args));
-                                                                  }
-                                                let rval = f.apply(this,[targetClass].concat(args.slice(1)));
-                                                return rval;
-                                                }
-                                          } | ))
-                                  {
-                                    `description: (+ "Used by the compiler for implementation of the new operator and shouldn't be directly called by "
-                                                     "user programs.  The new operator should be called instead.")
-                                    `usage: ["arg0:*" "argsN:*"]
-                                    `tags: [ `system `compiler `internal ]
-                                    })
-                    
-                    (range (function (`& args)
-                              (let
-                                 ((`from_to (if args.1
-                                                [ (int args.0) (int args.1) ]
-                                                [ 0 (int args.0) ]))
-                                  (`step (if args.2
-                                             (float args.2)
-                                             1))
-                                  (`idx from_to.0)
-                                  (`acc []))
-                                 (assert (> step 0) "range: step must be > 0")
-                                 (assert (>= from_to.1 from_to.0) "range: lower bound must be greater or equal than upper bound")
-                                 (while (< idx from_to.1)
-                                    (do
-                                       (push acc idx)
-                                       (inc idx step)))
-                                 acc))
-                           {
-                             `usage: ["start_or_end:number" "end:number" "step:number"]
-                             `description: (+ "Range has a variable form depending on the amount of arguments provided to the function when "
-                                              "calling it. If provided one argument, range will produce an array from 0 up to, but not including "
-                                              "the provided value. If given two arguments, the first argument will be the starging value and "
-                                              "the last value will be used as the upper bounding value, returning an array with elements starting "
-                                              "at the start value and up to, but not including the bounding value. If given a third value, the "
-                                              "value will be interpreted as the step value, and the returned array will contain values that "
-                                              "increment by the step amount.  Range will throw an error if a negative range is specified. "
-                                              "For negative ranges see neg_range."
-                                              "<br><br>Examples:<br>"
-                                              "(range 5) -> [ 0 1 2 3 4 ]<br>"
-                                              "(range 10 15) -> [ 10 11 12 13 14 ]<br>"
-                                              "(range 10 20) -> [ 10 12 14 16 18 ]<br>"
-                                              "(range -5 0) -> [ -5 -4 -3 -2 -1 ]<br>"
-                                              "(range -3 3) -> [ -3, -2, -1, 0, 1, 2 ]<br>")
-                             
-                             })
-                    
-                    
-                    (add (new Function "...args"
-                              "{
-                              let acc;
-                              if (typeof args[0]===\"number\") {
-                                   acc = 0;
-                                   } else if (args[0] instanceof Array) {
-                                    return args[0].concat(args.slice(1));
-                                    } else if (typeof args[0]==='object') {
-                                     let rval = {};
-                                     for (let i in args) {
-                                            if (typeof args[i] === 'object') {
-                                                 for (let k in args[i]) {
-                                                        rval[k] = args[i][k];
-                                                        }
-                                                 }
-                                            }
-                                     return rval;
-                                     } else {
-                                      acc = \"\";
-                                      }
-                              for (let i in args) {
-                                     acc += args[i];
-                                     }
-                              return acc;
-                              }")
-                         {
-                           `description: (+ "Add is an overloaded function that, based on the first argument provided, determines how to \'add\' the arguments. "
-                                            "If provided a number as a first argument, then it will assume the rest of the arguments are numbers and add them "
-                                            "to the first, returning the numerical sum of the arguments. If an object, it will merge the keys of the provided "
-                                            "arguments, returning a combined object.  Be aware that if merging objects, if arguments that have the same keys "
-                                            "the argument who appears last with the key will prevail.  If called with an array as a first argument, the "
-                                            "subsequent arguments will be added to the first via 'concat'.  If strings, the strings will be joined into a "
-                                            "single string and returned.<br>"
-                                            "(add 1 2 3) => 6<br>"
-                                            "(add { `abc: 123 `def: 345 } { `def: 456 }) => { abc: 123, def: 456 }"
-                                            "(add [ 1 2 3 ] [ 4 5 6] 7) => [ 1, 2, 3, [ 4, 5, 6 ], 7 ]<br>"
-                                            "(add \"abc\" \"def\") => \"abcdef\"<br><br>"
-                                            "Note that add doesn't typically need to explicily called.  The compiler will try and determine the best "
-                                            "way to handle adding based on the arguments to be added, so the + operator should be used instead, since "
-                                            "it gives the compiler an opportunity to inline if possible.")
-                           `usage: [ "arg0:*" "argN:*" ]
-                           `tags: [ `add `+ `sum `number `addition `merge `join `concat ]
-                           })
-                    
-                    (merge_objects (new Function "x"
-                                        "{
-                                        let rval = {};
-                                        for (let i in x) {
-                                               if (typeof i === 'object') {
-                                                    for (let k in x[i]) {
-                                                           rval[k] = x[i][k];
-                                                           }
-                                                    }
-                                               }
-                                        return rval;
-                                        }")
-                                   {
-                                     `description: (+ "Merge objects takes an array of objects and returns an object whose keys and values are "
-                                                      "the sum of the provided objects (same behavior as add with objects).  If objects have the "
-                                                      "same keys, the last element in the array with the duplicate key will be used to provide the "
-                                                      "value for that key.")
-                                     `usage: ["objects:array"]
-                                     `tags: [ `add `merge `keys `values `objects `value ]
-                                     })
-                    
-                    (index_of (new Function "value" "container"
-                                   (+ "{ return container.indexOf(value) }"))
-                              {
-                                `description: "Given a value and an array container, returns the index of the value in the array, or -1 if not found."
-                                `usage: ["value:number|string|boolean" "container:array" ]
-                                `tags: [ `find `position `index `array `contains ]
-                                })
-                    
-                    (resolve_path (new Function "path,obj"
-                                       "{
-                                       if (typeof path==='string') {
-                                            path = path.split(\".\");
-                                            }
-                                       let s=obj;
-                                       return path.reduce(function(prev, curr) {
-                                                                    return prev ? prev[curr] : undefined
-                                                                    }, obj || {})
-                                       }")
-                                  {
-                                    `description: (+ "Given a path and a tree structure, which can be either an array or an object, "
-                                                     "traverse the tree structure and return the value at the path if it exists, otherwise "
-                                                     "undefined is returned.<br>"
-                                                     "(resolve_path [ 2 1 ] [ 1 2 [ 3 4 5 ] 6 7]) => 4)")
-                                    `usage: [ "path:array" "tree_structure:array|object" ]
-                                    `tags: [ `find `position `index `path `array `tree `contains `set_path ]
-                                    })
-                    
-                    
-                    
-                    (min_value (new Function "elements" "{ return Math.min(...elements); }")
-                               {
-                                 `description: "Returns the minimum value in the provided array of numbers."
-                                 `usage: ["elements:array"]
-                                 `tags: [ `min `max_value `array `elements `minimum `number ]
-                                 })
-                    (max_value (new Function "elements" "{ return Math.max(...elements); }")
-                               {
-                                 `description: "Returns the maximum value in the provided array of numbers."
-                                 `usage: ["elements:array"]
-                                 `tags: [ `min `max_value `array `elements `minimum `number ]
-                                 })
-                    
-                    (interlace (fn (`& args)
-                                  (let
-                                     ((min_length  (min_value (map length args)))
-                                      (rlength_args (range (length args)))
-                                      (rval []))
-                                     (for_each (`i (range min_length))
-                                        (for_each (`j rlength_args)
-                                           (push rval (prop (prop args j) i))))
-                                     rval))
-                               { `usage: ["list0:array" "list1:array" "listn?:array"]
-                                        `description: "Returns a list containing a consecutive values from each list, in argument order.  I.e. list0.0 list1.0 listn.0 list0.1 list1.1 listn.1 ..."
-                                        `tags: ["list","array","join" "merge"]
-                                        })
-                    
-                    (trim (function (x)
-                             (-> x `trim))
-                          {
-                            `description: "Removes leading and trailing spaces from the provided string value."
-                            `usage: ["value:string"]
-                            `tags: ["string" "spaces" "clean" "squeeze" "leading" "trailing" "space"]
-                            })
-                    
-                    (assert (function (assertion_form failure_message)
-                               (if assertion_form
-                                  assertion_form
-                                  (throw EvalError (or failure_message "assertion failure"))))
-                            {
-                              `description: "If the evaluated assertion form is true, the result is returned, otherwise an EvalError is thrown with the optionally provided failure message."
-                              `usage:["form:*" "failure_message:string?"]
-                              `tags:["true" "error" "check" "debug" "valid" "assertion"]
-                              })
-                    
-                    
-                    (unquotify (fn (val)
-                                  (let
-                                     ((dval val))
-                                     (if (starts_with? "\"" dval)
-                                         (= dval (-> dval `substr 1 (- dval.length 2))))
-                                     (if (starts_with? "=:" dval)
-                                         (= dval (-> dval `substr 2)))
-                                     dval))
-                               {
-                                 `description: "Removes binding symbols and quotes from a supplied value.  For use in compile time function such as macros."
-                                 `usage: ["val:string"]
-                                 `tags:["macro" "quote" "quotes" "desym"]
-                                 })
-                    
-                    (or_args (fn (argset)
-                                (let
-                                   ((is_true false))
-                                   (for_each (`elem argset)
-                                      (if elem
-                                         (do
-                                            (= is_true true)
-                                            (break))))
-                                   is_true))
-                             {
-                               `description: "Provided an array of values, returns true if any of the values are true, otherwise will return false."
-                               `usage: ["argset:array"]
-                               `tags: [ "or" "true" "false" "array" "logic" ]
-                               })
-                    
-                    
-                    (special_operators (fn ()
-                                          (make_set (compiler [] { `special_operators: true `env: Environment }))))
-                    
-                    (defclog (fn (opts)
-                                (let
-                                   ((`style (+ "padding: 5px;"
-                                               (if opts.background
-                                                  (+ "background: " opts.background ";")
-                                                  "")
-                                               (if opts.color
-                                                  (+ "color: " opts.color ";"))
-                                               "")))
-                                   (fn (`& args)
-                                      (apply console.log (+ "%c" (if opts.prefix
-                                                                     opts.prefix
-                                                                     (take args)))
-                                             (conj [ style ]
-                                                   args)))))
-                       {
-                         `description: (+ "Given a description object, containing specific keys, returns a customized console logging "
-                                          "function implements the given requested properties.<br>Options<br>"
-                                          "prefix:string:The prefix to log prior to any supplied user arguments.<br>"
-                                          "color:string:The text color to use on the prefix (or initial argument if no prefix)<br>"
-                                          "background:string:The background coloe to use on the prefix (or initial argument if no prefix)<br>")
-                         `usage: ["options:object"]
-                         `tags: ["log" "logging" "console" "utility"]
-                         })
-                    
-                    
-                    (NOT_FOUND (new ReferenceError "not found"))
-                    
-                    (check_external_env_default (if (== namespace "core") true false))
-                    (*namespace* namespace)
-                    ;; handle dependency loads between namespaces
-                    (pending_ns_loads {})  ;; object to store dependencies by namespace as they are rehydrated
-                    (pend_load (fn (from_namespace target_namespace symbol initializer)
-                                  (progn
-                                     (when (eq nil (prop pending_ns_loads from_namespace))
-                                        (set_prop pending_ns_loads from_namespace []))
-                                     (push (prop pending_ns_loads from_namespace)
-                                           { `symbol: symbol
-                                             `source_ns: from_namespace
-                                             `target_ns: target_namespace
-                                             `initializer: [(quote quote) initializer]
-                                             }
-                                           )
-                                     initializer))
-                               {
-                                 `description: (+ "When used as an initializer wrapper via the use_symbols macro, the wrapped "
-                                                  "initializer will not be loaded until the from_namespace is loaded to ensure "
-                                                  "that the wrapped initializer won't fail due to not yet loaded dependencies.")
-                                 `usage: ["from_namespace:string" "target_namespace:string" "symbol:string" "initializer:array"]
-                                 `tags: [ `symbol `definitions `namespace `scope `dependency `dependencies `require ]
-                                 })
-                    (load_pends (fn (from_namespace)
-                                   (when (prop pending_ns_loads from_namespace)
-                                      (defvar acc [])
-                                      (setq acc
-                                         (for_each (`load_instruction (prop pending_ns_loads from_namespace))
-                                            `(use_symbols ,#load_instruction.source_ns [ ,#load_instruction.symbol ] ,#load_instruction.target_ns)))
-                                      (console.log "load_pends: " from_namespace "->" acc)
-                                      (eval acc)
-                                      true)))
-                    (symbols (fn (opts)
-                                (cond
-                                   (eq nil opts)
-                                   (keys Environment.global_ctx.scope)
-                                   opts.unique
-                                   (progn
-                                      (defvar no_includes (make_set (conj [ "meta_for_symbol", "describe", "undefine", "*namespace*",
-                                                                           "pend_load", "symbols", "set_global", "get_global", "symbol_definition",
-                                                                           "compile", "env_log", "evaluate_local", "evaluate", "eval_struct",
-                                                                           "set_compiler", "clone", "eval", "add_escape_encoding",
-                                                                           "get_outside_global", "as_lisp", "lisp_writer", "clone_to_new",
-                                                                           "save_env", "null", "compiler" ] built_ins)))
-                                      (reduce (sym (keys Environment.global_ctx.scope))
-                                         (if (-> no_includes `has sym)
-                                             nil
-                                             sym)))))
-                             {
-                               `description: (+ "Returns an array of the defined global symbols for the local environment.  "
-                                                "If opts.unique is true, only symbols that are not part of the built ins are "
-                                                "included.")
-                               `usage: ["opts:object"]
-                               `tags: [`symbol `names `definitions `values `scope]
-                               })
-                    (set_global
-                       (function (refname value meta is_constant target_namespace contained_req)
-                          (progn
-                             (cond (not (== (typeof refname) "string"))
-                                (throw TypeError "reference name must be a string type")
-                                (or (== Environment value)
-                                    (== Environment.global_ctx value)
-                                    (== Environment.global_ctx.scope value))
-                                (do
-                                   ;(debug)
-                                   (throw EvalError "cannot set the environment scope as a global value")))
-                             
-                             (when (resolve_path [ refname `constant ] Environment.definitions)
-                                (throw TypeError (+ "Assignment to constant variable " refname )))
-                             
-                             ;; we need to determine what we've been given.  We could have:
-                             ;; 1. refname by itself, with no name space, so we need to check
-                             ;;    if it is us, and if it is not, hand it up to our parent
-                             ;; 2. fully/qualified refname - nead to split and then check
-                             ;; 3. refname and target_namespace - if us we deal with or
-                             ;;    send onwards if not us.
-                             
-                             (defvar namespace_identity (if target_namespace
-                                                            [target_namespace refname]
-                                                            (split_by "/" refname)))
-                             
+         (make_set (function (vals)
+                      (if (instanceof vals Array)
+                          (new Set vals)
+                          (let
+                             ((`vtype (sub_type vals)))
                              (cond
-                                ;; check if we already have an explicit namespace and it isn't us,
-                                ;; send it to our parent to deal with..
+                                (== vtype "Set")
+                                (new Set vals)
+                                (== vtype "object")
+                                (new Set (values vals))))))
+                   {
+                     `description: (+ "If given an array, a new Set is returned containing the elements of the array. "
+                                      "If given an object, a new Set is returned containing the values of the object, and the keys are discarded. "
+                                      "If given a set, new Set is created and returend  from the values of the old set.")
+                     `usage: ["vals:array|object|set"]
+                     `tags: [`array `set `object `values `convert ]
+                     })
+         
+         (meta_for_symbol (function (quoted_symbol search_mode)
+                             (when (is_string? quoted_symbol)
+                                ;; if we have been given a string, get any local data we have in our global context
+                                (defvar local_data (or (prop Environment.global_ctx.scope quoted_symbol)
+                                                       (prop Environment.definitions quoted_symbol)))
+                                (defvar acc [])
+                                (if search_mode
+                                   (do
+                                      (when local_data
+                                         (push acc
+                                            (+ { `namespace: namespace
+                                                 `name: quoted_symbol
+                                                 `type: (subtype local_data) }
+                                              ;; include any symbols we need
+                                              (aif (prop Environment.definitions quoted_symbol)
+                                                   it
+                                                   {}))))
+                                      (when parent_environment
+                                         (reduce_sync (info (-> (-> parent_environment `meta_for_symbol quoted_symbol true) `flat 1))
+                                            (push acc info)))
+                                      (when (> (length (keys children)) 0)  ;; we don't have a parent, but we have children
+                                         (reduce_sync (`details (reduce_sync (`child_data (pairs children))
+                                                                   (when (not (== child_data.0 (current_namespace)))
+                                                                      (-> child_data.1 `meta_for_symbol quoted_symbol))))
+                                            (push acc details)))
+                                      acc)
+                                   (do
+                                      (= quoted_symbol (if (starts_with? (quote "=:") quoted_symbol)
+                                                           (-> quoted_symbol `substr 2)
+                                                           quoted_symbol))
+                                      (aif (prop Environment.definitions quoted_symbol)
+                                           (+ { `namespace: namespace
+                                                `type: (sub_type local_data)
+                                                `name: quoted_symbol }
+                                             it)
+                                           nil)))))
+                          {
+                            `description: (+ "Given a quoted symbol and a boolean indicating whether or not all namespaces should be searched, returns "
+                                             "the meta data associated with the symbol for each environment.  If search mode is requested, the value returned "
+                                             "is an array, since there can be symbols with the same name in different environments. If no values are found "
+                                             "an empty array is returned.  If not in search mode, meta_for_symbol searches the current namespace "
+                                             "only, and if a matching symbol is found, returns an object with all found metadata, otherwise nil is returned.")
+                            
+                            `usage: ["quoted_symbol:string" "search_mode:boolean"]
+                            `tags: [`describe `meta `help `definition `symbol `metadata ]
+                            })
+         
+         
+         (describe (fn (quoted_symbol search_mode)
+                      (progn
+                         (defvar internal_results (meta_for_symbol quoted_symbol true))
+                         (if (and (is_array? internal_results)
+                                  internal_results.0)
+                             (if search_mode
+                                internal_results          ;; if we found something internal, return all results
+                                (first internal_results)) ;; we are interested in the first result onlu
+                             (do
+                                (defvar external_results (get_outside_global quoted_symbol))
                                 
-                                (and parent_environment
-                                   (> namespace_identity.length 1)
-                                   (not (== namespace namespace_identity.0)))
-                                (-> parent_environment `set_global namespace_identity.1 value meta is_constant namespace_identity.0 (or contained contained_req))
-                                
-                                ;; not us but we are the core, so we need to send it to the appropriate namespace
+                                (if external_results
+                                   (progn
+                                      (defvar detail
+                                         {
+                                           `location: "external"
+                                           `type: (subtype external_results)
+                                           `name: quoted_symbol
+                                           `namespace: "EXTERNAL"
+                                           `description: (+  "This is not a bound symbol within the Juno Environment.  "
+                                                            "If it is to be used, it is recommended to create a reference to it with "
+                                                            "`(defglobal " quoted_symbol " " quoted_symbol " { `description: \"...\" })`")
+                                           })
+                                      (if search_mode
+                                         [ detail ]
+                                         detail))
+                                   nil)))))
+                   {
+                     `description: "Given a quoted symbol returns the relevant metadata pertinent to the current namespace context."
+                     `usage: ["quoted_symbol:string" "search_mode:boolean"]
+                     `tags: [ `meta `help `definition `symbol `metadata `info `meta_for_symbol ]
+                     })
+         
+         (undefine (function (quoted_symbol)
+                      (if (is_string? quoted_symbol)
+                          (let
+                             ((`namespace_identity (split_by "/" quoted_symbol))   ;;  split..namespace_identity may only have 1 component though
+                              (`parent_call nil)
+                              (`child_call nil)
+                              (`target_symbol nil))
+                             (declare (function parent_call))
+                             (cond
+                                (or (and (== namespace_identity.length 1)
+                                         (prop Environment.global_ctx.scope namespace_identity.0))
+                                    (and (> namespace_identity.length 1)
+                                         (== namespace_identity.0 namespace)))
+                                ;; it's not qualified and in our local environment
+                                (progn
+                                   (= target_symbol (if (> namespace_identity.length 1)
+                                                        namespace_identity.1
+                                                        namespace_identity.0))
+                                   (delete_prop Environment.definitions target_symbol)
+                                   (if (prop Environment.global_ctx.scope target_symbol)
+                                       (delete_prop Environment.global_ctx.scope target_symbol)
+                                       false))
                                 
                                 (and (> namespace_identity.length 1)
-                                     (not (== namespace_identity.0 namespace)))
-                                (do
-                                   (if (and (prop children namespace_identity.0)   ;; do we have the requested namespace?
-                                            (not contained_req))                   ;; can we access it?
-                                       (-> (prop children namespace_identity.0)       ;; dispatch it there..
-                                           `set_global
-                                           namespace_identity.1 value meta is_constant namespace_identity.0)
-                                       ;; no such namespace so it is an error...
-                                       (throw EvalError (+ "namespace " namespace_identity.0 " doesn't exist"))))
+                                     parent_environment)
+                                (progn
+                                   (setq parent_call (-> parent_environment `get_global "undefine"))
+                                   (parent_call quoted_symbol))
+                                
+                                (and (> namespace_identity.length 1)
+                                     (prop children namespace_identity.0))
+                                ;; child namespace, send it there
+                                (progn
+                                   (setq child_call (-> (prop children namespace_identity.0) `get_global "undefine"))
+                                   (child_call quoted_symbol))
+                                
                                 else
-                                ;; it's on us...
-                                (try 
-                                   (progn
-                                      (defvar comps (get_object_path (if (== 1 namespace_identity.length)
-                                                                         namespace_identity.0
-                                                                         namespace_identity.1)))
-                                      (set_prop Environment.global_ctx.scope
-                                         comps.0
-                                         value)
-                                      (if (and (is_object? meta)
-                                               (not (is_array? meta)))
-                                          (do
-                                             (when is_constant
-                                                (set_prop meta
-                                                   `constant
-                                                   true))
-                                             (set_prop Environment.definitions
-                                                comps.0
-                                                meta))
-                                          (when is_constant
-                                             (set_prop Environment.definitions
-                                                comps.0
-                                                {
-                                                  `constant: true
-                                                  })))
-                                      (prop Environment.global_ctx.scope comps.0))
-                                   (catch Error (e)
-                                      (progn
-                                         (defvar message (+ "Error: set_global: " *namespace* "symbol name: " refname ": " e.message))
-                                         (console.error message())
-                                         (set_prop e
-                                            `message
-                                            message)
-                                         (throw e))))))))
-                    
-                    (get_global
-                       (function (refname value_if_not_found suppress_check_external_env target_namespace path_comps contained_req)
-                          (cond
-                             (not (== (typeof refname) "string"))
-                             (throw TypeError "reference name must be a string type")
-                             
-                             (== refname "Environment")
-                             Environment
-                             
-                             (-> compiler_operators `has refname)
-                             special_identity
-                             
-                             else
-                             (let
-                                ((`namespace_identity (if target_namespace
-                                                          [target_namespace refname]  ;; already has been split or explicitly specified, so use it
-                                                          (split_by "/" refname)))    ;; otherwise split..namespace_identity may only have 1 component though
-                                 (`comps (or path_comps
-                                             (get_object_path (if (== 1 namespace_identity.length)
-                                                                  namespace_identity.0
-                                                                  namespace_identity.1))))
-                                 (`refval nil)
-                                 (`symbol_name nil)
-                                 ;; shadow the environments scope check if the suppress_check_external_env is set to true
-                                 ;; this is useful when we have reference names that are not legal js reference names
-                                 
-                                 (`check_external_env (if suppress_check_external_env
-                                                          false
-                                                          check_external_env_default)))
-                                (cond
-                                   ;; given a fully qualified name, if not us, pass it up
-                                   (and parent_environment
-                                      (> namespace_identity.length 1)
-                                      (not (== namespace_identity.0 namespace)))
-                                   ;; pass it up...note that is we are a contained environment, our request will turn contained to true
-                                   (-> parent_environment `get_global namespace_identity.1 value_if_not_found suppress_check_external_env namespace_identity.0 comps (or contained
-                                                                                                                                                                         contained_req))
-                                   
-                                   ;; we are at the root (core) but it is not us, so we need to see if we have a namespace that alignes and if so, call it's get_global specifically
-                                   (and (> namespace_identity.length 1)
-                                        (not (== namespace_identity.0 namespace)))
-                                   (do
-                                      (if (and (prop children namespace_identity.0)
-                                               (not contained_req))                   ;; can we access it?
-                                          (-> (prop children namespace_identity.0)
-                                              `get_global
-                                              namespace_identity.1 value_if_not_found suppress_check_external_env namespace_identity.0 comps)
-                                          (do
-                                             (throw EvalError (+ "namespace " namespace_identity.0 " doesn't exist")))))
-                                   else
-                                   (do
-                                      
-                                      ;; search path is to first check the global Lisp Environment
-                                      ;; and if the check_external_env flag is true, then go to the
-                                      ;; external JS environment.
-                                      
-                                      (= refval (prop Environment.global_ctx.scope comps.0))
-                                      
-                                      (if (and (== undefined refval)             ;; if we didn't find anything here, and if the refname was
-                                               (== namespace_identity.length 1)  ;; non-qualified we need to check upward
-                                               parent_environment)               ;; if possible..
-                                          (do
-                                             (defvar rval (-> parent_environment `get_global refname value_if_not_found suppress_check_external_env nil comps (or contained contained_req)))
-                                             rval)
-                                          (do
-                                             ;; this is us
-                                             (if (and (== undefined refval)
-                                                      check_external_env)
-                                                 (= refval (if check_external_env
-                                                               (or (get_outside_global comps.0)
-                                                                   NOT_FOUND)
-                                                               NOT_FOUND)))
-                                             
-                                             ;; based on the value of refval, return the value
-                                             
-                                             (cond
-                                                (and (== NOT_FOUND refval)
-                                                     (not (== undefined value_if_not_found)))
-                                                value_if_not_found
-                                                
-                                                (== NOT_FOUND refval)
-                                                (do
-                                                   (throw ReferenceError (+ "symbol not found: " (if (> namespace_identity.length 1)
-                                                                                                     (+ namespace "/" namespace_identity.1)
-                                                                                                     (+ namespace "/" namespace_identity.0)))))
-                                                
-                                                
-                                                (== comps.length 1)
-                                                refval
-                                                
-                                                (> comps.length 1)
-                                                (do
-                                                   (resolve_path (rest comps) refval))
-                                                
-                                                else
-                                                (do
-                                                   (console.warn "get_global: condition fall through: " comps)
-                                                   NOT_FOUND))))))))))
-                    
-                    (symbol_definition (fn (symname target_namespace)
-                                          (let
-                                             ((namespace_identity (if target_namespace
-                                                                      [ target_namespace symname ]
-                                                                      (if (> (length symname) 2)
-                                                                          (split_by "/" symname)
-                                                                          [symname] ))))
-                                             ;(console.log "symbol_definition: " symname namespace_identity)
-                                             (cond
-                                                (== namespace_identity.length 1)
-                                                ;; not fully qualified
-                                                (aif (prop Environment.definitions symname)
-                                                     it ;; we have it here so return it
-                                                     (if parent_environment
-                                                        (-> parent_environment `symbol_definition symname)))
-                                                
-                                                (== namespace_identity.0  namespace)
-                                                (prop Environment.definitions symname)
-                                                
-                                                parent_environment
-                                                (-> parent_environment `symbol_definition namespace_identity.1 namespace_identity.0)
-                                                
-                                                (== namespace_identity.length 2)
-                                                (-> (prop children namespace_identity.0) `symbol_definition namespace_identity.1)
-                                                else
-                                                undefined)))
-                                       {
-                                         `description: (+ "Given a symbol name and an optional namespace, either as a fully qualified path "
-                                                          "or via the target_namespace argument, returns definition information about the "
-                                                          "retquested symbol.  "
-                                                          "Used primarily by the compiler to find metadata for a specific symbol during compilation.")
-                                         `usage: ["symname:string" "namespace:string"]
-                                         `tags: ["compiler" "symbols" "namespace" "search" "context" "environment"]
-                                         })
-                    
-                    (compile (fn (json_expression opts)
-                                (let
-                                   ((opts (+ {
-                                               `env: Environment
-                                               }
-                                            opts
-                                            {
-                                              `meta: (if (and opts opts.meta)
-                                                         true
-                                                         false)
-                                              }))
-                                    (out nil))
-                                   
-                                   (= out
-                                      (compiler json_expression opts))
-                                   (cond
-                                      (and (is_array? out)
-                                           out.0.ctype
-                                           (== out.0.ctype "FAIL"))
-                                      out
-                                      opts.meta
-                                      out
-                                      else
-                                      out.1)))
-                       {
-                         `description: (+ "Compiles the given JSON or quoted lisp and returns a string containing "
-                                          "the lisp form or expression as javascript.<br>"
-                                          "If passed the option { meta: true } , an array is returned containing compilation metadata "
-                                          "in element 0 and the compiled code in element 1.")
-                         `usage: ["json_expression:*" "opts:object"]
-                         `tags:["macro" "quote" "quotes" "desym" "compiler"]
-                         })
-                    
-                    (env_log (defclog { `prefix: (+ "env" id) `background: "#B0F0C0" })
+                                false))
+                          (throw SyntaxError "undefine requires a quoted symbol")))
+                   {
+                     `description: (+ "Given a quoted symbol removes the symbol and any definition information from the namespace. "
+                                      "If the namespace is fully-qualified, then the symbol will be removed from the specified namespace "
+                                      "instead of the currently active namespace. If the symbol is successfully removed, the function "
+                                      "will return true, otherwise if it is not found, false will be returned.  Note that if the "
+                                      "specified symbol is non-qualified, but exists in a different, accessible namespace, but the "
+                                      "symbol isn't present in the current namespace, the symbol will not be deleted.  The environment "
+                                      "is not searched and therefore symbols have to be explicitly fully-qualified for any effect "
+                                      "of this function outside the current namespace.")
+                     `usage: ["quoted_symbol:string"]
+                     `tags: [ `symbol `delete `remove `unintern `reference `value ]
+                     })
+         
+         (eval_exp (fn (expression)
+                      (do
+                         (expression)))
+                   {
+                     `description: (+ "Evaluates the given expression and returns the value.")
+                     `usage: ["expression:*"]
+                     `tags: [ `eval `evaluation `expression ]
+                     })
+         
+         (indirect_new (function (`& args)
+                          (javascript |
                              {
-                               `description: "The environment logging function used by the environment."
-                               `usage: ["arg0:*" "argN:*"]
-                               })
-                    
-                    ;; evaluate_local facilitates the evaluation cycle for the specific
-                    ;; environment (namespace): compilation, binding, and then calling
-                    ;; the bound function.
-                    
-                    (evaluate_local (fn (expression ctx opts)
-                                       (let
-                                          ((opts (or opts
-                                                     {}))
-                                           (compiled nil)
-                                           (error_data nil)
-                                           (requires nil)
-                                           (precompiled_assembly nil)
-                                           (result nil))
-                                          ;;(debug)
-                                          ;;(console.log "evaluate_local [ " namespace "] :" Environment.context.name)
-                                          (if opts.compiled_source
-                                             (= compiled expression)
-                                             (try
-                                                (= compiled
-                                                   (compiler (if opts.json_in
-                                                                 expression
-                                                                 (-> Environment `read_lisp expression { `source_name: opts.source_name }))
-                                                             {
-                                                               `env: Environment
-                                                               `ctx: ctx
-                                                               `formatted_output: true
-                                                               `source_name: opts.source_name
-                                                               `throw_on_error: opts.throw_on_error
-                                                               `on_final_token_assembly: (fn (val)
-                                                                                            (= precompiled_assembly val))
-                                                               `error_report: (or opts.error_report nil)
-                                                               `quiet_mode: (or opts.quiet_mode false) }))
-                                                (catch Error (`e)
-                                                   (do
-                                                      (when opts.throw_on_error
-                                                         (throw e))
-                                                      (when (instanceof e LispSyntaxError)
-                                                         (set_prop e
-                                                            `message
-                                                            (JSON.parse e.message)))
-                                                      (cond
-                                                         (instanceof e LispSyntaxError)
-                                                         (= error_data (+ { `error: "LispSyntaxError"  }
-                                                                          e.message))
-                                                         else
-                                                         (= error_data
-                                                            {
-                                                              `error: (sub_type e)
-                                                              `message:  e.message
-                                                              `stack: e.stack
-                                                              `form: (cond
-                                                                        (and (is_string? expression)
-                                                                             (> expression.length 100))
-                                                                        (+ (-> expression `substr 0 100) "...")
-                                                                        else
-                                                                        (as_lisp expression))
-                                                              `parent_forms: []
-                                                              `source_name: opts.source_name
-                                                              `invalid: true
-                                                              }))
-                                                      (if opts.error_report
-                                                         (opts.error_report error_data)
-                                                         (console.error "Compilation Error: " error_data))
-                                                      (= compiled [ { `error: true } nil  ])))))
-                                          
-                                          (cond
-                                             (eq nil compiled)
-                                             ;; we got nothing back - for now note it and return nil
-                                             ;; if we had an error it should of been reported
-                                             nil
-                                             (== compiled.0.ctype "FAIL")
-                                             (progn
-                                                (when opts.error_report
-                                                   (opts.error_report compiled.1))
-                                                (cond
-                                                   (instanceof compiled.1 Error)
-                                                   (throw compiled.1)
-                                                   (instanceof compiled.1.0 Error)
-                                                   (throw compiled.1.0)
-                                                   
-                                                   (and (is_object? compiled.1.0)
-                                                        (== compiled.1.0.error "SyntaxError"))
-                                                   (progn
-                                                      (defvar new_error (new SyntaxError compiled.1.0.message))
-                                                      (set_prop new_error
-                                                         `from compiled.1.0)
-                                                      (throw new_error))
-                                                   else
-                                                   compiled.1))
-                                             
-                                             
-                                             (and compiled.0.namespace
-                                                (not (== compiled.0.namespace namespace))
-                                                parent_environment)
-                                             ;; not us and if we are a child, pass it up to our parent to deal with
-                                             (-> parent_environment `evaluate_local compiled ctx (+ {}
-                                                                                                    opts
-                                                                                                    { `compiled_source: true }))
-                                             (and compiled.0.namespace
-                                                (not (== compiled.0.namespace namespace)))
-                                             
-                                             ;; not us, but we are a root as we have no parent, so do we
-                                             ;; have a child namespace that matches?
-                                             
-                                             (if (prop children compiled.0.namespace)
-                                                 (-> (prop children compiled.0.namespace) `evaluate_local compiled ctx (+ {}
-                                                           opts
-                                                           { `compiled_source: true }))
-                                                 (throw EvalError (+ "unknown namespace " compiled.0.namespace " assignment")))
-                                             
-                                             else
-                                             ;; this is us or no namespace designated
-                                             (do
-                                                (if opts.on_compilation_complete
-                                                   (opts.on_compilation_complete compiled))
-                                                (try
-                                                   (do
-                                                      (when (and (is_array? compiled)
-                                                                 (is_object? compiled.0)
-                                                                 compiled.0.ctype
-                                                                 (not (is_string? compiled.0.ctype)))
-                                                         (set_prop compiled.0
-                                                            `ctype
-                                                            (subtype compiled.0.ctype)))
-                                                      (= result
-                                                         (cond
-                                                            compiled.error  ;; compiler error
-                                                            (throw (new compiled.error compiled.message))
-                                                            
-                                                            (and compiled.0.ctype
-                                                               (or (contains? "block" compiled.0.ctype)
-                                                                   (== compiled.0.ctype "assignment")
-                                                                   (== compiled.0.ctype "__!NOT_FOUND!__")))
-                                                            (if (compiled.0.has_lisp_globals)
-                                                                (do
-                                                                   (set_prop compiled
-                                                                      
-                                                                      1
-                                                                      (new AsyncFunction "Environment" (+ "{ " compiled.1 "}")))
-                                                                   
-                                                                   (compiled.1 Environment))
-                                                                (do
-                                                                   (set_prop compiled
-                                                                      1
-                                                                      (new AsyncFunction  (+ "{" compiled.1 "}")))
-                                                                   (compiled.1)))
-                                                            
-                                                            (and compiled.0.ctype
-                                                               (or (== "AsyncFunction" compiled.0.ctype)
-                                                                   (== "statement" compiled.0.ctype)
-                                                                   (== "objliteral" compiled.0.ctype)))
-                                                            (do
-                                                               (if (compiled.0.has_lisp_globals)
-                                                                   (do
-                                                                      ;(console.log "env: compiled text: " (+ "{ return " compiled.1 "} "))
-                                                                      (set_prop compiled
-                                                                         1
-                                                                         (new AsyncFunction "Environment" (+ "{ return " compiled.1 "} ")))
-                                                                      (compiled.1 Environment))
-                                                                   (do
-                                                                      (set_prop compiled
-                                                                         1
-                                                                         (new AsyncFunction (+ "{ return " compiled.1 "}")))
-                                                                      (compiled.1))))
-                                                            
-                                                            (and compiled.0.ctype
-                                                               (== "Function" compiled.0.ctype))
-                                                            (do
-                                                               (if (compiled.0.has_lisp_globals)
-                                                                   (do
-                                                                      (set_prop compiled
-                                                                         1
-                                                                         (new Function "Environment" (+ "{ return " compiled.1 "} ")))
-                                                                      (compiled.1 Environment))
-                                                                   (do
-                                                                      (set_prop compiled
-                                                                         1
-                                                                         (new Function (+ "{ return " compiled.1 "}")))
-                                                                      (compiled.1))))
-                                                            else ;; this is a simple expression
-                                                            compiled.1)))
-                                                   (catch Error (e)
-                                                      (do
-                                                         (when true ;(== (sub_type e) "SyntaxError")
-                                                             (defvar details
-                                                                {
-                                                                  `error: e.name
-                                                                  `message: e.message
-                                                                  `expanded_source: (pretty_print (detokenize precompiled_assembly))
-                                                                  `compiled: compiled.1 
-                                                                  })
-                                                             (log "Syntax Error: " details)
-                                                             (set_prop e
-                                                                `details
-                                                                details))
-                                                             
-                                                         (when (or opts.log_errors
-                                                                   (> Environment.context.scope.__VERBOSITY__  4))
-                                                            (if e.details
-                                                               (env_log "caught error: " e.details)
-                                                               (env_log "caught error: " e.name e.message e)))
-                                                         (if (and false (== (sub_type e) "SyntaxError")
-                                                                  (or opts.log_errors
-                                                                     (> Environment.context.scope.__VERBOSITY__  4)))
-                                                             (console.log compiled.1))
-                                                         (when opts.error_report
-                                                            (opts.error_report (if e.details
-                                                                                   e.details
-                                                                                   {
-                                                                                     `error: e.name
-                                                                                     `message: e.message
-                                                                                     `form: nil
-                                                                                     `parent_forms: nil
-                                                                                     `invalid: true
-                                                                                     `text: e.stack
-                                                                                     })))
-                                                         (= result e)
-                                                         (if (or (not opts.catch_errors)
-                                                                 (and ctx ctx.in_try))
-                                                             (progn
-                                                                (throw result))))))
-                                                result)))))
-                    
-                    (evaluate (fn (expression ctx opts)
-                                 (progn
-                                    (cond
-                                       (== namespace active_namespace)
-                                       (evaluate_local expression ctx opts)  ;; we by default use evaluate local
-                                       ;parent_environment
-                                       ;(-> parent_environment `evaluate expression ctx opts)
-                                       (== namespace "core")
-                                       (-> (prop children active_namespace)
-                                           `evaluate
-                                           expression ctx opts))))) ;; otherwise evaluate using the active namespace
-                    
-                    (eval_struct (fn (lisp_struct ctx opts)
-                                    (let
-                                       ((rval nil))
-                                       ;(env_log "eval_struct ->" (clone lisp_struct) ctx opts)
-                                       (if (is_function? lisp_struct)
-                                           (= rval (lisp_struct))
-                                           (= rval (evaluate lisp_struct
-                                                             ctx
-                                                             (+ {
-                                                                  `json_in: true
-                                                                  }
-                                                               (or opts {})))))
-                                       ;(env_log "eval_struct <-" (clone rval))
-                                       rval))))
+                               let targetClass = args[0];
+                               if (subtype(targetClass)==="String") {
+                                    let tmpf=new Function("{ return "+targetClass+" }");
+                                    targetClass = tmpf();
+                                    }
+                               if (args.length==1) {
+                                    let f = function(Class) {
+                                                      return new (Function.prototype.bind.apply(Class, args));
+                                                      }
+                                    let rval = f.apply(this,[targetClass]);
+                                    return rval;
+                                    } else {
+                                     let f = function(Class) {
+                                                       return new (Function.prototype.bind.apply(Class, args));
+                                                       }
+                                     let rval = f.apply(this,[targetClass].concat(args.slice(1)));
+                                     return rval;
+                                     }
+                               } | ))
+                       {
+                         `description: (+ "Used by the compiler for implementation of the new operator and shouldn't be directly called by "
+                                          "user programs.  The new operator should be called instead.")
+                         `usage: ["arg0:*" "argsN:*"]
+                         `tags: [ `system `compiler `internal ]
+                         })
+         
+         (range (function (`& args)
+                   (let
+                      ((`from_to (if args.1
+                                     [ (int args.0) (int args.1) ]
+                                     [ 0 (int args.0) ]))
+                       (`step (if args.2
+                                  (float args.2)
+                                  1))
+                       (`idx from_to.0)
+                       (`acc []))
+                      (assert (> step 0) "range: step must be > 0")
+                      (assert (>= from_to.1 from_to.0) "range: lower bound must be greater or equal than upper bound")
+                      (while (< idx from_to.1)
+                         (do
+                            (push acc idx)
+                            (inc idx step)))
+                      acc))
+                {
+                  `usage: ["start_or_end:number" "end:number" "step:number"]
+                  `description: (+ "Range has a variable form depending on the amount of arguments provided to the function when "
+                                   "calling it. If provided one argument, range will produce an array from 0 up to, but not including "
+                                   "the provided value. If given two arguments, the first argument will be the starging value and "
+                                   "the last value will be used as the upper bounding value, returning an array with elements starting "
+                                   "at the start value and up to, but not including the bounding value. If given a third value, the "
+                                   "value will be interpreted as the step value, and the returned array will contain values that "
+                                   "increment by the step amount.  Range will throw an error if a negative range is specified. "
+                                   "For negative ranges see neg_range."
+                                   "<br><br>Examples:<br>"
+                                   "(range 5) -> [ 0 1 2 3 4 ]<br>"
+                                   "(range 10 15) -> [ 10 11 12 13 14 ]<br>"
+                                   "(range 10 20) -> [ 10 12 14 16 18 ]<br>"
+                                   "(range -5 0) -> [ -5 -4 -3 -2 -1 ]<br>"
+                                   "(range -3 3) -> [ -3, -2, -1, 0, 1, 2 ]<br>")
+                  
+                  })
+         
+         
+         (add (new Function "...args"
+                   "{
+                   let acc;
+                   if (typeof args[0]===\"number\") {
+                        acc = 0;
+                        } else if (args[0] instanceof Array) {
+                         return args[0].concat(args.slice(1));
+                         } else if (typeof args[0]==='object') {
+                          let rval = {};
+                          for (let i in args) {
+                                 if (typeof args[i] === 'object') {
+                                      for (let k in args[i]) {
+                                             rval[k] = args[i][k];
+                                             }
+                                      }
+                                 }
+                          return rval;
+                          } else {
+                           acc = \"\";
+                           }
+                   for (let i in args) {
+                          acc += args[i];
+                          }
+                   return acc;
+                   }")
+              {
+                `description: (+ "Add is an overloaded function that, based on the first argument provided, determines how to \'add\' the arguments. "
+                                 "If provided a number as a first argument, then it will assume the rest of the arguments are numbers and add them "
+                                 "to the first, returning the numerical sum of the arguments. If an object, it will merge the keys of the provided "
+                                 "arguments, returning a combined object.  Be aware that if merging objects, if arguments that have the same keys "
+                                 "the argument who appears last with the key will prevail.  If called with an array as a first argument, the "
+                                 "subsequent arguments will be added to the first via 'concat'.  If strings, the strings will be joined into a "
+                                 "single string and returned.<br>"
+                                 "(add 1 2 3) => 6<br>"
+                                 "(add { `abc: 123 `def: 345 } { `def: 456 }) => { abc: 123, def: 456 }"
+                                 "(add [ 1 2 3 ] [ 4 5 6] 7) => [ 1, 2, 3, [ 4, 5, 6 ], 7 ]<br>"
+                                 "(add \"abc\" \"def\") => \"abcdef\"<br><br>"
+                                 "Note that add doesn't typically need to explicily called.  The compiler will try and determine the best "
+                                 "way to handle adding based on the arguments to be added, so the + operator should be used instead, since "
+                                 "it gives the compiler an opportunity to inline if possible.")
+                `usage: [ "arg0:*" "argN:*" ]
+                `tags: [ `add `+ `sum `number `addition `merge `join `concat ]
+                })
+         
+         (merge_objects (new Function "x"
+                             "{
+                             let rval = {};
+                             for (let i in x) {
+                                    if (typeof i === 'object') {
+                                         for (let k in x[i]) {
+                                                rval[k] = x[i][k];
+                                                }
+                                         }
+                                    }
+                             return rval;
+                             }")
+                        {
+                          `description: (+ "Merge objects takes an array of objects and returns an object whose keys and values are "
+                                           "the sum of the provided objects (same behavior as add with objects).  If objects have the "
+                                           "same keys, the last element in the array with the duplicate key will be used to provide the "
+                                           "value for that key.")
+                          `usage: ["objects:array"]
+                          `tags: [ `add `merge `keys `values `objects `value ]
+                          })
+         
+         (index_of (new Function "value" "container"
+                        (+ "{ return container.indexOf(value) }"))
+                   {
+                     `description: "Given a value and an array container, returns the index of the value in the array, or -1 if not found."
+                     `usage: ["value:number|string|boolean" "container:array" ]
+                     `tags: [ `find `position `index `array `contains ]
+                     })
+         
+         (resolve_path (new Function "path,obj"
+                            "{
+                            if (typeof path==='string') {
+                                 path = path.split(\".\");
+                                 }
+                            let s=obj;
+                            return path.reduce(function(prev, curr) {
+                                                         return prev ? prev[curr] : undefined
+                                                         }, obj || {})
+                            }")
+                       {
+                         `description: (+ "Given a path and a tree structure, which can be either an array or an object, "
+                                          "traverse the tree structure and return the value at the path if it exists, otherwise "
+                                          "undefined is returned.<br>"
+                                          "(resolve_path [ 2 1 ] [ 1 2 [ 3 4 5 ] 6 7]) => 4)")
+                         `usage: [ "path:array" "tree_structure:array|object" ]
+                         `tags: [ `find `position `index `path `array `tree `contains `set_path ]
+                         })
+         
+         
+         
+         (min_value (new Function "elements" "{ return Math.min(...elements); }")
+                    {
+                      `description: "Returns the minimum value in the provided array of numbers."
+                      `usage: ["elements:array"]
+                      `tags: [ `min `max_value `array `elements `minimum `number ]
+                      })
+         (max_value (new Function "elements" "{ return Math.max(...elements); }")
+                    {
+                      `description: "Returns the maximum value in the provided array of numbers."
+                      `usage: ["elements:array"]
+                      `tags: [ `min `max_value `array `elements `minimum `number ]
+                      })
+         
+         (interlace (fn (`& args)
+                       (let
+                          ((min_length  (min_value (map length args)))
+                           (rlength_args (range (length args)))
+                           (rval []))
+                          (for_each (`i (range min_length))
+                             (for_each (`j rlength_args)
+                                (push rval (prop (prop args j) i))))
+                          rval))
+                    { `usage: ["list0:array" "list1:array" "listn?:array"]
+                             `description: "Returns a list containing a consecutive values from each list, in argument order.  I.e. list0.0 list1.0 listn.0 list0.1 list1.1 listn.1 ..."
+                             `tags: ["list","array","join" "merge"]
+                             })
+         
+         (trim (function (x)
+                  (-> x `trim))
+               {
+                 `description: "Removes leading and trailing spaces from the provided string value."
+                 `usage: ["value:string"]
+                 `tags: ["string" "spaces" "clean" "squeeze" "leading" "trailing" "space"]
+                 })
+         
+         (assert (function (assertion_form failure_message)
+                    (if assertion_form
+                       assertion_form
+                       (throw EvalError (or failure_message "assertion failure"))))
+                 {
+                   `description: "If the evaluated assertion form is true, the result is returned, otherwise an EvalError is thrown with the optionally provided failure message."
+                   `usage:["form:*" "failure_message:string?"]
+                   `tags:["true" "error" "check" "debug" "valid" "assertion"]
+                   })
+         
+         
+         (unquotify (fn (val)
+                       (let
+                          ((dval val))
+                          (if (starts_with? "\"" dval)
+                              (= dval (-> dval `substr 1 (- dval.length 2))))
+                          (if (starts_with? "=:" dval)
+                              (= dval (-> dval `substr 2)))
+                          dval))
+                    {
+                      `description: "Removes binding symbols and quotes from a supplied value.  For use in compile time function such as macros."
+                      `usage: ["val:string"]
+                      `tags:["macro" "quote" "quotes" "desym"]
+                      })
+         
+         (or_args (fn (argset)
+                     (let
+                        ((is_true false))
+                        (for_each (`elem argset)
+                           (if elem
+                              (do
+                                 (= is_true true)
+                                 (break))))
+                        is_true))
+                  {
+                    `description: "Provided an array of values, returns true if any of the values are true, otherwise will return false."
+                    `usage: ["argset:array"]
+                    `tags: [ "or" "true" "false" "array" "logic" ]
+                    })
+         
+         
+         (special_operators (fn ()
+                               (make_set (compiler [] { `special_operators: true `env: Environment }))))
+         
+         (defclog (fn (opts)
+                     (let
+                        ((`style (+ "padding: 5px;"
+                                    (if opts.background
+                                       (+ "background: " opts.background ";")
+                                       "")
+                                    (if opts.color
+                                       (+ "color: " opts.color ";"))
+                                    "")))
+                        (fn (`& args)
+                           (apply console.log (+ "%c" (if opts.prefix
+                                                          opts.prefix
+                                                          (take args)))
+                                  (conj [ style ]
+                                        args)))))
+            {
+              `description: (+ "Given a description object, containing specific keys, returns a customized console logging "
+                               "function implements the given requested properties.<br>Options<br>"
+                               "prefix:string:The prefix to log prior to any supplied user arguments.<br>"
+                               "color:string:The text color to use on the prefix (or initial argument if no prefix)<br>"
+                               "background:string:The background coloe to use on the prefix (or initial argument if no prefix)<br>")
+              `usage: ["options:object"]
+              `tags: ["log" "logging" "console" "utility"]
+              })
+         
+         
+         (NOT_FOUND (new ReferenceError "not found"))
+         
+         (check_external_env_default (if (== namespace "core") true false))
+         (*namespace* namespace)
+         ;; handle dependency loads between namespaces
+         (pending_ns_loads {})  ;; object to store dependencies by namespace as they are rehydrated
+         (pend_load (fn (from_namespace target_namespace symbol initializer)
+                       (progn
+                          (when (eq nil (prop pending_ns_loads from_namespace))
+                             (set_prop pending_ns_loads from_namespace []))
+                          (push (prop pending_ns_loads from_namespace)
+                                { `symbol: symbol
+                                  `source_ns: from_namespace
+                                  `target_ns: target_namespace
+                                  `initializer: [(quote quote) initializer]
+                                  }
+                                )
+                          initializer))
+                    {
+                      `description: (+ "When used as an initializer wrapper via the use_symbols macro, the wrapped "
+                                       "initializer will not be loaded until the from_namespace is loaded to ensure "
+                                       "that the wrapped initializer won't fail due to not yet loaded dependencies.")
+                      `usage: ["from_namespace:string" "target_namespace:string" "symbol:string" "initializer:array"]
+                      `tags: [ `symbol `definitions `namespace `scope `dependency `dependencies `require ]
+                      })
+         (load_pends (fn (from_namespace)
+                        (when (prop pending_ns_loads from_namespace)
+                           (defvar acc [])
+                           (setq acc
+                              (for_each (`load_instruction (prop pending_ns_loads from_namespace))
+                                 `(use_symbols ,#load_instruction.source_ns [ ,#load_instruction.symbol ] ,#load_instruction.target_ns)))
+                           (console.log "load_pends: " from_namespace "->" acc)
+                           (eval acc)
+                           true)))
+         (symbols (fn (opts)
+                     (cond
+                        (eq nil opts)
+                        (keys Environment.global_ctx.scope)
+                        opts.unique
+                        (progn
+                           (defvar no_includes (make_set (conj [ "meta_for_symbol", "describe", "undefine", "*namespace*",
+                                                                "pend_load", "symbols", "set_global", "get_global", "symbol_definition",
+                                                                "compile", "env_log", "evaluate_local", "evaluate", "eval_struct",
+                                                                "set_compiler", "clone", "eval", "add_escape_encoding",
+                                                                "get_outside_global", "as_lisp", "lisp_writer", "clone_to_new",
+                                                                "save_env", "null", "compiler" ] built_ins)))
+                           (reduce (sym (keys Environment.global_ctx.scope))
+                              (if (-> no_includes `has sym)
+                                  nil
+                                  sym)))))
+                  {
+                    `description: (+ "Returns an array of the defined global symbols for the local environment.  "
+                                     "If opts.unique is true, only symbols that are not part of the built ins are "
+                                     "included.")
+                    `usage: ["opts:object"]
+                    `tags: [`symbol `names `definitions `values `scope]
+                    })
+         (set_global
+            (function (refname value meta is_constant target_namespace contained_req)
+               (progn
+                  (cond (not (== (typeof refname) "string"))
+                     (throw TypeError "reference name must be a string type")
+                     (or (== Environment value)
+                         (== Environment.global_ctx value)
+                         (== Environment.global_ctx.scope value))
+                     (do
+                        ;(debug)
+                        (throw EvalError "cannot set the environment scope as a global value")))
+                  
+                  (when (resolve_path [ refname `constant ] Environment.definitions)
+                     (throw TypeError (+ "Assignment to constant variable " refname )))
+                  
+                  ;; we need to determine what we've been given.  We could have:
+                  ;; 1. refname by itself, with no name space, so we need to check
+                  ;;    if it is us, and if it is not, hand it up to our parent
+                  ;; 2. fully/qualified refname - nead to split and then check
+                  ;; 3. refname and target_namespace - if us we deal with or
+                  ;;    send onwards if not us.
+                  
+                  (defvar namespace_identity (if target_namespace
+                                                 [target_namespace refname]
+                                                 (split_by "/" refname)))
+                  
+                  (cond
+                     ;; check if we already have an explicit namespace and it isn't us,
+                     ;; send it to our parent to deal with..
+                     
+                     (and parent_environment
+                        (> namespace_identity.length 1)
+                        (not (== namespace namespace_identity.0)))
+                     (-> parent_environment `set_global namespace_identity.1 value meta is_constant namespace_identity.0 (or contained contained_req))
+                     
+                     ;; not us but we are the core, so we need to send it to the appropriate namespace
+                     
+                     (and (> namespace_identity.length 1)
+                          (not (== namespace_identity.0 namespace)))
+                     (do
+                        (if (and (prop children namespace_identity.0)   ;; do we have the requested namespace?
+                                 (not contained_req))                   ;; can we access it?
+                            (-> (prop children namespace_identity.0)       ;; dispatch it there..
+                                `set_global
+                                namespace_identity.1 value meta is_constant namespace_identity.0)
+                            ;; no such namespace so it is an error...
+                            (throw EvalError (+ "namespace " namespace_identity.0 " doesn't exist"))))
+                     else
+                     ;; it's on us...
+                     (try
+                        (progn
+                           (defvar comps (get_object_path (if (== 1 namespace_identity.length)
+                                                              namespace_identity.0
+                                                              namespace_identity.1)))
+                           (set_prop Environment.global_ctx.scope
+                              comps.0
+                              value)
+                           (if (and (is_object? meta)
+                                    (not (is_array? meta)))
+                               (do
+                                  (when is_constant
+                                     (set_prop meta
+                                        `constant
+                                        true))
+                                  (set_prop Environment.definitions
+                                     comps.0
+                                     meta))
+                               (when is_constant
+                                  (set_prop Environment.definitions
+                                     comps.0
+                                     {
+                                       `constant: true
+                                       })))
+                           (prop Environment.global_ctx.scope comps.0))
+                        (catch Error (e)
+                           (progn
+                              (defvar message (+ "Error: set_global: " *namespace* "symbol name: " refname ": " e.message))
+                              (console.error message())
+                              (set_prop e
+                                 `message
+                                 message)
+                              (throw e))))))))
+         
+         (get_global
+            (function (refname value_if_not_found suppress_check_external_env target_namespace path_comps contained_req)
+               (cond
+                  (not (== (typeof refname) "string"))
+                  (throw TypeError "reference name must be a string type")
+                  
+                  (== refname "Environment")
+                  Environment
+                  
+                  (-> compiler_operators `has refname)
+                  special_identity
+                  
+                  else
+                  (let
+                     ((`namespace_identity (if target_namespace
+                                               [target_namespace refname]  ;; already has been split or explicitly specified, so use it
+                                               (split_by "/" refname)))    ;; otherwise split..namespace_identity may only have 1 component though
+                      (`comps (or path_comps
+                                  (get_object_path (if (== 1 namespace_identity.length)
+                                                       namespace_identity.0
+                                                       namespace_identity.1))))
+                      (`refval nil)
+                      (`symbol_name nil)
+                      ;; shadow the environments scope check if the suppress_check_external_env is set to true
+                      ;; this is useful when we have reference names that are not legal js reference names
+                      
+                      (`check_external_env (if suppress_check_external_env
+                                               false
+                                               check_external_env_default)))
+                     (cond
+                        ;; given a fully qualified name, if not us, pass it up
+                        (and parent_environment
+                           (> namespace_identity.length 1)
+                           (not (== namespace_identity.0 namespace)))
+                        ;; pass it up...note that is we are a contained environment, our request will turn contained to true
+                        (-> parent_environment `get_global namespace_identity.1 value_if_not_found suppress_check_external_env namespace_identity.0 comps (or contained
+                                                                                                                                                              contained_req))
+                        
+                        ;; we are at the root (core) but it is not us, so we need to see if we have a namespace that alignes and if so, call it's get_global specifically
+                        (and (> namespace_identity.length 1)
+                             (not (== namespace_identity.0 namespace)))
+                        (do
+                           (if (and (prop children namespace_identity.0)
+                                    (not contained_req))                   ;; can we access it?
+                               (-> (prop children namespace_identity.0)
+                                   `get_global
+                                   namespace_identity.1 value_if_not_found suppress_check_external_env namespace_identity.0 comps)
+                               (do
+                                  (throw EvalError (+ "namespace " namespace_identity.0 " doesn't exist")))))
+                        else
+                        (do
+                           
+                           ;; search path is to first check the global Lisp Environment
+                           ;; and if the check_external_env flag is true, then go to the
+                           ;; external JS environment.
+                           
+                           (= refval (prop Environment.global_ctx.scope comps.0))
+                           
+                           (if (and (== undefined refval)             ;; if we didn't find anything here, and if the refname was
+                                    (== namespace_identity.length 1)  ;; non-qualified we need to check upward
+                                    parent_environment)               ;; if possible..
+                               (do
+                                  (defvar rval (-> parent_environment `get_global refname value_if_not_found suppress_check_external_env nil comps (or contained contained_req)))
+                                  rval)
+                               (do
+                                  ;; this is us
+                                  (if (and (== undefined refval)
+                                           check_external_env)
+                                      (= refval (if check_external_env
+                                                    (or (get_outside_global comps.0)
+                                                        NOT_FOUND)
+                                                    NOT_FOUND)))
+                                  
+                                  ;; based on the value of refval, return the value
+                                  
+                                  (cond
+                                     (and (== NOT_FOUND refval)
+                                          (not (== undefined value_if_not_found)))
+                                     value_if_not_found
+                                     
+                                     (== NOT_FOUND refval)
+                                     (do
+                                        (throw ReferenceError (+ "symbol not found: " (if (> namespace_identity.length 1)
+                                                                                          (+ namespace "/" namespace_identity.1)
+                                                                                          (+ namespace "/" namespace_identity.0)))))
+                                     
+                                     
+                                     (== comps.length 1)
+                                     refval
+                                     
+                                     (> comps.length 1)
+                                     (do
+                                        (resolve_path (rest comps) refval))
+                                     
+                                     else
+                                     (do
+                                        (console.warn "get_global: condition fall through: " comps)
+                                        NOT_FOUND))))))))))
+         
+         (symbol_definition (fn (symname target_namespace)
+                               (let
+                                  ((namespace_identity (if target_namespace
+                                                           [ target_namespace symname ]
+                                                           (if (> (length symname) 2)
+                                                               (split_by "/" symname)
+                                                               [symname] ))))
+                                  ;(console.log "symbol_definition: " symname namespace_identity)
+                                  (cond
+                                     (== namespace_identity.length 1)
+                                     ;; not fully qualified
+                                     (aif (prop Environment.definitions symname)
+                                          it ;; we have it here so return it
+                                          (if parent_environment
+                                             (-> parent_environment `symbol_definition symname)))
+                                     
+                                     (== namespace_identity.0  namespace)
+                                     (prop Environment.definitions symname)
+                                     
+                                     parent_environment
+                                     (-> parent_environment `symbol_definition namespace_identity.1 namespace_identity.0)
+                                     
+                                     (== namespace_identity.length 2)
+                                     (-> (prop children namespace_identity.0) `symbol_definition namespace_identity.1)
+                                     else
+                                     undefined)))
+                            {
+                              `description: (+ "Given a symbol name and an optional namespace, either as a fully qualified path "
+                                               "or via the target_namespace argument, returns definition information about the "
+                                               "retquested symbol.  "
+                                               "Used primarily by the compiler to find metadata for a specific symbol during compilation.")
+                              `usage: ["symname:string" "namespace:string"]
+                              `tags: ["compiler" "symbols" "namespace" "search" "context" "environment"]
+                              })
+         
+         (compile (fn (json_expression opts)
+                     (let
+                        ((opts (+ {
+                                    `env: Environment
+                                    }
+                                 opts
+                                 {
+                                   `meta: (if (and opts opts.meta)
+                                              true
+                                              false)
+                                   }))
+                         (out nil))
+                        
+                        (= out
+                           (compiler json_expression opts))
+                        (cond
+                           (and (is_array? out)
+                                out.0.ctype
+                                (== out.0.ctype "FAIL"))
+                           out
+                           opts.meta
+                           out
+                           else
+                           out.1)))
+            {
+              `description: (+ "Compiles the given JSON or quoted lisp and returns a string containing "
+                               "the lisp form or expression as javascript.<br>"
+                               "If passed the option { meta: true } , an array is returned containing compilation metadata "
+                               "in element 0 and the compiled code in element 1.")
+              `usage: ["json_expression:*" "opts:object"]
+              `tags:["macro" "quote" "quotes" "desym" "compiler"]
+              })
+         
+         (env_log (defclog { `prefix: (+ "env" id) `background: "#B0F0C0" })
+                  {
+                    `description: "The environment logging function used by the environment."
+                    `usage: ["arg0:*" "argN:*"]
+                    })
+         
+         ;; evaluate_local facilitates the evaluation cycle for the specific
+         ;; environment (namespace): compilation, binding, and then calling
+         ;; the bound function.
+         
+         (evaluate_local (fn (expression ctx opts)
+                            (let
+                               ((opts (or opts
+                                          {}))
+                                (compiled nil)
+                                (error_data nil)
+                                (requires nil)
+                                (precompiled_assembly nil)
+                                (result nil))
+                               ;;(debug)
+                               ;;(console.log "evaluate_local [ " namespace "] :" Environment.context.name)
+                               (if opts.compiled_source
+                                  (= compiled expression)
+                                  (try
+                                     (= compiled
+                                        (compiler (if opts.json_in
+                                                      expression
+                                                      (-> Environment `read_lisp expression { `source_name: opts.source_name }))
+                                                  {
+                                                    `env: Environment
+                                                    `ctx: ctx
+                                                    `formatted_output: true
+                                                    `source_name: opts.source_name
+                                                    `throw_on_error: opts.throw_on_error
+                                                    `on_final_token_assembly: (fn (val)
+                                                                                 (= precompiled_assembly val))
+                                                    `error_report: (or opts.error_report nil)
+                                                    `quiet_mode: (or opts.quiet_mode false) }))
+                                     (catch Error (`e)
+                                        (do
+                                           (when opts.throw_on_error
+                                              (throw e))
+                                           (when (instanceof e LispSyntaxError)
+                                              (set_prop e
+                                                 `message
+                                                 (JSON.parse e.message)))
+                                           (cond
+                                              (instanceof e LispSyntaxError)
+                                              (= error_data (+ { `error: "LispSyntaxError"  }
+                                                               e.message))
+                                              else
+                                              (= error_data
+                                                 {
+                                                   `error: (sub_type e)
+                                                   `message:  e.message
+                                                   `stack: e.stack
+                                                   `form: (cond
+                                                             (and (is_string? expression)
+                                                                  (> expression.length 100))
+                                                             (+ (-> expression `substr 0 100) "...")
+                                                             else
+                                                             (as_lisp expression))
+                                                   `parent_forms: []
+                                                   `source_name: opts.source_name
+                                                   `invalid: true
+                                                   }))
+                                           (if opts.error_report
+                                              (opts.error_report error_data)
+                                              (console.error "Compilation Error: " error_data))
+                                           (= compiled [ { `error: true } nil  ])))))
+                               
+                               (cond
+                                  (eq nil compiled)
+                                  ;; we got nothing back - for now note it and return nil
+                                  ;; if we had an error it should of been reported
+                                  nil
+                                  (== compiled.0.ctype "FAIL")
+                                  (progn
+                                     (when opts.error_report
+                                        (opts.error_report compiled.1))
+                                     (cond
+                                        (instanceof compiled.1 Error)
+                                        (throw compiled.1)
+                                        (instanceof compiled.1.0 Error)
+                                        (throw compiled.1.0)
+                                        
+                                        (and (is_object? compiled.1.0)
+                                             (== compiled.1.0.error "SyntaxError"))
+                                        (progn
+                                           (defvar new_error (new SyntaxError compiled.1.0.message))
+                                           (set_prop new_error
+                                              `from compiled.1.0)
+                                           (throw new_error))
+                                        else
+                                        compiled.1))
+                                  
+                                  
+                                  (and compiled.0.namespace
+                                     (not (== compiled.0.namespace namespace))
+                                     parent_environment)
+                                  ;; not us and if we are a child, pass it up to our parent to deal with
+                                  (-> parent_environment `evaluate_local compiled ctx (+ {}
+                                                                                         opts
+                                                                                         { `compiled_source: true }))
+                                  (and compiled.0.namespace
+                                     (not (== compiled.0.namespace namespace)))
+                                  
+                                  ;; not us, but we are a root as we have no parent, so do we
+                                  ;; have a child namespace that matches?
+                                  
+                                  (if (prop children compiled.0.namespace)
+                                      (-> (prop children compiled.0.namespace) `evaluate_local compiled ctx (+ {}
+                                                opts
+                                                { `compiled_source: true }))
+                                      (throw EvalError (+ "unknown namespace " compiled.0.namespace " assignment")))
+                                  
+                                  else
+                                  ;; this is us or no namespace designated
+                                  (do
+                                     (if opts.on_compilation_complete
+                                        (opts.on_compilation_complete compiled))
+                                     (try
+                                        (do
+                                           (when (and (is_array? compiled)
+                                                      (is_object? compiled.0)
+                                                      compiled.0.ctype
+                                                      (not (is_string? compiled.0.ctype)))
+                                              (set_prop compiled.0
+                                                 `ctype
+                                                 (subtype compiled.0.ctype)))
+                                           (= result
+                                              (cond
+                                                 compiled.error  ;; compiler error
+                                                 (throw (new compiled.error compiled.message))
+                                                 
+                                                 (and compiled.0.ctype
+                                                    (or (contains? "block" compiled.0.ctype)
+                                                        (== compiled.0.ctype "assignment")
+                                                        (== compiled.0.ctype "__!NOT_FOUND!__")))
+                                                 (if (compiled.0.has_lisp_globals)
+                                                     (do
+                                                        (set_prop compiled
+                                                           
+                                                           1
+                                                           (new AsyncFunction "Environment" (+ "{ " compiled.1 "}")))
+                                                        
+                                                        (compiled.1 Environment))
+                                                     (do
+                                                        (set_prop compiled
+                                                           1
+                                                           (new AsyncFunction  (+ "{" compiled.1 "}")))
+                                                        (compiled.1)))
+                                                 
+                                                 (and compiled.0.ctype
+                                                    (or (== "AsyncFunction" compiled.0.ctype)
+                                                        (== "statement" compiled.0.ctype)
+                                                        (== "objliteral" compiled.0.ctype)))
+                                                 (do
+                                                    (if (compiled.0.has_lisp_globals)
+                                                        (do
+                                                           ;(console.log "env: compiled text: " (+ "{ return " compiled.1 "} "))
+                                                           (set_prop compiled
+                                                              1
+                                                              (new AsyncFunction "Environment" (+ "{ return " compiled.1 "} ")))
+                                                           (compiled.1 Environment))
+                                                        (do
+                                                           (set_prop compiled
+                                                              1
+                                                              (new AsyncFunction (+ "{ return " compiled.1 "}")))
+                                                           (compiled.1))))
+                                                 
+                                                 (and compiled.0.ctype
+                                                    (== "Function" compiled.0.ctype))
+                                                 (do
+                                                    (if (compiled.0.has_lisp_globals)
+                                                        (do
+                                                           (set_prop compiled
+                                                              1
+                                                              (new Function "Environment" (+ "{ return " compiled.1 "} ")))
+                                                           (compiled.1 Environment))
+                                                        (do
+                                                           (set_prop compiled
+                                                              1
+                                                              (new Function (+ "{ return " compiled.1 "}")))
+                                                           (compiled.1))))
+                                                 else ;; this is a simple expression
+                                                 compiled.1)))
+                                        (catch Error (e)
+                                           (do
+                                              (when true ;(== (sub_type e) "SyntaxError")
+                                                 (defvar details
+                                                    {
+                                                      `error: e.name
+                                                      `message: e.message
+                                                      `expanded_source: (pretty_print (detokenize precompiled_assembly))
+                                                      `compiled: compiled.1
+                                                      })
+                                                 (log "Syntax Error: " details)
+                                                 (set_prop e
+                                                    `details
+                                                    details))
+                                              
+                                              (when (or opts.log_errors
+                                                        (> Environment.context.scope.__VERBOSITY__  4))
+                                                 (if e.details
+                                                    (env_log "caught error: " e.details)
+                                                    (env_log "caught error: " e.name e.message e)))
+                                              (if (and false (== (sub_type e) "SyntaxError")
+                                                       (or opts.log_errors
+                                                          (> Environment.context.scope.__VERBOSITY__  4)))
+                                                  (console.log compiled.1))
+                                              (when opts.error_report
+                                                 (opts.error_report (if e.details
+                                                                        e.details
+                                                                        {
+                                                                          `error: e.name
+                                                                          `message: e.message
+                                                                          `form: nil
+                                                                          `parent_forms: nil
+                                                                          `invalid: true
+                                                                          `text: e.stack
+                                                                          })))
+                                              (= result e)
+                                              (if (or (not opts.catch_errors)
+                                                      (and ctx ctx.in_try))
+                                                  (progn
+                                                     (throw result))))))
+                                     result)))))
+         
+         (evaluate (fn (expression ctx opts)
+                      (progn
+                         (cond
+                            (== namespace active_namespace)
+                            (evaluate_local expression ctx opts)  ;; we by default use evaluate local
+                            ;parent_environment
+                            ;(-> parent_environment `evaluate expression ctx opts)
+                            (== namespace "core")
+                            (-> (prop children active_namespace)
+                                `evaluate
+                                expression ctx opts))))) ;; otherwise evaluate using the active namespace
+         
+         (eval_struct (fn (lisp_struct ctx opts)
+                         (let
+                            ((rval nil))
+                            ;(env_log "eval_struct ->" (clone lisp_struct) ctx opts)
+                            (if (is_function? lisp_struct)
+                                (= rval (lisp_struct))
+                                (= rval (evaluate lisp_struct
+                                                  ctx
+                                                  (+ {
+                                                       `json_in: true
+                                                       }
+                                                    (or opts {})))))
+                            ;(env_log "eval_struct <-" (clone rval))
+                            rval))))
          
          ;; these are selected names which we don't need to propogate to children
          ;; however, anything that operates on the toplevel context needs to remain
@@ -1732,6 +1732,7 @@
             `built_ins
             built_ins)
          
+       
          ;; This will allow us to swap out compiler functions for when we are using potentially
          ;; multiple compilers, for example in the development of the compiler.
          

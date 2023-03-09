@@ -1,7 +1,7 @@
 // Source: core-ext.lisp  
-// Build Time: 2023-03-03 06:25:22
-// Version: 2023.03.03.06.25
-export const DLISP_ENV_VERSION='2023.03.03.06.25';
+// Build Time: 2023-03-09 12:01:14
+// Version: 2023.03.09.12.01
+export const DLISP_ENV_VERSION='2023.03.09.12.01';
 
 
 
@@ -2203,6 +2203,53 @@ await Environment.set_global("unload_core_ext",async function() {
     console.log(("removed "+ count+ " definitions."));
     return count
 },{ "name":"unload_core_ext","fn_args":"[]","requires":["log"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console"],"source_name":"core-ext.lisp"
+});
+await Environment.set_global("documentation_coverage",async function(ns) {
+    let env;
+    let good;
+    let missing;
+    let total;
+    env=await (async function(){
+        if (check_true (ns)){
+            return await Environment["get_namespace_handle"].call(Environment,ns)
+        } else {
+            return Environment
+        }
+    })();
+    good=[];
+    missing=[];
+    total=0;
+    await (async function() {
+        let __for_body__178=async function(_pset) {
+            {
+                let sym;
+                let meta;
+                sym=(_pset && _pset["0"]);
+                meta=(_pset && _pset["1"]);
+                if (check_true ((meta && meta["description"]))){
+                    return (good).push(sym)
+                } else {
+                    return (missing).push(sym)
+                }
+            }
+        };
+        let __array__179=[],__elements__177=await (await Environment.get_global("pairs"))((env && env["definitions"]));
+        let __BREAK__FLAG__=false;
+        for(let __iter__176 in __elements__177) {
+            __array__179.push(await __for_body__178(__elements__177[__iter__176]));
+            if(__BREAK__FLAG__) {
+                 __array__179.pop();
+                break;
+                
+            }
+        }return __array__179;
+         
+    })();
+    total=((good && good.length)+ (missing && missing.length));
+    return {
+        total:total,ratio:((good && good.length)/ total),num_good:(good && good.length),num_missing:(missing && missing.length),good:good,missing:missing
+    }
+},{ "name":"documentation_coverage","fn_args":"(ns)","description":["=:+","This function returns the coverage details for the documentation of ","global symbols by assessing how many descriptions are registered as part of a ","namespace's symbol meta data.  The lower the coverage score the less documented ","a namespace is.  The returned data is contained in an object with the total ","symbol count, the coverage ratio (number-of-documented-symbols / ","total-symbols), the amounts of good and missing documentation and the symbols ","grouped as arrays that represent completed and missing documentation ","respectively. "],"usage":["namespace:?string"],"tags":["documentation","coverage","help","namespace"],"requires":["push","pairs"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console"],"source_name":"core-ext.lisp"
 });
 await (await Environment.get_global("register_feature"))("core-ext");
 return true

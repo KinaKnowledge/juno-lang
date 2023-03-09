@@ -83,6 +83,9 @@
      })
 
 
+
+
+
 (set_prop *key_bindings*.repl          
           `history_next_entry { win: "Ctrl-Alt-n" mac: "Ctrl-Alt-n" }                                                               
           `history_prior_entry { win: "Ctrl-Alt-p" mac: "Ctrl-Alt-p" })
@@ -148,6 +151,67 @@
        description: "Returns the element with active focus in the document."
        tags: [ `focus `document `ui `active `element ]
        usage: []
+   })
+
+(defmacro activity_box (options `& body_forms)
+   `(let
+      ((content_id (gen_id "content"))
+       (content (div { `id: content_id } 
+                     ""))
+       (opts (or ,#options {}))
+       (dialog_box (dialog opts
+                           content))
+       (rval nil)
+       (set_content (fn (c)
+                       (progn
+                          (-> content `replaceChildren
+                             (if (is_element? c)
+                                 c
+                                 (div { } c)))
+                          (sleep 0.001))))
+       (append_content (fn (c)
+                          (progn
+                             (-> content `append
+                                (if (is_element? c)
+                                    c
+                                    (div { } c)))
+                             (sleep 0.001)))))
+      (declare (function alert_on_error)
+               (global alert_on_error))
+      (-> (get_by_id `body) `append dialog_box)
+      (-> dialog_box `showModal)
+      (= rval
+         (alert_on_error "An Error Occured"
+            ,@body_forms))
+      (-> dialog_box `close)
+      rval)
+   {
+     description: (+ "The activity_box macro sets up a modal dialog box that can show "
+                      "progress messages and activity for a series of steps that are provided.  "
+                      "Information can either be \'set\' or \'appended\' via the `set_content` or "
+                      "`append_content` functions that are available for the forms provided to the "
+                      "macro.  Once the provided forms are evaluated, the return value of the last "
+                      "form is returned and dialog is closed.  <br>If an error is thrown that is "
+                      "uncaught within the provided forms during the evaluation of the form sequence, "
+                      "an alert box is shown with the error, and the dialog box is subsequently "
+                      "closed.  The return value in this instance should be considered "
+                      "undefined.<br><br>#### Content Update Functions <br><br>`set_content`:function "
+                      "- Given either a string or an element, replaces the content of the displayed "
+                      "dialog box with the provided content. <br>`append_content`: function - Given "
+                      "either a string or a DOM Element, appends the provided content to the existing "
+                      "content of the dialog box.<br><br><br>#### Options <br><br>If an options object "
+                      "is provided, it is passed as the attributes for the dialog box, so it can "
+                      "contain keys such as `style`, `class`, etc.  An error will likely be thrown if "
+                      "the `open` attribute is set, since the macro sets up the dialog and calls the "
+                      "`showModal` function.  <br><br><br>#### Examples <br>```(activity_box  { "
+                      "`style:  \"width: 200px; height: 50px;\" }\n   (set_content \"Working on "
+                      "it..\")\n   (sleep 1)\n   (set_content (div \"Some more "
+                      "work\"))\n   (sleep 2)\n   (append_content (div \"Again..more "
+                      "work!!\"))\n   (sleep 2)\n   (+ 2 2))```<br><br>Running the above example will "
+                      "display a small dialog box, and demonstrate the two content setting functions "
+                      "provided by the macro, returning `4` as the result.<br><br> ")
+     usage: ["options:object" "body_forms:*" ]
+     tags: ["modal" "dialog" "display" "ui" "DOM"]
    })
 
 (defun_sync value_to_dom (val options _path)
@@ -12016,10 +12080,69 @@
      `usage: []
      })
         
+(defun display_license_info ()
+   (let
+      ((collection {})
+       (env nil))
+      (for_each (ns (sort (namespaces)))
+         (progn
+            (= env (-> Environment `get_namespace_handle ns))
+            (when env
+               (for ((symbol meta) (pairs env.definitions))
+                    (when meta.license
+                       (set_prop collection
+                          (+ ns "/" symbol) (pre meta.license)))))))
+      (show_control *system_repl*)
+      (log collection))
+   {
+     description: (+ "<br><br>Logs to the system REPL the license information recorded in each "
+                     "Environment object.  License information can be found in a symbol\'s metadata "
+                     "under the license key. ")
+     tags: ["license" "licenses" "information" ]
+     usage: []
+   })
 
 (defun *help_menu_function* ()
-  [["Toggle Documentation" (fn () 
-                              (toggle_help_panel)) ]])
+  [[(dtext "Toggle Documentation") 
+    (fn ()
+       (toggle_help_panel)) ]
+   [(dtext "Lookup Symbol")
+        (fn (e)
+           (progn
+              (aif (request_user_input (dtext "What is the name of the symbol?"))
+                   (dispatch_event { command: "open_definition"
+                                     source: nil
+                                     args: [ it ] }))))
+              
+        ]
+   [ "--" nil]
+   (if (is_symbol? `generate_docs)
+       [(+ (dtext "Create Static Documentation") "...")
+         (conj [[ (dtext "For All Namespaces")
+                (eval `(fn ()
+                          (activity_box  { `style:  "width: 200px; height: 50px;" }
+                                        (set_content "Generating Documentation to /doc")
+                                        (generate_docs)
+                                        (set_content "Complete")
+                                        (sleep 1)
+                                        )))]]
+               (for_each (ns (sort (namespaces)))
+                  [ ns (eval `(fn ()
+                                 (activity_box  { `style:  "width: 200px; height: 50px;" }
+                                               (set_content "Generating Documentation to /doc")
+                                               (export_documentation_to_html ,#ns)))) ]))]
+       [(dtext "Import Documentation Generation Package")
+        (fn (e)
+           (progn
+              (import "/pkg/doc_generation.juno")
+              (notify (dtext "Imported Documentation Generation Package"))))
+              ])
+  [ "--" nil]
+  [(dtext "Licenses")
+   (fn (e)
+      (display_license_info))]])
+  
+                  
 
 (defun tag_selector (options tags)
    (let
@@ -13754,6 +13877,7 @@
 
       `usage: ["control:?object"]
       `tags: ["editor" "description" "metadata" "meta" ] })
+
 
 
 (defun handle_app_click_event (e)
@@ -15502,6 +15626,35 @@
          `md: `markdown
          `txt: `text
          })
+    
+    (set_path [ `definitions `ace ] Environment
+            { `description: "The Ace Editor - see https://ace.c9.io for details"
+              license: (join "\n"
+                          ["Copyright (c) 2010, Ajax.org B.V."
+                           "All rights reserved."
+                           ""
+                           "Redistribution and use in source and binary forms, with or without"
+                           "modification, are permitted provided that the following conditions are met:"
+                           "    * Redistributions of source code must retain the above copyright"
+                           "      notice, this list of conditions and the following disclaimer."
+                           "    * Redistributions in binary form must reproduce the above copyright"
+                           "      notice, this list of conditions and the following disclaimer in the"
+                           "      documentation and/or other materials provided with the distribution."
+                           "    * Neither the name of Ajax.org B.V. nor the"
+                           "      names of its contributors may be used to endorse or promote products"
+                           "      derived from this software without specific prior written permission."
+                           ""
+                           "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\" AND"
+                           "ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED"
+                           "WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE"
+                           "DISCLAIMED. IN NO EVENT SHALL AJAX.ORG B.V. BE LIABLE FOR ANY"
+                           "DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES"
+                           "(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;"
+                           "LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND"
+                           "ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT"
+                           "(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS"
+                           "SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. "])
+              })
     
     (attach_event_listener juno_container `click
                            (fn (e)

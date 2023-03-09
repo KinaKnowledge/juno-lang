@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2023-03-03 06:25:22
-// Version: 2023.03.03.06.25
-export const DLISP_ENV_VERSION='2023.03.03.06.25';
+// Build Time: 2023-03-09 12:01:14
+// Version: 2023.03.09.12.01
+export const DLISP_ENV_VERSION='2023.03.09.12.01';
 
 
 
@@ -73,10 +73,10 @@ export async function init_compiler(Environment) {
             {
                 rval=[];
                 await (async function(){
-                     let __test_condition__20=async function() {
+                     let __test_condition__21=async function() {
                         return (idx<(tree && tree.length))
                     };
-                    let __body_ref__21=async function() {
+                    let __body_ref__22=async function() {
                         tval=tree[idx];
                         if (check_true ((tval===deferred_operator))){
                             {
@@ -94,8 +94,8 @@ export async function init_compiler(Environment) {
                         return idx+=1
                     };
                     let __BREAK__FLAG__=false;
-                    while(await __test_condition__20()) {
-                         await __body_ref__21();
+                    while(await __test_condition__21()) {
+                         await __body_ref__22();
                          if(__BREAK__FLAG__) {
                              break;
                             
@@ -109,7 +109,7 @@ export async function init_compiler(Environment) {
             {
                 rval=new Object();
                 await (async function() {
-                    let __for_body__24=async function(pset) {
+                    let __for_body__25=async function(pset) {
                         return await async function(){
                             rval[(pset && pset["0"])]=await (async function(){
                                  return await do_deferred_splice((pset && pset["1"])) 
@@ -118,16 +118,16 @@ export async function init_compiler(Environment) {
                             
                         }()
                     };
-                    let __array__25=[],__elements__23=await (await Environment.get_global("pairs"))(tree);
+                    let __array__26=[],__elements__24=await (await Environment.get_global("pairs"))(tree);
                     let __BREAK__FLAG__=false;
-                    for(let __iter__22 in __elements__23) {
-                        __array__25.push(await __for_body__24(__elements__23[__iter__22]));
+                    for(let __iter__23 in __elements__24) {
+                        __array__26.push(await __for_body__25(__elements__24[__iter__23]));
                         if(__BREAK__FLAG__) {
-                             __array__25.pop();
+                             __array__26.pop();
                             break;
                             
                         }
-                    }return __array__25;
+                    }return __array__26;
                      
                 })();
                 return rval
@@ -155,29 +155,29 @@ export async function init_compiler(Environment) {
 };
         let add=function anonymous(...args) {
 {
-                              let acc;
-                              if (typeof args[0]==="number") {
-                                   acc = 0;
-                                   } else if (args[0] instanceof Array) {
-                                    return args[0].concat(args.slice(1));
-                                    } else if (typeof args[0]==='object') {
-                                     let rval = {};
-                                     for (let i in args) {
-                                            if (typeof args[i] === 'object') {
-                                                 for (let k in args[i]) {
-                                                        rval[k] = args[i][k];
-                                                        }
-                                                 }
-                                            }
-                                     return rval;
-                                     } else {
-                                      acc = "";
+                   let acc;
+                   if (typeof args[0]==="number") {
+                        acc = 0;
+                        } else if (args[0] instanceof Array) {
+                         return args[0].concat(args.slice(1));
+                         } else if (typeof args[0]==='object') {
+                          let rval = {};
+                          for (let i in args) {
+                                 if (typeof args[i] === 'object') {
+                                      for (let k in args[i]) {
+                                             rval[k] = args[i][k];
+                                             }
                                       }
-                              for (let i in args) {
-                                     acc += args[i];
-                                     }
-                              return acc;
-                              }
+                                 }
+                          return rval;
+                          } else {
+                           acc = "";
+                           }
+                   for (let i in args) {
+                          acc += args[i];
+                          }
+                   return acc;
+                   }
 };
         let subtype=function subtype(value) {  if (value === null) return "null";
   else if (value === undefined) return "undefined";
@@ -206,14 +206,14 @@ export async function init_compiler(Environment) {
     properties=new Set();
     current_obj=obj;
     await (async function(){
-         let __body_ref__263=async function() {
+         let __body_ref__264=async function() {
             await (await Environment.get_global("map"))(async function(item) {
                 return await properties["add"].call(properties,item)
             },await Object.getOwnPropertyNames(current_obj));
             return current_obj=await Object.getPrototypeOf(current_obj)
         };
         let __BREAK__FLAG__=false;
-        while(current_obj) { await __body_ref__263();
+        while(current_obj) { await __body_ref__264();
          if(__BREAK__FLAG__) {
              break;
             

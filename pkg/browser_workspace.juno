@@ -146,6 +146,8 @@
 (defun core/page_header ()
   (first (html/query_all "head")))
 
+
+
 (defglobal core/*env_skeleton* (reader (LZString.decompressFromBase64 (clone *env_template*))))
 
 (defun core/read_text_file (file)
