@@ -1157,36 +1157,31 @@
           
           
     {
-     `eval_when: { `compile_time: true }
-     `description: (+ "Defines the provided name as a compile time macro function in the current namespace environment. "
-                      "The parameters in the lambda list are destructured and bound to the provided names which are then "
-                      "available in the macro function.  The forms are used as the basis for the function with the final "
-                      "form expected to return a quoted form which is then as the expansion of the macro by the compiler. "
-                      "The body of forms are explicitly placed in a progn block.  Like with functions and defglobal, "
-                      "if the final argument to defmacro is an object, this will be used for the metadata associated with "
-                      "with the bound symbol provided as name.<br>Example:<br>"
-| (defmacro unless (condition `& forms)
-    `(if (not ,#condition)
-       (do 
-         ,@forms))
-    {
-     `description: "opposite of if, if the condition is false then the forms are evaluated"
-     `usage: ["condition:array" "forms:array"]
-     `tags: ["if" "not" "ifnot" "logic" "conditional"]
-     }) |
-                      "<br>"
-                      "In the above example the macro unless is defined.  Passed arguments must be explicitly "
-                      "unquoted or an error may be thrown because the arguments condition and forms *may* not be "
-                      "defined in the final compilation environment.  Note that if the symbols used by the macro "
-                      "are defined in the final compilation scope, that this may cause unexpected behavior due to "
-                      "the form being placed into the compilation tree and then acting on those symbols. <br>"
-                      "Be aware that if a macro being defined returns an object (not an array) you should explicitly "
-                      "add the final metadata form to explictly ensure appropriate interpretation of the argument "
-                      "positions.<br><br>"
-                      "Since a macro is a function that is defined to operate at compile time vs. run time, the "
-                      "rules of declare apply.  Declaration operate normally and should be the first form in "
-                      "the block, or if using let, the first form after the allocation block of the let.")
+     
+      `description: (+ "Defines the provided name as a compile time macro function in the "
+                       "current namespace environment. The parameters in the lambda list are "
+                       "destructured and bound to the provided names which are then available in the "
+                       "macro function.  The forms are used as the basis for the function with the "
+                       "final form expected to return a quoted form which is then as the expansion of "
+                       "the macro by the compiler. The body of forms are explicitly placed in a progn "
+                       "block.  Like with functions and defglobal, if the final argument to defmacro is "
+                       "an object, this will be used for the metadata associated with with the bound "
+                       "symbol provided as name.<br><br>#### Example <br>```(defmacro unless (condition "
+                       "`& forms)\n  `(if (not ,#condition)\n       (progn \n         ,@forms))) "
+                       "```<br><br><br>In the above example the macro unless is defined.  Passed "
+                       "arguments must be explicitly unquoted or an error may be thrown because the "
+                       "arguments condition and forms *may* not be defined in the final compilation "
+                       "environment.  Note that if the symbols used by the macro are defined in the "
+                       "final compilation scope, that this may cause unexpected behavior due to the "
+                       "form being placed into the compilation tree and then acting on those symbols. "
+                       "<br>Be aware that if a macro being defined returns an object (not an array) you "
+                       "should explicitly add the final metadata form to explictly ensure appropriate "
+                       "interpretation of the argument positions.<br>Since a macro is a function that "
+                       "is defined to operate at compile time vs. run time, the rules of declare apply. "
+                       " Declaration operate normally and should be the first form in the block, or if "
+                       "using let, the first form after the allocation block of the let. ")
      `usage: ["name:symbol" "lambda_list:array" "forms:array" "meta?:object"]
+     `eval_when: { `compile_time: true }
      `tags: [ `macro `define `compile `function ]
     })  
 
@@ -1312,9 +1307,10 @@
                  (push __collector __result))))
       __collector)
   {
-      "description":"Provided a first argument as a list which contains a binding variable name and a list, returns a list of all non-null return values that result from the evaluation of the second list."
-      "usage":[['binding-elem:symbol','values:list'],["form:list"]]
-      `tags: [`filter `remove `select `list `array]
+      description: (+ "Provided a first argument as a list which contains a binding variable name and a list, " 
+                      "returns a list of all non-null return values that result from the evaluation of the second list.")
+      usage: ["allocator:array" "forms:*"]
+      tags: [`filter `remove `select `list `array]
    })
 
 (defmacro reduce_sync ((elem item_list) form)
@@ -1332,7 +1328,7 @@
       __collector)
   {
       "description":"Provided a first argument as a list which contains a binding variable name and a list, returns a list of all non-null return values that result from the evaluation of the second list."
-      "usage":[['binding-elem:symbol','values:list'],["form:list"]]
+      "usage":["allocator:array" "forms:*"]
       `tags: [`filter `remove `select `list `array]
   })
      
@@ -1884,13 +1880,12 @@
 		    (insert_initializer form))
 		 form))))
   {
-    `description: | 
-use_quoted_initializer is a macro that preserves the source form in the symbol definition object. 
-When the environment is saved, any source forms that wish to be preserved through the 
-serialization process should be in the body of this macro.  This is a necessity for global 
-objects that hold callable functions, or functions or structures that require initializers,
-such as things that connect or use environmental resources.
-|
+    `description: (+ "The macro `use_quoted_initializer` preserves the source form in the "
+                     "symbol definition object.  When the environment is saved, any source forms that "
+                     "wish to be preserved through the serialization process should be in the body of "
+                     "this macro.  This is a necessity for global objects that hold callable "
+                     "functions, or functions or structures that require initializers, such as things "
+                     "that connect or use environmental resources.  ")
     `usage: ["forms:array"]
     `tags: [`compilation `save_env `export `source `use `compiler `compile ]
 
@@ -1925,9 +1920,11 @@ such as things that connect or use environmental resources.
             (parseInt (+ (* (Math.random)(- top bottom)) bottom))
        )
        {
-           "description":"Returns a random integer between 0 and the argument.  If two arguments are provided then returns an integer between the first argument and the second argument."
-           "usage":["arg1:number","arg2?:number"]
-           "tags":["rand" "number" "integer" ]
+           description: (+ "Returns a random integer between 0 and the argument. " 
+                           "If two arguments are provided then returns an integer "
+                           "between the first argument and the second argument.")
+           usage:["arg1:number","arg2?:number"]
+           tags:["rand" "number" "integer" ]
        })
 
 

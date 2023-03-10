@@ -11,6 +11,8 @@
                                    (== (prop (fetch "/files") `status) 200)))
 (console.log "browser_workspace: online? is_served: " is_served?)
 
+;; not needed in the client
+(delete_namespace `sys)
 
 (defun core/*initializer* ()
   (let

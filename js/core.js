@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2023-03-09 12:01:14
-// Version: 2023.03.09.12.01
-export const DLISP_ENV_VERSION='2023.03.09.12.01';
+// Build Time: 2023-03-09 15:50:01
+// Version: 2023.03.09.15.50
+export const DLISP_ENV_VERSION='2023.03.09.15.50';
 
 
 
@@ -945,9 +945,9 @@ await Environment.set_global("defmacro",async function(name,lambda_list,...forms
         return ["=:defglobal",macro_name,["=:fn",macro_args,].concat(macro_body),["=:quote",source_details]]
     }
 },{
-    eval_when:{
+    description:("Defines the provided name as a compile time macro function in the "+ "current namespace environment. The parameters in the lambda list are "+ "destructured and bound to the provided names which are then available in the "+ "macro function.  The forms are used as the basis for the function with the "+ "final form expected to return a quoted form which is then as the expansion of "+ "the macro by the compiler. The body of forms are explicitly placed in a progn "+ "block.  Like with functions and defglobal, if the final argument to defmacro is "+ "an object, this will be used for the metadata associated with with the bound "+ "symbol provided as name.<br><br>#### Example <br>```(defmacro unless (condition "+ "`& forms)\n  `(if (not ,#condition)\n       (progn \n         ,@forms))) "+ "```<br><br><br>In the above example the macro unless is defined.  Passed "+ "arguments must be explicitly unquoted or an error may be thrown because the "+ "arguments condition and forms *may* not be defined in the final compilation "+ "environment.  Note that if the symbols used by the macro are defined in the "+ "final compilation scope, that this may cause unexpected behavior due to the "+ "form being placed into the compilation tree and then acting on those symbols. "+ "<br>Be aware that if a macro being defined returns an object (not an array) you "+ "should explicitly add the final metadata form to explictly ensure appropriate "+ "interpretation of the argument positions.<br>Since a macro is a function that "+ "is defined to operate at compile time vs. run time, the rules of declare apply. "+ " Declaration operate normally and should be the first form in the block, or if "+ "using let, the first form after the allocation block of the let. "),usage:["name:symbol","lambda_list:array","forms:array","meta?:object"],eval_when:{
         compile_time:true
-    },description:("Defines the provided name as a compile time macro function in the current namespace environment. "+ "The parameters in the lambda list are destructured and bound to the provided names which are then "+ "available in the macro function.  The forms are used as the basis for the function with the final "+ "form expected to return a quoted form which is then as the expansion of the macro by the compiler. "+ "The body of forms are explicitly placed in a progn block.  Like with functions and defglobal, "+ "if the final argument to defmacro is an object, this will be used for the metadata associated with "+ "with the bound symbol provided as name.<br>Example:<br>"+ " (defmacro unless (condition `& forms)\n    `(if (not ,#condition)\n       (do \n         ,@forms))\n    {\n     `description: \"opposite of if, if the condition is false then the forms are evaluated\"\n     `usage: [\"condition:array\" \"forms:array\"]\n     `tags: [\"if\" \"not\" \"ifnot\" \"logic\" \"conditional\"]\n     }) "+ "<br>"+ "In the above example the macro unless is defined.  Passed arguments must be explicitly "+ "unquoted or an error may be thrown because the arguments condition and forms *may* not be "+ "defined in the final compilation environment.  Note that if the symbols used by the macro "+ "are defined in the final compilation scope, that this may cause unexpected behavior due to "+ "the form being placed into the compilation tree and then acting on those symbols. <br>"+ "Be aware that if a macro being defined returns an object (not an array) you should explicitly "+ "add the final metadata form to explictly ensure appropriate interpretation of the argument "+ "positions.<br><br>"+ "Since a macro is a function that is defined to operate at compile time vs. run time, the "+ "rules of declare apply.  Declaration operate normally and should be the first form in "+ "the block, or if using let, the first form after the allocation block of the let."),usage:["name:symbol","lambda_list:array","forms:array","meta?:object"],tags:["macro","define","compile","function"],requires:["last","is_object?","not","blank?","pop","or_args","length","flatten","destructure_list","add","starts_with?","as_lisp"],requires:["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],source_name:"core.lisp"
+    },tags:["macro","define","compile","function"],requires:["last","is_object?","not","blank?","pop","or_args","length","flatten","destructure_list","add","starts_with?","as_lisp"],requires:["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],source_name:"core.lisp"
 });
 await Environment.set_global("defun",async function(name,lambda_list,body,meta) {
     let fn_name;
@@ -1085,7 +1085,7 @@ await Environment.set_global("reduce",async function(...args) {
     form=(args && args["1"]);
     return ["=:let",[["=:__collector",[]],["=:__result","=:nil"],["=:__action",["=:fn",[].concat(elem),form]]],["=:declare",["=:function","=:__action"]],["=:for_each",["=:__item",item_list],["=:do",["=:=","=:__result",["=:__action","=:__item"]],["=:if","=:__result",["=:push","=:__collector","=:__result"]]]],"=:__collector"]
 },{ "eval_when":{ "compile_time":true
-},"name":"reduce","macro":true,"fn_args":"[(elem item_list) form]","description":"Provided a first argument as a list which contains a binding variable name and a list, returns a list of all non-null return values that result from the evaluation of the second list.","usage":[["binding-elem:symbol","values:list"],["form:list"]],"tags":["filter","remove","select","list","array"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"reduce","macro":true,"fn_args":"[(elem item_list) form]","description":["=:+","Provided a first argument as a list which contains a binding variable name and a list, ","returns a list of all non-null return values that result from the evaluation of the second list."],"usage":["allocator:array","forms:*"],"tags":["filter","remove","select","list","array"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 });
 await Environment.set_global("reduce_sync",async function(...args) {
     let elem;
@@ -1096,7 +1096,7 @@ await Environment.set_global("reduce_sync",async function(...args) {
     form=(args && args["1"]);
     return ["=:let",[["=:__collector",[]],["=:__result","=:nil"],["=:__action",["=:function",[].concat(elem),form]]],["=:declare",["=:function","=:__action"]],["=:for_each",["=:__item",item_list],["=:do",["=:=","=:__result",["=:__action","=:__item"]],["=:if","=:__result",["=:push","=:__collector","=:__result"]]]],"=:__collector"]
 },{ "eval_when":{ "compile_time":true
-},"name":"reduce_sync","macro":true,"fn_args":"[(elem item_list) form]","description":"Provided a first argument as a list which contains a binding variable name and a list, returns a list of all non-null return values that result from the evaluation of the second list.","usage":[["binding-elem:symbol","values:list"],["form:list"]],"tags":["filter","remove","select","list","array"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"reduce_sync","macro":true,"fn_args":"[(elem item_list) form]","description":"Provided a first argument as a list which contains a binding variable name and a list, returns a list of all non-null return values that result from the evaluation of the second list.","usage":["allocator:array","forms:*"],"tags":["filter","remove","select","list","array"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 });
 await Environment.set_global("is_nil?",async function(value) {
     return (null===value)
@@ -1878,7 +1878,7 @@ await Environment.set_global("use_quoted_initializer",async function(...args) {
         })()
     }
 },{ "eval_when":{ "compile_time":true
-},"name":"use_quoted_initializer","macro":true,"fn_args":"[\"&\" forms]","description":" \nuse_quoted_initializer is a macro that preserves the source form in the symbol definition object. \nWhen the environment is saved, any source forms that wish to be preserved through the \nserialization process should be in the body of this macro.  This is a necessity for global \nobjects that hold callable functions, or functions or structures that require initializers,\nsuch as things that connect or use environmental resources.\n","usage":["forms:array"],"tags":["compilation","save_env","export","source","use","compiler","compile"],"requires":["slice","is_array?","is_object?","resolve_path","set_path","warn","is_string?","macroexpand"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"use_quoted_initializer","macro":true,"fn_args":"[\"&\" forms]","description":["=:+","The macro `use_quoted_initializer` preserves the source form in the ","symbol definition object.  When the environment is saved, any source forms that ","wish to be preserved through the serialization process should be in the body of ","this macro.  This is a necessity for global objects that hold callable ","functions, or functions or structures that require initializers, such as things ","that connect or use environmental resources.  "],"usage":["forms:array"],"tags":["compilation","save_env","export","source","use","compiler","compile"],"requires":["slice","is_array?","is_object?","resolve_path","set_path","warn","is_string?","macroexpand"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 });
 {
      Environment.set_global("but_last",function(arr) {
@@ -1906,7 +1906,7 @@ await Environment.set_global("use_quoted_initializer",async function(...args) {
             top= parseInt((args && args["0"]))
         };
         return  parseInt( ( Environment.get_global("add"))(( Math.random()* (top- bottom)),bottom))
-    },{ "name":"random_int","fn_args":"[\"&\" \"args\"]","description":"Returns a random integer between 0 and the argument.  If two arguments are provided then returns an integer between the first argument and the second argument.","usage":["arg1:number","arg2?:number"],"tags":["rand","number","integer"],"requires":["length","add"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+    },{ "name":"random_int","fn_args":"[\"&\" \"args\"]","description":["=:+","Returns a random integer between 0 and the argument. ","If two arguments are provided then returns an integer ","between the first argument and the second argument."],"usage":["arg1:number","arg2?:number"],"tags":["rand","number","integer"],"requires":["length","add"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
 };
 {
@@ -4262,16 +4262,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__288=async function(req) {
                                             {
-                                                let _expr_35587;
+                                                let _expr_58599;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_35587=await (async function(){
+                                                _expr_58599=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_35587 && _expr_35587["0"]);
-                                                req_ns=(_expr_35587 && _expr_35587["1"]);
-                                                explicit=(_expr_35587 && _expr_35587["2"]);
+                                                req_sym=(_expr_58599 && _expr_58599["0"]);
+                                                req_ns=(_expr_58599 && _expr_58599["1"]);
+                                                explicit=(_expr_58599 && _expr_58599["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -4374,13 +4374,13 @@ await Environment.set_global("sort_dependencies",async function() {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_25414;
+                    let _expr_87788;
                     let nspace;
-                    _expr_25414=await (async function(){
+                    _expr_87788=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_25414 && _expr_25414["0"]);
-                    nspace=(_expr_25414 && _expr_25414["1"]);
+                    sym=(_expr_87788 && _expr_87788["0"]);
+                    nspace=(_expr_87788 && _expr_87788["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);

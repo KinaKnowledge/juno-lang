@@ -1723,17 +1723,22 @@
       ((ctls_by_parent (controls_by_parent))
        (roots (prop controls_by_parent `root))
        (next_up (fn (ctl_name)
-                   (for_each (pset (pairs ctls_by_parent))
-                      (destructuring_bind (parent_name controls)
-                         pset
-                         (cond 
-                            (and (== parent_name "root")
-                                 (contains? ctl_name (each controls `name)))
-                            (progn
-                               (= layout ctl_name)
-                               (break))
-                            (contains? ctl_name (each controls `name))
-                            (next_up parent_name))))))
+                   (progn
+                      (for_each (pset (pairs ctls_by_parent))
+                         (destructuring_bind (parent_name controls)
+                            pset
+                            (when layout
+                               (break)))
+                            (assert (not (== parent_name ctl_name))
+                                    "get_layout_for_control: parent_name is equal to ctl_name")
+                            (cond
+                               (and (== parent_name "root")
+                                    (contains? ctl_name (each controls `name)))
+                               (progn
+                                  (= layout ctl_name)
+                                  (break))
+                               (contains? ctl_name (each controls `name))
+                               (next_up parent_name))))))
        (layout nil))
       (declare (function controls_by_parent)
                (global controls_by_parent))
@@ -1744,7 +1749,9 @@
          (next_up control.name)
          else
          (throw TypeError "get_layout_for_control: invalid argument provided: must be control or string"))
-      (get_control_by_name layout))
+      (if layout
+         (get_control_by_name layout)
+         nil))
    {
      description: (+ "Given either a control or name of a control, returns the layout control "
                      "or root container control (such as the holding tank) for the provided control.  "
@@ -5800,65 +5807,74 @@
              self)
           ,#meta))
    {
-       `description: (+ "The macro defcontrol creates a function in the current namespace that implements the specified "
-                        "control features passed to the macro.  The macro handles most of the boiler plate for a basic "
-                        "control, combining the passed allocations and options to produce a standardized control "
-                        "constructor.  The macro is similar in shape to a defun+let form with some differences.<br><br>"
-                        "Like the defun macro, the first argument provides the name of the control that it will be used " 
-                        "to construct the name and type of the control.  Also similar to defun, the second argument is "
-                        "an array containing any arguments for the control.  Note that, mandatorily, an options argument "
-                        "will be appended as the last argument of the argument list, so an empty array passed will "
-                        "cause the control only to have an options argument.<br><br>"
-                        "The next argument is a series of allocation forms that are integrated into a let allocation "
-                        "structure, and so should be in the same form as the allocation block of the let operator.  For "
-                        "example, ((render (fn () (div { } \"My View\")))) would meet the minimal requirement for a "
-                        "control to be constructed.  The caller of this macro can have as many allocation forms as needed "
-                        "to implement the required behavior of the emitted control.  To note that there are "
-                        "symbols that made available to these provided forms in the evaluation context of the form that "
-                        "can be referenced and used by the user provided forms:<br>"
-                        "self:object - The interface object returned.<br>"
-                        "content_view:Element - The control's view (not including the control_bar.  Effectively the contents of "
-                        "the control view.<br>"
-                        "do_render:function - Calls the (render) function provided to the macro.  User code can call this "
-                        "function when a redraw is required.<br>"
-                        "initialized:boolean - This value is true if the function is initialized or false if it hasn't " 
-                        "yet been.<br>"
-                        "options:object - The options object passed to the control on instantiation.<br>"
-                        "<br><br>"
-                        "There are multiple functions that are called upon certain events, which allow the caller to build "
-                        "customized behavior and hook into the system when needed.  These functions are specified in the "
-                        "allocation forms provided to the macro and are all optional except for render:<br>"
-                        "render:function - This function returns the DOM structure assigned to content_view and is what is "
-                        "drawn in the control's content container.  If the function returns nil, nothing is done.  Can be "
-                        "used in conjunction with the on_render below, which acts on the already drawn view.<br>"
-                        "on_focus:function - When a focusing event occurs to the control, this function is called with the "
-                        "self object of the macro.<br>"
-                        "on_render:function - If this function is specified it will act as the render function so as to "
-                        "manipulate an already built view, via the content_view in scope symbol, which is the contents of the "
-                        "controls view.<br>"
-                        "on_resize:function - A resize function to invoke if a forced resize is required.<br>"
-                        "control_bar_elements:array - If the control is specified with the control_bar control_options set to "
-                        "true, the Elements in this array will be placed into the control bar after any runtime additional_elements "
-                        "provided to the options object.<br>"
-                        "menu_items:function - A function that is called on demand that should return an array containing "
-                        "pairs of [menu_text menu_function] that implement any command functionality for the menu.<br>"
-                        "on_destroy:function - When the control receives a destroy call, this user provided function will be "
-                        "called with the self object.<br>"
-                        "on_initialize:function - Upon initialization, this function will be called with the self function. It "
-                        "should be expected that the initialization should be called only once for a control lifespan.<br>"
-                        "to_json:function - This synchronous function call can be used to provide a customization hook "
-                        "for the control.  The return value must be a structure that can be serialized into JSON form.<br><br>"
-                        "The final object, control_options is meta data and other flags for the macro:<br>"
-                        "expose:array - An array of pairs that specify [ `function_handle function_to_call ] that are placed "
-                        "on the self interface and provide the API for the control.  In order for a resource in the control "
-                        "scope to be accessed, it must be specified in this option, otherwise the function remains effectively "
-                        "private to the control.<br>"
-                        "usage:array - The argument specification for the macro"
-                        "description:string - The description of the control that is registered in the Environment.<br>"
-                        "control_bar:boolean - If a control bar is to be displayed on the top of the control, set this to "
-                        "true.<br>"
-                        "frame_style:string - Any custom style attributes to apply to the control frame.  These "
-                        "should be formatted in the CSS manner: eg.  \"overflow: hidden;\"")
+     `description: (+ "<br><br>The macro defcontrol creates a function in the current namespace that "
+                      "implements the specified control features passed to the macro.  The macro "
+                      "handles most of the boiler plate for a basic control, combining the passed "
+                      "allocations and options to produce a standardized control constructor.  The "
+                      "macro is similar in shape to a defun+let form with some differences.<br>Like "
+                      "the defun macro, the first argument provides the name of the control that it "
+                      "will be used to construct the name and type of the control.  Also similar to "
+                      "defun, the second argument is an array containing any arguments for the "
+                      "control.  Note that, mandatorily, an options argument will be appended as the "
+                      "last argument of the argument list, so an empty array passed will cause the "
+                      "control only to have an options argument.<br>The next argument is a series of "
+                      "allocation forms that are integrated into a let allocation structure, and so "
+                      "should be in the same form as the allocation block of the let operator.  For "
+                      "example, the following:```(defcontrol a_simple_panel ()\n   ((render \n       (fn "
+                      "() (div { } \"This is the view\")))))```<br><br>would meet the minimal "
+                      "requirement for a control to be constructed.  The caller of this macro can have "
+                      "as many allocation forms as needed to implement the required behavior of the "
+                      "emitted control.   To place this control on screen, use ```(place_control "
+                      "`right (a_simple_panel))```<br><br>Since there will be no top control bar "
+                      "(title bar) on this simple control, use the `Controls` menu to remove it from "
+                      "the screen.<br>The `defcontrol` macro makes symbols available to the provided "
+                      "allocation forms in the evaluation context of the control that can be "
+                      "referenced and used by the user provided forms.  These locally scoped symbols "
+                      "are as follows:<br>self:object -The interface object "
+                      "returned.<br>content_view:Element -The control\'s view (not including the "
+                      "control_bar.  Effectively the contents of the control "
+                      "view.<br>do_render:function -Calls the (render) function provided to the macro. "
+                      " User code can call this function when a redraw is "
+                      "required.<br>initialized:boolean -This value is true if the function is "
+                      "initialized or false if it hasn\'t yet been.<br>options:object -The options "
+                      "object passed to the control on instantiation.<br>There are multiple functions "
+                      "that are called upon certain events, which allow the caller to build customized "
+                      "behavior and hook into the system when needed.  These functions are specified "
+                      "in the allocation forms provided to the macro and are all optional except for "
+                      "render:<br>render:function -This function returns the DOM structure assigned to "
+                      "content_view and is what is drawn in the control\'s content container.  If the "
+                      "function returns nil, nothing is done.  Can be used in conjunction with the "
+                      "on_render below, which acts on the already drawn view.<br>on_focus:function "
+                      "-When a focusing event occurs to the control, this function is called with the "
+                      "self object of the macro.<br>on_render:function -If this function is specified "
+                      "it will act as the render function so as to manipulate an already built view, "
+                      "via the content_view in scope symbol, which is the contents of the controls "
+                      "view.<br>on_resize:function -A resize function to invoke if a forced resize is "
+                      "required.<br>control_bar_elements:array -If the control is specified with the "
+                      "control_bar control_options set to true, the Elements in this array will be "
+                      "placed into the control bar after any runtime additional_elements provided to "
+                      "the options object.<br>menu_items:function -A function that is called on demand "
+                      "that should return an array containing pairs of [menu_text menu_function] that "
+                      "implement any command functionality for the menu.<br>on_destroy:function -When "
+                      "the control receives a destroy call, this user provided function will be called "
+                      "with the self object.<br>on_initialize:function -Upon initialization, this "
+                      "function will be called with the self function. It should be expected that the "
+                      "initialization should be called only once for a control "
+                      "lifespan.<br>to_json:function -This synchronous function call can be used to "
+                      "provide a customization hook for the control.  The return value must be a "
+                      "structure that can be serialized into JSON form.<br>The final object, "
+                      "control_options is meta data and other flags for the macro:<br>expose:array -An "
+                      "array of pairs that specify [ `function_handle function_to_call ] that are "
+                      "placed on the self interface and provide the API for the control.  In order for "
+                      "a resource in the control scope to be accessed, it must be specified in this "
+                      "option, otherwise the function remains effectively private to the "
+                      "control.<br>usage:array -The argument specification for the "
+                      "macrodescription:string - The description of the control that is registered in "
+                      "the Environment.<br>control_bar:boolean -If a control bar is to be displayed on "
+                      "the top of the control, set this to true.<br>frame_style:string -Any custom "
+                      "style attributes to apply to the control frame.  These should be formatted in "
+                      "the CSS manner: eg.  \"overflow: hidden;\" ")
+
        `usage: ["name:symbol" "control_arguments:array" "allocations:array" "control_options:object"]
        `tags: ["control" "define" "controls" "ui"]
    })
@@ -8050,15 +8066,20 @@
                                     cached_symbols)
                 `keyword_mapper: internal_keyword_mapper
                 `toJSON: (function ()
-                            (progn
-                               (if (is_symbol? `LZString)
-                                   (set_prop options
-                                      `content_compressed
-                                      (LZString.compressToBase64 (-> editor `getValue)))
-                                   (set_prop options
-                                      `content
-                                      (-> editor `getValue)))
-                               `(text_editor ,#options)))
+                            (progn ;; we may not have ever been initialized with an editor if never mounted to the DOM
+                               (if (or (not initialized)
+                                       (not editor))
+                                  `(text_editor ,#options)
+                                  (progn
+                                     (if (is_symbol? `LZString)
+                                         (set_prop options
+                                            `content_compressed
+                                            (LZString.compressToBase64 (-> editor `getValue)))
+                                         
+                                         (set_prop options
+                                            `content
+                                            (-> editor `getValue)))
+                                     `(text_editor ,#options)))))
                 `initialize: (fn ()
                                 (when view.parentElement
                                    (console.log "editor: performing initialization")
@@ -11535,7 +11556,34 @@
    })
 
 
-
+(defcontrol panel (the_title element)
+   ((render 
+       (fn () (div { `style: "overflow: auto; height: calc(100% - 5px);" } element)))
+    (on_initialize 
+       (fn (self)
+          (progn 
+             (= name (compute_name_for_control the_title))
+             (set_prop self
+                `name
+                name)
+          (set_title the_title))))
+    (to_json (function ()
+                `(panel ,#the_title ,#(element_to_lisp content_view)))))
+   {
+     description: (+ "The `panel` control takes a title and an `Element` which is encased in "
+                     "a control structure.  This can then be placed as a panel in the user interface "
+                     "with the `place_control` function or other UI manipulation operations.  This "
+                     "control is useful as a way to quickly display a panel with static HTML "
+                     "elements, but without needing to create a formal control in order to display "
+                     "information.  The panel control has a title bar which will be set to the title "
+                     "provided in the call to `panel`.  <br>On serialization, the panel will "
+                     "serialize to quoted lisp the view such that restoration is "
+                     "possible.<br><br>#### Example <br>```(place_control `right (panel \"Key "
+                     "Bindings\" (show_key_bindings)))```<br><br>This will create a panel with the "
+                     "control name \"Key Bindings\" on the right hand side of the screen.<br> ")
+     usage: ["title:string" "element:Element"]
+       control_bar: true
+   })
 
 (defun build_documentation_datalist ()
    (let
@@ -12125,7 +12173,8 @@
                                         (generate_docs)
                                         (set_content "Complete")
                                         (sleep 1)
-                                        )))]]
+                                        )))]
+                 [ "--" nil]]
                (for_each (ns (sort (namespaces)))
                   [ ns (eval `(fn ()
                                  (activity_box  { `style:  "width: 200px; height: 50px;" }

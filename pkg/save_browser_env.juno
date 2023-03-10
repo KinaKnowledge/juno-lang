@@ -93,7 +93,8 @@
                             "theme-solarized_dark.js" "theme-solarized_light.js"])
   
   (defglobal included_editor_assets (sort (each (sys/list_files "./js_lib/editor-assets") `name)))
-  
+  (set_prop Environment.definitions.included_editor_assets
+     `requires [])  ;; remove the requirements for this because sys/list_files is included
   
   ;(set_path [ `included_libraries ] *env_config* included_libs)
   
