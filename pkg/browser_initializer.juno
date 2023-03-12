@@ -1728,7 +1728,7 @@
                          (destructuring_bind (parent_name controls)
                             pset
                             (when layout
-                               (break)))
+                               (break))
                             (assert (not (== parent_name ctl_name))
                                     "get_layout_for_control: parent_name is equal to ctl_name")
                             (cond
@@ -1738,7 +1738,8 @@
                                   (= layout ctl_name)
                                   (break))
                                (contains? ctl_name (each controls `name))
-                               (next_up parent_name))))))
+                               (progn
+                                  (next_up parent_name))))))))
        (layout nil))
       (declare (function controls_by_parent)
                (global controls_by_parent))
@@ -1749,6 +1750,7 @@
          (next_up control.name)
          else
          (throw TypeError "get_layout_for_control: invalid argument provided: must be control or string"))
+      ;(log "get_layout_for_control: layout is: " layout)
       (if layout
          (get_control_by_name layout)
          nil))
@@ -2441,7 +2443,7 @@
         (progn
            (= noop true)
            (notify (dtext "Cannot swap controls between different layouts"))))
-    (log "swap_control: from: " (control_name current_control_layout) (control_name target_control) "->" (control_name new_control_layout) (control_name new_control))
+    (console.log "swap_control: from: " (control_name current_control_layout) (control_name target_control) "->" (control_name new_control_layout) (control_name new_control))
     
     (cond
         (or (== target_control new_control)
@@ -3958,7 +3960,8 @@
        (handlers (when handler_key  ;; check for handlers that match specifically, match only source events, and match only command events
                     (flatten (conj (or (prop *event_routes* handler_key) [])
                                    (or (prop *event_routes* (compute_handler_key event_obj.source nil)) [])
-                                   (or (prop *event_routes* (compute_handler_key nil event_obj.command)) []))))))
+                                   (or (prop *event_routes* (compute_handler_key nil event_obj.command)) [])))))
+       (deduper (new Set)))
                     
       (when (> __VERBOSITY__ 1)
          (log "dispatch_event: " event_obj handler_key handlers))
@@ -3966,7 +3969,9 @@
            (for_each (handler handlers)
               (try
                  (progn 
-                    (-> handler `f event_obj))
+                    (unless (-> deduper `has handler.fid)
+                       (-> handler `f event_obj)
+                       (-> deduper `add handler.fid)))
                  (catch Error (e)
                     (progn
                        (log (+ "Error on event handler for route: " handler_key ": removing: " e.message))
@@ -4181,58 +4186,62 @@
        (log "Unable to read the file")
        (console.error fdata)))))
 
-(defun embed_js_orig (name js_text) 
+(defun embed_js (name js_text symbol_name) 
   (progn
-   ;(debug)
-   (-> (page_header) `append (html/script { `id: name `type: "text/javascript" `charset: "utf-8" }
-                                     (javascript js_text)))   
-   (eval `(defglobal ,#name (html/get_by_id ,#name)
-            {
-             `embedded_script: true
-             `external_header_ids: [ ,#name ]
-             }))))
+     (log "embed_js: creating tag id: " name " -> symbol?" symbol_name)
+   (-> (page_header) 
+       `append
+       (html/script
+          { `id: name `type: "text/javascript" `charset: "utf-8" }
+          (javascript js_text)))
+   (when (not (blank? symbol_name))
+      (eval `(defglobal ,#symbol_name (html/get_by_id ,#name)
+                {
+                  `embedded_script: true
+                  `external_header_ids: [ ,#name ]
+                  })))))
 
-(defun embed_js (name js_text) 
-  (progn
-   ;(debug)
-   (eval `(-> (page_header) `append (html/script { `id: name `type: "text/javascript" `charset: "utf-8" }
-                                     (javascript ,#js_text))))
-   (eval `(defglobal ,#name (html/get_by_id ,#name)
-            {
-             `embedded_script: true
-             }))))
-
-(defun embed_js_file (file)
+(defun embed_file (file options)
   (let
-      ((fdata (try
-                (read_file file { `read_as: "text" })
+      ((options (if (is_object? options) 
+                    options 
+                    {}))
+       (ftype (or options.type "text"))
+       (fdata (try
+                (read_file file { `read_as: ftype })
                 (catch Error (e)
-                  e)))
-       (assignment_to nil)
+                   (progn
+                      (log_error e.message)
+                      e))))
+       (assignment_to (join "-" (split_by "." (or options.symbol file.name))))
        (error nil))
-    (log (message (+ "found and read JS " file.name ", size: " file.size)))
+    (log (message (+ "found and read JS " file.name ", size: " file.size "assignment_to: " assignment_to)))
     (cond
       (and fdata
            (not (instanceof fdata Error)))
       (progn
-       (aif (request_user_input "Enter a name for a reference to the loaded Javascript" "text")
-            (do
-              (= assignment_to it)              
-              (try
-                (embed_js_orig assignment_to fdata)                   
-                (catch Error (e)
-                  (do
-                    (= error true)
-                    (log (error_message (+ "Unable to create " assignment_to ": " e.message)))
-                    (console.error "ERROR: " e))))                                                    
-              (when (not error)
-                (set_path [ `definitions assignment_to `source_name ] Environment file.name)
-                (log (message (+ "Loaded JS to " assignment_to )))))
-            (notify "Entry Cancelled")))
+         (try
+            (embed_js assignment_to fdata options.symbol)
+            (catch Error (e)
+               (do
+                  (= error true)
+                  (log (error_message (+ "Unable to create " assignment_to ": " e.message)))
+                  (console.error "ERROR: " e))))
+         (when (not error)
+            (when options.symbol
+               (log "Setting path for " assignment_to  (+ `for " " `source_name))
+               (set_path [ `definitions assignment_to `source_name ] Environment file.name))
+            (log (message (+ "Loaded JS to " assignment_to )))))
       else
       (progn
-       (log "Unable to read the file")
-       (console.error fdata)))))
+         (alert_box "Unable To Read File"
+                    fdata.message)
+         (log "Unable to read the file")
+         (console.error fdata)))))
+
+
+
+
 
 ;; get all the header scripts - we need to choose to eliminate some if we want to
 (defun embedded_script_ids ()
@@ -4256,17 +4265,167 @@
 
 
 (defun load_files (files)
-  (when (> files.length 0)
-    (for_each (file files)
-       (do
-         (cond
-           (== file.type "text/javascript")
-           (embed_js_file file)
-           (== file.type "text/plain")
-           (notify "Text Resource")
-           (or (ends_with? file.name ".lisp")
-               (ends_with? file.name ".juno"))
-           (notify "Loading lisp file"))))))
+   (let
+      ((frame nil)
+       (action_selector (fn (path_text default_idx choices)
+                           (select { `lpath: path_text } 
+                                   (for ((choice idx) (pairs_from_list (interlace choices (range (length choices)))))
+                                      (option (+ { value: choice  }
+                                                 (if (== default_idx idx)
+                                                     { `selected: true }
+                                                     {}))
+                                              (dtext choice))))))
+       (import_button (button { `style: "float: right" } "Import"))
+       (cancel_button (button { } (dtext "Cancel")))
+       (dispatch nil)
+       (file_to_symbol_mapping (reduce (file files)
+                                  (when (== (sub_type file) "File")
+                                     [file.name 
+                                      file.type 
+                                      (input { `lpath: (+ file.name "~2") `value: "" }) 
+                                      (cond
+                                         (== file.type "text/javascript")
+                                         (action_selector (+ file.name "~3") 0 [ "Embed As Script Tag" "Only Assign To Global" "Open In Buffer" ])
+                                         (starts_with? "image/" file.type)
+                                         (action_selector (+ file.name "~3") 0 [ "Display" "Only Assign To Global"])
+                                         else
+                                         (action_selector (+ file.name "~3") 1 [ "Open In Buffer" "Only Assign To Global"]))
+                                      ])))
+       (harvest_values (fn ()
+                          (to_object
+                             (for_each (file file_to_symbol_mapping)
+                                (progn
+                                   (set_prop file
+                                      `2
+                                      file.2.value)
+                                   (set_prop file
+                                      `3
+                                      file.3.value)
+                                   [ file.0
+                                    { type: file.1
+                                      name: file.0
+                                      symbol: (if (blank? file.2)
+                                                  nil
+                                                  file.2)
+                                      action: file.3 } ])))))
+       (resolver nil)
+       (result nil)
+       (load_op (fn ()
+                   (when (> files.length 0)
+                      (log "load_op: files: " files)
+                      (for_each (file files)
+                         (progn
+                            (= dispatch (prop file_to_symbol_mapping file.name))
+                            (log "load_op: dispatch: " dispatch)
+                            (cond
+                               (== file.type "text/javascript")
+                               (cond 
+                                  (== "Embed As Script Tag" dispatch.action)
+                                  (progn
+                                     (log "load_op: calling embed_file: " file)
+                                     (alert_on_error "Unable To Load File"
+                                                     (embed_file file
+                                                                 {
+                                                                   `symbol: dispatch.symbol
+                                                                   `type: (first (split_by "/" dispatch.type))
+                                                                   })))
+                                  (== "Only Assign To Global" dispatch.action)
+                                  (set_global dispatch.symbol
+                                     (javascript (read_file file { `read_as: "text" })))
+                                  else
+                                  (new_buffer { content: (read_file file { `read_as: "text" })
+                                                mode: "javascript"
+                                                `name: file.name  }))
+                               (starts_with? "image/" file.type)
+                               (cond
+                                  (== "Display" dispatch.action)
+                                  (place_control `right
+                                                 (panel dispatch.name
+                                                        (img { src: (+ "data:" file.type ";base64," (btoa (apply String.fromCharCode (new Uint8Array (read_file file { `read_as: "binary" }))))) })))
+                                  (and (not (blank? dispatch.symbol))
+                                       (== "Only Assign To Global" dispatch.action))
+                                  (set_global dispatch.symbol
+                                     (read_file file { `read_as: "binary" })))
+                               else
+                               (cond
+                                  (== dispatch.action "Only Assign To Global")
+                                  (set_global dispatch.symbol
+                                     (read_file file { `read_as: "text" }))
+                                  (== dispatch.action "Open In Buffer")
+                                  (new_buffer { `content: (read_file file { `read_as: "text" })
+                                                `mode: (last (split_by "/" dispatch.type))
+                                                `name: file.name  }))))))))
+       (handle_event (fn (e)
+                        (let
+                           ((src e.srcElement))
+                           (declare (function resolver))
+                           (cond
+                              (or (and (== e.type "click")
+                                       (== src cancel_button))
+                                  (== e.key "Escape"))
+                              (progn
+                                 (-> frame `close)
+                                 (resolver nil))
+                              (or (and (== e.type "click")
+                                       (== src import_button))
+                                  (== e.key "Enter"))
+                              (progn
+                                 (= file_to_symbol_mapping (harvest_values))
+                                 (log "handle_event: file_to_symbol_mapping: " file_to_symbol_mapping)
+                                 (-> frame `close)
+                                 (load_op)
+                                 (resolver file_to_symbol_mapping))))))
+       (view (div { `class: "juno-form" `style: "flex-grow: 1; "}
+                     (div { `class: "juno-form-data" `style: "flex-grow: 1; "}
+                          (div { } 
+                               (dtext "Enter any symbol names you wish to use assign to the imported resources.")
+                               (br)
+                               (dtext "These will be globally accessible in the namespace") 
+                               " " (b Environment.namespace) "."
+                               (br)
+                               (dtext "Click Import to complete the process."))
+                          (br)
+                          (dtable file_to_symbol_mapping 
+                             {
+                               `columns: ["Name" "Type" "Symbol/Path?" "Action"]
+                               }))
+                     (hr { `class: "LightHR" })
+                     (div cancel_button import_button ))))
+      (declare (function new_buffer panel floating_div)
+               (global new_buffer panel floating_div))
+      (when (> files.length 0)
+         (= result
+            (new Promise
+               (fn (resolve reject)
+                  (progn
+                     (declare (function resolve reject))
+                     (= resolver resolve)
+                     (= frame
+                        (floating_div view {
+                                             title: (dtext "Import Local Files")
+                                             on_close: (fn ()
+                                                          (resolver nil))
+                                             controls: true
+                                             position: {
+                                                         left: 10
+                                                         top: 10
+                                                         }
+                                             }))
+                     (attach_event_listener frame.view
+                        `keydown
+                        handle_event)
+                     (attach_event_listener frame.view
+                        `keyup
+                        handle_event)
+                     (attach_event_listener frame.view
+                        `change
+                        handle_event)
+                     (attach_event_listener view
+                        `click
+                        handle_event)
+                     (focus_to (first (-> view `querySelectorAll "input"))))))))
+      result))
+
 
 
 
@@ -5302,9 +5461,11 @@
        (let
           ((binding_row (fn (keysequence binding)
                            (tr
-                              (td keysequence)
-                              (td (or binding.description
-                                      (from_key binding.name)))))))
+                              (td (td_style) keysequence)
+                              (td (td_style) (or binding.description
+                                      (from_key binding.name))))))
+           (td_style (function () 
+                        { `style: "vertical-align:top; padding: 5px; border-bottom: 1px solid var(--main-accent-line);" } )))
           (table { `style: "width: 100%" }
                  (thead
                     (tr
@@ -5323,7 +5484,7 @@
                              (binding_row keysequence binding)
                              else
                              []))))))
-       (throw EvalError "show_editor_keybindings: requirs a text_editor control as an argument")))
+       (throw EvalError "show_editor_keybindings: requires a text_editor control as an argument")))
 
 (defun show_key_bindings ()
    (let
@@ -6523,7 +6684,7 @@
                                  (resolve_path [ `editor key ] *env_config*)
                                  default_value)))
             (buffer_commands_button (commands_button options.id))
-            (evaluator_span (span { `class: "juno-evaluator" `style: "pointer: cursor" `title: (dtext "Name of the evaluator assigned to this buffer") } "-"))
+            (evaluator_span (span { `class: "juno-evaluator" `style: "cursor: pointer" `title: (dtext "Name of the evaluator assigned to this buffer") } "-"))
             (nav_back_button (button { `title: (dtext "Step Backward In Position History") `style: "float: right" } "<"))
             (nav_forward_button (button { `disabled: true `title: (dtext "Step Foreward In Position History") `style: "float: right" } ">"))
             ;; if we have a namespace in options use that for referencing paths
@@ -6539,7 +6700,7 @@
             (wrap_span (span { `style: "width: 25px; min-width: 25px; display: inline-block;float: right; margin-right: 15px;margin-left: 15px;" `title: "Word Wrap" } ""))
             (mode "-")
             (mode_span (span { `class: "juno-mode" `title: "Current Editing Mode" `style: "float: right; margin-right: 15px; display: inline-block; padding-left: 5px; padding-right: 5px;" } mode))
-            (title_span (span { `class: "juno-title" } options.name))
+            (title_span (span { `class: "juno-title" `style: "cursor: pointer"  } options.name))
             (ns_span (span { `title: "Namespace" `class: "juno-namespace" `style: "display:inline-block; padding-left: 30px; padding-right: 5px;" } nseval.namespace))
             (control_bar (or options.control_bar
                              (div { `class: "juno-buffer-bar" }
@@ -6746,6 +6907,66 @@
                                `innerText
                                options.name)
                             options.name)))
+            (rename_editor (fn ()
+                              (if (cloned_editor?)
+                                  (notify (dtext "Cannot change name of a currently cloned editor instance."))
+                                  (let
+                                     ((name_input (input { `tabindex: 0 `style: "width: 95%; font-weight: bold;" `value: options.name } ))
+                                      (bbox (-> title_span `getBoundingClientRect))
+                                      (rename_view
+                                         (div { `id: "cmenu" `style: (+ "z-index: 10000; padding: 5px; margin: 0px; min-width: " (+ bbox.width 15) "px; background: inherit; position:absolute; top: " (- bbox.top 5) "px; left: "  bbox.left "px;") }
+                                              
+                                              name_input
+                                              (div { `style: "padding: 5px;"}
+                                                   (cond
+                                                      (and (is_array? options.path)
+                                                           (== "filesystem" (first options.path)))
+                                                      (div
+                                                         (div { `style: "padding: 5px; font-weight: bold" } "Save To File")
+                                                         (div { `style: "padding: 5px; " } (join " / " (rest options.path))))
+                                                      (is_array? options.path)
+                                                      (div
+                                                         (div { `style: "padding: 5px; font-weight: bold" } "Save To Symbol")
+                                                         (for_each (comp options.path)
+                                                            (span { `style: "padding: 5px;" } comp)))
+                                                      (eq nil options.path)
+                                                      (div
+                                                         (div { `style: "padding: 5px; font-weight: bold" } "Temporary Buffer" )
+                                                         (div { `style: "padding: 5px;" } "No Path"))
+                                                      else
+                                                      (div
+                                                         (div { `style: "padding: 5px; font-weight: bold" } "Check Path")
+                                                         (div (as_lisp options.path)))))))
+                                      (cmenu_remove (fn ()
+                                                       (aif (get_by_id "cmenu")
+                                                            (-> it `remove)))))
+                                     
+                                     (declare (function resolver))
+                                     (log "renaming editor" bbox)
+                                     (cmenu_remove)
+                                     (sleep 0.01)
+                                     (-> (get_by_id "body")
+                                         `append rename_view)
+                                     (-> name_input `select)
+                                     (focus_to name_input)
+                                     (attach_event_listener name_input
+                                        `keyup
+                                        (fn (e)
+                                           (progn
+                                              (cond
+                                                 (and (== e.key "Enter")
+                                                      (not (blank? name_input.value)))
+                                                 (progn
+                                                    (set_name name_input.value)
+                                                    (set_prop options
+                                                       `group_name
+                                                       options.name)
+                                                    (cmenu_remove)
+                                                    (focus_to_editor intf))
+                                                 (== e.key "Escape")
+                                                 (progn
+                                                    (cmenu_remove)
+                                                    (focus_to_editor intf))))))))))
             (refresh_symbol_timer nil)
             (symbol_positions_timer nil)
             (evaluate_selection (function (editor)
@@ -6945,9 +7166,22 @@
                                   
                                   rval)))
             ;; signal ready for saving
-            (request_save (function ()
+            (request_save (fn ()
                              (progn
-                                (save_event_handler { command: "save_request" source: options.id args: [{ path: options.path }] }))))
+                                (unless options.path
+                                   (let
+                                      ((symbol_data (symbol_chooser "Select or Create Symbol" options.mode)))
+                                      (when symbol_data
+                                         (set_prop options
+                                            `namespace
+                                            symbol_data.namespace)
+                                         (set_prop options
+                                            `path
+                                            symbol_data.path)
+                                         (set_name (last symbol_data.path) false)
+                                         )))
+                                (if options.path
+                                   (save_event_handler { command: "save_request" source: options.id args: [{ path: options.path }] })))))
             
             ;; handle the results of the save
             (save_complete (function (event_obj)
@@ -6970,6 +7204,9 @@
                              (let
                                 ((new_editor nil))
                                 (cond
+                                   (eq nil options.path)
+                                   (alert_box "Save Required" 
+                                              (+ (dtext "This temporary editor must be saved to a symbol or linked to a file in order to split.")))
                                    (== dir "vertical")
                                    (progn
                                       (= new_editor (clone_text_editor_control intf))
@@ -7050,7 +7287,10 @@
                                           (when (== position_history_idx (- position_history.length 1))
                                              (set_disabled nav_forward_button))
                                           (set_cursor_position (prop position_history position_history_idx)))))
-            
+            (cloned_editor? (fn ()
+                               (if options.path
+                                  (> (length (get_editors_for_path options.path)) 1)
+                                  false)))
             (on_focus (fn ()
                          (progn
                             (when (not (== *last_focus* intf))
@@ -7124,7 +7364,6 @@
                                         
                                         (if (is_string? content)
                                             (progn
-                                               
                                                (-> editor `setValue content -1))
                                             (progn
                                                (-> editor `setValue "")
@@ -7178,6 +7417,8 @@
                                      (if (not (== "String" (sub_type content)))
                                          (-> editor `setValue (pretty_print content))
                                          (-> editor `setValue content -1)))
+                                  (is_string? options.content_compressed)
+                                  (-> editor `setValue (LZString.decompressFromBase64 options.content_compressed -1) -1)
                                   (is_string? options.content)
                                   (progn
                                      (= content options.content)
@@ -7425,6 +7666,7 @@
                                       ((text (-> navigator.clipboard `readText))
                                        (rng (get_selection_object)))
                                       (-> editor.session `replace rng text)))))
+            
             (search_box_handle (function ()
                                   (-> view `querySelector "input.ace_search_field")))
             (search_focused? (function ()
@@ -7446,15 +7688,20 @@
                                    (split_editor `horizontal))]
                                [(dtext "Select Evaluator")
                                 user_select_evaluator]
-                               
+                               (cond
+                                  (or options.clone_with_editor_id
+                                      (cloned_editor?))
+                                  []
+                                  else 
+                                  [(dtext "Rename Editor")
+                                   (fn (e)
+                                      (rename_editor))
+                                   ])
                                [(dtext "Increase Font Size") increase_font_size]
                                [(dtext "Decrease Font Size") decrease_font_size]
                                (if (== (-> editor `getOption `wrap) "off")
                                    [(dtext "Enable Word Wrap") (fn (e) (set_wrap_mode true))]
                                    [(dtext "Disable Word Wrap") (fn (e) (set_wrap_mode false)) ])
-                               [(dtext "Options and Preferences")
-                                (fn (e)
-                                   (show_editor_options intf))]
                                [(dtext "Go")
                                 [[{
                                    text: (dtext "Go to line number")
@@ -7480,116 +7727,130 @@
                                  ["Shell" (fn () (-> intf `set_mode "sh"))]]]
                                [(dtext "Set Editor Theme")
                                 (for_each (theme (get_default [ `editor `themes ]))
-                                   [theme  (fn () (-> intf `set_theme theme))])]]
+                                   [theme  (fn () (-> intf `set_theme theme))])]
+                                [(dtext "Options and Preferences")
+                                (fn (e)
+                                   (show_editor_options intf))]]
                               (progn
                                  (notify (+ "" options.name ": BUG: no editor anymore"))
                                  []))))
             
-            (init_context_menu (fn ()
-                                  (let
-                                     ()
-                                     (attach_context_menu 
-                                        view
-                                        (fn (event)
-                                           (let
-                                              ((ctoken (get_current_token)))
-                                              ;(log "current token: " ctoken)
-                                              (conj
-                                                 (cond
-                                                    (== options.mode "juno")
-                                                    [(if (and ctoken
-                                                               (or (== ctoken.type "identifier")
-                                                                   (== ctoken.type "asyncfunction")
-                                                                   (== ctoken.type "function")))
-                                                         [ {
-                                                              text: (dtext "Go to symbol definition")
-                                                              path: [`editor `jump_to_local_definition ]
-                                                              exec: (fn ()
-                                                                       (jump_to_local_definition ctoken.value))
-                                                          } ]
-                                                          [])
-                                                     [{
-                                                        text: (dtext "Select to root form")
-                                                        path: [`editor `select_form_root ]
-                                                        exec: (fn ()
-                                                                 (select_to_root_form editor))
-                                                        }]
-                                                     [{
-                                                        text: (dtext "Evaluate root form")
-                                                        path: [`editor `evaluate_root_form ]
-                                                        exec: evaluate_root_form
-                                                        }]
-                                                     (if (is_clipboard_allowed?)
-                                                         [{
-                                                            text: (dtext "Copy root form")
-                                                            path: [`editor `copy_root_form ]
-                                                            exec:  (fn ()
-                                                                      (let
-                                                                         ((cpos (current_position)))
-                                                                         (select_form_root)
-                                                                         (-> navigator.clipboard `writeText (-> editor `getCopyText))
-                                                                         (sleep 0.02)
-                                                                         (-> editor.selection `clearSelection)
-                                                                         (-> editor `navigateTo cpos.row cpos.column)))
-                                                            }]
-                                                         [])
-                                                     ["--" nil]
-                                                     [{
-                                                        text: (dtext "Select current form")
-                                                        path: [`editor `select_current_form ]
-                                                        exec: select_current_form
-                                                        }]
-                                                     [{
-                                                        text: (dtext "Evaluate selection")
-                                                        path: [`editor `evaluate_selection ]
-                                                        exec: (fn ()
-                                                                 (evaluate_selection editor))
-                                                        }]
-                                                     ["--" nil]]
-                                                    (== options.mode "css")
-                                                    [[{
-                                                        text: (dtext "Select rule")
-                                                        path: [`editor `select_css_rule ]
-                                                        exec: (fn ()
-                                                                 (select_css_rule editor))
-                                                        }]
-                                                     [{
-                                                         text: (dtext "Evaluate rule")
-                                                         path: [`editor `evaluate_root_form ]
-                                                         exec: (fn ()
-                                                                  (evaluate_root_form))
-                                                     }]
-                                                     [{
-                                                         text: (dtext "Copy rule")
-                                                         path: [`editor `copy_css_rule ]
-                                                         exec: (fn ()
-                                                                  (let
-                                                                     ((cpos (current_position)))
-                                                                     (select_css_rule editor)
-                                                                     (-> navigator.clipboard `writeText (-> editor `getCopyText))
-                                                                     (sleep 0.02)
-                                                                     (-> editor.selection `clearSelection)
-                                                                     (-> editor `navigateTo cpos.row cpos.column)))
-                                                     }]
-                                                     ["--" nil]]
-                                                    else
-                                                    [])
-                                                 (if (is_clipboard_allowed?)
-                                                     [
-                                                      [{
-                                                         text: "Cut"
-                                                         path: [`global `cut ]
-                                                         exec: cut_selection }]
-                                                      [{
-                                                         text: "Copy"
-                                                         path: [`global `copy ]
-                                                         exec: copy_selection
-                                                         }]
-                                                      [ {
-                                                          text: "Paste"
-                                                          path: [`global `paste ]
-                                                          exec: paste_selection }]]
-                                                     []))))))))
+            (init_context_menu 
+               (fn ()
+                  (let
+                     ()
+                     (attach_context_menu
+                        view
+                        (fn (event)
+                           (let
+                              ((ctoken (get_current_token)))
+                              ;(log "current token: " ctoken)
+                              (conj
+                                 (cond
+                                    (== options.mode "juno")
+                                    (conj (if (and ctoken
+                                                   (or (== ctoken.type "identifier")
+                                                       (== ctoken.type "asyncfunction")
+                                                       (== ctoken.type "function")))
+                                              [[ {
+                                                  text: (dtext "Go to buffer definition")
+                                                  path: [`editor `jump_to_local_definition ]
+                                                  exec: (fn ()
+                                                           (jump_to_local_definition ctoken.value))
+                                                  } ]
+                                               [ {
+                                                   text: (dtext "Go to current definition")
+                                                   path: [`editor `jump_to_local_definition ]
+                                                   exec: (fn ()
+                                                            (dispatch_event { command: "open_definition"
+                                                                              source: nil
+                                                                              args: [ ctoken.value ] }))
+                                                   } ]
+                                               ["--" nil]]
+                                              [])
+                                     
+                                          [[{
+                                             text: (dtext "Select to root form")
+                                             path: [`editor `select_form_root ]
+                                             exec: (fn ()
+                                                      (select_to_root_form editor))
+                                             }]
+                                          [{
+                                             text: (dtext "Evaluate root form")
+                                             path: [`editor `evaluate_root_form ]
+                                             exec: evaluate_root_form
+                                             }]
+                                          (if (is_clipboard_allowed?)
+                                              [{
+                                                 text: (dtext "Copy root form")
+                                                 path: [`editor `copy_root_form ]
+                                                 exec:  (fn ()
+                                                           (let
+                                                              ((cpos (current_position)))
+                                                              (select_form_root)
+                                                              (-> navigator.clipboard `writeText (-> editor `getCopyText))
+                                                              (sleep 0.02)
+                                                              (-> editor.selection `clearSelection)
+                                                              (-> editor `navigateTo cpos.row cpos.column)))
+                                                 }]
+                                              [])
+                                          ["--" nil]
+                                          [{
+                                             text: (dtext "Select current form")
+                                             path: [`editor `select_current_form ]
+                                             exec: select_current_form
+                                             }]
+                                          [{
+                                             text: (dtext "Evaluate selection")
+                                             path: [`editor `evaluate_selection ]
+                                             exec: (fn ()
+                                                      (evaluate_selection editor))
+                                             }]
+                                          ["--" nil]])
+                                    (== options.mode "css")
+                                    [[{
+                                        text: (dtext "Select rule")
+                                        path: [`editor `select_css_rule ]
+                                        exec: (fn ()
+                                                 (select_css_rule editor))
+                                        }]
+                                     [{
+                                        text: (dtext "Evaluate rule")
+                                        path: [`editor `evaluate_root_form ]
+                                        exec: (fn ()
+                                                 (evaluate_root_form))
+                                        }]
+                                     [{
+                                        text: (dtext "Copy rule")
+                                        path: [`editor `copy_css_rule ]
+                                        exec: (fn ()
+                                                 (let
+                                                    ((cpos (current_position)))
+                                                    (select_css_rule editor)
+                                                    (-> navigator.clipboard `writeText (-> editor `getCopyText))
+                                                    (sleep 0.02)
+                                                    (-> editor.selection `clearSelection)
+                                                    (-> editor `navigateTo cpos.row cpos.column)))
+                                        }]
+                                     ["--" nil]]
+                                    else
+                                    [])
+                                 (if (is_clipboard_allowed?)
+                                     [
+                                      [{
+                                         text: "Cut"
+                                         path: [`global `cut ]
+                                         exec: cut_selection }]
+                                      [{
+                                         text: "Copy"
+                                         path: [`global `copy ]
+                                         exec: copy_selection
+                                         }]
+                                      [ {
+                                          text: "Paste"
+                                          path: [`global `paste ]
+                                          exec: paste_selection }]]
+                                     []))))))))
             ;; main initialization routine
             (initialize_editor (fn ()
                                   (when (not initialized)
@@ -7636,7 +7897,6 @@
                                                  (set_prop options
                                                     `clone_with_editor_id
                                                     primary))))
-                                        
                                         
                                         ;; are we a cloned editor?
                                         
@@ -7704,6 +7964,7 @@
                                         ;; build the key bindings
                                         (build_key_bindings editor)
                                         
+                                        ;; set options and defaults
                                         (-> editor `setOptions {
                                                                  `showFoldWidgets: true
                                                                  `cursorStyle: "wide"
@@ -7711,7 +7972,7 @@
                                                                  `useSoftTabs: true
                                                                  `highlightActiveWord: true
                                                                  })
-                                        
+                                        ;; editor defaults...
                                         (when (resolve_path [ `editor `editor_defaults ] *env_config*)
                                               (for ((key val) (pairs (resolve_path [ `editor `editor_defaults ] *env_config*)))
                                                    (try 
@@ -7719,9 +7980,8 @@
                                                       (catch Error (e)
                                                          (log (+ "Error: " name ": bad initialization default value for editor in *env_config*:" key ": ") val)))))
                                         
-                                       
+                                        ;; ...and session defaults
                                         (when (resolve_path [ `editor `session_defaults ] *env_config*)
-                                           
                                            (for ((key val) (pairs (resolve_path [ `editor `session_defaults ] *env_config*)))
                                                 (try
                                                    (-> editor.session `setOption (to_mixed_case key) val)
@@ -7806,12 +8066,10 @@
                                               (catch Error (e)
                                                  (log "ERROR on undo manager:" e message))))
                                         
+                                        ;; is the buffer read only?
                                         (if options.read_only
                                            (set_read_only options.read_only))
                                       
-                                        
-                                       
-                                        
                                         ;; signal our mode change
                                         
                                         (dispatch_event { command: "editor_change"
@@ -7877,6 +8135,12 @@
                                         (attach_event_listener evaluator_span
                                            `click
                                            user_select_evaluator)
+                                        
+                                        (attach_event_listener title_span 
+                                           `click
+                                           (fn (e)
+                                              (rename_editor e)))
+                                        
                                         ;; setup the evaluator if it is ready
                                         (setTimeout (fn ()
                                                        (let
@@ -7906,8 +8170,8 @@
            
            (declare (function compute_name_for_control select_evaluator)
                     (global compute_name_for_control select_evaluator))
-           (if (not (is_symbol? `$ace_editor))
-               (throw TypeError "$ace_editor symbol not found, and is required for this editor."))
+           (if (not (is_symbol? `ace))
+               (throw TypeError "ace symbol not found, and is required for this editor."))
            
            (set_style [["height" (+ "calc(100% - " (+ (Math.max 12 control_bar.offsetHeight) (Math.max 40 context_bar.offsetHeight))  "px)") ]]
                       editor_div )
@@ -7942,7 +8206,8 @@
                                       (< (length (get_editors_for_path options.path)) 2)
                                       true)))
                 `on_hide: (fn ()
-                             (log "text_editor: " options.name ": on_hide is called."))
+                             (when (> __VERBOSITY__ 0)
+                                (log "text_editor: " options.name ": on_hide is called.")))
                 `set_display_control_bar: set_display_control_bar
                 `on_destroy: (fn ()
                                 (progn
@@ -8072,10 +8337,11 @@
                                   `(text_editor ,#options)
                                   (progn
                                      (if (is_symbol? `LZString)
-                                         (set_prop options
-                                            `content_compressed
-                                            (LZString.compressToBase64 (-> editor `getValue)))
-                                         
+                                         (progn
+                                            (delete_prop options `content)
+                                            (set_prop options
+                                               `content_compressed
+                                               (LZString.compressToBase64 (-> editor `getValue))))
                                          (set_prop options
                                             `content
                                             (-> editor `getValue)))
@@ -8461,6 +8727,15 @@
                                   state)
                                (log_message "show prototypes: " options.display_options.include_prototypes))))
     (display_modes [ `tree `juno `json ])
+    (scroll_to_bottom (fn ()
+                         (progn
+                            (unless (== options.smooth_scroll_mode false)
+                               (set_style [[`scroll-behavior `default]] output_container)
+                               (set_prop output_container `scrollTop content_height)
+                               (set_style [[`scroll-behavior `smooth]] output_container))
+                            (set_prop output_container
+                                           `scrollTop
+                                           (+ content_height 540)))))
     (set_display_mode (fn (mode)
                          (progn
                             (cond
@@ -8581,9 +8856,9 @@
                                   { include_prototypes: false display_mode: 0 }))
                             (when (eq nil (resolve_path [ `display_options `display_mode ] options))
                                (set_path [ `display_options `display_mode ] options 0))
-                            (if (eq nil options.display_options.show_timestamps)
-                                (set_show_timestamps false)
-                                (set_show_timestamps options.display_options.show_timestamps))
+                            (if options.display_options.show_timestamps
+                                (set_show_timestamps options.display_options.show_timestamps)
+                                (set_show_timestamps false))
                             (if options.hide_command_button
                                (set_display_command_button (not options.hide_command_button)))
                             (attach_context_menu output_container
@@ -8602,7 +8877,7 @@
                      (= hide_state false)
                      (set_prop output_container
                         `scrollTop
-                        1000000)
+                        content_height)
                      (set_prop view
                         `scrollTop
                         0)))))
@@ -8640,8 +8915,8 @@
                                                   "border-top: 1px solid #00000020; padding: 5px;"
                                                   "border-left: 3px solid #0167835e; padding: 5px; margin-bottom: 5px; border-bottom: 1px solid transparent;")) }
                               (value_to_dom result options.display_options))))
-                      
-                      (= content_height (sum (each output_container.children `offsetHeight)))
+                      (when (> (prop view.parentElement `offsetHeight) 10)
+                         (= content_height (Math.max window.innerHeight (sum (each output_container.children `offsetHeight)))))
                       
                       (setTimeout (fn ()
                                      (progn
@@ -8751,9 +9026,15 @@
                 (progn
                    (= hide_state true))))
     (on_focus (fn ()
-                 (progn
-                    (= hide_state false)
-                    (add_class "juno-focused" control_status)))) ;; we know that is the command bar
+                 (try
+                    (progn
+                       (when hide_state
+                          (= content_height (Math.max window.innerHeight (sum (each output_container.children `offsetHeight))))
+                          (scroll_to_bottom))
+                       (= hide_state false)
+                       (add_class "juno-focused" control_status))
+                    (catch Error (e) 
+                       (notify (+ "ERROR: " e.message)))))) ;; we know that is the command bar
     
     (log_message (fn (highlight_color `& args)
                     (progn
@@ -8811,6 +9092,8 @@
                                     *env_config*.application.max_log_lines
                                     10))]
               [`append add_result]
+              [`on_hide on_hide]
+              [`scroll_to_bottom scroll_to_bottom]
               [`log_message log_standard ]
               [`log_error log_problem ]]
      frame_style: "overflow: hidden;"
@@ -9935,6 +10218,7 @@
        (non_whitespace_regex (new RegExp "\\\\s"))
        (on_focus (fn ()
                    (progn
+                      (-> output_control `on_focus)
                     ;(-> input_container.editor `focus) ;; bring focus to the repl
                     (add_class "juno-focused" output_control.control_bar )
                     (set_prop intf
@@ -10160,9 +10444,9 @@
     (set_prop sview
               `type
               "REPL_split")
-    (set_prop output_control
-       `on_focus
-       nil)
+    ;(set_prop output_control
+    ;   `on_focus
+     ;  nil)
     (set_prop options
               `id
               id)
@@ -10190,8 +10474,9 @@
              `rename: rename
              `destroy: destroy
              `on_hide: (fn ()
-                         (when (is_function? output_control.on_hide)
-                            (-> output_control `on_hide)))
+                          (progn
+                             (when (is_function? output_control.on_hide)
+                                (-> output_control `on_hide))))
              `type: "visual_repl"
              `resize: (fn ()
                        (-> sview `resize))
@@ -11558,7 +11843,7 @@
 
 (defcontrol panel (the_title element)
    ((render 
-       (fn () (div { `style: "overflow: auto; height: calc(100% - 5px);" } element)))
+       (fn () (div { `style: "overflow: auto; height: calc(100% - 20px);" } element)))
     (on_initialize 
        (fn (self)
           (progn 
@@ -12163,6 +12448,16 @@
                                      args: [ it ] }))))
               
         ]
+   [(dtext "Show Global Key Bindings")
+    (fn ()
+       (place_control `right (panel "Key Bindings" (show_key_bindings ))))]
+   (if (and *last_focus*
+            *last_focus*.editor)
+       [(dtext "Show Editor Key Bindings")
+        (fn ()
+           (place_control `right (panel (+ "Key Bindings" " - " (control_name *last_focus*)) 
+                                        (show_editor_keybindings *last_focus*))))]
+       [])
    [ "--" nil]
    (if (is_symbol? `generate_docs)
        [(+ (dtext "Create Static Documentation") "...")
@@ -14657,7 +14952,7 @@
                    (dtext "Frame 0 cannot be found, check to make sure it exists"))))
 
 (defun new_buffer (options)
-   (let
+  (let
       ((options (cond
                    (is_array? options)
                    { `path: options `mode: "juno"}
@@ -14670,80 +14965,77 @@
                    { `path: [ options ] `mode: "juno" }
                    else
                    { `mode: "juno" }))
-       (target_container nil)
+       (target_container (or options.control_to_replace *last_focus*  (default_focus)))
        (new_control nil)
-       (symbol_data (if options.path
-                        { `path: options.path `namespace: (or options.namespace (current_namespace)) }
-                        (symbol_chooser "Select a symbol to edit" options.mode)))
-       (extension (cond
+       (show_new_control (fn (new_control)
+                            (progn
+                               (cond
+                                  (is_top_control? target_container)
+                                  (container_view_operation "split_right"
+                                                            (first (-> target_container `controls))
+                                                            new_control)
+                                  else
+                                  (swap_control target_container
+                                                new_control))
+                               (sleep 0.1)
+                               (set_focus_to new_control))))
+       (symbol_data (cond 
+                       options.path
+                       { `path: options.path `namespace: (or options.namespace (current_namespace)) }
+                       (and (is_string? options.content)
+                            (not options.filename))
+                       nil
+                       else
+                       (symbol_chooser "Select a symbol to edit" options.mode)))
+       (extension (cond 
                      options.filename
                      (last (split_by "." options.filename))
                      (== options.mode "dom")
                      "dom"
                      else
                      "juno"))
-       (target_ns symbol_data.namespace)
-       (current_layout (get_current_layout_control))
+       (target_ns (if symbol_data
+                      symbol_data.namespace
+                      (current_namespace)))
        (target_env nil))
-      (log "new_buffer: for: " options target_ns extension symbol_data)
-      
-      (when (resolve_path [ `options `is_locked? ] current_layout)
-         (jump_to_frame_0)
-         (sleep 0.1))
-      
-      (= target_container (or (and options.control_to_replace  ;; first check easy thing
-                                   (== current_layout (get_current_layout_control)) ;; then the hard thing
-                                   options.control_to_replace) ;; then return the control to replace 
-                              *last_focus* 
-                              (default_focus)))
-                 
-                 
-         
-      
-      (when target_ns
-         (= target_env (-> Environment `get_namespace_handle symbol_data.namespace)))
-      (when (and target_env (eq nil (resolve_path symbol_data.path target_env.global_ctx.scope)))
-         (make_path symbol_data.path target_env.global_ctx.scope ""))
-      
-      (when symbol_data.path
-         (= new_control
-            (if (== extension `dom)
-                (DOM_editor (+ { rules: [ `*markdown_rules* ]
-                                       hide_control_bar: false
-                                       debug: false }
-                               options))
-                (text_editor (+ { name: (last symbol_data.path)
-                                       path_namespace: target_ns
-                                       namespace: target_ns
-                                       path: symbol_data.path
-                                       mode: options.mode }
-                                options ))))
-         (cond
-            (is_top_control? target_container)
-            (container_view_operation "split_right"
-                                      (first (-> target_container `controls))
-                                      new_control)
-            else
-            (swap_control target_container
-                          new_control))
-         (sleep 0.1)
-         (set_focus_to new_control)))
-   {
-     `description: (+ "Opens a new editor, if possible, in the currently focused control.  If necessary, it may "
-                      "split the view to the right for the new editor.  If no options are provided, the user "
-                      "will be prompted for a symbol to edit.  Options can be: <br>"
-                      "string: is considered a symbol name and the function will open or create the "
-                      "specified symbol in the current namespace global context.<br>"
-                      "array: is considered a path to access, and if the path is present will open the path.  If not, "
-                      "will attempt to create the final value in the path as a string for editing.<br>"
-                      "object: if an object, the object can contain:<br>"
-                      "  path: array: the path to the symbol to be edited.  If the final path segment doesn't exist "
-                      "it will create it.<br>"
-                      "  namespace: string: the namespace to use for accessing the provided path.<br>"
-                      "  mode: the mode to open the editor in. The default mode is Juno.<br>")
-     `tags: ["editor" "edit" "buffer" "control"]
-     `usage: ["options:object?"]
-     })
+    ;   (log "new_buffer: for: " options target_ns extension symbol_data)
+      (console.log "new_buffer: target_container: " target_container.name (is_top_control? target_container))
+    (when target_ns
+      (= target_env (-> Environment `get_namespace_handle symbol_data.namespace)))
+    (when (and target_env 
+               (is_object? symbol_data) 
+               (eq nil (resolve_path symbol_data.path target_env.global_ctx.scope)))
+       (make_path symbol_data.path target_env.global_ctx.scope ""))
+    
+    (cond 
+       symbol_data.path
+       (progn
+          (= new_control
+             (if (== extension `dom)
+                 (DOM_editor (+ { rules: [ `*markdown_rules* ] `hide_control_bar: false debug: false } options))
+                 (text_editor (+ { name: (last symbol_data.path) namespace: target_ns path: symbol_data.path mode: options.mode } options ))))
+          (show_new_control new_control))
+       (is_string? options.content)
+       (progn
+          (= new_control
+             (text_editor (+ {  namespace: target_ns  mode: options.mode } options )))
+          (show_new_control new_control))))
+  {
+      `description: (+ "Opens a new editor, if possible, in the currently focused control.  If necessary, it may "
+                       "split the view to the right for the new editor.  If no options are provided, the user "
+                       "will be prompted for a symbol to edit.  Options can be: <br>"
+                       "string: is considered a symbol name and the function will open or create the " 
+                       "specified symbol in the current namespace global context.<br>"
+                       "array: is considered a path to access, and if the path is present will open the path.  If not, "
+                       "will attempt to create the final value in the path as a string for editing.<br>"
+                       "object: if an object, the object can contain:<br>"
+                       "  path: array: the path to the symbol to be edited.  If the final path segment doesn't exist "
+                       "it will create it.<br>"
+                       "  namespace: string: the namespace to use for accessing the provided path.<br>"
+                       "  mode: the mode to open the editor in. The default mode is Juno.<br>")
+      `tags: ["editor" "edit" "buffer" "control"]
+      `usage: ["options:object?"]
+  })
 
 (defun new_top_level_frame ()
    (let
@@ -15121,11 +15413,16 @@
 
    })
 
-(defun export_layout (layout_name options)
+(defun export_system (layout_name options)
    (let
       ((cancel_button (button { `style: "float: right" }  (dtext "Close")))
        (orig_options options)
-       (export_button (button (dtext "Export")))
+       (whole_application? (if (== layout_name nil)
+                              true
+                              false))
+       (export_button (button (if whole_application?
+                                  (dtext "Save Image")
+                                  (dtext "Export"))))
        (array_to_keyed_booleans (fn (items init_state)
                                   (if (is_array? items)
                                       (to_object
@@ -15145,11 +15442,17 @@
        (export_options nil)
        (copy_button (button { `title: "Copy as a quoted form that can be reused in other code" } (dtext "Copy Code")))
        (status_elem (div { `style: "border: 2px inset #FFFFFF; padding: 8px; background: #FFFFFF20; font-weight: bold; margin-bottom: 20px;margin-top: 10px;" } (dtext "Ready")))
-       (options (+ { include_container: true
+       (options (+ {}
+                   (if whole_application?
+                         {}
+                         { include_container: true })
+                   {
                      keep_text_editor_content: (if is_served?
                                                   false
                                                   true)
-                     application_name: (or layout_name "")
+                     application_name: (if whole_application?
+                                          *env_config*.application.name
+                                          (or layout_name ""))
                      save_location: (if is_served?
                                       "Server"
                                       "Local To This Computer")
@@ -15172,7 +15475,7 @@
        (set_message (fn (message)
                        (if (is_string? message)
                         (progn
-                           (log "export_layout: " message)
+                           (log "export_system: " message)
                            (set_prop status_elem
                               `innerHTML
                               message)))))
@@ -15188,7 +15491,46 @@
                                             (-> elem `click))))
                                   (catch Error (e)
                                      (log "Error: " e))))))
-       (layout (get_control_by_name layout_name))
+       (layout (unless whole_application?
+                  (get_control_by_name layout_name)))
+       (save_ide (fn ()
+                    (let
+                       ((rval nil)
+                        (app_name nil))
+                       (set_busy (+ (dtext "Saving") "..."))
+                       (sleep 0.1)
+                       (= export_options
+                          {
+                            `save_prefix: options.application_name
+                            `shake_tree: false
+                            `keep_text_editor_content: options.keep_text_editor_content
+                            `save_locally: (if (== "Local To This Computer" options.save_location)
+                                               true
+                                               false)
+                            })
+                       (= rval
+                          (save_control_image false
+                                              export_options))
+                       (set_busy nil)
+                       (cond
+                          (and export_options.save_locally
+                             (== rval true))
+                          (progn
+                             (set_message "Saved Locally - check your Downloads Folder"))
+                          (and (not export_options.save_locally)
+                               (== rval.rval "OK"))
+                          (progn
+                             (= app_name (last (split_by "/" rval.results.0.filename)))
+                             (set_message (+ "Saved To Host - opening in browser: " (+ "/env/" app_name)))
+                             (-> window `open (+ "/env/" app_name) options.application_name))
+                          else
+                          (progn
+                             (set_prop status_elem
+                                `innerHTML
+                                (+ "ERROR: " (or rval.message "Check system repl for return value")))))
+                       (log "export_system: result: " rval))))
+                       
+                       
        (save_as_app (fn ()
                        (when (not (blank? options.application_name))
                           (let
@@ -15236,7 +15578,7 @@
                                     (set_prop status_elem
                                        `innerHTML
                                        (+ "ERROR: " (or rval.message "Check system repl for return value")))))
-                             (log "export_layout: result: " rval)))))
+                             (log "export_system: result: " rval)))))
        (resolver nil)
        (handle_event (fn (e)
                         (let
@@ -15249,7 +15591,9 @@
                                  (resolver nil))
                               (== src export_button)
                               (progn
-                                 (save_as_app))
+                                 (if whole_application?
+                                    (save_ide)
+                                    (save_as_app)))
                               (== src copy_button)
                               (progn
                                  (copy_layout_to_buffer layout options))
@@ -15263,11 +15607,16 @@
        (view nil)
        (frame nil)
        (result nil))
-      (assert (is_control? layout) "export_layout: invalid layout or control name provided")
+      (unless whole_application?
+         (assert (is_control? layout) "export_system: invalid layout or control name provided"))
       (= view
                 (div { `class: "juno-form" `style: "flex-grow: 1; "}
-                     (h4 (+ "Layout: " layout_name))
-                     (dtext "You can export the layout as usable code, or save the layout as an application.")
+                     (if whole_application?
+                        (h4 *env_config*.application.name)
+                        (h4 (+ "Layout: " layout_name)))
+                     (if whole_application?
+                        (dtext "Save the current global state of the IDE with the settings below.")
+                        (dtext "You can export the layout as usable code, or save the layout as an application."))
                      (br)
                      (br)
                      (div { `class: "juno-form-data" `style: "flex-grow: 1; "}
@@ -15279,11 +15628,13 @@
                                           expand_all: true
                                           paths: {
                                                    output_as: {
-                                                                values: ["Formatted Lisp"
-                                                                         "Single-line Lisp"
-                                                                         "Formatted JSON"
-                                                                         "Single-line JSON"]
-                                                                }
+                                                                values: (if whole_application?
+                                                                           ["HTML Page"]
+                                                                           ["Formatted Lisp"
+                                                                            "Single-line Lisp"
+                                                                            "Formatted JSON"
+                                                                            "Single-line JSON"])
+                                                                           }
                                                    save_location: {
                                                        values: (if is_served?
                                                                   [ "Server" "Local To This Computer"]
@@ -15293,15 +15644,19 @@
                                           }))
                           (hr { `style: "width: 100%" } )
                           (h4 { `style: "flex-grow: 0;" } "DOM Resident Assets")
-                          (div { `style: "flex-grow: 0;" } "Checked items will be included in the emitted page."
-                               (div { `style: "display: inline-block;"} check_all_assets_button uncheck_all_assets_button))
+                          (if whole_application?
+                             (div { `style: "flex-grow: 0;" } 
+                                  (div "Since the whole IDE state is being saved, the below scripts and styles are included with the full IDE export.")
+                                  (div "No tree shaking will occur."))
+                             (div { `style: "flex-grow: 0;" } "Checked items will be included in the emitted page."
+                                  (div { `style: "display: inline-block;"} check_all_assets_button uncheck_all_assets_button)))
                           (= assets_elem
                              (div { `style: "margin-top: 3px; justify-content: stretch; flex-grow: 2; flex-shrink: 2; flex-basis: 150px; overflow: scroll;" }
                                (div { `style: "display: flex; align-items: stretch; justify-content: stretch; flex-direction: row;" }
                                     (div { `style: "flex-grow: 1;margin-top: 3px; background: #FFFFFF10; ; padding: 5px; " }
                                          (div { `style: "font-weight: bold;" } "Scripts")
                                             (value_to_dom embedded_scripts
-                                                       { editable: true
+                                                       { editable: (not whole_application?)
                                                          disable_object_toggle: true
                                                          pretty_keys: true
                                                          expand_all: true
@@ -15309,7 +15664,7 @@
                                     (div { `style: "flex-grow: 1;  margin-top: 3px; background: #FFFFFF10;; padding: 5px; " }
                                          (div { `style: "font-weight: bold;"} "Styles")
                                          (value_to_dom embedded_styles
-                                                       { editable: true
+                                                       { editable:  (not whole_application?)
                                                          disable_object_toggle: true
                                                          pretty_keys: true
                                                          expand_all: true
@@ -15317,7 +15672,9 @@
                           status_elem
                           (div
                              export_button
-                             copy_button
+                             (if whole_application?
+                                []
+                                copy_button)
                              cancel_button))))
       (attach_event_listener view
          `click
@@ -15334,7 +15691,9 @@
                   
                   (= frame
                      (floating_div view {
-                                          title: (+ (dtext "Export/Copy") ": " layout_name)
+                                          title: (if whole_application?
+                                                    (dtext "Save Application Image")
+                                                    (+ (dtext "Export/Copy") ": " layout_name))
                                           on_close: (fn ()
                                                        (resolver nil))
                                           controls: true
@@ -15347,7 +15706,6 @@
                      `keydown
                      (fn (e)
                         (progn
-                           (log "Key: " e.key)
                            (if (== e.key "Escape")
                                (progn
                                   (-> frame `close)
@@ -15401,14 +15759,15 @@
                [{ text: "Juno Lisp Editor" 
                   path: [ `global `open_new_buffer ]
                   }
-                  (fn (e) (new_buffer { `type: "juno" }))]
-               ["Javascript Editor" (fn (e) (new_buffer { `type: "javascript" })) ]
-               ["CSS Editor" (fn (e) (new_buffer { `type: "css" })) ]
-               ["Text Editor" (fn (e) (new_buffer { `type: "text" })) ]
-               ["JSON Editor" (fn (e) (new_buffer { `type: "json" }))]]]
+                  (fn (e) (new_buffer { `content: "" `type: "juno" }))]
+               ["Javascript Editor" (fn (e) (new_buffer { `content: "" `type: "javascript" })) ]
+               ["CSS Editor" (fn (e) (new_buffer { `content: "" `type: "css" })) ]
+               ["Text Editor" (fn (e) (new_buffer { `content: "" `type: "text" })) ]
+               ["JSON Editor" (fn (e) (new_buffer { `content: "" `type: "json" }))]]]
     (if is_served?
        ["Open File" edit_file ]
        [])
+    
     (if (resolve_path [ `get ] *last_focus*) 
         ["--" nil]
         [])
@@ -15451,14 +15810,14 @@
         [])
     ["--" nil]
     [(+ (dtext "Browser Environment") "...")
-     [(if is_served?
-        [(dtext "Bundle Application To Host") (fn (e) (save_control_image true)) ]
-        [])
-     [(dtext "Bundle Application and Download") (fn (e) (save_control_image true { save_locally: true })) ]
-     (if is_served?
+     [
+      [(dtext "Bundle And Save Current State") (fn (e) (export_system nil)) ]
+      [(dtext "Import Local File") (fn (e) (-> resource_loader_button `click)) ]
+      (if is_served?
+         ["--" nil])
+      (if is_served?
         [(dtext "Generate Starter Application") build_starter_environment]
-        [])
-     [(dtext "Import Local File") (fn (e) (-> resource_loader_button `click)) ]]]
+        [])]]
     (if is_served?
        [(dtext "Rebuild Host Juno Environment")
         (fn (e) (rebuild_remote_environment))]
@@ -15512,8 +15871,7 @@
                     exec: (fn ()
                              (make_named_layout_interactive current_layout))
                 }])]
-         [(if 
-             (and current_layout.options.root_bundle
+         [(if (and current_layout.options.root_bundle
                 layout_locked?)
              [{
                 text: (+ (dtext "Unlock positions for") " " current_layout.options.name)
@@ -15536,7 +15894,7 @@
           [(if current_layout.options.root_bundle
               [(+ (dtext "Export Layout") " " (control_name current_layout) "...")
                (fn ()
-                  (export_layout (control_name current_layout)))]
+                  (export_system (control_name current_layout)))]
               [])]
          [["--" nil]]
          [[(dtext "Remove Named Layout..")
@@ -15773,7 +16131,7 @@
        (console.log "initializing control surface")
        ;; take in the global default theme, but don't impact the setting for the sub themes
        (set_global_theme *env_config*.application.global_theme { `suppress_set_sub_theme: true `suppress_cascade: true })
-       (defglobal $repl (visual_repl { `name: "Juno REPL"  `display_options: { `show_timestamps: true }}))
+       (defglobal $repl (visual_repl { `name: "Juno REPL"  `display_options: { `show_timestamps: false }}))
        (try
          (= scratch_editor
             (text_editor { name: "*scratch*" 
@@ -15809,7 +16167,7 @@
                  "open_new_buffer" { win: "Command-Enter"
                                      mac: "Command-Enter"
                                      description: "New Juno Buffer"
-                                     exec: (fn () (new_buffer { type: "juno" }))
+                                     exec: (fn () (new_buffer { content: "" type: "juno" }))
                                     }
                  "juno_remote_repl" { win: "Alt-Shift-2"
                                      mac: "Command-Shift-2"

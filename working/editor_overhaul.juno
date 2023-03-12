@@ -393,9 +393,26 @@
                    { `mode: "juno" }))
        (target_container (or options.control_to_replace *last_focus*  (default_focus)))
        (new_control nil)
-       (symbol_data (if options.path
-                        { `path: options.path `namespace: (or options.namespace (current_namespace)) }
-                        (symbol_chooser "Select a symbol to edit" options.mode)))
+       (show_new_control (fn (new_control)
+                            (progn
+                               (cond
+                                  (is_top_control? target_container)
+                                  (container_view_operation "split_right"
+                                                            (first (-> target_container `controls))
+                                                            new_control)
+                                  else
+                                  (swap_control target_container
+                                                new_control))
+                               (sleep 0.1)
+                               (set_focus_to new_control))))
+       (symbol_data (cond 
+                       options.path
+                       { `path: options.path `namespace: (or options.namespace (current_namespace)) }
+                       (and (is_string? options.content)
+                            (not options.filename))
+                       nil
+                       else
+                       (symbol_chooser "Select a symbol to edit" options.mode)))
        (extension (cond 
                      options.filename
                      (last (split_by "." options.filename))
@@ -403,30 +420,32 @@
                      "dom"
                      else
                      "juno"))
-       (target_ns symbol_data.namespace)
+       (target_ns (if symbol_data
+                      symbol_data.namespace
+                      (current_namespace)))
        (target_env nil))
-      (log "new_buffer: for: " options target_ns extension symbol_data)
+    ;   (log "new_buffer: for: " options target_ns extension symbol_data)
       (console.log "new_buffer: target_container: " target_container.name (is_top_control? target_container))
     (when target_ns
       (= target_env (-> Environment `get_namespace_handle symbol_data.namespace)))
-    (when (and target_env (eq nil (resolve_path symbol_data.path target_env.global_ctx.scope)))
+    (when (and target_env 
+               (is_object? symbol_data) 
+               (eq nil (resolve_path symbol_data.path target_env.global_ctx.scope)))
        (make_path symbol_data.path target_env.global_ctx.scope ""))
     
-    (when symbol_data.path
-       (= new_control
-          (if (== extension `dom)
-              (DOM_editor (+ { rules: [ `*markdown_rules* ] `hide_control_bar: false debug: false } options))
-              (text_editor (+ { name: (last symbol_data.path) namespace: target_ns path: symbol_data.path mode: options.mode } options ))))
-      (cond
-         (is_top_control? target_container)
-         (container_view_operation "split_right" 
-                                   (first (-> target_container `controls))
-                                   new_control)
-         else
-         (swap_control target_container 
-                       new_control))
-      (sleep 0.1)
-      (set_focus_to new_control)))
+    (cond 
+       symbol_data.path
+       (progn
+          (= new_control
+             (if (== extension `dom)
+                 (DOM_editor (+ { rules: [ `*markdown_rules* ] `hide_control_bar: false debug: false } options))
+                 (text_editor (+ { name: (last symbol_data.path) namespace: target_ns path: symbol_data.path mode: options.mode } options ))))
+          (show_new_control new_control))
+       (is_string? options.content)
+       (progn
+          (= new_control
+             (text_editor (+ {  namespace: target_ns  mode: options.mode } options )))
+          (show_new_control new_control))))
   {
       `description: (+ "Opens a new editor, if possible, in the currently focused control.  If necessary, it may "
                        "split the view to the right for the new editor.  If no options are provided, the user "
@@ -1413,6 +1432,10 @@
      tags: ["editor" "options"]
    })
 
+
+   
+
+
 (defun show_editor_options (ctl)
    (let
       ((opts (editor_options ctl))
@@ -1868,7 +1891,7 @@
                                  (resolve_path [ `editor key ] *env_config*)
                                  default_value)))
             (buffer_commands_button (commands_button options.id))
-            (evaluator_span (span { `class: "juno-evaluator" `style: "pointer: cursor" `title: (dtext "Name of the evaluator assigned to this buffer") } "-"))
+            (evaluator_span (span { `class: "juno-evaluator" `style: "cursor: pointer" `title: (dtext "Name of the evaluator assigned to this buffer") } "-"))
             (nav_back_button (button { `title: (dtext "Step Backward In Position History") `style: "float: right" } "<"))
             (nav_forward_button (button { `disabled: true `title: (dtext "Step Foreward In Position History") `style: "float: right" } ">"))
             ;; if we have a namespace in options use that for referencing paths
@@ -1884,7 +1907,7 @@
             (wrap_span (span { `style: "width: 25px; min-width: 25px; display: inline-block;float: right; margin-right: 15px;margin-left: 15px;" `title: "Word Wrap" } ""))
             (mode "-")
             (mode_span (span { `class: "juno-mode" `title: "Current Editing Mode" `style: "float: right; margin-right: 15px; display: inline-block; padding-left: 5px; padding-right: 5px;" } mode))
-            (title_span (span { `class: "juno-title" } options.name))
+            (title_span (span { `class: "juno-title" `style: "cursor: pointer"  } options.name))
             (ns_span (span { `title: "Namespace" `class: "juno-namespace" `style: "display:inline-block; padding-left: 30px; padding-right: 5px;" } nseval.namespace))
             (control_bar (or options.control_bar
                              (div { `class: "juno-buffer-bar" }
@@ -2091,6 +2114,66 @@
                                `innerText
                                options.name)
                             options.name)))
+            (rename_editor (fn ()
+                              (if (cloned_editor?)
+                                  (notify (dtext "Cannot change name of a currently cloned editor instance."))
+                                  (let
+                                     ((name_input (input { `tabindex: 0 `style: "width: 95%; font-weight: bold;" `value: options.name } ))
+                                      (bbox (-> title_span `getBoundingClientRect))
+                                      (rename_view
+                                         (div { `id: "cmenu" `style: (+ "z-index: 10000; padding: 5px; margin: 0px; min-width: " (+ bbox.width 15) "px; background: inherit; position:absolute; top: " (- bbox.top 5) "px; left: "  bbox.left "px;") }
+                                              
+                                              name_input
+                                              (div { `style: "padding: 5px;"}
+                                                   (cond
+                                                      (and (is_array? options.path)
+                                                           (== "filesystem" (first options.path)))
+                                                      (div
+                                                         (div { `style: "padding: 5px; font-weight: bold" } "Save To File")
+                                                         (div { `style: "padding: 5px; " } (join " / " (rest options.path))))
+                                                      (is_array? options.path)
+                                                      (div
+                                                         (div { `style: "padding: 5px; font-weight: bold" } "Save To Symbol")
+                                                         (for_each (comp options.path)
+                                                            (span { `style: "padding: 5px;" } comp)))
+                                                      (eq nil options.path)
+                                                      (div
+                                                         (div { `style: "padding: 5px; font-weight: bold" } "Temporary Buffer" )
+                                                         (div { `style: "padding: 5px;" } "No Path"))
+                                                      else
+                                                      (div
+                                                         (div { `style: "padding: 5px; font-weight: bold" } "Check Path")
+                                                         (div (as_lisp options.path)))))))
+                                      (cmenu_remove (fn ()
+                                                       (aif (get_by_id "cmenu")
+                                                            (-> it `remove)))))
+                                     
+                                     (declare (function resolver))
+                                     (log "renaming editor" bbox)
+                                     (cmenu_remove)
+                                     (sleep 0.01)
+                                     (-> (get_by_id "body")
+                                         `append rename_view)
+                                     (-> name_input `select)
+                                     (focus_to name_input)
+                                     (attach_event_listener name_input
+                                        `keyup
+                                        (fn (e)
+                                           (progn
+                                              (cond
+                                                 (and (== e.key "Enter")
+                                                      (not (blank? name_input.value)))
+                                                 (progn
+                                                    (set_name name_input.value)
+                                                    (set_prop options
+                                                       `group_name
+                                                       options.name)
+                                                    (cmenu_remove)
+                                                    (focus_to_editor intf))
+                                                 (== e.key "Escape")
+                                                 (progn
+                                                    (cmenu_remove)
+                                                    (focus_to_editor intf))))))))))
             (refresh_symbol_timer nil)
             (symbol_positions_timer nil)
             (evaluate_selection (function (editor)
@@ -2290,9 +2373,22 @@
                                   
                                   rval)))
             ;; signal ready for saving
-            (request_save (function ()
+            (request_save (fn ()
                              (progn
-                                (save_event_handler { command: "save_request" source: options.id args: [{ path: options.path }] }))))
+                                (unless options.path
+                                   (let
+                                      ((symbol_data (symbol_chooser "Select or Create Symbol" options.mode)))
+                                      (when symbol_data
+                                         (set_prop options
+                                            `namespace
+                                            symbol_data.namespace)
+                                         (set_prop options
+                                            `path
+                                            symbol_data.path)
+                                         (set_name (last symbol_data.path) false)
+                                         )))
+                                (if options.path
+                                   (save_event_handler { command: "save_request" source: options.id args: [{ path: options.path }] })))))
             
             ;; handle the results of the save
             (save_complete (function (event_obj)
@@ -2315,6 +2411,9 @@
                              (let
                                 ((new_editor nil))
                                 (cond
+                                   (eq nil options.path)
+                                   (alert_box "Save Required" 
+                                              (+ (dtext "This temporary editor must be saved to a symbol or linked to a file in order to split.")))
                                    (== dir "vertical")
                                    (progn
                                       (= new_editor (clone_text_editor_control intf))
@@ -2395,7 +2494,10 @@
                                           (when (== position_history_idx (- position_history.length 1))
                                              (set_disabled nav_forward_button))
                                           (set_cursor_position (prop position_history position_history_idx)))))
-            
+            (cloned_editor? (fn ()
+                               (if options.path
+                                  (> (length (get_editors_for_path options.path)) 1)
+                                  false)))
             (on_focus (fn ()
                          (progn
                             (when (not (== *last_focus* intf))
@@ -2469,7 +2571,6 @@
                                         
                                         (if (is_string? content)
                                             (progn
-                                               
                                                (-> editor `setValue content -1))
                                             (progn
                                                (-> editor `setValue "")
@@ -2523,6 +2624,8 @@
                                      (if (not (== "String" (sub_type content)))
                                          (-> editor `setValue (pretty_print content))
                                          (-> editor `setValue content -1)))
+                                  (is_string? options.content_compressed)
+                                  (-> editor `setValue (LZString.decompressFromBase64 options.content_compressed -1) -1)
                                   (is_string? options.content)
                                   (progn
                                      (= content options.content)
@@ -2770,6 +2873,7 @@
                                       ((text (-> navigator.clipboard `readText))
                                        (rng (get_selection_object)))
                                       (-> editor.session `replace rng text)))))
+            
             (search_box_handle (function ()
                                   (-> view `querySelector "input.ace_search_field")))
             (search_focused? (function ()
@@ -2791,15 +2895,20 @@
                                    (split_editor `horizontal))]
                                [(dtext "Select Evaluator")
                                 user_select_evaluator]
-                               
+                               (cond
+                                  (or options.clone_with_editor_id
+                                      (cloned_editor?))
+                                  []
+                                  else 
+                                  [(dtext "Rename Editor")
+                                   (fn (e)
+                                      (rename_editor))
+                                   ])
                                [(dtext "Increase Font Size") increase_font_size]
                                [(dtext "Decrease Font Size") decrease_font_size]
                                (if (== (-> editor `getOption `wrap) "off")
                                    [(dtext "Enable Word Wrap") (fn (e) (set_wrap_mode true))]
                                    [(dtext "Disable Word Wrap") (fn (e) (set_wrap_mode false)) ])
-                               [(dtext "Options and Preferences")
-                                (fn (e)
-                                   (show_editor_options intf))]
                                [(dtext "Go")
                                 [[{
                                    text: (dtext "Go to line number")
@@ -2825,116 +2934,130 @@
                                  ["Shell" (fn () (-> intf `set_mode "sh"))]]]
                                [(dtext "Set Editor Theme")
                                 (for_each (theme (get_default [ `editor `themes ]))
-                                   [theme  (fn () (-> intf `set_theme theme))])]]
+                                   [theme  (fn () (-> intf `set_theme theme))])]
+                                [(dtext "Options and Preferences")
+                                (fn (e)
+                                   (show_editor_options intf))]]
                               (progn
                                  (notify (+ "" options.name ": BUG: no editor anymore"))
                                  []))))
             
-            (init_context_menu (fn ()
-                                  (let
-                                     ()
-                                     (attach_context_menu 
-                                        view
-                                        (fn (event)
-                                           (let
-                                              ((ctoken (get_current_token)))
-                                              ;(log "current token: " ctoken)
-                                              (conj
-                                                 (cond
-                                                    (== options.mode "juno")
-                                                    [(if (and ctoken
-                                                               (or (== ctoken.type "identifier")
-                                                                   (== ctoken.type "asyncfunction")
-                                                                   (== ctoken.type "function")))
-                                                         [ {
-                                                              text: (dtext "Go to symbol definition")
-                                                              path: [`editor `jump_to_local_definition ]
-                                                              exec: (fn ()
-                                                                       (jump_to_local_definition ctoken.value))
-                                                          } ]
-                                                          [])
-                                                     [{
-                                                        text: (dtext "Select to root form")
-                                                        path: [`editor `select_form_root ]
-                                                        exec: (fn ()
-                                                                 (select_to_root_form editor))
-                                                        }]
-                                                     [{
-                                                        text: (dtext "Evaluate root form")
-                                                        path: [`editor `evaluate_root_form ]
-                                                        exec: evaluate_root_form
-                                                        }]
-                                                     (if (is_clipboard_allowed?)
-                                                         [{
-                                                            text: (dtext "Copy root form")
-                                                            path: [`editor `copy_root_form ]
-                                                            exec:  (fn ()
-                                                                      (let
-                                                                         ((cpos (current_position)))
-                                                                         (select_form_root)
-                                                                         (-> navigator.clipboard `writeText (-> editor `getCopyText))
-                                                                         (sleep 0.02)
-                                                                         (-> editor.selection `clearSelection)
-                                                                         (-> editor `navigateTo cpos.row cpos.column)))
-                                                            }]
-                                                         [])
-                                                     ["--" nil]
-                                                     [{
-                                                        text: (dtext "Select current form")
-                                                        path: [`editor `select_current_form ]
-                                                        exec: select_current_form
-                                                        }]
-                                                     [{
-                                                        text: (dtext "Evaluate selection")
-                                                        path: [`editor `evaluate_selection ]
-                                                        exec: (fn ()
-                                                                 (evaluate_selection editor))
-                                                        }]
-                                                     ["--" nil]]
-                                                    (== options.mode "css")
-                                                    [[{
-                                                        text: (dtext "Select rule")
-                                                        path: [`editor `select_css_rule ]
-                                                        exec: (fn ()
-                                                                 (select_css_rule editor))
-                                                        }]
-                                                     [{
-                                                         text: (dtext "Evaluate rule")
-                                                         path: [`editor `evaluate_root_form ]
-                                                         exec: (fn ()
-                                                                  (evaluate_root_form))
-                                                     }]
-                                                     [{
-                                                         text: (dtext "Copy rule")
-                                                         path: [`editor `copy_css_rule ]
-                                                         exec: (fn ()
-                                                                  (let
-                                                                     ((cpos (current_position)))
-                                                                     (select_css_rule editor)
-                                                                     (-> navigator.clipboard `writeText (-> editor `getCopyText))
-                                                                     (sleep 0.02)
-                                                                     (-> editor.selection `clearSelection)
-                                                                     (-> editor `navigateTo cpos.row cpos.column)))
-                                                     }]
-                                                     ["--" nil]]
-                                                    else
-                                                    [])
-                                                 (if (is_clipboard_allowed?)
-                                                     [
-                                                      [{
-                                                         text: "Cut"
-                                                         path: [`global `cut ]
-                                                         exec: cut_selection }]
-                                                      [{
-                                                         text: "Copy"
-                                                         path: [`global `copy ]
-                                                         exec: copy_selection
-                                                         }]
-                                                      [ {
-                                                          text: "Paste"
-                                                          path: [`global `paste ]
-                                                          exec: paste_selection }]]
-                                                     []))))))))
+            (init_context_menu 
+               (fn ()
+                  (let
+                     ()
+                     (attach_context_menu
+                        view
+                        (fn (event)
+                           (let
+                              ((ctoken (get_current_token)))
+                              ;(log "current token: " ctoken)
+                              (conj
+                                 (cond
+                                    (== options.mode "juno")
+                                    (conj (if (and ctoken
+                                                   (or (== ctoken.type "identifier")
+                                                       (== ctoken.type "asyncfunction")
+                                                       (== ctoken.type "function")))
+                                              [[ {
+                                                  text: (dtext "Go to buffer definition")
+                                                  path: [`editor `jump_to_local_definition ]
+                                                  exec: (fn ()
+                                                           (jump_to_local_definition ctoken.value))
+                                                  } ]
+                                               [ {
+                                                   text: (dtext "Go to current definition")
+                                                   path: [`editor `jump_to_local_definition ]
+                                                   exec: (fn ()
+                                                            (dispatch_event { command: "open_definition"
+                                                                              source: nil
+                                                                              args: [ ctoken.value ] }))
+                                                   } ]
+                                               ["--" nil]]
+                                              [])
+                                     
+                                          [[{
+                                             text: (dtext "Select to root form")
+                                             path: [`editor `select_form_root ]
+                                             exec: (fn ()
+                                                      (select_to_root_form editor))
+                                             }]
+                                          [{
+                                             text: (dtext "Evaluate root form")
+                                             path: [`editor `evaluate_root_form ]
+                                             exec: evaluate_root_form
+                                             }]
+                                          (if (is_clipboard_allowed?)
+                                              [{
+                                                 text: (dtext "Copy root form")
+                                                 path: [`editor `copy_root_form ]
+                                                 exec:  (fn ()
+                                                           (let
+                                                              ((cpos (current_position)))
+                                                              (select_form_root)
+                                                              (-> navigator.clipboard `writeText (-> editor `getCopyText))
+                                                              (sleep 0.02)
+                                                              (-> editor.selection `clearSelection)
+                                                              (-> editor `navigateTo cpos.row cpos.column)))
+                                                 }]
+                                              [])
+                                          ["--" nil]
+                                          [{
+                                             text: (dtext "Select current form")
+                                             path: [`editor `select_current_form ]
+                                             exec: select_current_form
+                                             }]
+                                          [{
+                                             text: (dtext "Evaluate selection")
+                                             path: [`editor `evaluate_selection ]
+                                             exec: (fn ()
+                                                      (evaluate_selection editor))
+                                             }]
+                                          ["--" nil]])
+                                    (== options.mode "css")
+                                    [[{
+                                        text: (dtext "Select rule")
+                                        path: [`editor `select_css_rule ]
+                                        exec: (fn ()
+                                                 (select_css_rule editor))
+                                        }]
+                                     [{
+                                        text: (dtext "Evaluate rule")
+                                        path: [`editor `evaluate_root_form ]
+                                        exec: (fn ()
+                                                 (evaluate_root_form))
+                                        }]
+                                     [{
+                                        text: (dtext "Copy rule")
+                                        path: [`editor `copy_css_rule ]
+                                        exec: (fn ()
+                                                 (let
+                                                    ((cpos (current_position)))
+                                                    (select_css_rule editor)
+                                                    (-> navigator.clipboard `writeText (-> editor `getCopyText))
+                                                    (sleep 0.02)
+                                                    (-> editor.selection `clearSelection)
+                                                    (-> editor `navigateTo cpos.row cpos.column)))
+                                        }]
+                                     ["--" nil]]
+                                    else
+                                    [])
+                                 (if (is_clipboard_allowed?)
+                                     [
+                                      [{
+                                         text: "Cut"
+                                         path: [`global `cut ]
+                                         exec: cut_selection }]
+                                      [{
+                                         text: "Copy"
+                                         path: [`global `copy ]
+                                         exec: copy_selection
+                                         }]
+                                      [ {
+                                          text: "Paste"
+                                          path: [`global `paste ]
+                                          exec: paste_selection }]]
+                                     []))))))))
             ;; main initialization routine
             (initialize_editor (fn ()
                                   (when (not initialized)
@@ -2981,7 +3104,6 @@
                                                  (set_prop options
                                                     `clone_with_editor_id
                                                     primary))))
-                                        
                                         
                                         ;; are we a cloned editor?
                                         
@@ -3049,6 +3171,7 @@
                                         ;; build the key bindings
                                         (build_key_bindings editor)
                                         
+                                        ;; set options and defaults
                                         (-> editor `setOptions {
                                                                  `showFoldWidgets: true
                                                                  `cursorStyle: "wide"
@@ -3056,7 +3179,7 @@
                                                                  `useSoftTabs: true
                                                                  `highlightActiveWord: true
                                                                  })
-                                        
+                                        ;; editor defaults...
                                         (when (resolve_path [ `editor `editor_defaults ] *env_config*)
                                               (for ((key val) (pairs (resolve_path [ `editor `editor_defaults ] *env_config*)))
                                                    (try 
@@ -3064,9 +3187,8 @@
                                                       (catch Error (e)
                                                          (log (+ "Error: " name ": bad initialization default value for editor in *env_config*:" key ": ") val)))))
                                         
-                                       
+                                        ;; ...and session defaults
                                         (when (resolve_path [ `editor `session_defaults ] *env_config*)
-                                           
                                            (for ((key val) (pairs (resolve_path [ `editor `session_defaults ] *env_config*)))
                                                 (try
                                                    (-> editor.session `setOption (to_mixed_case key) val)
@@ -3151,12 +3273,10 @@
                                               (catch Error (e)
                                                  (log "ERROR on undo manager:" e message))))
                                         
+                                        ;; is the buffer read only?
                                         (if options.read_only
                                            (set_read_only options.read_only))
                                       
-                                        
-                                       
-                                        
                                         ;; signal our mode change
                                         
                                         (dispatch_event { command: "editor_change"
@@ -3222,6 +3342,12 @@
                                         (attach_event_listener evaluator_span
                                            `click
                                            user_select_evaluator)
+                                        
+                                        (attach_event_listener title_span 
+                                           `click
+                                           (fn (e)
+                                              (rename_editor e)))
+                                        
                                         ;; setup the evaluator if it is ready
                                         (setTimeout (fn ()
                                                        (let
@@ -3251,8 +3377,8 @@
            
            (declare (function compute_name_for_control select_evaluator)
                     (global compute_name_for_control select_evaluator))
-           (if (not (is_symbol? `$ace_editor))
-               (throw TypeError "$ace_editor symbol not found, and is required for this editor."))
+           (if (not (is_symbol? `ace))
+               (throw TypeError "ace symbol not found, and is required for this editor."))
            
            (set_style [["height" (+ "calc(100% - " (+ (Math.max 12 control_bar.offsetHeight) (Math.max 40 context_bar.offsetHeight))  "px)") ]]
                       editor_div )
@@ -3287,7 +3413,8 @@
                                       (< (length (get_editors_for_path options.path)) 2)
                                       true)))
                 `on_hide: (fn ()
-                             (log "text_editor: " options.name ": on_hide is called."))
+                             (when (> __VERBOSITY__ 0)
+                                (log "text_editor: " options.name ": on_hide is called.")))
                 `set_display_control_bar: set_display_control_bar
                 `on_destroy: (fn ()
                                 (progn
@@ -3417,10 +3544,11 @@
                                   `(text_editor ,#options)
                                   (progn
                                      (if (is_symbol? `LZString)
-                                         (set_prop options
-                                            `content_compressed
-                                            (LZString.compressToBase64 (-> editor `getValue)))
-                                         
+                                         (progn
+                                            (delete_prop options `content)
+                                            (set_prop options
+                                               `content_compressed
+                                               (LZString.compressToBase64 (-> editor `getValue))))
                                          (set_prop options
                                             `content
                                             (-> editor `getValue)))
