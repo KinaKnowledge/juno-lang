@@ -1543,7 +1543,7 @@
 
 
 
-(defun open_symbol_definition (symbol namespace)
+(defun open_symbol_definition (symbol namespace initiating_control_id)
    (let 
       ((env (if (is_string? namespace)  ;; if given a namespace, get the symbol from the perspective of the namespace, otherwise just use the current
                 (-> Environment `get_namespace_handle namespace)
@@ -1564,41 +1564,45 @@
        (is_buffer? false)
        (src_files [ "base-io.lisp" "repl.lisp" "io.lisp" "core.lisp" "compiler.lisp" "reader.lisp" "environment.lisp" "build-tools.lisp" "core-ext.lisp" ])
        (ctl nil))
-      (declare (function edit_file new_buffer get_control_by_name)
-               (global edit_file new_buffer get_control_by_name))
-      (log "open_symbol_definition: symbol: " symbol namespace)
-      (cond 
-         (eq nil symbol_def)
-         (notify (+ "Unable to find the definition information for " symbol_def))
-         (eq nil symbol_def.source_name)
-         (notify (+ "No source file listed for " symbol_def))
-         (and (== (length comps) 1)
-              (contains? symbol_def.source_name src_files))
-          (= source_file (+ "src/" symbol_def.source_name))
-          (and (== (length comps) 1)
-               (is_array? symbol_def.source_name)
-               (is_symbol? (first symbol_def.source_name)))
-          (progn 
-             (= is_buffer? true)
-             (= source_file symbol_def.source_name))
-          (> comps.length 1)
-          (= source_file symbol_def.source_name))
-      
-      (log "open_symbol_definition: def: " source_file is_buffer?)
-      (cond
-         (and is_buffer?
-            source_file)
-         (progn
-            (new_buffer { `mode: `juno `type: `juno `path: (if (is_array? source_file) source_file [ source_file ]) })
-            (aif (get_control_by_name (last (split_by "/" source_file)))
-                                  (-> it `jump_to_local_definition symbol)))
-         source_file
-         (progn
-            (edit_file { `filename: source_file })
-            (aif (get_control_by_name (last (split_by "/" source_file)))
-                 (-> it `jump_to_local_definition symbol)))
-         else
-         (notify (+ (dtext "Cannot find source for symbol") ": " symbol))))
+      (declare (function edit_file new_buffer get_control_by_name activity_box)
+               (global edit_file new_buffer get_control_by_name activity_box))
+      (activity_box { `style:  "width: 200px; height: 50px;" } 
+            (set_content (+ (dtext "Locating symbol:") symbol))
+            (log "open_symbol_definition: symbol: " symbol namespace)
+            (cond
+               (eq nil symbol_def)
+               (notify (+ "Unable to find the definition information for " symbol))
+               (eq nil symbol_def.source_name)
+               (notify (+ "No source file listed for " symbol))
+               (and (== (length comps) 1)
+                    (contains? symbol_def.source_name src_files))
+               (= source_file (+ "src/" symbol_def.source_name))
+               (and (== (length comps) 1)
+                    (is_array? symbol_def.source_name)
+                    (is_symbol? (first symbol_def.source_name)))
+               (progn
+                  (= is_buffer? true)
+                  (= source_file symbol_def.source_name))
+               (> comps.length 1)
+               (= source_file symbol_def.source_name))
+            
+            (log "open_symbol_definition: def: " source_file is_buffer?)
+            (cond
+               (and is_buffer?
+                  source_file)
+               (progn
+                  (new_buffer { `mode: `juno `type: `juno `path: (if (is_array? source_file) source_file [ source_file ]) })
+                  (aif (get_control_by_name (last (split_by "/" source_file)))
+                       (when (not (== it.options.id initiating_control_id))
+                          (-> it `jump_to_local_definition symbol))))
+               source_file
+               (progn
+                  (edit_file { `filename: source_file })
+                  (aif (get_control_by_name (last (split_by "/" source_file)))
+                       (when (not (== it.options.id initiating_control_id))
+                          (-> it `jump_to_local_definition symbol))))
+               else
+               nil)))
    {
      description: (+ "Given a symbol and an optional namespace, displays an editor containing "
                       "the definition of the symbol.  If the editor is already opened, the editor will "
@@ -2751,17 +2755,21 @@
                                                         (update_position true))
                                                      (== def_locs.length 1)
                                                      (progn
+                                                        ;(= in_dispatch true)
                                                         (dispatch_event { command: "open_definition"
                                                                           source: options.id
-                                                                          args: [ symbol (-> evaluator_control `current_namespace) ] }))
+                                                                          args: [ symbol (-> evaluator_control `current_namespace) options.id ] }))
+                                                        ;(setTimeout (fn () (= in_dispatch false)) 1000)
+                                                        
                                                      (> def_locs.length 1)
                                                      (progn
                                                         (notify "Ambiguous: multiple positions found"))
                                                      (== def_locs.length 0)
                                                      (progn
+                                                        ;(= in_dispatch true)
                                                         (dispatch_event { command: "open_definition"
                                                                           source: options.id
-                                                                          args: [ symbol ] })
+                                                                          args: [ symbol (-> evaluator_control `current_namespace) options.id ] })
                                                         (notify (dtext "No local definition found")))))))))
             (jump_to_local_definition_command (fn (editor)
                                                  (let
@@ -3042,6 +3050,12 @@
                                      ["--" nil]]
                                     else
                                     [])
+                                 [[{
+                                     `text: (dtext "Select All")
+                                     `path: [ `global `select_all ]
+                                     `exec: (fn ()
+                                               (-> editor `selectAll))
+                                 }]]
                                  (if (is_clipboard_allowed?)
                                      [
                                       [{
@@ -3056,7 +3070,7 @@
                                       [ {
                                           text: "Paste"
                                           path: [`global `paste ]
-                                          exec: paste_selection }]]
+                                          exec: paste_selection }]] 
                                      []))))))))
             ;; main initialization routine
             (initialize_editor (fn ()

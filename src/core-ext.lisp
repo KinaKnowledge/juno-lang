@@ -1698,6 +1698,27 @@
        `tags: ["range" "interpolation" "fill"]
    })
  
+ (defun encode_to_base64 (array_buffer_data)
+   (new Promise 
+      (fn (resolve)
+         (let
+            ((reader (new FileReader))
+             (complete (fn ()
+                          (progn
+                             (resolve (second (split_by "," reader.result)))))))
+            (set_prop reader
+               `onload complete)
+            (-> reader `readAsDataURL (new Blob [ array_buffer_data ])))))
+   {
+     description: (+ "Given a value of type `ArrayBuffer` as input, returns a base64 encoded "
+                     "string, suitable for use in image URLs or serialized storage.<br>#### Example "
+                     "<br>```(defun file_to_img (file)\n   (img { src: (+ \"data:\" file.type \";base64,\" "
+                     "\n        (encode_to_base64 (read_file file { `read_as: \"binary\" }))) "
+                     "}))```<br>")
+     usage: ["array_buffer_data:ArrayBuffer"]
+     tags: [`encode `base64 `b64 `ArrayBuffer `array `convert `conversion]
+     })
+ 
  (defun unload_core_ext ()
    (let
       ((count 0)

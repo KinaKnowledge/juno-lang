@@ -854,6 +854,14 @@
     false))
 
 
+(defun select_all_for_control (e)
+   (cond
+      (and *last_focus*
+         *last_focus*.editor)
+      (-> *last_focus*.editor `selectAll)
+      else
+      nil))
+
 (defun copy_text_to_clipboard (text)
         (if text
            (let ((temp (textarea { `style: "position: absolute; top: -100px; left: -200px;"  } )))
@@ -3457,26 +3465,33 @@
       (attach_event_listener element `contextmenu
          (fn (e)
             (let
-               ((cmenu nil))
-               (handle_event e)
-               (= cmenu 
-                  (make_menu e.srcElement
-                             (cond
-                                (is_function? menu_gen)
-                                (menu_gen e)
-                                (is_array? menu_gen)
-                                menu_gen)
-                             {
-                               min_width: 300
-                               do_not_attach: true
-                               }))
-               (set_style [["top" (+ "" (Math.max 0 e.clientY) "px") ]
-                           ["left" (+ "" (Math.max e.clientX 0) "px") ]
-                           ["position" "absolute"]
-                           ["z-index" "30"]]
-                          cmenu)
-                (-> (get_by_id "body") `appendChild cmenu))))
-      element)
+               ((cmenu nil)
+                (dims nil))
+               (unless e.shiftKey
+                  (handle_event e)
+                  (= cmenu
+                     (make_menu e.srcElement
+                                (cond
+                                   (is_function? menu_gen)
+                                   (menu_gen e)
+                                   (is_array? menu_gen)
+                                   menu_gen)
+                                {
+                                  min_width: 300
+                                  do_not_attach: true
+                                  }))
+                  (set_style [["top" (+ "" (Math.max 0 e.clientY) "px") ]
+                              ["left" (+ "" (Math.max e.clientX 0) "px") ]
+                              ["position" "absolute"]
+                              ["z-index" "30"]]
+                             cmenu)
+                  (-> (get_by_id "body") `appendChild cmenu)
+                  (= dims (-> cmenu `getBoundingClientRect))
+                  (when (> dims.bottom window.innerHeight)
+                     (set_style [["top" (+ "" (- dims.top dims.height 10) "px") ]] cmenu))
+                  (when (> dims.right  window.innerWidth)
+                     (set_style [["left" (+ "" (- window.innerWidth dims.width 5) "px") ]] cmenu)))))
+         element))
    {
      description: (+ "Given a target DOM element and a menu generator function or a menu "
                      "array, attaches a `contextmenu` event listener to the target element.  The menu "
@@ -4229,7 +4244,7 @@
                   (console.error "ERROR: " e))))
          (when (not error)
             (when options.symbol
-               (log "Setting path for " assignment_to  (+ `for " " `source_name))
+               ;(log "Setting path for " assignment_to  (+ `for " " `source_name))
                (set_path [ `definitions assignment_to `source_name ] Environment file.name))
             (log (message (+ "Loaded JS to " assignment_to )))))
       else
@@ -4285,7 +4300,7 @@
                                       (input { `lpath: (+ file.name "~2") `value: "" }) 
                                       (cond
                                          (== file.type "text/javascript")
-                                         (action_selector (+ file.name "~3") 0 [ "Embed As Script Tag" "Only Assign To Global" "Open In Buffer" ])
+                                         (action_selector (+ file.name "~3") 0 [ "Embed As Script Tag" "Assign Source To Global" "Open In Buffer" ])
                                          (starts_with? "image/" file.type)
                                          (action_selector (+ file.name "~3") 0 [ "Display" "Only Assign To Global"])
                                          else
@@ -4312,49 +4327,103 @@
        (result nil)
        (load_op (fn ()
                    (when (> files.length 0)
-                      (log "load_op: files: " files)
                       (for_each (file files)
                          (progn
                             (= dispatch (prop file_to_symbol_mapping file.name))
-                            (log "load_op: dispatch: " dispatch)
                             (cond
                                (== file.type "text/javascript")
                                (cond 
                                   (== "Embed As Script Tag" dispatch.action)
                                   (progn
-                                     (log "load_op: calling embed_file: " file)
                                      (alert_on_error "Unable To Load File"
                                                      (embed_file file
                                                                  {
                                                                    `symbol: dispatch.symbol
                                                                    `type: (first (split_by "/" dispatch.type))
                                                                    })))
-                                  (== "Only Assign To Global" dispatch.action)
-                                  (set_global dispatch.symbol
-                                     (javascript (read_file file { `read_as: "text" })))
+                                  (== "Assign Source To Global" dispatch.action)
+                                  (alert_on_error "Unable to create symbol"
+                                      (if (not (blank? dispatch.symbol))
+                                         (progn
+                                            (eval `(defglobal ,#dispatch.symbol ,#(javascript (read_file file { `read_as: "text" }))
+                                                      {
+                                                        source_name: (+ "" ,#file.name)
+                                                        }))
+                                            (log "load_files: new symbol: " dispatch.symbol))
+                                        (notify (+ (dtext "No symbol name provided for the file:")
+                                                   " " 
+                                                   file.name))))
                                   else
-                                  (new_buffer { content: (read_file file { `read_as: "text" })
-                                                mode: "javascript"
-                                                `name: file.name  }))
+                                  (alert_on_error (dtext "Unable to open buffer")
+                                     (log "Opening buffer: " dispatch)
+                                     (when (not (blank? dispatch.symbol))
+                                        (set_global dispatch.symbol 
+                                           (read_file file { `read_as: "text" })
+                                                      {
+                                                        source_name: (+ "" file.name)
+                                                        }))
+                                     
+                                     (new_buffer { content: (if (blank? dispatch.symbol)
+                                                                (read_file file { `read_as: "text" })
+                                                                nil)
+                                                   mode: "javascript"
+                                                   path: (if (not (blank? dispatch.symbol))
+                                                             [ dispatch.symbol ]
+                                                             nil)
+                                                   `name: file.name  })))
                                (starts_with? "image/" file.type)
                                (cond
                                   (== "Display" dispatch.action)
-                                  (place_control `right
-                                                 (panel dispatch.name
-                                                        (img { src: (+ "data:" file.type ";base64," (btoa (apply String.fromCharCode (new Uint8Array (read_file file { `read_as: "binary" }))))) })))
+                                  (progn
+                                     (defvar file_data (encode_to_base64 (read_file file { `read_as: "binary" })))
+                                     (when (not (blank? dispatch.symbol))
+                                        (eval
+                                           `(defglobal ,#dispatch.symbol
+                                               ,#file_data
+                                               {
+                                                   description: (+ "Image of type " ,#file.type ", source: ",#file.name )
+                                               })))
+                                     (alert_on_error "Cannot load image"
+                                                     (place_control `right
+                                                                    (image_viewer (+ "data:" file.type ";base64," file_data)
+                                                                                  { name: dispatch.name `auto: true }))
+                                                                    ;(panel dispatch.name
+                                                                     ;      (img { src: (+ "data:" file.type ";base64," file_data) }))
+                                                                    ))
                                   (and (not (blank? dispatch.symbol))
                                        (== "Only Assign To Global" dispatch.action))
                                   (set_global dispatch.symbol
-                                     (read_file file { `read_as: "binary" })))
+                                     (read_file file { `read_as: "binary" }))
+                                  (== "Only Assign To Global" dispatch.action)
+                                  (notify (+ (dtext "No symbol name provided for the file:")
+                                             " "
+                                             file.name))
+                                  else
+                                  (notify "Bug: Image fall through condition - no action taken"))
                                else
                                (cond
                                   (== dispatch.action "Only Assign To Global")
-                                  (set_global dispatch.symbol
-                                     (read_file file { `read_as: "text" }))
+                                  (progn
+                                     (eval `(defglobal ,#dispatch.symbol ,#(read_file file { `read_as: "text" })
+                                                      {
+                                                        source_name: (+ "" ,#file.name)
+                                                        })))
                                   (== dispatch.action "Open In Buffer")
-                                  (new_buffer { `content: (read_file file { `read_as: "text" })
-                                                `mode: (last (split_by "/" dispatch.type))
-                                                `name: file.name  }))))))))
+                                  (alert_on_error "Unable to open buffer"
+                                     (when (not (blank? dispatch.symbol))
+                                        (eval `(defglobal ,#dispatch.symbol ,#(read_file file { `read_as: "text" })
+                                                      {
+                                                        source_name: (+ "" ,#file.name)
+                                                        })))
+                                           
+                                     (new_buffer { `content: (if (blank? dispatch.symbol)
+                                                                 (read_file file { `read_as: "text" })
+                                                                 nil)
+                                                   `mode: (last (split_by "/" dispatch.type))
+                                                   `path: (if (not (blank? dispatch.symbol))
+                                                              [ dispatch.symbol ]
+                                                              nil)
+                                                   `name: file.name  })))))))))
        (handle_event (fn (e)
                         (let
                            ((src e.srcElement))
@@ -4371,7 +4440,6 @@
                                   (== e.key "Enter"))
                               (progn
                                  (= file_to_symbol_mapping (harvest_values))
-                                 (log "handle_event: file_to_symbol_mapping: " file_to_symbol_mapping)
                                  (-> frame `close)
                                  (load_op)
                                  (resolver file_to_symbol_mapping))))))
@@ -4391,8 +4459,8 @@
                                }))
                      (hr { `class: "LightHR" })
                      (div cancel_button import_button ))))
-      (declare (function new_buffer panel floating_div)
-               (global new_buffer panel floating_div))
+      (declare (function new_buffer image_viewer floating_div)
+               (global new_buffer image_viewer floating_div))
       (when (> files.length 0)
          (= result
             (new Promise
@@ -4424,7 +4492,18 @@
                         `click
                         handle_event)
                      (focus_to (first (-> view `querySelectorAll "input"))))))))
-      result))
+      result)
+   {
+     description: (+ "<br>The `load_files` function receives a FileList object and displays a user "
+                     "interface element to the user to facilitate how the files are to be processed "
+                     "in the browser system.  File actions can be specified for each file in the "
+                     "list, such as embedding in a header element, opening the file in a buffer, or "
+                     "creating a symbol reference to the contents.  There is no return value that is "
+                     "meaningful as this function performs the dispatch of each file as specified in "
+                     "the presented user interface elements.<br> ")
+     usage: ["files:FileList" ]
+     tags: ["files" "import" "embedded" "load" "embed" "browser"]
+     })
 
 
 
@@ -5836,6 +5915,16 @@
                             (set_prop title_span
                                `innerText
                                title_text)))
+              (set_name (fn (new_name)
+                           (when (and (is_string? new_name)
+                                      (not (blank? new_name))
+                                      (not (== new_name name)))
+                              ;(log "setting_name: " name "->" new_name (is_control? (get_control_by_name new_name)))
+                              (= name (compute_name_for_control new_name))
+                              (set_prop options
+                                 `name
+                                 name)
+                              (set_title name))))
               (command_button (commands_button id))
               (_parent_view nil)
               (check_observer (fn ()
@@ -5930,6 +6019,8 @@
                                          `(on_initialize self)
                                          true)
                                    (do_render))))))
+             (declare (function compute_name_for_control)
+                      (global compute_name_for_control))
              (set_prop options
                 `id id
                 `name name)
@@ -5968,7 +6059,7 @@
              self)
           ,#meta))
    {
-     `description: (+ "<br><br>The macro defcontrol creates a function in the current namespace that "
+     `description: (+ "The macro defcontrol creates a function in the current namespace that "
                       "implements the specified control features passed to the macro.  The macro "
                       "handles most of the boiler plate for a basic control, combining the passed "
                       "allocations and options to produce a standardized control constructor.  The "
@@ -5998,7 +6089,18 @@
                       " User code can call this function when a redraw is "
                       "required.<br>initialized:boolean -This value is true if the function is "
                       "initialized or false if it hasn\'t yet been.<br>options:object -The options "
-                      "object passed to the control on instantiation.<br>There are multiple functions "
+                      "object passed to the control on instantiation.<br>set_name:string -Given a "
+                      "string, sets the controls title and name, which can be used to reference the "
+                      "specific instance of the control.   This function will handle name collisions "
+                      "by appending a numeric value to the end of the string if a control with the "
+                      "same name already exists.<br>set_title:string - Given a string, sets the title "
+                      "bar only but doesn\'t rename the actual control.  Note that if using this "
+                      "function to set the displayed text on the title bar, as opposed to set_name, "
+                      "the other displayed references to the control in the application will still be "
+                      "the controls `name` value, not the title, and so this can lead to confusion if "
+                      "the title doesn\'t match the name.  The preferred option is to use set_name to "
+                      "keep alignment between the name displayed on the title bar and the name "
+                      "displayed in other areas of the application.<br>There are multiple functions "
                       "that are called upon certain events, which allow the caller to build customized "
                       "behavior and hook into the system when needed.  These functions are specified "
                       "in the allocation forms provided to the macro and are all optional except for "
@@ -6035,11 +6137,114 @@
                       "the top of the control, set this to true.<br>frame_style:string -Any custom "
                       "style attributes to apply to the control frame.  These should be formatted in "
                       "the CSS manner: eg.  \"overflow: hidden;\" ")
-
        `usage: ["name:symbol" "control_arguments:array" "allocations:array" "control_options:object"]
        `tags: ["control" "define" "controls" "ui"]
    })
 
+(defcontrol image_viewer (url)
+   ((current_zoom 1)
+    (img_dims {
+             image_width: image_elem.width
+             image_height: image_elem.height
+             scale: 1
+             })
+    ;(zoom_elem (input { type: `range min: 10 max: 400 value: (* 100 current_zoom) }))
+    (zoom_elem (input { `style: "width: 40px; text-align: center;" type: `number min: 10 max: 400 value: (* 100 current_zoom) } ))
+    (set_auto_scale (fn (force?)
+                       (progn
+                          (cond 
+                             (or force?
+                                (not (has_class? `juno-button-on auto_button)))
+                             (progn
+                                (add_class "juno-button-on" auto_button)
+                                (set_zoom 0))
+                             (has_class? `juno-button-on auto_button)
+                             (remove_class "juno-button-on" auto_button)))))
+    (auto_button (button { style: "margin-left: 10px;" onclick: (fn (e) (set_auto_scale)) }  (dtext "Auto")))
+    (zoom_controls (div { `style: "display: inline-block; float: right; " }
+                        zoom_elem "%"
+                        auto_button))
+                   
+    (image_elem (img { src: url alt: options.alt } ))
+    (container (div { `style: "overflow: auto; height: calc(100% - 30px); width: calc(100% - 0px);" } 
+                    image_elem))
+    (on_resize (fn ()
+                  (if (has_class? "juno-button-on" auto_button)
+                      (set_zoom 0))))
+    (set_zoom (fn (zoom_coef update?)
+                 (progn
+                    (cond 
+                       (== zoom_coef 0)
+                       (progn
+                          ;(log "auto click: " (/ content_view.offsetWidth img_dims.image_width))
+                          (set_prop img_dims
+                             `scale
+                             (/ content_view.offsetWidth img_dims.image_width))
+                          (= update? true))
+                       else
+                       (progn
+                          (remove_class "juno-button-on" auto_button)
+                          (set_prop img_dims
+                             `scale
+                             (clamp zoom_coef 0.1 4))))
+                    
+                    (set_style [["width" (+ "" (* img_dims.image_width img_dims.scale) "px")]
+                                ["height" "auto"]] image_elem)
+                    ;(log "image: width: " (* img_dims.image_width img_dims.scale) img_dims.scale zoom_coef img_dims image_elem.width image_elem.height content_view.offsetWidth) 
+                    (when update?
+                       (set_prop zoom_elem
+                          `value (parseInt (* img_dims.scale 100)))))))
+    (to_json (function ()
+                `(image_viewer ,#url 
+                             ,#(+  options 
+                                {
+                                  `auto: (has_class? "juno-button-on" auto_button)
+                                  `scale: img_dims.scale
+                                  }))))
+    (menu_items (fn ()
+                   [["Reset Scale" (fn (e)
+                                      (set_zoom 1 true))]
+                    ["Auto Scale" (fn (e)
+                                     (set_auto_scale true))]]))
+    (render (fn ()
+               container))
+    (control_bar_elements [ zoom_controls ])
+    (get_url (function ()
+                url))
+    (on_initialize (fn (self)
+                      (progn
+                         (set_prop img_dims
+                            `image_width image_elem.width
+                            `image_height image_elem.height)
+                         (when (is_string? options.name)
+                            (set_name options.name))
+                         (attach_event_listener zoom_elem
+                            `change
+                            (fn (e)
+                               (progn
+                                  (set_zoom (/ (parseInt e.srcElement.value) 100) false))))
+                         (when options.scale
+                            (set_zoom options.scale))
+                         (when options.auto
+                            (set_auto_scale true))))))
+   {
+     description: (+ "The `image_viewer` control takes a url for an image plus an optional "
+                     "`options` object, and creates a control that can display an image in the "
+                     "panel.  The URL can be either a local or remote location, or a base64 encoded "
+                     "data URL.<br><br>#### Options <br><br>name:string - The name of the control "
+                     "(default is `Image Viewer`) that is displayed on the title bar, and which the "
+                     "control can be referenced by.<br>auto:boolean - If true, the auto button is "
+                     "turned on, and the image will scale to the dimensions of the panel it is "
+                     "displayed.  The default is false.<br>scale:number - Given a scale value "
+                     "(clamped between 0.1 and 4) displays the image scaled to the provided value.  "
+                     "For example, a value of 0.1 will scale the image to 10% the original size, and "
+                     "a value of 4 will display the image at 4 times the original size.  A value of 1 "
+                     "will display the image with no scaling, the intrinsic image size.<br> ")
+     tags: [ `image `img `display `ui `control `controls `picture ]
+     control_bar: true
+     expose: [ set_zoom get_url set_auto]
+     usage: ["url:string" "options:object"]
+   })
 
 (defun go_to_line_number (control)
    (when (and (is_control? control)
@@ -6233,9 +6438,6 @@
 
 
 
-
-
-
 (defun get_primary_editor_in_group (controls)
    (let
       ((primaries (reduce (editor (or controls []))
@@ -6272,6 +6474,7 @@
      `tags: ["groups" "control" "select" "editor"]
      })
    
+
 
 (defun rename_editor_group (path)
    (try 
@@ -6594,7 +6797,7 @@
             (= text (-> editor `getCopyText))
             (evaluate_css_rule_text text)))))
 
-(defun open_symbol_definition (symbol namespace)
+(defun open_symbol_definition (symbol namespace initiating_control_id)
    (let 
       ((env (if (is_string? namespace)  ;; if given a namespace, get the symbol from the perspective of the namespace, otherwise just use the current
                 (-> Environment `get_namespace_handle namespace)
@@ -6615,41 +6818,45 @@
        (is_buffer? false)
        (src_files [ "base-io.lisp" "repl.lisp" "io.lisp" "core.lisp" "compiler.lisp" "reader.lisp" "environment.lisp" "build-tools.lisp" "core-ext.lisp" ])
        (ctl nil))
-      (declare (function edit_file new_buffer get_control_by_name)
-               (global edit_file new_buffer get_control_by_name))
-      (log "open_symbol_definition: symbol: " symbol namespace)
-      (cond 
-         (eq nil symbol_def)
-         (notify (+ "Unable to find the definition information for " symbol_def))
-         (eq nil symbol_def.source_name)
-         (notify (+ "No source file listed for " symbol_def))
-         (and (== (length comps) 1)
-              (contains? symbol_def.source_name src_files))
-          (= source_file (+ "src/" symbol_def.source_name))
-          (and (== (length comps) 1)
-               (is_array? symbol_def.source_name)
-               (is_symbol? (first symbol_def.source_name)))
-          (progn 
-             (= is_buffer? true)
-             (= source_file symbol_def.source_name))
-          (> comps.length 1)
-          (= source_file symbol_def.source_name))
-      
-      (log "open_symbol_definition: def: " source_file is_buffer?)
-      (cond
-         (and is_buffer?
-            source_file)
-         (progn
-            (new_buffer { `mode: `juno `type: `juno `path: (if (is_array? source_file) source_file [ source_file ]) })
-            (aif (get_control_by_name (last (split_by "/" source_file)))
-                                  (-> it `jump_to_local_definition symbol)))
-         source_file
-         (progn
-            (edit_file { `filename: source_file })
-            (aif (get_control_by_name (last (split_by "/" source_file)))
-                 (-> it `jump_to_local_definition symbol)))
-         else
-         (notify (+ (dtext "Cannot find source for symbol") ": " symbol))))
+      (declare (function edit_file new_buffer get_control_by_name activity_box)
+               (global edit_file new_buffer get_control_by_name activity_box))
+      (activity_box { `style:  "width: 200px; height: 50px;" } 
+            (set_content (+ (dtext "Locating symbol:") symbol))
+            (log "open_symbol_definition: symbol: " symbol namespace)
+            (cond
+               (eq nil symbol_def)
+               (notify (+ "Unable to find the definition information for " symbol))
+               (eq nil symbol_def.source_name)
+               (notify (+ "No source file listed for " symbol))
+               (and (== (length comps) 1)
+                    (contains? symbol_def.source_name src_files))
+               (= source_file (+ "src/" symbol_def.source_name))
+               (and (== (length comps) 1)
+                    (is_array? symbol_def.source_name)
+                    (is_symbol? (first symbol_def.source_name)))
+               (progn
+                  (= is_buffer? true)
+                  (= source_file symbol_def.source_name))
+               (> comps.length 1)
+               (= source_file symbol_def.source_name))
+            
+            (log "open_symbol_definition: def: " source_file is_buffer?)
+            (cond
+               (and is_buffer?
+                  source_file)
+               (progn
+                  (new_buffer { `mode: `juno `type: `juno `path: (if (is_array? source_file) source_file [ source_file ]) })
+                  (aif (get_control_by_name (last (split_by "/" source_file)))
+                       (when (not (== it.options.id initiating_control_id))
+                          (-> it `jump_to_local_definition symbol))))
+               source_file
+               (progn
+                  (edit_file { `filename: source_file })
+                  (aif (get_control_by_name (last (split_by "/" source_file)))
+                       (when (not (== it.options.id initiating_control_id))
+                          (-> it `jump_to_local_definition symbol))))
+               else
+               nil)))
    {
      description: (+ "Given a symbol and an optional namespace, displays an editor containing "
                       "the definition of the symbol.  If the editor is already opened, the editor will "
@@ -7544,17 +7751,21 @@
                                                         (update_position true))
                                                      (== def_locs.length 1)
                                                      (progn
+                                                        ;(= in_dispatch true)
                                                         (dispatch_event { command: "open_definition"
                                                                           source: options.id
-                                                                          args: [ symbol (-> evaluator_control `current_namespace) ] }))
+                                                                          args: [ symbol (-> evaluator_control `current_namespace) options.id ] }))
+                                                        ;(setTimeout (fn () (= in_dispatch false)) 1000)
+                                                        
                                                      (> def_locs.length 1)
                                                      (progn
                                                         (notify "Ambiguous: multiple positions found"))
                                                      (== def_locs.length 0)
                                                      (progn
+                                                        ;(= in_dispatch true)
                                                         (dispatch_event { command: "open_definition"
                                                                           source: options.id
-                                                                          args: [ symbol ] })
+                                                                          args: [ symbol (-> evaluator_control `current_namespace) options.id ] })
                                                         (notify (dtext "No local definition found")))))))))
             (jump_to_local_definition_command (fn (editor)
                                                  (let
@@ -7835,6 +8046,12 @@
                                      ["--" nil]]
                                     else
                                     [])
+                                 [[{
+                                     `text: (dtext "Select All")
+                                     `path: [ `global `select_all ]
+                                     `exec: (fn ()
+                                               (-> editor `selectAll))
+                                 }]]
                                  (if (is_clipboard_allowed?)
                                      [
                                       [{
@@ -7849,7 +8066,7 @@
                                       [ {
                                           text: "Paste"
                                           path: [`global `paste ]
-                                          exec: paste_selection }]]
+                                          exec: paste_selection }]] 
                                      []))))))))
             ;; main initialization routine
             (initialize_editor (fn ()
@@ -9670,7 +9887,7 @@
      `tags: ["repl" "system" "log" "messages" "errors" "display"]
      `usage: ["repl_control:object"]
    })
-(defglobal *repl_counter* 0)
+(defparameter *repl_counter* 0)
 
 (defun visual_repl (options)
   (let
@@ -16301,6 +16518,13 @@
                                         description: "Clears the system repl output pane."
                                         exec: (fn () (clear_log))
                                         }
+                  "select_all" {
+                      win: "Ctrl-A"
+                      mac: "Command-A"
+                      description: "Select all contents of the current editor"
+                      exec: (fn ()
+                               (select_all_for_control))
+                  }
                   "copy" {
                             win: "Ctrl-C"
                             mac: "Command-C"
