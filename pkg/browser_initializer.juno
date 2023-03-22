@@ -126,6 +126,36 @@
 (defun is_clipboard_allowed? ()
       (== "granted" (prop (-> navigator.permissions `query { name: "clipboard-write" }) `state)))
 
+(defun attempt_undo ()
+   (cond
+     (is_function?  (prop *last_focus* `undo))
+      (-> *last_focus* `undo)
+      else
+      (doc_exec `undo ))
+   {
+     description: (+ "This function attempts to undo the last activity by first attempting to "
+                     "call the control\'s undo command, if it has one.  If it doesn\'t, it will call "
+                     "`(doc_exec `undo)`.  No return value is provided. ")
+     usage: [ ]
+     tags: ["undo" "control" "controls" "ui"]
+   })
+
+(defun attempt_redo ()
+   (cond
+      (is_function?  (prop *last_focus* `redo))
+      (-> *last_focus* `redo)
+      else
+      (doc_exec `redo ))
+   {
+     description: (+ "This function attempts to redo the last activity by first attempting to "
+                     "call the control\'s redo command, if it has one.  If it doesn\'t, it will call "
+                     "`(doc_exec `redo)`.  No return value is provided. ")
+     usage: [ ]
+     tags: ["undo" "control" "controls" "ui"]
+   })
+
+
+
 (defun handle_clipboard_event (command)
    (progn
       (declare (object *last_focus*)
@@ -8650,6 +8680,12 @@
                                                  (jump_to_local_definition symbol)))
                 `name: options.name
                 `set_name: set_name
+                `undo: (fn ()
+                          (when editor
+                             (-> editor `undo)))
+                `redo: (fn ()
+                          (when editor
+                             (-> editor `redo)))
                 `get_linked: (fn ()
                                 options.clone_with_editor_id)
                 `set_linked: (fn (id)
@@ -9445,6 +9481,8 @@
                           (= content_height (Math.max window.innerHeight (sum (each output_container.children `offsetHeight))))
                           (scroll_to_bottom))
                        (= hide_state false)
+                       (when options.on_focus
+                          (-> options `on_focus self))
                        (add_class "juno-focused" control_status))
                     (catch Error (e) 
                        (notify (+ "ERROR: " e.message)))))) ;; we know that is the command bar
@@ -10149,17 +10187,21 @@
                                              (remove_class "juno-button-on" show_prototype_details_button)))))
        (output_control (progn
                           (log_view { `display_options: (or options.display_options { `show_timestamps: false } )
-                                                         `hide_command_button: true
-                                                         `additional_elements: [ control_button 
-                                                                                 title_span 
-                                                                                 show_prototype_details_button 
-                                                                                 namespace_span 
-                                                                                 path_span
-                                                                                 display_mode_span 
-                                                                                 (if options.remote_repl ws_id_span [])
-                                                                                 location_span
-                                                                                 (if options.remote_repl reopen_button [])] 
-                                                         `id: id })))
+                                      `on_focus: (fn (e)
+                                                    (progn
+                                                       (console.log "output_control: on_focus, calling our focus")
+                                                       (on_focus true))) ;; suppress the focus loop but redirect the focus to this control
+                                      `hide_command_button: true
+                                      `additional_elements: [ control_button 
+                                                             title_span 
+                                                             show_prototype_details_button 
+                                                             namespace_span 
+                                                             path_span
+                                                             display_mode_span 
+                                                             (if options.remote_repl ws_id_span [])
+                                                             location_span
+                                                             (if options.remote_repl reopen_button [])] 
+                                      `id: id })))
        (history (if (is_array? options.history)
                   options.history
                   []))
@@ -10629,9 +10671,11 @@
        
        (view sview.view)
        (non_whitespace_regex (new RegExp "\\\\s"))
-       (on_focus (fn ()
+       (on_focus (fn (suppress_output_focus_call)
                    (progn
-                      (-> output_control `on_focus)
+                      (console.log "visual_repl: on_focus: " suppress_output_focus_call)
+                      (unless suppress_output_focus_call
+                         (-> output_control `on_focus))
                     ;(-> input_container.editor `focus) ;; bring focus to the repl
                     (add_class "juno-focused" output_control.control_bar )
                     (set_prop intf
@@ -10858,8 +10902,8 @@
               `type
               "REPL_split")
     ;(set_prop output_control
-    ;   `on_focus
-     ;  nil)
+     ;  `on_focus
+      ; nil)
     (set_prop options
               `id
               id)
@@ -10909,7 +10953,7 @@
                                            `history
                                            [(quote quotel) history])
                                 `(visual_repl ,#(or options { `ratio: sview.options.ratio } ))))
-             `controls: (fn () [ input_container output_control])
+             ;`controls: (fn () [ input_container output_control])
              `output_container: output_control.view
              `log: (fn (val)
                      (-> output_control `log_message val))
@@ -15089,6 +15133,10 @@
                   (get_control_by_id control_id)))
        (clayout (get_current_layout_control))
        (parents (each (parents_for_control control) `name)))
+      (aif (get_by_id "page-header")
+         (for (menu_item (-> it `querySelectorAll ".juno-menu-selected"))
+              (when (is_element? menu_item)
+                 (remove_class "juno-menu-selected" menu_item))))
     (cond
       (and (has_class? "juno-command-button" elem)
            (== elem_type "BUTTON")           
@@ -16764,6 +16812,23 @@
                                              (set_global_theme theme_name))])]
        [])]);
 
+
+(defun gen_edit_menu ()
+   [[{ text: (dtext "Undo")
+      path: [ `global `undo ] }]
+    [{ text: (dtext "Redo")
+      path: [ `global `redo ] }]
+    ["--" nil]
+    [{ text: (dtext "Cut")
+      path: [ `global `cut ] }]
+    [{ text: (dtext "Copy")
+      path: [ `global `copy ] }]
+    [{ text: (dtext "Paste")
+       path: [ `global `paste ] }]
+    ["--" nil ]
+    [{ text: (dtext "Select All")
+      path: [ `global `select_all ] }]])
+
 (defun gen_layout_menu ()
    (let
       ((current_layout (get_current_layout_control))
@@ -17095,12 +17160,17 @@
            (console.error "error on constructing scratch editor: " e)))
 
        (push *main_menu*   ;; using a wrapper function allows us to change the menu more dynamically
-             [ "File" (fn ()
-                         (gen_file_menu))])
-                         
+             [ (dtext "File") 
+              (fn ()
+                 (gen_file_menu))])
+       
+       (push *main_menu*   ;; using a wrapper function allows us to change the menu more dynamically
+             [ (dtext "Edit") 
+              (fn ()
+                 (gen_edit_menu))])
        
        (push *main_menu*            
-             ["Controls" (fn ()
+             ["View" (fn ()
                         (gen_controls_menu))])
        (push *main_menu*
              ["Layout"
@@ -17278,6 +17348,18 @@
                             mac: "Command-V"
                             description: "Copy the current selection and remove from document"
                             exec: (fn (e) (handle_clipboard_event `paste e))
+                            }
+                  "undo" {
+                            win: "Ctrl-Z"
+                            mac: "Command-Z"
+                            description: "Attempt to undo the last operation"
+                            exec: (fn (e) (attempt_undo))
+                            }
+                  "redo" {
+                            win: "Ctrl-Shift-Z"
+                            mac: "Command-Shift-Z"
+                            description: "Attempt to redo the last operation"
+                            exec: (fn (e) (attempt_redo))
                             }
                   "jump_to_control" {
                       win: "Alt-J"

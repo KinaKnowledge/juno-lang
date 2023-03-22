@@ -3614,6 +3614,12 @@
                                                  (jump_to_local_definition symbol)))
                 `name: options.name
                 `set_name: set_name
+                `undo: (fn ()
+                          (when editor
+                             (-> editor `undo)))
+                `redo: (fn ()
+                          (when editor
+                             (-> editor `redo)))
                 `get_linked: (fn ()
                                 options.clone_with_editor_id)
                 `set_linked: (fn (id)
