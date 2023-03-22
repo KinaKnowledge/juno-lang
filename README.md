@@ -1,10 +1,12 @@
 Juno 
 ====
 
-Juno is a self-hosted Lisp dialect that compiles to Javascript.  It combines fast execution and ease of use with features such as a macro facility modeled on Common Lisp and the ability to save and restore the running image.  Juno provides a Lisp computing environment for Javascript platforms: the browser, Deno or Node (ala V8), or similar, without requiring any dependencies except the Javascript container itself.
+Juno is a self-hosted Lisp dialect that compiles to Javascript.  It combines fast execution and ease of use with features such as a macro facility modeled on Common Lisp and the ability to save and restore the running image.  Juno provides a Lisp computing environment for Javascript platforms: the browser, Deno or Node (ala V8), or similar, without requiring any dependencies except the Javascript container itself. 
+
+The language has a browser-based IDE called Seedling that brings the ability to save the running state (the Lisp "image") locally or remotely, build applications within it, bundle and export those applications as standalone HTML documents, and interact with the local environment and remote Juno environments.  It is recommended to use the IDE to get familiar with the language, and what it can do.  The IDE itself is written in Juno, and similar to Emacs, provides a fully hackable environment, described in itself, that you can shape to your own needs.
 
 ### Links
-[Online Demo Environment](environments/welcome.html) | [Latest Release](releases) | [Documentation/API](doc)
+[Online Example Environment](environments/welcome.html) | [Latest Release](releases) | [Documentation/API](doc)
 
 ### Quick Start Instructions
 

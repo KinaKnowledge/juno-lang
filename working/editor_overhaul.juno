@@ -17,7 +17,11 @@
                                                 { discard_nil_values: true })
                                             (if options.append
                                                 { append: true }
-                                                {}))))))
+                                                {}))))
+         (== ctl.type "DOM_editor")
+         (progn
+            (eval_selected_text_in_place ctl options))
+         ))
    {
        `description: (+ "Using the control in `*last_focus*`, calls the eval_selected_text_in_place function "
                         "with the provided options.  The result of the evaluation will be placed into "
@@ -1152,109 +1156,177 @@
        `tags: ["ace" "editor" "autocomplete" ]
    })        
             
- (edit_description_text_v1)                      
+              
 
-(defun eval_selected_text_in_place (ctl options)
-   (progc
-      (let
-         ((text nil)
-          (pos nil)
-          (editor (cond
-                      (== ctl.type "text_editor")
-                      ctl.editor
-                      else
-                      (throw TypeError "eval_selected_text_in_place: no text editor for provided control")))
-          (selection nil)  ;; range to replace with results
-          (evaluator nil)
-          (result nil))
-         (= pos (-> ctl `get_selection))
-         (if (and (== pos.start.row pos.end.row)
-                  (== pos.start.column pos.end.column))
-             (select_to_current_form ctl.editor))
-         ;; we should have an actual selection now if we didn't...
-         (= selection (-> ctl `get_selection))
-         (= text (-> ctl `get_selected_text))
-         (if (blank? text)
-             (progn 
-                (-> ctl `display_context_message (dtext "Nothing to evaluate at the cursor position")))
-             (progn
-                (= evaluator
-                   (cond
-                      (is_function? ctl.get_evaluator)
-                      (-> ctl `get_evaluator)
-                      options.evaluator_id
-                      (progn
-                         (aif (prop (get_control_by_id options.evaluator_id)
-                                    `evaluate)
-                              it
-                              nil))))
-                (if (is_function? evaluator)
+ (defun eval_selected_text_in_place (ctl options)
+    (progn
+       (cond
+          (== ctl.type "text_editor")
+          (progc
+             (let
+                ((text nil)
+                 (pos nil)
+                 (editor (cond
+                            (== ctl.type "text_editor")
+                            ctl.editor
+                            else
+                            (throw TypeError "eval_selected_text_in_place: no text editor for provided control")))
+                 (selection nil)  ;; range to replace with results
+                 (evaluator nil)
+                 (result nil))
+                (= pos (-> ctl `get_selection))
+                (if (and (== pos.start.row pos.end.row)
+                         (== pos.start.column pos.end.column))
+                    (select_to_current_form ctl.editor))
+                ;; we should have an actual selection now if we didn't...
+                (= selection (-> ctl `get_selection))
+                (= text (-> ctl `get_selected_text))
+                (if (blank? text)
                     (progn
-                       (alert_on_error (dtext "Evaluation Error")
-                                       (= result (evaluator text false true true)))
-                       (if (and (eq nil result)
-                                (or options.discard_nil_values
-                                    (== "discard" (request_user_choice 
-                                                     (+ (dtext "The evaluation result is")
-                                                        " "
-                                                        (as_lisp result)
-                                                        ".  "
-                                                        (dtext "Insert or discard the result?"))
-                                                     [[(dtext "Insert") "ok"] 
-                                                      [(dtext "Discard") "discard"]]
-                                                     {
-                                                       `no_cancel_button: true
-                                                       }))))
-                           nil
+                       (-> ctl `display_context_message (dtext "Nothing to evaluate at the cursor position")))
+                    (progn
+                       (= evaluator
+                          (cond
+                             (is_function? ctl.get_evaluator)
+                             (-> ctl `get_evaluator)
+                             options.evaluator_id
+                             (progn
+                                (aif (prop (get_control_by_id options.evaluator_id)
+                                           `evaluate)
+                                     it
+                                     nil))))
+                       (if (is_function? evaluator)
                            (progn
-                              (= result
-                                 (cond
-                                    (is_object? result)
-                                    (if options.as_json
-                                       (JSON.stringify result nil 2)
-                                       (+ "" (pretty_print (as_lisp result))))
-                                    (is_string? result)
-                                    result
-                                    else
-                                    (+ "" (pretty_print (as_lisp result)))))
-                              (try
+                              (alert_on_error (dtext "Evaluation Error")
+                                              (= result (evaluator text false true true)))
+                              (if (and (eq nil result)
+                                       (or options.discard_nil_values
+                                          (== "discard" (request_user_choice
+                                                           (+ (dtext "The evaluation result is")
+                                                              " "
+                                                              (as_lisp result)
+                                                              ".  "
+                                                              (dtext "Insert or discard the result?"))
+                                                           [[(dtext "Insert") "ok"]
+                                                            [(dtext "Discard") "discard"]]
+                                                           {
+                                                             `no_cancel_button: true
+                                                             }))))
+                                  nil
+                                  (progn
+                                     (= result
+                                        (cond
+                                           (is_object? result)
+                                           (if options.as_json
+                                              (JSON.stringify result nil 2)
+                                              (+ "" (pretty_print (as_lisp result))))
+                                           (is_string? result)
+                                           result
+                                           else
+                                           (+ "" (pretty_print (as_lisp result)))))
+                                     (try
+                                        (progn
+                                           (if options.append
+                                              (progn
+                                                 (-> editor.selection `clearSelection)
+                                                 (-> editor `navigateTo pos.end.row pos.end.column)
+                                                 (set_prop pos.start
+                                                    `row pos.end.row
+                                                    `column pos.end.column)
+                                                 (-> (-> editor `getSession) `replace pos result))
+                                              (-> (-> editor `getSession) `replace selection result)))
+                                        (catch Error (e)
+                                           (progn
+                                              (-> (-> editor `getSession) `replace selection text)
+                                              (-> ctl `display_context_message (+ "Error on replace: " e.message))
+                                              (log (+ (dtext "Couldn't replace text in editor") ":" (prop ctl.options `name) ": " e.message))
+                                              (log e)))))))
+                           (alert_box (dtext "Evaluation Error")
+                                      (+ (dtext "No evaluator found for the control")
+                                         " "
+                                         ctl.options.name)))))))
+          (== ctl.type "DOM_editor")
+          (progc
+             (console.log "eval_selected_text_in_place: DOM_editor" ctl options)
+             (let
+                ((selected (get_selection))
+                 (id (gen_id "placeholder"))
+                 (evaluator nil)
+                 (elem nil)
+                 (insert_result (fn (result)
+                                   (cond
+                                      (is_element? result)
+                                      (insert_elem result)
+                                      (or (is_control? result)
+                                          (and (is_object? result)
+                                               result.view))
+                                      (insert_elem result.view)
+                                      (is_array? result)
+                                      (for (val result)
+                                         (insert_result val))
+                                      (is_object? result)
+                                      (if options.as_json
+                                         (insert_elem_at_point (pre
+                                                                    (JSON.stringify result nil 2)))
+                                         (insert_elem_at_point (pre
+                                                                    (+ "" (pretty_print (as_lisp result))))))
+                                      (is_string? result)
+                                      (doc_exec `insertHTML result)
+                                      else
+                                      (insert_elem_at_point (pre (+ "" (pretty_print (as_lisp result))))))))
+                                
+                 (insert_elem (fn (result)
                                  (progn
-                                    (if options.append
-                                       (progn
-                                          (-> editor.selection `clearSelection)
-                                          (-> editor `navigateTo pos.end.row pos.end.column)
-                                          (set_prop pos.start
-                                             `row pos.end.row
-                                             `column pos.end.column)
-                                          (-> (-> editor `getSession) `replace pos result))
-                                       (-> (-> editor `getSession) `replace selection result)))
-                                 (catch Error (e)
-                                    (progn
-                                       (-> (-> editor `getSession) `replace selection text)
-                                       (-> ctl `display_context_message (+ "Error on replace: " e.message))
-                                       (log (+ (dtext "Couldn't replace text in editor") ":" (prop ctl.options `name) ": " e.message))
-                                       (log e)))))))
-                    (alert_box (dtext "Evaluation Error")
-                               (+ (dtext "No evaluator found for the control")
-                                  " "
-                                  ctl.options.name)))))))
-   {
-     description: (+ "Given a control with an editor, the selected text is evaluated " 
-                     "using the editors evaluator.  The evaluated selection is replaced with the result."  
-                     "<br>#### Options<br>"
-                     "append:boolean - If true, the selected value isn't replaced but the result of the "
-                     "evaluation is placed into the editor at the cursor's position.<br>"
-                     "discard_nil_values:boolean - If true, a nil value (undefined or nil) will not be "
-                     "placed into the editor's text.  Otherwise, if a nil value is returned the user "
-                     "will be prompted to place the nil result in the buffer, or discard it.<br>"
-                     "evaluator:function - An optional 'evaluator' function can be passed to be used " 
-                     "as the evaluator instead of the controls default evaluator.<br>"
-                     "as_json:boolean - If true, the result will be placed as formatted JSON into the "
-                     "editor.  The default is to place the result in formatted Juno notation.<br>")
-                     
-     usage: ["control:object" "options:?object"]
-     tags: ["editor" "control" "text" "evaluation" "replacement" "eval" "buffer"]
-   })
+                                    (doc_exec `insertHTML (+ "<br/><div id='" id "'>PLACEHOLDER</div><div>&nbsp;</div>") true)
+                                    (sleep 0.1)
+                                    (= elem (get_by_id id))
+                                    (if elem
+                                       (-> elem `replaceWith result)
+                                       (notify "Cannot find placeholder")))))
+                 (text (when selected
+                          (-> selected `toString)))
+                 (result nil))
+                (declare (function insert_elem_at_point get_control_by_id)
+                         (global insert_elem_at_point get_control_by_id))
+                (if (blank? text)
+                    (notify (dtext "Nothing to evaluate at the cursor position"))
+                    (progn
+                       (= evaluator
+                          (cond
+                             (is_function? ctl.get_evaluator)
+                             (-> ctl `get_evaluator)
+                             options.evaluator_id
+                             (progn
+                                (aif (prop (get_control_by_id options.evaluator_id)
+                                           `evaluate)
+                                     it
+                                     nil))))
+                       (if (is_function? evaluator)
+                           (progn
+                              (alert_on_error (dtext "Evaluation Error")
+                                              (= result (evaluator text false true true)))
+                              (-> selected `deleteFromDocument)
+                              (-> selected `collapseToStart)
+                              (insert_result result))
+                              
+                           (notify (+ "No evaluator for control " ctl.name)))))))))
+    {
+      description: (+ "Given a control with an editor, the selected text is evaluated "
+                      "using the editors evaluator.  The evaluated selection is replaced with the result."
+                      "<br>#### Options<br>"
+                      "append:boolean - If true, the selected value isn't replaced but the result of the "
+                      "evaluation is placed into the editor at the cursor's position.<br>"
+                      "discard_nil_values:boolean - If true, a nil value (undefined or nil) will not be "
+                      "placed into the editor's text.  Otherwise, if a nil value is returned the user "
+                      "will be prompted to place the nil result in the buffer, or discard it.<br>"
+                      "evaluator:function - An optional 'evaluator' function can be passed to be used "
+                      "as the evaluator instead of the controls default evaluator.<br>"
+                      "as_json:boolean - If true, the result will be placed as formatted JSON into the "
+                      "editor.  The default is to place the result in formatted Juno notation.<br>")
+      
+      usage: ["control:object" "options:?object"]
+      tags: ["editor" "control" "text" "evaluation" "replacement" "eval" "buffer"]
+      })
 
 
 (defun get_primary_editor_in_group (controls)
@@ -1314,12 +1386,16 @@
       (declare (function text_editor)
                (global text_editor))
       (assert new_name "clone_text_editor_control: unable to get group name of the editor to clone")
-      (when (and editor_control.editor id)
-         (alert_on_error "Unable to clone the editor"
-                         (text_editor (+ {} ;; start options 
-                                         editor_control.options ;; take existing options..
-                                         { `id: (gen_id "text_editor")
-                                           `clone_with_editor_id: id }))))))
+      (if (layout_locked? (get_layout_for_control editor_control))
+          (progn
+             (notify (dtext "Target layout is locked"))
+             nil)
+          (when (and editor_control.editor id)
+             (alert_on_error "Unable to clone the editor"
+                             (text_editor (+ {} ;; start options
+                                             editor_control.options ;; take existing options..
+                                             { `id: (gen_id "text_editor")
+                                                   `clone_with_editor_id: id })))))))
 
 (defun symbol_map_for_buffer (source_name source debug?)
    (let
@@ -2421,13 +2497,15 @@
                                    (== dir "vertical")
                                    (progn
                                       (= new_editor (clone_text_editor_control intf))
-                                      (alert_on_error "Unable to split"
-                                                      (container_view_operation "split_right" intf new_editor)))
+                                      (when new_editor
+                                         (alert_on_error "Unable to split"
+                                                         (container_view_operation "split_right" intf new_editor))))
                                    (== dir "horizontal")
                                    (progn
                                       (= new_editor (clone_text_editor_control intf))
-                                      (alert_on_error "Unable to split"
-                                                      (container_view_operation "split_below" intf new_editor)))
+                                      (when new_editor
+                                         (alert_on_error "Unable to split"
+                                                         (container_view_operation "split_below" intf new_editor))))
                                    else
                                    (alert_box "Invalid Split Request" "Split commands  must be vertical or horizontal")))))
             ;; position tracking
@@ -3776,7 +3854,274 @@
                          "background: " rgb_text "; ") }))))
 
 
-(let
-   ((widgets (new ace.LineWidgets))
+(defun floating_div (contents options)
+   (let
+      ((close_button (button { `title: (dtext "Close") } "X"))
+       (move_state nil)
+       (expander_elem (div { `style: "position: absolute; right: 0px; bottom: 0px; width: 15px; height: 15px; cursor: nwse-resize; background: transparent;" }
+                           ""))
+       (full_block (div { `style: "z-index: 8; width: 100%; height: 100%; position: absolute; top:0px; left: 0px;" }))
+       (dims nil)
+       (top (cond
+               (is_string? options.position.top)
+               (+ options.position.top ";")
+               (is_number? options.position.top)
+               (+ "" options.position.top "px;")
+               else
+               (+ "" (+ 5 (random_int 10)) "px; ")))
+       (left (cond
+               (is_string? options.position.left)
+               (+ options.position.left ";")
+               (is_number? options.position.left)
+               (+ "" options.position.left "px;")
+               else
+               (+ "" (+ 45 (random_int 10)) "%; ")))
+       (initial_width (cond 
+                         (is_string? options.position.width)
+                         (+ options.position.width ";")
+                         (is_number? options.position.width)
+                         (+ "" options.position.width "px;")))
+       (initial_height (cond
+                          (is_string? options.position.height)
+                          (+ options.position.height ";")
+                          (is_number? options.position.height)
+                          (+ "" options.position.height "px;")))
+       (resize_mode false)
+       (max_dims {
+                  `width: 0
+                  `height: 0
+                  })
+       (body_element nil)
+       (block_on (fn (e)
+                    (progn
+                       (= dims (-> frame `getBoundingClientRect))
+                       (= body_element (get_by_id "body"))
+                       (= max_dims {
+                                     `width: (prop body_element `offsetWidth)
+                                     `height: (prop body_element `offsetHeight) })
+                       (-> body_element `appendChild full_block)
+                       (= move_state {
+                                       mx: e.pageX
+                                       my: e.pageY
+                                       fx: dims.right
+                                       fy: dims.top
+                                       w: dims.width
+                                       h: dims.height
+                                       }))))
+       (control_bar (div { `class: "juno-buffer-bar" style: "cursor: grab;" }
+                 close_button
+                 (or options.title "")))
+       (end_drag (fn (e)
+                    (progn
+                       (= move_state nil)
+                       (= resize_mode false)
+                       (if (is_function? contents.resize)
+                           (-> contents `resize))
+                       (-> full_block `remove))))       
+       (handle_drag (fn (e)
+                      (when (and move_state
+                                 (== e.buttons 1))
+                         (if resize_mode
+                            (set_style [["width"  (+ "" (Math.max 300 (Math.min (- max_dims.width 30) (+ dims.width (- e.pageX move_state.mx)))) "px")]
+                                        ["height" (+ "" (Math.max 30 (Math.min (- max_dims.height 30) (+ dims.height (- e.pageY move_state.my)))) "px")]]
+                                       frame)
+                            (set_style [["top"  (+ "" (Math.max 0 (Math.min (- max_dims.height 30) (+ dims.top (- e.pageY move_state.my)))) "px") ]
+                                        ["left" (+ "" (Math.max 0 (Math.min (- max_dims.width 30) (+ dims.left (- e.pageX move_state.mx)))) "px") ]]
+                                       frame)))))
+                                   
+       (frame (div { class: "juno-floating-container" 
+                     style: (+ "left: " left
+                               "top: " top
+                               (if (is_string? initial_width)
+                                   (+ "width: " initial_width " ")
+                                   "")
+                               (if (is_string? initial_height)
+                                   (+ "height: " initial_height " ")
+                                   "")
+                                (if (is_string? options.style)
+                                    (+ "" options.style ";")
+                                    ""))
+                                  }
+               (if (control_frame {}
+                control_bar
+                (cond
+                   (and (is_object? contents)
+                        contents.view)
+                   contents.view
+                   (is_element? contents)
+                   contents
+                   else
+                   (value_to_dom contents)))
+               expander_elem)))
+      
+      (attach_event_listener close_button
+         `click
+         (fn (v)
+            (progn
+               (when options.on_close
+                  (options.on_close))
+               (-> frame `remove))))
+      
+      (attach_event_listener control_bar
+         `mousedown
+         (fn (e)
+            (block_on e)))
+      (attach_event_listener expander_elem
+         `mousedown
+         (fn (e)
+            (progn
+               (= resize_mode true)
+               (block_on e))))
+      
+      
+      (attach_event_listener frame 
+         `focusin
+         (progn
+            (add_class "juno-focused" control_bar)))
+      
+      (attach_event_listener full_block
+                             `mouseup
+                             end_drag)
+      (attach_event_listener frame
+                             `mouseup
+                             end_drag)
+      (attach_event_listener frame
+                             `mousemove
+                             handle_drag)
+      (attach_event_listener full_block
+                             `mousemove
+                             handle_drag)
+      (-> (get_by_id "body") `appendChild frame)
+      ;; if we have a control, initialize it if it needs it since it is 
+      ;; now mounted on the DOM
+      (when contents.initialize
+         (-> contents `initialize))
+     
+      (setTimeout (fn ()
+                     (progn
+                         (= dims (-> frame `getBoundingClientRect))
+                        (set_style [["width"  (+ "" (Math.max 300 dims.width) "px")]
+                                    ["height" (+ "" (Math.max 30  dims.height) "px")]]
+                                   frame))) 10)
+      (if options.controls
+         {
+           `close: (fn ()
+                      (progn
+                         (when options.on_close
+                            (options.on_close))
+                         (-> frame `remove)))
+           `view: frame
+           }
+         true))
+   {
+     description: (+ "<br><br>Given content in the form of a DOM structure, creates a draggable frame "
+                     "that presents like a dialog box, and which does not affect the underlying "
+                     "layout structure.  The presented frame can be modified with options.  The popup "
+                     "frame includes a title bar with a close button by default.   This is a "
+                     "non-modal structure, howerver by using the controls option in conjunction with "
+                     "a `Promise`, evaluation of subsequent code can be prevented until the dialog is "
+                     "closed.<br><br>#### Options  <br><br>position:object -An object with up to four "
+                     "optional keys: `undefined``top`, `width`, and `height`, which values control "
+                     "the position of the box.  If a value is a string, then the value is treated "
+                     "directly as a CSS directive, such as `45%`.  If the value is a number, it is "
+                     "considered to be a pixel offset for that value.  <br>title:string -If provided, "
+                     "this value will be used as the title bar.<br>style:string -Any CSS styling "
+                     "directives to be passed to the outer frame `div` that functions as the "
+                     "container for the content.<br>on_close:function -When present, this function is "
+                     "called when the user has initiated a close operation with the close button.  "
+                     "The return value of this function is ignored and so this function is purely "
+                     "advisory.<br>controls:boolean -If true, provides an interface object to manage "
+                     "the floating div externally.  This provides a means to close the floating div "
+                     "element and retrieve the view.  By default this option is false. <br>If the "
+                     "controls option is true, then the interface object returned will have a `view` "
+                     "element value, and a `close` function which will close the window and should be "
+                     "called with no arguments.<br> ")
+     usage: ["contents:Element" "options:object"]
+     tags: ["DOM" "ui" "html" "view" "floating" "dialog" ]
+     })
+
+(defun floating_temp_editor (options)
+      (new Promise
+         (fn (resolve reject)
+             (let
+                ((dwin nil)
+                 (editor_ctl (text_editor { namespace: (or options.namespace (current_namespace)) temporary: true content: "" mode: (or options.mode `juno) display_control_bar: false }))
+                 (cancel_button (button (dtext "Cancel")))
+                 (ok_button (button { `style: "float: right" } (dtext "OK")))
+                 (rval nil)
+                 (last_focused_ctl *last_focus*)
+                 (controls_container nil)
+                 (closing nil)
+                 (resize (fn ()
+                            (progn
+                               (set_style [["height" (+ "" (- view.parentElement.offsetHeight 80) "px")]
+                                           ["width" (+ "" view.parentElement.offsetWidth "px") ]]
+                                           editor_container)
+                               ;(set_style [["width" (+ "" (- view.parentElement.offsetWidth 50) "px") ]] controls_container)
+                               (-> editor_ctl `resize)
+                               )))
+                 (resize_observer (new ResizeObserver resize))
+                 (process_results (fn (cancelled?)
+                                     (progn
+                                        (notify "Closing")
+                                        (= closing true)
+                                        (= rval (-> editor_ctl `get))
+                                        (log "rval: " rval)
+                                        ;(destroy_control editor_ctl)
+                                        (-> dwin `close)
+                                        (= editor_ctl nil)
+                                        (if cancelled?
+                                           (resolve nil)
+                                           (resolve rval)))))
+                 (editor_container
+                    (div {  `style: "overflow: hidden; height: inherit; width: 100%; padding-bottom: 10px; "}
+                         editor_ctl.view))
+                 (view (div { `style: "height: 400px; width: 450px; " }
+                            editor_container
+                            (= controls_container
+                               (div { `style: "position: absolute; bottom: 0px; width: calc(100% - 50px); left: 0px; padding: 10px;" }
+                                 cancel_button ok_button)))))
+                (= dwin (floating_div
+                           view
+                           {
+                               `title: "Enter Form To Be Called"
+                               `controls: true
+                               `on_close: (fn ()
+                                             (progn
+                                                (unless closing
+                                                   (resolve nil))))
+                           }))
+                (sleep 0.1)
+                (-> editor_ctl `initialize)
+                (attach_event_listener cancel_button
+                   `click
+                   (fn ()
+                      (process_results true)))
+                (attach_event_listener ok_button 
+                   `click
+                   (fn ()
+                      (process_results)))
+                (-> resize_observer `observe view.parentElement)
+                
+                (focus_to_editor editor_ctl)
+                (= *last_focus* last_focused_ctl)
+                )))
+      {
+        description: (+ "<br><br><br>The `floating_temp_editor` function initiates an editor in a "
+                        "`floating_div` that will cause the calling form to wait until the user has "
+                        "closed the floating editor.  If the user presses cancel or closes the floating "
+                        "window via the upper left close button, then `nil` will be returned.  Otherwise "
+                        "a string containing the text value of the editor will be returned.  <br>#### "
+                        "Options <br><br>mode:string - The editing mode of the editor.  <br> ")
+        usage: ["options:object"]
+        tags: ["editor "]
+        
+
+        
+        })
+   
+
+
+
       
             

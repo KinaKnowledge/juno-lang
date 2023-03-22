@@ -77,6 +77,16 @@
               (-> parent `appendChild child)))
   parent)
 
+(defun_sync is_input? (elem)
+   (if (== (sub_type elem) "HTMLInputElement")
+       true
+       false)
+   {
+     description: (+ "If the given element is an HTMLInputElement type, then the function "
+                     "returns true, otherwise it returns false. ")
+     usage: ["elem:Element"]
+     tags: [ `ui `element `DOM `view html ]
+   })
 
 (defun generate_id (prefix)
   (if (is_string? prefix)
@@ -165,6 +175,11 @@
                     (set_prop elem
                               pset.0
                               pset.1)
+                    (and (== pset.0 "onclick")
+                         (is_string? pset.1))
+                    (set_prop elem
+                       pset.0
+                       (eval_struct (read_lisp pset.1)))
                     else
                     (-> elem `setAttribute pset.0 pset.1)))))
     (when (> content.length 0)
@@ -284,13 +299,16 @@
    `tags: ["ui" "html" "css" "class"]
    })
 
-(defun element_to_lisp (element options)
+(defun_sync element_to_lisp (element options)
    (if (is_element? element)
        (let
           ((tag_name (if (is_function? options.tagname_for_element)
                          (-> options `tagname_for_element element)
                          element.tagName))
-           (elem_as_lisp (list (+ "=:" (lowercase tag_name))))
+           (ns (if (is_string? options.use_ns)
+                   (+ options.use_ns "/")
+                   ""))
+           (elem_as_lisp (list (+ "=:" ns (lowercase tag_name))))
            (acc [])
            (nodes nil)
            (ptype nil)
@@ -302,6 +320,20 @@
                 (set_prop attribs
                    (resolve_path [ `attributes attrib_num `name ] element)
                    (resolve_path [ `attributes attrib_num `value ] element))))
+          (if (prop element `onclick)
+              (set_prop attribs
+                 `onclick
+                 (prop element `onclick)))
+          (when (and (== tag_name "INPUT")
+                     (== (prop attribs `type)
+                         "checkbox"))
+             (if (prop element `checked)
+                 (set_prop attribs
+                    `is_checked
+                    true)
+                 (set_prop attribs
+                    `is_checked
+                    false)))
           (push elem_as_lisp
              attribs)
           (= nodes element.childNodes)
@@ -309,10 +341,14 @@
              (cond 
                 (== 3 (resolve_path [ cnum `nodeType ] nodes))
                 (push elem_as_lisp
-                   (resolve_path [ cnum `nodeValue] nodes))
+                   (if (is_function? options.on_text)
+                       (-> options `on_text (resolve_path [ cnum `nodeValue] nodes) nodes)
+                       (resolve_path [ cnum `nodeValue] nodes)))
                 (== 1 (resolve_path [ cnum `nodeType ] nodes))
-                (push elem_as_lisp
-                   (element_to_lisp (resolve_path [ cnum ] nodes) options))))
+                (progn
+                   (unless (has_class?  "juno-non-value" (resolve_path [ cnum ] nodes) `classList )
+                      (push elem_as_lisp
+                         (element_to_lisp (resolve_path [ cnum ] nodes) options))))))
           (if (is_function? options.on_element_complete)
               (-> options `on_element_complete elem_as_lisp)
               elem_as_lisp))
@@ -324,11 +360,14 @@
                       "provided tree, will be called with the new element.  The function should "
                       "return a string value to be used for the tagname as opposed to the original "
                       "element tagName value.<br>"
-                      "on_element_complete:(fn array) - Will be called with the quoted lisp form "
+                      "use_ns:string - Qualify the emitted tag symbols with the provided namespace.<br> "
+                      "on_text:(function text nodes) - Will be called on a text node with the text and "
+                      "and the sibling nodes.<br>"
+                      "on_element_complete:(function array) - Will be called with the quoted lisp form "
                       "that was constructed.  The function can then manipulate the completed form "
                       "prior to it being placed in the returned lisp form.  Note that this function "
                       "is called for every completed element, not just the final return value.")
-     `usage: ["element:element"]
+     `usage: ["element:element" "options:object"]
      `tags: ["DOM" "ui" "serialize" "serialization" "view" "element" ]
    })
 
@@ -435,7 +474,10 @@
    (-> e `stopPropagation)))
 
 (defun_sync focus_to (elem)
-    (aif elem (-> it `focus)))
+   
+    (aif elem
+       (-> it `focus)))
+    
 
 (defmacro blur_to (elem)
     `(aif ,#elem (-> it `blur)))
@@ -516,6 +558,23 @@
          })
 
 
+(defun adjust_element_position (element)
+   (let
+      ((dims nil))
+      (= dims (-> element `getBoundingClientRect))
+      (when (> dims.bottom window.innerHeight)
+         (set_style [["top" (+ "" (- dims.top dims.height 10) "px") ]] element))
+      (when (> dims.right  window.innerWidth)
+         (set_style [["left" (+ "" (- window.innerWidth dims.width 5) "px") ]] element))
+      element)
+   {
+     description: (+ "Given an absolute positioned HTML Element, makes sure that the element "
+                     "bottom and right are not partially displayed off screen.  Will adjust the "
+                     "elements position if the geometry is determined to be out of bounds.  Returns "
+                     "the element. ")
+     tags: ["ui" "element" "DOM" "position" ]
+     usage: ["element:Element"]
+   })
 
 (defun editable_element (`& args)
    (let
@@ -550,7 +609,7 @@
        description:(+ "Returns a contenteditable div with an additional value " 
                       "property for the innerText value.  Single line by default, "
                       "setting options.multiline to true will allow for multiple "
-                      "line input values. If ptions.on_change is set as a function "
+                      "line input values. If options.on_change is set as a function "
                       "it will be called with the keydown event.")
        usage: ["options:object" "argsN:*"]
        tags: [`DOM `UI `input `edit `element]
@@ -769,7 +828,7 @@
        (center_pos nil)
        (initialized false)
        (min_size (or options.min_size 20))
-       (init_timer nil)       
+       (init_timer nil)
        (lock_ratio (function (state)
                              (when (not drag_status)
                               (if state
@@ -786,6 +845,30 @@
                            (-> resize_observer `disconnect)
                            (-> resize_observer `observe view.parentElement)
                            (= parent_view view.parentElement))))
+       (saved_ratio nil)
+       (set_show_second_panel (fn (state)
+                                 (progn
+                                    (console.log "set_show_second_panel: ->  state: " state "options.ratio: " options.ratio " saved_ratio: " saved_ratio)
+                                    (set_prop options
+                                       `hide_second_panel
+                                       (not state))
+                                    (cond
+                                       state
+                                       (progn
+                                          (set_prop options
+                                             `ratio
+                                             (or saved_ratio 0.5))
+                                          (= saved_ratio nil))
+                                       else
+                                       (progn
+                                          (if options.ratio 
+                                             (= saved_ratio options.ratio))
+                                          (set_prop options
+                                             `ratio
+                                             1)))
+                                    (console.log "set_show_second_panel: <-  state: " options.hide_second_panel "options.ratio: " options.ratio " saved_ratio: " saved_ratio)
+                                    ;(notify (+ "split_view: show_second_panel: " state ": ratio:" options.ratio " saved: " saved_ratio))
+                                    (perform_resize))))
        (perform_resize (fn ()
                          (when view.parentElement
                            (check_observer)
@@ -796,51 +879,57 @@
                              (let
                                  ((new_height (- (prop view.parentElement `offsetHeight) 5))
                                   (new_width  (- (prop view.parentElement `offsetWidth) 0)))
-                               
                                (set_style [[ "width" (+ "" new_width "px") ]
                                            [ "height" (+ "" new_height "px") ]]
                                           view)
                                ;; get the center position - set it to the midpoint if we are just initializing
-                               (when (== center_pos nil)
-                                 (cond
-                                   (and options.ratio
-                                        (is_number? options.ratio))
-                                   (= center_pos (* (Math.min 1 (Math.max 0.01 options.ratio)) view.offsetWidth))
-                                   options.ratio
-                                   (throw TypeError "Invalid ratio option: must be a number between 0 and 1")
-                                   else
-                                   (= center_pos (/ view.offsetWidth 2))))
-                               
-                               (when (and (== drag_status nil)
-                                          (or (isNaN options.ratio)
-                                              (isNaN center_pos)))
-                                 (console.log "split_view_vertical: options.ratio is NaN: " options.ratio "center_pos: " center_pos)
-                                 (set_prop options
-                                           `ratio
-                                           0.5)
-                                 (= center_pos (* (Math.min 1 (Math.max 0.01 options.ratio)) view.offsetWidth))
-                                 (console.log "split_view_horizontal: center_pos now:" center_pos))
-                                                                                             
-                               (when (and (== drag_status nil)  ;; not doing a drag so we need to preserve the ratio
-                                          (is_number? options.ratio))
-                                 (= center_pos (* (Math.min 1 (Math.max 0.01 options.ratio)) view.offsetWidth)))
-
-                               
-                               (if (> options.right_panel_max_size 10)
-                                 (= center_pos (- new_width 20 options.right_panel_max_size))
-                                 (= center_pos (Math.max (+ 20 min_size) (Math.min center_pos (- new_width 20 min_size)))))
-                               
-                               (set_style [["width" (+ (- center_pos center_width) "px") ]]                                         
-                                          left_container)
-                               (set_style [["width" (+ "" center_width "px") ]] center_divider)
-                               (set_style [["width" (+ (- view.offsetWidth center_pos center_width right_margin) "px") ]]
-                                          right_container)
-                               (when (not options.ratio_locked)
-                                 (set_prop options
-                                           `ratio
-                                           (/ center_pos view.offsetWidth)))
-                                        ;(console.log "[" left_container.offsetWidth "<->" right_container.offsetWidth "]")
-                               )))))
+                               (when (> view.offsetWidth 0)
+                                  (when (== center_pos nil)
+                                     (console.log "split_view_vertical: center_pos is nil")
+                                     (cond
+                                        (and options.ratio
+                                           (is_number? options.ratio))
+                                        (= center_pos (* (Math.min 1 (Math.max 0.01 options.ratio)) view.offsetWidth))
+                                        options.ratio
+                                        (throw TypeError "Invalid ratio option: must be a number between 0 and 1")
+                                        else
+                                        (= center_pos (/ view.offsetWidth 2))))
+                                  
+                                  (when (and (== drag_status nil)
+                                             (or (isNaN options.ratio)
+                                                 (isNaN center_pos)))
+                                     (console.log "split_view_vertical: options.ratio is NaN: " options.ratio "center_pos: " center_pos)
+                                     (set_prop options
+                                        `ratio
+                                        0.5)
+                                     (= center_pos (* (Math.min 1 (Math.max 0.01 options.ratio)) view.offsetWidth))
+                                     (console.log "split_view_vertical: center_pos now:" center_pos))
+                                  
+                                  (if options.hide_second_panel
+                                     (= center_pos view.offsetWidth)
+                                     (progn
+                                        ;(console.log "split_view: calculating center_pos:" center_pos options.ratio view.offsetWidth)
+                                        (when (and (== drag_status nil)  ;; not doing a drag so we need to preserve the ratio
+                                                   (is_number? options.ratio))
+                                           (= center_pos (* (Math.min 1 (Math.max 0.01 options.ratio)) view.offsetWidth)))
+                                        
+                                        (if (> options.right_panel_max_size 10)
+                                            (= center_pos (- new_width 20 options.right_panel_max_size))
+                                            (= center_pos (Math.max (+ 20 min_size) (Math.min center_pos (- new_width 20 min_size)))))))
+                                  
+                                  (set_style [["width" (+ (- center_pos center_width) "px") ]]
+                                             left_container)
+                                  (set_style [["width" (+ "" center_width "px") ]] center_divider)
+                                  (set_style [["width" (+ (- view.offsetWidth center_pos center_width right_margin) "px") ]]
+                                             right_container)
+                                  
+                                  (when (not options.ratio_locked)
+                                     (set_prop options
+                                        `ratio
+                                        (/ center_pos view.offsetWidth)))
+                                  ;(console.log "split_view: center_pos: <- " center_pos options.ratio view.offsetWidth)
+                                  ;(console.log "[" left_container.offsetWidth "<->" right_container.offsetWidth "]")
+                                  ))))))
        (init_drag (fn (e)
                     (when (and (not options.ratio_locked)
                                (== drag_status nil))
@@ -873,7 +962,7 @@
                       (when init_timer
                         (clearInterval init_timer)
                         (= init_timer nil))
-                      (console.log "split_view_vertical: initialize called: " initialized)
+                      (console.log "split_view_vertical: initialize called: " initialized) options
                       (when (not initialized)                       
                         (= initialized true)
                         (= parent_view view.parentElement)
@@ -890,6 +979,12 @@
                      (-> content_a `destroy))
                    (when (is_function? content_b.destroy)
                      (-> content_b `destroy)))))
+       
+       (set_right_panel_max_size (fn (val)
+                                    (when (is_number? val)
+                                       (set_prop options `right_panel_max_size val)
+                                       (perform_resize))))
+       
        (set_content (fn (position new_content)
                       (if (and position new_content
                                (or (== position 0) (== position 1)))
@@ -968,16 +1063,15 @@
      `view view
      `initialize initialize
      `set_content set_content
+     `set_show_second_panel set_show_second_panel
      `lock_ratio lock_ratio
      `set_min_panel_size (fn (val)
                              (when (is_number? val)
                                (set_prop options `min_size val)
                                (= min_size val)
                                (perform_resize)))
-     `set_right_panel_max_size (fn (val)
-                                 (when (is_number? val)                                   
-                                   (set_prop options `right_panel_max_size val)                                  
-                                   (perform_resize)))
+     `set_right_panel_max_size set_right_panel_max_size
+     `set_second_panel_max_size set_right_panel_max_size
      `options options
      `destroy destroy
      `name options.name
@@ -986,7 +1080,41 @@
      `controls (fn () [ content_a content_b ])
      `toJSON (function ()
                        `(split_view_vertical ,#content_a ,#content_b ,#options)))
-    intf))
+    intf)
+  {
+    description: (+ "<br><br>The `split_view_vertical` and the `split_view_horizontal` functions "
+                    "return a framing control that provides a vertical or horizontal partition "
+                    "between two elements or controls.  The ratio of the left side to the right "
+                    "side, or top side to the bottom side can be varied using a draggable "
+                    "handle. <br><br>#### Options   <br><br>ratio_locked:boolean -When true, the "
+                    "ratio between the two panels are non-adjustable and cannot be changed.  "
+                    "Defaults to false.<br>ratio:number -Given a value between 0 and 1, the ratio "
+                    "determines how wide or hight the first panel is relative to the second panel "
+                    "(right or lower).  A ratio of 0.8 results in the first element (left or top) "
+                    "being 80% of the available space, while a ratio of 0.1, result in the first "
+                    "element taking 10% of the available space of the split panel total area.  "
+                    "<br>name:string -The name to be given to the split view.  Note that this is "
+                    "typically handled by the control itself to ensure a unique name, and so "
+                    "generally doesn\'t need to be set.<br>min_size:number -The minimum size of the "
+                    "first panel (left or top) that is allowed. <br>hide_second_panel: When true, "
+                    "the second panel is hidden from view and the split_view looks like a "
+                    "`control_container`.  This option is defaulted to false.<br><br>#### Interface "
+                    "Specifics <br><br>set_second_panel_max_size:function - The maximum size that is "
+                    "allowed for the second panel (right or bottom).  This is specified in pixels so "
+                    "it should be provided as an integer.  By default there is no limit "
+                    "applied.<br>set_min_panel_size:function - Given a number via the signature "
+                    "(number) sets the minimum size of the first panel<br>set_content:function - The "
+                    "set_content function takes the arguments `(position new_content)`, where "
+                    "position is either 0 for first position, or 1 for second position.   The "
+                    "content can wither be a control or a DOM "
+                    "element.  <br>set_show_second_panel:function - Given a boolean value, if true, "
+                    "which is the default, set the secondary panel to visible.  If false, the second "
+                    "panel is hidden.<br><br><br><br> ")
+
+    usage: ["content_a:Element|Object" "content_b:Element|Object" "options:object"]
+    tags: [ `control `view `split `layout `panel `adjust `partition `ui `DOM]
+
+    })
                              
 
 (defun split_view_horizontal (content_a content_b options)
@@ -1039,6 +1167,30 @@
                            (-> resize_observer `disconnect)
                            (-> resize_observer `observe view.parentElement)
                            (= parent_view view.parentElement))))
+       (saved_ratio nil)
+       (set_show_second_panel (fn (state)
+                                 (progn
+                                    (console.log "set_show_second_panel: ->  state: " state "options.ratio: " options.ratio " saved_ratio: " saved_ratio)
+                                    (set_prop options
+                                       `hide_second_panel
+                                       (not state))
+                                    (cond
+                                       state
+                                       (progn
+                                          (set_prop options
+                                             `ratio
+                                             (or saved_ratio 0.5))
+                                          (= saved_ratio nil))
+                                       else
+                                       (progn
+                                          (if options.ratio 
+                                             (= saved_ratio options.ratio))
+                                          (set_prop options
+                                             `ratio
+                                             1)))
+                                    (console.log "set_show_second_panel: <-  state: " options.hide_second_panel "options.ratio: " options.ratio " saved_ratio: " saved_ratio)
+                                    ;(notify (+ "split_view: show_second_panel: " state ": ratio:" options.ratio " saved: " saved_ratio))
+                                    (perform_resize))))
        (perform_resize (fn ()
                          (when view.parentElement
                            (check_observer)
@@ -1060,61 +1212,64 @@
                                            [ "height" (+ "" new_height "px") ]]
                                           view)
                                ;; get the center position - set it to the midpoint if we are just initializing
-                               (when (== center_pos nil)
-                                 (cond
-                                   (and options.ratio
-                                        (is_number? options.ratio))
-                                   (= center_pos (* (Math.min 1 (Math.max 0.01 options.ratio)) view.offsetHeight))
-                                   options.ratio
-                                   (throw TypeError "Invalid ratio option: must be a number between 0 and 1")
-                                   else
-                                   (= center_pos (/ view.offsetHeight 2))))  ;; default is 50% 0.5
-                               (when (and (== drag_status nil)
-                                          (or (isNaN options.ratio)
-                                              (isNaN center_pos)))
-                                 (log "split_view_horizontal: options.ratio is NaN: " options.ratio "center_pos: " center_pos)
-                                 (set_prop options
-                                           `ratio
-                                           0.5)
-                                 (= center_pos (* (Math.min 1 (Math.max 0.01 options.ratio)) view.offsetHeight)))
-                                 
-                               
-                             
-                               (when (and (== drag_status nil)  ;; not doing a drag so we need to preserve the ratio 
-                                          (is_number? options.ratio))
-                                 (= center_pos (* (Math.min 1 (Math.max 0.01 options.ratio)) view.offsetHeight)))
-                               
-                               (when (== new_height 0)
-                                  (= last_set_ratio
-                                     options.ratio))
-                               
-                               (cond 
-                                 last_set_ratio
-                                 (= center_pos (* new_height last_set_ratio))
-                                 (> options.lower_panel_max_size 10)
-                                 (= center_pos (- new_height 20 options.lower_panel_max_size))
-                                 else
-                                 (= center_pos (Math.max (+ 20 min_size) (Math.min center_pos (- new_height 20 min_size)))))
-                               
-                               (set_style [["height" (+ "" center_pos  "px") ]]
-                                          top_container)
-                               (set_style [["height" (+ "" center_height "px") ]] center_divider)
-                               (set_style [["height" (+ (- view.offsetHeight center_height center_pos 0) "px") ]]
-                                          bottom_container)
-                               (cond 
-                                  (and (not options.ratio_locked)
-                                       last_set_ratio)
-                                  (progn
+                               (when (> view.offsetWidth 0)
+                                  (when (== center_pos nil)
+                                     (cond
+                                        (and options.ratio
+                                           (is_number? options.ratio))
+                                        (= center_pos (* (Math.min 1 (Math.max 0.01 options.ratio)) view.offsetHeight))
+                                        options.ratio
+                                        (throw TypeError "Invalid ratio option: must be a number between 0 and 1")
+                                        else
+                                        (= center_pos (/ view.offsetHeight 2))))  ;; default is 50% 0.5
+                                  (when (and (== drag_status nil)
+                                             (or (isNaN options.ratio)
+                                                 (isNaN center_pos)))
+                                     (log "split_view_horizontal: options.ratio is NaN: " options.ratio "center_pos: " center_pos)
                                      (set_prop options
                                         `ratio
-                                        last_set_ratio)
-                                     (= last_set_ratio nil))
-                                  (not options.ratio_locked)
-                                  (set_prop options
-                                     `ratio
-                                     (/ center_pos view.offsetHeight)))
-                                        ;(console.log "[" top_container.offsetHeight "<|>" bottom_container.offsetHeight "]")
-                               )))))
+                                        0.5)
+                                     (= center_pos (* (Math.min 1 (Math.max 0.01 options.ratio)) view.offsetHeight)))
+                                  
+                                  
+                                  (if options.hide_second_panel
+                                     (= center_pos view.offsetHeight)
+                                     (progn
+                                        (when (and (== drag_status nil)  ;; not doing a drag so we need to preserve the ratio
+                                                   (is_number? options.ratio))
+                                           (= center_pos (* (Math.min 1 (Math.max 0.01 options.ratio)) view.offsetHeight)))
+                                        
+                                        (when (== new_height 0)
+                                           (= last_set_ratio
+                                              options.ratio))
+                                        
+                                        (cond
+                                           last_set_ratio
+                                           (= center_pos (* new_height last_set_ratio))
+                                           (> options.lower_panel_max_size 10)
+                                           (= center_pos (- new_height 20 options.lower_panel_max_size))
+                                           else
+                                           (= center_pos (Math.max (+ 20 min_size) (Math.min center_pos (- new_height 20 min_size)))))))
+                                  
+                                  (set_style [["height" (+ "" center_pos  "px") ]]
+                                             top_container)
+                                  (set_style [["height" (+ "" center_height "px") ]] center_divider)
+                                  (set_style [["height" (+ (- view.offsetHeight center_height center_pos 0) "px") ]]
+                                             bottom_container)
+                                  (cond
+                                     (and (not options.ratio_locked)
+                                          last_set_ratio)
+                                     (progn
+                                        (set_prop options
+                                           `ratio
+                                           last_set_ratio)
+                                        (= last_set_ratio nil))
+                                     (not options.ratio_locked)
+                                     (set_prop options
+                                        `ratio
+                                        (/ center_pos view.offsetHeight)))
+                                  ;(console.log "[" top_container.offsetHeight "<|>" bottom_container.offsetHeight "]")
+                                  ))))))
        (init_drag (fn (e)
                     (when (and (not options.ratio_locked)
                                (== drag_status nil))
@@ -1164,6 +1319,10 @@
                      (-> content_a `destroy))
                    (when (is_function? content_b.destroy)
                      (-> content_b `destroy)))))
+       (set_lower_panel_max_size (fn (val)
+                                 (when (is_number? val)                                   
+                                   (set_prop options `lower_panel_max_size val)                                  
+                                   (perform_resize))))
        (set_content (fn (position new_content)
                       (if (and position new_content
                                (or (== position 0) (== position 1)))
@@ -1246,10 +1405,9 @@
                                (set_prop options `min_size val)
                                (= min_size val)
                                (perform_resize)))
-     `set_lower_panel_max_size (fn (val)
-                                 (when (is_number? val)                                   
-                                   (set_prop options `lower_panel_max_size val)                                  
-                                   (perform_resize)))
+     `set_lower_panel_max_size set_lower_panel_max_size
+     `set_second_panel_max_size set_lower_panel_max_size
+     `set_show_second_panel set_show_second_panel
      `destroy destroy
      `type `split_view_horizontal
      `controls (fn () [ content_a content_b ])
@@ -1259,7 +1417,12 @@
      `set_content (fn (position new_content)
                         (set_content position new_content)))
      
-    intf))
+    intf)
+  {
+    description: (eval Environment.definitions.split_view_vertical.description)
+    usage: ["content_a:Element|Object" "content_b:Element|Object" "options:object"]
+    tags: [ `control `view `split `layout `panel `adjust `partition `ui `DOM] 
+  })
 
 (defun checkbox (`& args)
    (let
@@ -1407,14 +1570,107 @@
                      (td { `style: "padding: 3px;" } 
                          cell)))))))
 
-
-
-
-          
- ;; (defglobal tabview (tabs [["Tab 1" (div "Hi this is tab 1") true ] ["Tab 2" (div "This is tab 2") ]]))                
-
-
-
+(defun tabs (tab_list options)
+   (let
+      ((tab_bar (ul { `class: "juno-tabs" } ))
+       (content_container (div { `class: "juno-tab-content-section" } ))
+       (view (div { `style: "width: 100%; overflow: hidden; height: calc(100% - 30px);" }
+                  (nav { }
+                       tab_bar)
+                  content_container))
+       (add_tab (fn (name content)
+                   (progc
+                      (-> tab_bar `append
+                         (li { data-tab-id: (to_key name) } name))
+                      (-> content_container `append
+                         (div { class: "juno-tab-content" data-tab-id: (to_key name) }
+                              (cond 
+                                 (is_element? content.view)
+                                 content.view
+                                 (is_element? content)
+                                 content
+                                 else
+                                 "Invalid content"))))))
+       (remove_tab (fn (pos)
+                      (when (is_number? pos)
+                         (let
+                            ((tab_to_remove (prop tab_bar.children pos))
+                             (content_to_remove (prop content_container.children pos))
+                             (tab_active? (== pos (active_tab))))
+                            
+                            (when tab_to_remove
+                               (-> tab_to_remove `remove))
+                            (when content_to_remove
+                                  (-> content_to_remove `remove))
+                            (when tab_active?
+                               (= pos (clamp (- pos 1) 0 (- (length tab_bar.children) 1)))
+                               (activate_tab pos))
+                            ))))
+       (active_tab (fn ()
+                      (let
+                         ((idx -1))
+                         (for_each (elem tab_bar.children)
+                            (progn
+                               (inc idx)
+                               (when (has_class? "juno-tab-active" elem)
+                                  (break))))
+                         (if (and (< idx tab_bar.children.length)
+                                  (> idx -1))
+                             idx
+                             nil))))
+       (activate_tab_by_source (fn (elem)
+                                  (let
+                                     ((idx -1))
+                                  (for_each (t tab_bar.children)
+                                     (progn
+                                        (inc idx)
+                                        (when (== t elem)
+                                           (activate_tab idx)))))))
+       (activate_tab (fn (pos)
+                        (progc
+                            (when (is_number? pos)
+                               (= pos (clamp pos 0 (- (length tab_bar.children) 1)))
+                               (for_each (elem (-> tab_bar `querySelectorAll ".juno-tab-active"))
+                                  (when (is_element? elem)
+                                     (remove_class "juno-tab-active" elem)))
+                               (add_class "juno-tab-active" (prop tab_bar.children pos))
+                               
+                               (for_each (elem (-> content_container `querySelectorAll ".juno-tab-active"))
+                                  (when (is_element? elem)
+                                     (remove_class "juno-tab-active" elem)))
+                               (add_class "juno-tab-active" (prop content_container.children pos))))))
+       (tab_headers []))
+      
+      (for ((tab_name content) (or tab_list []))
+           (add_tab tab_name content))
+      
+      (activate_tab (or options.active_tab 0))
+      
+      (attach_event_listener tab_bar
+         `click
+         (fn (e)
+            (activate_tab_by_source e.srcElement)))
+      
+      {
+         `view: view
+         `add_tab: add_tab
+         `activate_tab: activate_tab
+         `remove_tab: remove_tab
+         `active_tab: active_tab
+         `tab_names: (fn ()
+                           (each tab_bar.children `innerText))
+      })
+   {
+     description: (+ "Given an array of pairs containing the name of the tab and the tabs "
+                     "content, this function established a view that encapsulates the content and "
+                     "displays the content associated with the active tab.  There is an interface "
+                     "returned, containing control and accessor methods and a view property which is "
+                     "the Element to be mounted to the DOM.<br><br>#### Options "
+                     "<br><br>active_tab:number - When given a number representing the tab position, "
+                     "the corresponding tab will be activated on start.  By default the first tab is "
+                     "the active value.  The value 0 represents the first tab.  <br> ")
+     
+     })
 
 
 (set_prop (get_by_id "juno-css")

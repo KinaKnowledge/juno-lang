@@ -153,6 +153,9 @@
        usage: []
    })
 
+(defmacro get_selection ()
+      `(-> window `getSelection))
+
 (defmacro activity_box (options `& body_forms)
    `(let
       ((content_id (gen_id "content"))
@@ -259,7 +262,13 @@
                                                  (resolve_path [ `read_only ] path_opts)))
                                           { `disabled: true }
                                           {})
-                                      { `lpath: (lpath) `tabindex: 0 `class: (+ classes (lowercase dtype)) }
+                                      
+                                      { lpath: (lpath) tabindex: 0 
+                                        class: (+ classes 
+                                                  (lowercase dtype)
+                                                  (if options.input_class
+                                                     (+ " " options.input_class)
+                                                     "") ) }
                                       { `title: (lpath) }
                                       (cond 
                                          (== dtype "Boolean")
@@ -755,6 +764,8 @@
        (classes "juno-value juno-type-")
        (detail_elem nil)
        (expanded false)
+       (key_style? (is_string? options.key_style))
+       (value_style? (is_string? options.value_style))
        (expansion_elem nil)
        (expansion_mode false)
        (get_pairs (if options.include_prototypes
@@ -768,16 +779,27 @@
                                   pset))))))
        (render_table (function () 
                          (table
+                            (+ {}
+                               (if (is_string? options.table_style)
+                                  { style: options.table_style }
+                                  {}))
                             (tbody
                              (for_each (keyval (get_pairs obj))
                                        (destructuring_bind (key value)
                                                            keyval
                                                            (tr 
-                                                            (td {  `class: "juno-obj-to-dom-key" } 
+                                                            (td (+ {}
+                                                                   (if key_style?
+                                                                      { style: options.key_style }
+                                                                      {})
+                                                                   { `class: "juno-obj-to-dom-key" })
                                                                 (if options.pretty_keys
                                                                    (from_key key)
                                                                    key))
-                                                            (td { `class: "juno-obj-to-dom-value" } 
+                                                            (td (+ { `class: "juno-obj-to-dom-value" } 
+                                                                   (if value_style?
+                                                                      { `style: options.value_style }
+                                                                      {}))
                                                                 (value_to_dom value options (conj _path [ key ] ))))))))))
        (_path (or _path []))
        (lpath (function () (join "~" _path))))
@@ -794,7 +816,7 @@
           (span { `lpath: (lpath) `tabindex: 0 `class: "juno-value juno-obj-to-dom" } "Object {}")
           else
           (progn
-           (-> options.visited `add obj)    
+           (-> options.visited `add obj)
            (when (> _path.length -1)
               (= expansion_mode true))
            (= detail_elem 
@@ -1932,13 +1954,15 @@
 (defparameter *focus_suppress_timer* nil)
 
 (defun set_focus_to (target_control _controls)
-   (unless *focus_suppress_timer*
+   (unless (or *focus_suppress_timer*
+               (== *last_focus* target_control))
       (= *focus_suppress_timer* (setTimeout (fn ()
                                                (= *focus_suppress_timer* nil))
                                             50))
-      (console.log "set_focus_to: " target_control.name target_control)
+      (console.log "set_focus_to: " target_control.name target_control *last_focus*)
       (let
          ((focused_list (query_all ".juno-focused"))
+          (current_layout (get_current_layout_control))
           (controls (or _controls
                         (reduce (c (current_controls))
                            (when c.on_focus
@@ -1973,6 +1997,8 @@
                   (-> target_control `on_focus)
                   (focus_to target_control.view))
                (setq *last_focus* target_control)
+               (set_prop current_layout.options
+                  `last_focus_id target_control.options.id)
                (setq core/$current_control *last_focus*)
                (setq *last_top_frame* (top_frame target_control))
                (when (and target_control.menu_items
@@ -2083,16 +2109,19 @@
                        (= found true)
                        (sleep 0.01)
                        (cascade_resize)
+                       (console.log "switch_to_new_layout: target control for focus: " ctl.options.last_focus_id)
                        (when ctl.options.last_focus_id 
                           (= control_to_focus_to (get_control_by_id ctl.options.last_focus_id)))
                        (if control_to_focus_to
-                           (if (not (== current_layout (get_layout_for_control control_to_focus_to)))
+                           (if (not (== ctl (get_layout_for_control control_to_focus_to)))
                                (= control_to_focus_to (default_focus)))
                            (= control_to_focus_to (default_focus)))
                               
-                       ;(log "control_to_focus_to: " control_to_focus_to)
+                       (setTimeout (fn ()
+                                      (progn
+                                         (set_focus_to control_to_focus_to))) 40)
+                       ;(= *last_focus* control_to_focus_to)
                        
-                       (= *last_focus* control_to_focus_to)
                        (break))))
              else
              (progn
@@ -2105,7 +2134,7 @@
                      "return true, otherwise it will return false. ")
      usage:["layout_name:string"]
      tags: ["layout" "DOM" "controls" "ui" "root" "layout" "control"]
-     }) 
+     })  
 
 (defun is_sub_control? (control)
    (let
@@ -2613,9 +2642,16 @@
       (when (and target_layout_locked?
                  (not (== target_control.type "juno_documentation_control"))
                  (not (== new_control.type "juno_documentation_control")))
-         (= confirmed false)
-         (console.log "container_view_operation: target layout is locked")
-         (notify (dtext "Target layout is locked")))
+         (if (starts_with? "split" command)
+             (progn
+                (= target_layout (frame_0))
+                (switch_to_new_layout target_layout.name)
+                (= target_control (first (-> target_layout `controls)))
+                (= position_details (control_position target_control)))
+             (progn
+                (= confirmed false)
+                (console.log "container_view_operation: target layout is locked")
+                (notify (dtext "Target layout is locked")))))
       
       (when (and target_control.options.only_for
                  new_control_layout
@@ -3363,12 +3399,11 @@
                   ["position" "absolute"]
                   ["z-index" "30"]]
                   view))
-    
-     
     (if options.do_not_attach
       view
       (progn       
        (-> (get_by_id "body") `appendChild view)
+       (adjust_element_position view)
        view)))
   {
     description: (+ "The `make_menu` function constructs a pop-up menu DOM structure and "
@@ -3487,11 +3522,8 @@
                              cmenu)
                   (-> (get_by_id "body") `appendChild cmenu)
                   (= dims (-> cmenu `getBoundingClientRect))
-                  (when (> dims.bottom window.innerHeight)
-                     (set_style [["top" (+ "" (- dims.top dims.height 10) "px") ]] cmenu))
-                  (when (> dims.right  window.innerWidth)
-                     (set_style [["left" (+ "" (- window.innerWidth dims.width 5) "px") ]] cmenu)))))
-         element))
+                  (adjust_element_position cmenu)))))
+         element)
    {
      description: (+ "Given a target DOM element and a menu generator function or a menu "
                      "array, attaches a `contextmenu` event listener to the target element.  The menu "
@@ -5299,6 +5331,13 @@
       ;; now mounted on the DOM
       (when contents.initialize
          (-> contents `initialize))
+     
+      (setTimeout (fn ()
+                     (progn
+                         (= dims (-> frame `getBoundingClientRect))
+                        (set_style [["width"  (+ "" (Math.max 300 dims.width) "px")]
+                                    ["height" (+ "" (Math.max 30  dims.height) "px")]]
+                                   frame))) 10)
       (if options.controls
          {
            `close: (fn ()
@@ -5717,106 +5756,174 @@
       s))
 
 (defun eval_selected_text_in_place (ctl options)
-   (progc
-      (let
-         ((text nil)
-          (pos nil)
-          (editor (cond
-                      (== ctl.type "text_editor")
-                      ctl.editor
-                      else
-                      (throw TypeError "eval_selected_text_in_place: no text editor for provided control")))
-          (selection nil)  ;; range to replace with results
-          (evaluator nil)
-          (result nil))
-         (= pos (-> ctl `get_selection))
-         (if (and (== pos.start.row pos.end.row)
-                  (== pos.start.column pos.end.column))
-             (select_to_current_form ctl.editor))
-         ;; we should have an actual selection now if we didn't...
-         (= selection (-> ctl `get_selection))
-         (= text (-> ctl `get_selected_text))
-         (if (blank? text)
-             (progn 
-                (-> ctl `display_context_message (dtext "Nothing to evaluate at the cursor position")))
-             (progn
-                (= evaluator
-                   (cond
-                      (is_function? ctl.get_evaluator)
-                      (-> ctl `get_evaluator)
-                      options.evaluator_id
-                      (progn
-                         (aif (prop (get_control_by_id options.evaluator_id)
-                                    `evaluate)
-                              it
-                              nil))))
-                (if (is_function? evaluator)
+    (progn
+       (cond
+          (== ctl.type "text_editor")
+          (progc
+             (let
+                ((text nil)
+                 (pos nil)
+                 (editor (cond
+                            (== ctl.type "text_editor")
+                            ctl.editor
+                            else
+                            (throw TypeError "eval_selected_text_in_place: no text editor for provided control")))
+                 (selection nil)  ;; range to replace with results
+                 (evaluator nil)
+                 (result nil))
+                (= pos (-> ctl `get_selection))
+                (if (and (== pos.start.row pos.end.row)
+                         (== pos.start.column pos.end.column))
+                    (select_to_current_form ctl.editor))
+                ;; we should have an actual selection now if we didn't...
+                (= selection (-> ctl `get_selection))
+                (= text (-> ctl `get_selected_text))
+                (if (blank? text)
                     (progn
-                       (alert_on_error (dtext "Evaluation Error")
-                                       (= result (evaluator text false true true)))
-                       (if (and (eq nil result)
-                                (or options.discard_nil_values
-                                    (== "discard" (request_user_choice 
-                                                     (+ (dtext "The evaluation result is")
-                                                        " "
-                                                        (as_lisp result)
-                                                        ".  "
-                                                        (dtext "Insert or discard the result?"))
-                                                     [[(dtext "Insert") "ok"] 
-                                                      [(dtext "Discard") "discard"]]
-                                                     {
-                                                       `no_cancel_button: true
-                                                       }))))
-                           nil
+                       (-> ctl `display_context_message (dtext "Nothing to evaluate at the cursor position")))
+                    (progn
+                       (= evaluator
+                          (cond
+                             (is_function? ctl.get_evaluator)
+                             (-> ctl `get_evaluator)
+                             options.evaluator_id
+                             (progn
+                                (aif (prop (get_control_by_id options.evaluator_id)
+                                           `evaluate)
+                                     it
+                                     nil))))
+                       (if (is_function? evaluator)
                            (progn
-                              (= result
-                                 (cond
-                                    (is_object? result)
-                                    (if options.as_json
-                                       (JSON.stringify result nil 2)
-                                       (+ "" (pretty_print (as_lisp result))))
-                                    (is_string? result)
-                                    result
-                                    else
-                                    (+ "" (pretty_print (as_lisp result)))))
-                              (try
+                              (alert_on_error (dtext "Evaluation Error")
+                                              (= result (evaluator text false true true)))
+                              (if (and (eq nil result)
+                                       (or options.discard_nil_values
+                                          (== "discard" (request_user_choice
+                                                           (+ (dtext "The evaluation result is")
+                                                              " "
+                                                              (as_lisp result)
+                                                              ".  "
+                                                              (dtext "Insert or discard the result?"))
+                                                           [[(dtext "Insert") "ok"]
+                                                            [(dtext "Discard") "discard"]]
+                                                           {
+                                                             `no_cancel_button: true
+                                                             }))))
+                                  nil
+                                  (progn
+                                     (= result
+                                        (cond
+                                           (is_object? result)
+                                           (if options.as_json
+                                              (JSON.stringify result nil 2)
+                                              (+ "" (pretty_print (as_lisp result))))
+                                           (is_string? result)
+                                           result
+                                           else
+                                           (+ "" (pretty_print (as_lisp result)))))
+                                     (try
+                                        (progn
+                                           (if options.append
+                                              (progn
+                                                 (-> editor.selection `clearSelection)
+                                                 (-> editor `navigateTo pos.end.row pos.end.column)
+                                                 (set_prop pos.start
+                                                    `row pos.end.row
+                                                    `column pos.end.column)
+                                                 (-> (-> editor `getSession) `replace pos result))
+                                              (-> (-> editor `getSession) `replace selection result)))
+                                        (catch Error (e)
+                                           (progn
+                                              (-> (-> editor `getSession) `replace selection text)
+                                              (-> ctl `display_context_message (+ "Error on replace: " e.message))
+                                              (log (+ (dtext "Couldn't replace text in editor") ":" (prop ctl.options `name) ": " e.message))
+                                              (log e)))))))
+                           (alert_box (dtext "Evaluation Error")
+                                      (+ (dtext "No evaluator found for the control")
+                                         " "
+                                         ctl.options.name)))))))
+          (== ctl.type "DOM_editor")
+          (progc
+             (console.log "eval_selected_text_in_place: DOM_editor" ctl options)
+             (let
+                ((selected (get_selection))
+                 (id (gen_id "placeholder"))
+                 (evaluator nil)
+                 (elem nil)
+                 (insert_result (fn (result)
+                                   (cond
+                                      (is_element? result)
+                                      (insert_elem result)
+                                      (or (is_control? result)
+                                          (and (is_object? result)
+                                               result.view))
+                                      (insert_elem result.view)
+                                      (is_array? result)
+                                      (for (val result)
+                                         (insert_result val))
+                                      (is_object? result)
+                                      (if options.as_json
+                                         (insert_elem_at_point (pre
+                                                                    (JSON.stringify result nil 2)))
+                                         (insert_elem_at_point (pre
+                                                                    (+ "" (pretty_print (as_lisp result))))))
+                                      (is_string? result)
+                                      (doc_exec `insertHTML result)
+                                      else
+                                      (insert_elem_at_point (pre (+ "" (pretty_print (as_lisp result))))))))
+                                
+                 (insert_elem (fn (result)
                                  (progn
-                                    (if options.append
-                                       (progn
-                                          (-> editor.selection `clearSelection)
-                                          (-> editor `navigateTo pos.end.row pos.end.column)
-                                          (set_prop pos.start
-                                             `row pos.end.row
-                                             `column pos.end.column)
-                                          (-> (-> editor `getSession) `replace pos result))
-                                       (-> (-> editor `getSession) `replace selection result)))
-                                 (catch Error (e)
-                                    (progn
-                                       (-> (-> editor `getSession) `replace selection text)
-                                       (-> ctl `display_context_message (+ "Error on replace: " e.message))
-                                       (log (+ (dtext "Couldn't replace text in editor") ":" (prop ctl.options `name) ": " e.message))
-                                       (log e)))))))
-                    (alert_box (dtext "Evaluation Error")
-                               (+ (dtext "No evaluator found for the control")
-                                  " "
-                                  ctl.options.name)))))))
-   {
-     description: (+ "Given a control with an editor, the selected text is evaluated " 
-                     "using the editors evaluator.  The evaluated selection is replaced with the result."  
-                     "<br>#### Options<br>"
-                     "append:boolean - If true, the selected value isn't replaced but the result of the "
-                     "evaluation is placed into the editor at the cursor's position.<br>"
-                     "discard_nil_values:boolean - If true, a nil value (undefined or nil) will not be "
-                     "placed into the editor's text.  Otherwise, if a nil value is returned the user "
-                     "will be prompted to place the nil result in the buffer, or discard it.<br>"
-                     "evaluator:function - An optional 'evaluator' function can be passed to be used " 
-                     "as the evaluator instead of the controls default evaluator.<br>"
-                     "as_json:boolean - If true, the result will be placed as formatted JSON into the "
-                     "editor.  The default is to place the result in formatted Juno notation.<br>")
-                     
-     usage: ["control:object" "options:?object"]
-     tags: ["editor" "control" "text" "evaluation" "replacement" "eval" "buffer"]
-   })
+                                    (doc_exec `insertHTML (+ "<br/><div id='" id "'>PLACEHOLDER</div><div>&nbsp;</div>") true)
+                                    (sleep 0.1)
+                                    (= elem (get_by_id id))
+                                    (if elem
+                                       (-> elem `replaceWith result)
+                                       (notify "Cannot find placeholder")))))
+                 (text (when selected
+                          (-> selected `toString)))
+                 (result nil))
+                (declare (function insert_elem_at_point get_control_by_id)
+                         (global insert_elem_at_point get_control_by_id))
+                (if (blank? text)
+                    (notify (dtext "Nothing to evaluate at the cursor position"))
+                    (progn
+                       (= evaluator
+                          (cond
+                             (is_function? ctl.get_evaluator)
+                             (-> ctl `get_evaluator)
+                             options.evaluator_id
+                             (progn
+                                (aif (prop (get_control_by_id options.evaluator_id)
+                                           `evaluate)
+                                     it
+                                     nil))))
+                       (if (is_function? evaluator)
+                           (progn
+                              (alert_on_error (dtext "Evaluation Error")
+                                              (= result (evaluator text false true true)))
+                              (-> selected `deleteFromDocument)
+                              (-> selected `collapseToStart)
+                              (insert_result result))
+                              
+                           (notify (+ "No evaluator for control " ctl.name)))))))))
+    {
+      description: (+ "Given a control with an editor, the selected text is evaluated "
+                      "using the editors evaluator.  The evaluated selection is replaced with the result."
+                      "<br>#### Options<br>"
+                      "append:boolean - If true, the selected value isn't replaced but the result of the "
+                      "evaluation is placed into the editor at the cursor's position.<br>"
+                      "discard_nil_values:boolean - If true, a nil value (undefined or nil) will not be "
+                      "placed into the editor's text.  Otherwise, if a nil value is returned the user "
+                      "will be prompted to place the nil result in the buffer, or discard it.<br>"
+                      "evaluator:function - An optional 'evaluator' function can be passed to be used "
+                      "as the evaluator instead of the controls default evaluator.<br>"
+                      "as_json:boolean - If true, the result will be placed as formatted JSON into the "
+                      "editor.  The default is to place the result in formatted Juno notation.<br>")
+      
+      usage: ["control:object" "options:?object"]
+      tags: ["editor" "control" "text" "evaluation" "replacement" "eval" "buffer"]
+      })
 
 (defun evaluate_and_replace_at_point (options)
    (let
@@ -5832,12 +5939,17 @@
                                                 { discard_nil_values: true })
                                             (if options.append
                                                 { append: true }
-                                                {}))))))
+                                                {}))))
+         (== ctl.type "DOM_editor")
+         (progn
+            (eval_selected_text_in_place ctl options))
+         ))
    {
-       `description: (+ "Using the control in *last_focus*, calls the eval_selected_text_in_place function "
+       `description: (+ "Using the control in `*last_focus*`, calls the eval_selected_text_in_place function "
                         "with the provided options.  The result of the evaluation will be placed into "
                         "the focused editor, either as replaceement text or appended text.<br>"
-                        "#### Options<br>"
+                        "The link is http://kinaknowledge.com."
+                        "<br>### Options<br>"
                         "discard_nil_values:boolean - If true any nil values will not be placed into "
                         "the editor.  If false, the user will be prompted to place nil values into "
                         "the text.  The default is true.<br>"
@@ -6515,12 +6627,16 @@
       (declare (function text_editor)
                (global text_editor))
       (assert new_name "clone_text_editor_control: unable to get group name of the editor to clone")
-      (when (and editor_control.editor id)
-         (alert_on_error "Unable to clone the editor"
-                         (text_editor (+ {} ;; start options 
-                                         editor_control.options ;; take existing options..
-                                         { `id: (gen_id "text_editor")
-                                           `clone_with_editor_id: id }))))))
+      (if (layout_locked? (get_layout_for_control editor_control))
+          (progn
+             (notify (dtext "Target layout is locked"))
+             nil)
+          (when (and editor_control.editor id)
+             (alert_on_error "Unable to clone the editor"
+                             (text_editor (+ {} ;; start options
+                                             editor_control.options ;; take existing options..
+                                             { `id: (gen_id "text_editor")
+                                                   `clone_with_editor_id: id })))))))
 
 (defun select_evaluator ()
   (let
@@ -7417,13 +7533,15 @@
                                    (== dir "vertical")
                                    (progn
                                       (= new_editor (clone_text_editor_control intf))
-                                      (alert_on_error "Unable to split"
-                                                      (container_view_operation "split_right" intf new_editor)))
+                                      (when new_editor
+                                         (alert_on_error "Unable to split"
+                                                         (container_view_operation "split_right" intf new_editor))))
                                    (== dir "horizontal")
                                    (progn
                                       (= new_editor (clone_text_editor_control intf))
-                                      (alert_on_error "Unable to split"
-                                                      (container_view_operation "split_below" intf new_editor)))
+                                      (when new_editor
+                                         (alert_on_error "Unable to split"
+                                                         (container_view_operation "split_below" intf new_editor))))
                                    else
                                    (alert_box "Invalid Split Request" "Split commands  must be vertical or horizontal")))))
             ;; position tracking
@@ -8751,6 +8869,85 @@
    })
 
 
+(defun floating_temp_editor (options)
+      (new Promise
+         (fn (resolve reject)
+             (let
+                ((dwin nil)
+                 (editor_ctl (text_editor { namespace: (or options.namespace (current_namespace)) temporary: true content: "" mode: (or options.mode `juno) display_control_bar: false }))
+                 (cancel_button (button (dtext "Cancel")))
+                 (ok_button (button { `style: "float: right" } (dtext "OK")))
+                 (rval nil)
+                 (last_focused_ctl *last_focus*)
+                 (controls_container nil)
+                 (closing nil)
+                 (resize (fn ()
+                            (progn
+                               (set_style [["height" (+ "" (- view.parentElement.offsetHeight 80) "px")]
+                                           ["width" (+ "" view.parentElement.offsetWidth "px") ]]
+                                           editor_container)
+                               ;(set_style [["width" (+ "" (- view.parentElement.offsetWidth 50) "px") ]] controls_container)
+                               (-> editor_ctl `resize)
+                               )))
+                 (resize_observer (new ResizeObserver resize))
+                 (process_results (fn (cancelled?)
+                                     (progn
+                                        (notify "Closing")
+                                        (= closing true)
+                                        (= rval (-> editor_ctl `get))
+                                        (log "rval: " rval)
+                                        ;(destroy_control editor_ctl)
+                                        (-> dwin `close)
+                                        (= editor_ctl nil)
+                                        (if cancelled?
+                                           (resolve nil)
+                                           (resolve rval)))))
+                 (editor_container
+                    (div {  `style: "overflow: hidden; height: inherit; width: 100%; padding-bottom: 10px; "}
+                         editor_ctl.view))
+                 (view (div { `style: "height: 400px; width: 450px; " }
+                            editor_container
+                            (= controls_container
+                               (div { `style: "position: absolute; bottom: 0px; width: calc(100% - 50px); left: 0px; padding: 10px;" }
+                                 cancel_button ok_button)))))
+                (= dwin (floating_div
+                           view
+                           {
+                               `title: "Enter Form To Be Called"
+                               `controls: true
+                               `on_close: (fn ()
+                                             (progn
+                                                (unless closing
+                                                   (resolve nil))))
+                           }))
+                (sleep 0.1)
+                (-> editor_ctl `initialize)
+                (attach_event_listener cancel_button
+                   `click
+                   (fn ()
+                      (process_results true)))
+                (attach_event_listener ok_button 
+                   `click
+                   (fn ()
+                      (process_results)))
+                (-> resize_observer `observe view.parentElement)
+                
+                (focus_to_editor editor_ctl)
+                (= *last_focus* last_focused_ctl)
+                )))
+      {
+        description: (+ "<br><br><br>The `floating_temp_editor` function initiates an editor in a "
+                        "`floating_div` that will cause the calling form to wait until the user has "
+                        "closed the floating editor.  If the user presses cancel or closes the floating "
+                        "window via the upper left close button, then `nil` will be returned.  Otherwise "
+                        "a string containing the text value of the editor will be returned.  <br>#### "
+                        "Options <br><br>mode:string - The editing mode of the editor.  <br> ")
+        usage: ["options:object"]
+        tags: ["editor "]
+        
+
+        
+        })
 
 (defun_sync get_path_for_DOM_obj (element)
    (let
@@ -8929,8 +9126,7 @@
 
       
 
-(defmacro get_selection ()
-   `(-> window `getSelection))
+
 
 (defcontrol log_view ()
    ((output_container (div { `class: "juno-log-output juno-scrollbar" `style: "scroll-behavior: smooth;" } ))
@@ -12019,10 +12215,13 @@
 (defun split_control (dir)
    (alert_on_error "Unable to perform split"
                    (let
-                      ((target *last_focus*))
-                      (if (eq nil target)
-                          (throw Error "No Focused Control to split"))
-                      (cond
+                      ((target_layout (get_current_layout_control))
+                       (target *last_focus*))
+                      (cond 
+                         (layout_locked? target_layout)
+                         (notify (dtext "Target Layout Locked"))
+                         (eq nil target)
+                         (throw Error "No Focused Control to split")
                          (and (== dir "vertical")
                               (prop target `split_vertical))
                          (-> target `split_vertical)
@@ -12036,7 +12235,14 @@
                               (> (length (-> (control_holding_tank) `controls)) 0))
                          (container_view_operation "split_below" target (last (-> (control_holding_tank) `controls)))
                          else
-                         (notify (+ "No controls to split to" (prop target.options `name) " cannot be split"))))))
+                         (notify (+ "No controls to split to" (prop target.options `name) " cannot be split")))))
+   {
+     description: (+ "Given a direction, either `horizontal` or `vertical`, will look at the "
+                     "value of `*last_focus*` and split that control if possible.  If the layout is "
+                     "locked, a notification will appear and the control will not be split. ")
+     usage: ["dir:string"]
+     tags: ["controls" "ui" "dom" "layout" "control" "view"]
+     })
 
 
 (defcontrol line_display ()
@@ -12652,6 +12858,29 @@
      usage: []
    })
 
+
+(defun display_tag (text)
+   (progn
+      (show_help_panel)
+      (-> (juno_documentation)`search_by_tag text))
+   {
+     description: (+ "Given a text string, opens the documentation panel with the associated "
+                     "text in the search bar, and the results of the search displayed. ")
+     tags: ["tags" "help" "search" "?" "describe" "meta" ]
+     usage: ["text:string"]
+   })
+
+
+(defun dtag (tag_text)
+  (eval `(span { class: "juno-tag" onclick: (fn () (display_tag ,#tag_text)) } ,#tag_text))
+   {
+     description: (+ "Constructs a clickable span element for the provided tag text.  When "
+                     "clicked on, opens the documentation panel with the associated items for the tag "
+                     "displayed. ")
+     usage: ["tag_text:string"]
+     tags: ["tags" "help" "search" "?" "describe" "meta" ]
+   })
+
 (defun *help_menu_function* ()
   [[(dtext "Toggle Documentation") 
     (fn ()
@@ -12939,74 +13168,6 @@
                    return { x, y };
                    } | ))
 
-(defun_sync element_to_lisp (element options)
-   (if (is_element? element)
-       (let
-          ((tag_name (if (is_function? options.tagname_for_element)
-                         (-> options `tagname_for_element element)
-                         element.tagName))
-           (ns (if (is_string? options.use_ns)
-                   (+ options.use_ns "/")
-                   ""))
-           (elem_as_lisp (list (+ "=:" ns (lowercase tag_name))))
-           (acc [])
-           (nodes nil)
-           (ptype nil)
-           (val nil)
-           (attrib_list (prop element `attributes))
-           (attribs {}))
-          (for_each (attrib_num (range (length attrib_list)))
-             (progn
-                (set_prop attribs
-                   (resolve_path [ `attributes attrib_num `name ] element)
-                   (resolve_path [ `attributes attrib_num `value ] element))))
-          (when (and (== tag_name "INPUT")
-                     (== (prop attribs `type)
-                         "checkbox"))
-             (if (prop element `checked)
-                 (set_prop attribs
-                    `is_checked
-                    true)
-                 (set_prop attribs
-                    `is_checked
-                    false)))
-          (push elem_as_lisp
-             attribs)
-          (= nodes element.childNodes)
-          (for_each (cnum (range (length nodes)))
-             (cond 
-                (== 3 (resolve_path [ cnum `nodeType ] nodes))
-                (push elem_as_lisp
-                   (if (is_function? options.on_text)
-                       (-> options `on_text (resolve_path [ cnum `nodeValue] nodes) nodes)
-                       (resolve_path [ cnum `nodeValue] nodes)))
-                (== 1 (resolve_path [ cnum `nodeType ] nodes))
-                (progn
-                   (unless (has_class?  "juno-non-value" (resolve_path [ cnum ] nodes) `classList )
-                      (push elem_as_lisp
-                         (element_to_lisp (resolve_path [ cnum ] nodes) options))))))
-          (if (is_function? options.on_element_complete)
-              (-> options `on_element_complete elem_as_lisp)
-              elem_as_lisp))
-       [ "UNKNOWN:" element ])
-   {
-     `description: (+ "Given a DOM element, returns the lisp represenation of the DOM element.<br>"
-                      "If provided with an options object, the following keys are applicable:<br>"
-                      "tagname_for_element:(fn element) - For every new element encountered in the "
-                      "provided tree, will be called with the new element.  The function should "
-                      "return a string value to be used for the tagname as opposed to the original "
-                      "element tagName value.<br>"
-                      "use_ns:string - Qualify the emitted tag symbols with the provided namespace.<br> "
-                      "on_text:(function text nodes) - Will be called on a text node with the text and "
-                      "and the sibling nodes.<br>"
-                      "on_element_complete:(function array) - Will be called with the quoted lisp form "
-                      "that was constructed.  The function can then manipulate the completed form "
-                      "prior to it being placed in the returned lisp form.  Note that this function "
-                      "is called for every completed element, not just the final return value.")
-     `usage: ["element:element" "options:object"]
-     `tags: ["DOM" "ui" "serialize" "serialization" "view" "element" ]
-   })
-
 
 
 
@@ -13037,7 +13198,25 @@
          (defvar selection (get_selection))
          (remove_all_ranges selection)
          (-> selection `addRange point_obj.range))))
-         
+
+(defun move_to_point_a (point_obj)
+   (progc
+      (when point_obj.selection
+         (set_attribute point_obj.element `contenteditable `true)
+         (focus_to point_obj.element)
+         (sleep 0.1)
+         (select_element point_obj.element)
+         (defvar selection (get_selection))
+         (collapse_to_start selection)
+         ;(remove_all_ranges selection)
+         ;(-> selection `addRange point_obj.range)
+         (if (== point_obj.pos_type 3)
+             (progn
+                (collapse_to_start selection)
+                (for_each (idx (range point_obj.position))
+                   (-> selection `modify `move `right  "character")))
+             (collapse_to_start selection)))))      
+   
 (defun_sync move_point (dir granularity)
    (progc
       (let
@@ -13058,6 +13237,7 @@
        (selrange (get_range selection))
        (selected_node selrange.startContainer)
        (offset selrange.startOffset)
+       (last_element nil)
        (position (progn
                     (if (== selrange.startContainer.nodeType 3)
                         (progn
@@ -13069,14 +13249,28 @@
                   (not (== current_element root_element)))
          (progn
             (prepend path current_element)
+            (when (and (eq nil last_element)
+                       (is_element? current_element))
+               (= last_element current_element))
             (= current_element current_element.parentElement)))
       { dom_path: path
         position: position
         pos_type: selected_node.nodeType
         pos_node: selected_node
+        element: last_element
         selection: selection
         range: selrange
-        }))
+        })
+   {
+     `description: (+ "Given a reference to a placed DOM element, returns an object " 
+                      "that contains the contextual details of the current cursor position and selection."
+                      "<br>#### Layout of Return Object<br>"
+                      "```"
+                      "{ dom_path: path\n  position: position\n  pos_type: selected_node.nodeType\n  pos_node: selected_node\n  selection: selection\n  range: selrange\n}"
+                      "```")
+     `usage: ["element:Element"]
+     `tags: ["DOM" "UI" "editor"]
+   })
 
 (defun_sync select_node_at_point ()
    (let
@@ -13254,24 +13448,19 @@
 
 (defparameter *markdown_rules*
    {
-     reload_rules:{
-         on_event: `keydown
-         key_sequence: "Alt-L"
-         handle_event: true
-         menu: true
-         qualifier: (fn (point ctl)
-                       true)
-         exec: (fn (point ctl event)
-                  (progn
-                     (notify (+ "Reloading Rules: " ctl.name))
-                     (-> ctl `reload_rules)))
-         
+     meta: {
+         name: "markdown"
+         description: "Simple implementation of a subset of markdown for documentation. To be used with the DOM Editor"
      }
+     
      get_as_wordwrap_text:{
          on_event: `keydown
          key_sequence: "Alt-X"
          handle_event: true
-         menu: true
+         control_menu: true
+         description: (+ "Used with the text editor, will collect the DOM buffer contents and "
+                         "place the contents in the description text of the edited function. "
+                         "NOTE: this will close the DOM editor. ")
          qualifier: (fn (point ctl)
                        (progn
                           true))
@@ -13281,7 +13470,7 @@
                       (try
                          (progn
                             (-> ctl `save)
-                            (defglobal $ed_rval (for_each (line (word_wrap (join "" (DOM_to_markdown  (-> ctl `get)))))
+                            (defglobal $ed_rval (for_each (line (word_wrap (join "" (DOM_to_markdown  (read_lisp (-> ctl `get))))))
                                                    (if (ends_with? " " line)
                                                        line
                                                        (+ line " "))))
@@ -13297,7 +13486,8 @@
          on_event: `keydown
          key_sequence: "Alt-R"
          handle_event: true
-         menu: true
+         control_menu: true
+         description: "Copies the DOM buffer contents to the clipboard as markdown text."
          qualifier: (fn (point ctl)
                        true)
          exec: (fn (point ctl event)
@@ -13305,28 +13495,67 @@
                      (-> ctl `save)
                      (sleep 0.1)
                      (copy_text_to_clipboard
-                        (pretty_print
-                           (for_each (line (word_wrap (join "" (DOM_to_markdown  (-> ctl `get)))))
+                           (for_each (line (word_wrap (join "" (DOM_to_markdown  (read_lisp (-> ctl `get))))))
                               (if (ends_with? " " line)
                                   line
-                                  (+ line " ")))))))
+                                  (+ line " "))))))
      }
-     copy_as_quoted:{
+     copy_as_quoted_lisp_to_buffer:{
          on_event: `keydown
          key_sequence: "Alt-Shift-Q"
          handle_event: true
-         menu: true
+         control_menu: true
+         description: "Copies the contents of the DOM buffer or selection as a quoted lisp structure"
          qualifier: (fn (point ctl)
                        true)
          exec: (fn (point ctl event)
-                  (progn
-                     (copy_text_to_clipboard (pretty_print (-> ctl `get)))
-                     (notify "Copied as quoted DOM to clipboard")))
+                  (let
+                     ()
+                     (declare (function new_buffer)
+                              (global new_buffer))
+                     (alert_on_error (dtext "Unable to create buffer")
+                        (if (not (blank? (-> (get_selection) `toString)))
+                            (new_buffer { mode: `juno content: (-> (get_selection) `toString) })
+                            (new_buffer { mode: `juno content: (-> ctl `get) } )))))
+     }
+     copy_as_markdown_to_buffer:{
+         on_event: `keydown
+         key_sequence: "Alt-Shift-M"
+         handle_event: true
+         control_menu: true
+         description: "Opens the contents of the DOM buffer editor or selection as markdown."
+         qualifier: (fn (point ctl)
+                       true)
+         exec: (fn (point ctl event)
+                  (progn 
+                     (declare (function new_buffer)
+                              (global new_buffer))
+                     (notify "Opening buffer")
+                     (alert_on_error (dtext "Unable to create buffer")
+                        (let
+                           ((brregex (new RegExp "<br>" `g))
+                            (content
+                               (join "\n" 
+                                  (for_each (line (word_wrap
+                                                          (join "" (DOM_to_markdown
+                                                                      (read_lisp (if (not (blank? (-> (get_selection) `toString)))
+                                                                                     (-> (get_selection) `toString)
+                                                                                     (-> ctl `get)))))))
+                                  (replace brregex "\n"
+                                     (if (ends_with? " " line)
+                                      line
+                                      (+ line " ")))))))
+                           (console.log "copy_as_markdown_to_buffer: " content)
+                           (if (blank? content)
+                               (notify "Unable to convert content!")
+                               (if (not (blank? (-> (get_selection) `toString)))
+                                   (new_buffer { mode: `markdown content: content })
+                                   (new_buffer { mode: `markdown content: content } )))))))
      }
      on_blank:{
          on_event: `keyup
          key_sequence: "Backspace"
-         menu: false
+         control_menu: false
          handle_event: false
          qualifier: (fn (point ctl)
                        (progn
@@ -13342,7 +13571,9 @@
      insert_pre:{   
          ;; on_event specifies what events cause this rule to be checked
          on_event: `keyup
-         menu: true
+         control_menu: true
+         context_menu: true
+         description: "Inserts a <pre> element into the DOM buffer at the location of the cursor (point)."
          ;; prior_text_sequences are the buffer contents prior to point that 
          ;; initiate the firing of the rule..
          prior_text_sequence: "```"    ;; when three backticks 
@@ -13362,52 +13593,42 @@
                      (doc_exec `insertHTML "<pre style='min-height: 2.4ch'></pre><div ><br></div>" true)
                      (move_to_point point)
                      (move_point `forward `character)))
-         
      }
      ;; the next two rules implement the handling of newlines in the preformatted text node
      ;; the keydown acts to cancel the default behavior of the event 
      ;; the keyup then performs the correct newline behavior for insertion of newlines
-     insert_return_in_pre_down:{
-         on_event: `keydown   ;; intercept the enter key in PRE tags to ignore any action on Enter
+     
+     on_enter_key:{
+         on_event: `keydown   ;; intercept the enter key in PRE tags to add a newline vs. a new element
          key_sequence: "Enter"
-         menu: false
-         qualifier: (fn (point ctl)   ;; we must be in a PRE tag
-                        (progn
-                           (point_under_element_tag? "PRE" point)))
-         handle_event: true
-         exec: (fn (point ctl event)
-                  (progc
-                     (defvar at_end ;; if we are at the end of the node, insert two newlines, otherwise just a single node
-                        (cond 
-                           (== point.pos_type 3)
-                           (== (length point.pos_node.textContent) point.position)
-                           (== point.pos_type 1)
-                           false))
-                     (log "at_end? " at_end)
-                     (if at_end 
-                        (doc_exec `insertHTML "\n\n")
-                        (doc_exec `insertHTML "\n"))))
-     }
-     insert_return_in_pre_up:{
-         on_event: `keyup   ;; intercept the enter key in PRE tags to add a newline vs. a new element
-         key_sequence: "Enter"
-         qualifier: (fn (point ctl)   ;; we must be in a PRE tag
+         qualifier: (fn (point ctl)   
                        (progn
-                          false))
-         handle_event: true
-         menu: false
+                          true))  ;; we go everywhere
+         handle_event: false
+         control_menu: false
          exec: (fn (point ctl event)
                   (progc
-                     (defvar at_end ;; if we are at the end of the node, insert two newlines, otherwise just a single node
-                        (cond 
-                           (== point.pos_type 3)
-                           (== (length point.pos_node.textContent) point.position)
-                           (== point.pos_type 1)
-                           false))
-                     (log "at_end? " at_end)
-                     (if at_end 
-                        (doc_exec `insertHTML "\n\n")
-                        (doc_exec `insertHTML "\n"))))
+                     ;(log "enter situation: OK: event: " event)
+                  (cond
+                     (point_under_element_tag? "PRE" point)
+                     (progc
+                        (handle_event event)
+                        (defvar at_end ;; if we are at the end of the node, insert two newlines, otherwise just a single node
+                           (cond
+                              (== point.pos_type 3)
+                              (== (length point.pos_node.textContent) point.position)
+                              (== point.pos_type 1)
+                              false))
+                        ;(log "at_end? " at_end point)
+                        (if at_end
+                           (doc_exec `insertHTML "\n\n")
+                           (doc_exec `insertHTML "\n")))
+                     else
+                     (progc ;; not under a pre
+                        false))))
+                         ;(move_to_point point)
+                         
+                         
      }
      insert_header: {
          on_event: `keyup
@@ -13416,7 +13637,7 @@
                        (not (point_under_element_tag? "PRE" point)))
          handle_event: true
          remove_if_prior: true
-         menu: true
+         control_menu: true
          exec: (fn (point ctl event)
                   (progc
                      (let 
@@ -13429,8 +13650,8 @@
                                          0))
                          ;; add one because our rule triggered so it deleted one and the space
                          (tag_name (+ "H" (clamp (+ num_hashes 1) 1 5)))
-                         (point nil))   
-                        
+                         (point nil))
+                        (sleep 0.001)
                         ;; since we have asked the editor to remove the matching text we are going to 
                         ;; remove the remaining and use that as a way to compute the Heading element we
                         ;; will add
@@ -13444,39 +13665,12 @@
                         (select_node_at_point)
                         )))
      }  
-      insert_section:{   
-         ;; on_event specifies what events cause this rule to be checked
-         on_event: `keydown
-         
-         ;; prior_text_sequences are the buffer contents prior to point that 
-         ;; initiate the firing of the rule..
-         prior_text_sequence: "%SCT"    
-         post_text_sequence: nil
-         key_sequence: "Ctrl-Alt-S"     ;; or when they control-option-p or control-alt-p
-         remove_if_prior: true     ;; remove sequence from buffer if prior to point if true
-         handle_event: true       ;; we don't care about handling the event
-         menu: true
-         ;; qualifiers specify if the rule can be executed by returning true or false.  
-         ;; True to execute, false to ignore in current position or context
-         qualifier: (fn (point ctl)
-                       (not (point_under_element_tag? "PRE" point))) ;; don't fire if we are in a pre tag
-         
-         ;; exec is the function that is evaluated when the rule is qualified to be fired
-         exec: (fn (point ctl event) 
-                  (progc
-                     (defvar insert_point point)
-                     (doc_exec `insertHTML "<br><details tabindex=0 open><summary>Summary Text</summary>Detail Text</details>" true)
-                     (move_to_point insert_point)
-                     (move_point `forward `character)
-                     (move_point `forward `character)
-                     (move_point `forward `character)
-                     (select_node_at_point)
-                     ))
-     }
+      
       insert_horizontal_rule:{
           on_event: `keyup
           handle_event: true
-          menu: true
+          control_menu: true
+          context_menu: true
           remove_if_prior: true
           prior_text_sequence: "---"    ;; when three dashes 
           qualifier: (fn (point ctl)
@@ -13496,36 +13690,37 @@
       insert_tab:{
           on_event: `keydown
           handle_event: true
-          menu: false
+          control_menu: false
           remove_if_prior: false
           key_sequence: "Tab"
           ;prior_text_sequence: ""    ;; when three dashes 
           qualifier: (fn (point ctl)
                         (progn
-                           (point_under_element_tag? "PRE" point)))
+                           true))
           exec: (fn (point ctl event)
                    (progc
-                      (sleep 0.001)
+                      ;(sleep 0.001)
+                      (log "Tab rule pressed")
                       (if (point_under_element_tag? "PRE" point)
+                          (doc_exec `insertText "\t")
                           (doc_exec `insertText "\t"))
-                      ;(move_point `forward `character)
-                      ;(move_point `forward `character)
-                      ;(select_node_at_point)
+                      
                       ))
-                        
           
-      }
+          }
        wrap_text_in_code_tag:{
           on_event: `keydown
           handle_event: true
-          menu: true
+          control_menu: true
+          context_menu: true
           key_sequence: "Ctrl-Alt-C"
           remove_if_prior: true
+          description: "Wraps the selected text in a code tag."
           qualifier: (fn (point ctl)
                         (progn
+                           (sleep 0.001)
                            (and (not (point_under_element_tag? "PRE" point))
-                                
-                                )))
+                                (not (blank? (-> (get_selection) `toString))))))
           exec: (fn (point ctl event)
                    (progc
                       (sleep 0.001)
@@ -13540,9 +13735,67 @@
                       ;(move_point `forward `character)
                       ;(select_node_at_point)
                       ))
-                        
-          
-      }
+          }
+       insert_button:{
+          prior_text_sequence: "%BT"
+          context_menu: true
+          control_menu: true
+          on_event: `keyup
+          remove_if_prior: true
+          description: "Insert button to perform a function"
+          qualifier: (fn (point ctl)
+                        (progn
+                           (sleep 0.001)
+                           (not (point_under_element_tag? "PRE" point))))
+          exec: (fn (point ctl event)
+                   (progc
+                      (sleep 0.001)
+                      (let
+                         ((command_to_call nil)
+                          (text nil)
+                          (elem nil)
+                          (editor_ctl nil)
+                          (id (gen_id "temp_button"))
+                          (bcode nil))
+                         (doc_exec `insertHTML (+ "<br id='" id "_br'><div id='" id "'>Button</div>") true)
+                         (select_node_at_point)
+                         (collapse_to_end (get_selection))
+                         (move_point `forward `character)
+                         (= command_to_call (floating_temp_editor))
+                         (= elem (get_by_id id))
+                         (if (not (blank? command_to_call))
+                             (= text (request_user_input "Enter Button Text")))
+                         (if (not (blank? text))
+                             (progn
+                                (if elem
+                                   (progn
+                                      (-> elem `replaceWith (button { command_text: command_to_call onclick: (eval_struct (read_lisp command_to_call)) } text))
+                                      (aif (get_by_id (+ id "_br"))
+                                           (-> it `remove)))
+                                   (log "Unable to replace!" elem)))
+                             (progn
+                                (sleep 0.01)
+                                (= elem (get_by_id id))
+                                (if elem
+                                   (-> elem `remove))
+                                (aif (get_by_id (+ id "_br"))
+                                     (-> it `remove)))))))
+                    
+       }
+       reload_rules:{
+         on_event: `keydown
+         key_sequence: "Alt-L"
+         handle_event: true
+         control_menu: true
+         description: "Reloads the markdown rule set.  This can be used after any changes have been made to the rule set."
+         qualifier: (fn (point ctl)
+                       true)
+         exec: (fn (point ctl event)
+                  (progn
+                     (notify (+ "Reloading Rules: " ctl.name))
+                     (-> ctl `reload_rules)))
+         
+     }
    })
 
 ;; placeholder
@@ -13553,7 +13806,9 @@
 (defun wrap_in_resizable (elem)
    (let
       ((move_state nil)
-       (just_enable (== (get_attribute elem.parentElement "initializer") "wrap_in_resizable"))
+       (just_enable (if elem.parentElement
+                        (== (get_attribute elem.parentElement "initializer") "wrap_in_resizable")
+                        false))
        (expander_elem (if just_enable
                           elem.parentElement.children.1
                           (div { `style: "position: absolute; right: 0px; bottom: -10px; width: 15px; height: 15px; cursor: nwse-resize; background: tranparent;" }
@@ -13642,7 +13897,7 @@
          (-> elem `replaceWith frame)
          (-> frame `append elem)
          (-> frame `append expander_elem))
-      true)
+      frame)
    {
      `description: (+ "<br><br>Given an element, will wrap it in a resizable element that preserves "
                       "aspect ratio. The provided element will be replaced with the wrapped element.  "
@@ -13655,7 +13910,7 @@
 
 (defcontrol DOM_editor ()
    ((starter  (div { } "Enter text"))
-    (root_elem (div { `contenteditable: true `tabindex: 0 }
+    (root_elem (div { `contenteditable: true `tabindex: 0 `class: "juno-dom-editor-root" }
                     starter))
     (document_view (div {  `class: "juno-editable" `style: "height: calc(100% - 0px); overflow: scroll; background: var(--editor-bg-color);  line-height: 1.5em; font-size: 1.1em;  padding: 5px; margin-top: 0px;margin-bottom: 0px"} 
                         root_elem))
@@ -13663,6 +13918,7 @@
     (position_elem (div { `style: "padding: 5px;color: darkblue;" } ))
     (depth_elem (div { `style: "padding: 5px; color: green;" } ))
     (path_elem (div { `style: "padding: 5px; " } ))
+    (evaluator_span (span { `class: "juno-evaluator" `style: "cursor: pointer" `title: (dtext "Name of the evaluator assigned to this buffer") } "-"))
     (key_history_elem (div { `style: "padding: 5px;" }))
     (text_around_elem (div { `style: "padding: 5px;" }))
     (locked_span (span { `title: (dtext "Read Only?") `style: "display: inline-block; width: 20px;padding-left: 5px; padding-right: 5px;" }
@@ -13680,13 +13936,42 @@
     (debug_container_elem (div { `style: "height: calc(100% - 10px); overflow: hidden;" }
                                status_elem
                                debug_elem))
-    (sview (if options.debug
-               (split_view_horizontal document_view  debug_container_elem)
-               { 
-                 `view: document_view 
-                 }))
+    (attributes_title (h4 { style: "margin-block-start: 10px; margin-block-end: 10px;" } "Attributes"))
+    (attributes_header_view (div { style: "margin: 0px; padding: 2px; background: #00000010;" }
+                                   attributes_title
+                                   ))
+    (attributes_page_view (div {
+                                 style: "height: calc(100% - 50px); overflow: auto; background: var(--editor-bg-color);  line-height: 1.5em; font-size: 1.0em;  padding: 5px; margin-top: 0px;margin-bottom: 0px";
+                                 } "-"))
+    (attributes_content_view 
+       (div {
+              style: "height: calc(100% - 50px); overflow: auto; background: var(--editor-bg-color);  line-height: 1.5em; font-size: 1.0em;  padding: 5px; margin-top: 0px;margin-bottom: 0px";
+              
+              } ))
+    (attributes_tabs (tabs [
+                            ["Section"
+                             (div {} attributes_header_view
+                                  attributes_content_view)]
+                            ["Page" 
+                             attributes_page_view]]))
+    (attributes_view (div {
+                            style: "height: calc(100% - 0px); min-width: 300px; overflow: hidden; background: var(--editor-bg-color); font-size: 1.0em;  padding: 0px; margin: 0px;"
+                            }
+                       attributes_tabs.view))
+    (ns_span (span { `title: "Namespace" `class: "juno-namespace" `style: "display:inline-block; padding-left: 30px; padding-right: 5px;" } nseval.namespace))
+    (sview (split_view_horizontal 
+                                (if options.debug
+                                   (split_view_vertical document_view  debug_container_elem)
+                                   {
+                                     `view: document_view
+                                     })
+                                attributes_view
+                                {
+                                    ratio: 0.8
+                                }))
     (content_view (div { `style: "background: var(--control-bg-color); overflow: hidden; width: 100%; height: 100%;" }
                        sview.view))
+    (show_attributes_button (button { `style: "float: right;" `class: "juno-button-on" } "Attributes"))
     (on_resize (fn (self)
                   (progc
                      (= debug_offset_height (+ 45 (Math.max 5 control_status.offsetHeight)))
@@ -13695,7 +13980,7 @@
                      (if (not options.debug) 
                          (set_style [["height" (+ "calc(100% - " control_status.offsetHeight "px)")]] document_view))
                      )))
-                     
+    (control_bar_elements [ ns_span evaluator_span locked_span show_attributes_button ])
     (rules nil) 
     (rules_menu [])
     (collection_timer nil)
@@ -13716,11 +14001,13 @@
                                       (if rule.handle_event
                                          { `handle_event: true }
                                          {}))))
+                     (when options.debug
+                        (log "loading rule: " name rule lookup_rule))
                      (when rule.prior_text_sequence
                         (make_path [ rule.on_event rule.prior_text_sequence ] prior_text_rules lookup_rule))
                      (when rule.key_sequence
                         (make_path [ rule.on_event rule.key_sequence ] key_sequence_rules lookup_rule))
-                     (when rule.menu
+                     (when rule.control_menu
                         (push rules_menu
                            [(from_key name)
                             (eval `(fn (e)
@@ -13745,7 +14032,6 @@
                                             (progn
                                                (log "dom_editor: load_rule: error on eval: " e.message)
                                                (console.error "dom_editor: load_rule: error on eval: " e))))))])))))
-                                   
     (load_rules (fn ()
                    (progn
                       (cond 
@@ -13765,9 +14051,25 @@
     (active_rules (fn ()
                      prior_text_rules))
     (current_point nil)
+    (saved_point nil)
     (last_event_context nil)
+    (last_active_elem nil)
     (render (fn ()
                content_view))
+    (evaluator nil)
+    (set_evaluator (fn (evaluator_function)
+                              (when (is_function? evaluator_function)
+                                 (= evaluator evaluator_function)
+                                 (dispatch_event { command: "dom_editor_change"
+                                                   source: options.id
+                                                   args: [ { `option: "evaluator" `value: evaluator_function } ] }))))
+    (change_evaluator_name (fn (event_obj)
+                              (progn
+                                 (log "Received evaluator name change: " event_obj)
+                                 (aif (resolve_path [ `args 0 `value ] event_obj)
+                                      (set_prop evaluator_span
+                                         `innerText
+                                         it)))))
     (set_filename (fn (fname)
                      (if (is_string? fname)
                          (progn
@@ -13784,16 +14086,46 @@
     (save_as (fn ()
                 (let
                    ((fname (wait_for_file_selection true)))
+                   (declare (function wait_for_file_selection)
+                            (global wait_for_file_selection))
                    (when (not (blank? fname))
                       (set_filename fname)
                       (request_save)))))
+    (hide_state false)
+    (current_scroll 0)
+    (on_hide (function (self)
+                (progn
+                   (= hide_state true)
+                   (unless current_point
+                      (log "DOM_editor: on_hide: no current point"))
+                   (when current_point
+                      ;(= saved_point (clone current_point))
+                      (log "DOM_editor: saved_point: range: " saved_point.range)
+                      ;(set_prop saved_point
+                      ;   `range (-> saved_point.range `cloneRange))
+                      ;(-> saved_point.selection `removeAllRanges)
+                      ;(-> saved_point.selection `addRange saved_point.range)
+                      true))))
     (on_focus (fn (self)
                 (progc
-                   (focus_to root_elem)
-                   (when current_point
-                      (move_to_point current_point)))))
-    
-               
+                   (when saved_point
+                      ;(focus_to saved_point.element)
+                      (sleep 0.1)
+                      (if hide_state
+                         (progn
+                             ;(collapse_to_start saved_point.selection )
+                             (move_to_point_a saved_point)
+                             (set_prop root_elem.parentElement `scrollTop current_scroll)
+                             ;(-> saved_point.element `scrollIntoView)
+                             ;(set_prop (first (get_by_tag "html")) `scrollTop 0)
+                             (= hide_state false))
+                         (progn
+                            (move_to_point_a saved_point)))
+                     
+                      (console.log "DOM_editor: on_focus: saved_point:  "  saved_point.element saved_point)
+                      (show_attributes saved_point.element)
+                      true
+                      ))))
     (process_rules_for_event (fn (event)
                                 (let
                                    ((text (get_text_around_point current_point))
@@ -13836,6 +14168,7 @@
      ;; to run and then run the rule 
     (qualify_and_run (fn (rule identified_by event)
                         (progc
+                           
                            (defvar qualified? 
                               (if (is_function? rule.qualifier)
                                   (-> rule `qualifier current_point self) ;; only run it if qualifier returns true
@@ -13869,9 +14202,10 @@
                                     (= key_history_acc []))
                                  ;; then call the rule!
                                  (try
-                                    (-> rule `exec current_point self)
+                                    (-> rule `exec current_point self event)
                                     (catch Error (e)
                                        (progn
+                                          (notify (+ "dom_editor: rule: " rule.name ": " e.message))
                                           (log "dom_editor: caught error: " e.message e)
                                           (console.error "dom_editor: caught error on rule evaluation: " e.message e))))
                                  true)
@@ -13887,6 +14221,8 @@
                                  (push key_history_acc key)
                                  (while (> key_history_acc.length key_history_length)
                                     (take key_history_acc))))))
+    (set_last_active_element (fn (status)
+                                (= last_active_elem status.element)))
     (key_down_event (fn (event)
                        (progc
                           (let
@@ -13904,7 +14240,7 @@
                                         (-> options `on_close self))
                                      (destroy_control self))
                                else
-                               (progn
+                               (progc
                                   (add_to_key_history (get_key_code event))
                                   (= last_event_context (process_rules_for_event event))
                                   (when (> __VERBOSITY__ 0) 
@@ -13922,8 +14258,11 @@
                                                    c.tagName
                                                    "text")))))
                             (= current_point status)
+                            (= saved_point status)
+                            (when (attributes_showing?)
+                               (show_attributes status.element))
+                            ;(console.log "key_up_event: current_point: " current_point)
                             (= last_event_context (process_rules_for_event event))
-                            
                             (when (or (and (== key.length 1)
                                             (not event.metaKey)
                                             (not event.ctrlKey))
@@ -13967,10 +14306,11 @@
                                               (element_to_lisp root_elem { use_ns: `html } )))))
                                   1000))
                                
-                            (-> debug_elem `replaceChildren
-                               (pre (pretty_print (element_to_lisp root_elem))))
+                            (when options.debug
+                               (-> debug_elem `replaceChildren
+                                  (pre (pretty_print (element_to_lisp root_elem)))))
                             ))))
-    (control_bar_elements [ locked_span ])
+   
     (cut_selection (fn ()
                       (let
                          ((selection (get_selection))
@@ -13987,11 +14327,12 @@
                           (when (not (blank? copytext))
                              (-> navigator.clipboard `writeText copytext)))))
     
-    (paste_selection (fn ()
+    (paste_selection (fn (e)
                         (let
                            ((text (-> navigator.clipboard `readText)))
-                           (notify "Pasting text")
-                           (doc_exec `insertText text))))
+                           (console.log "paste selection: " e.srcElement (is_input? e.srcElement))
+                           (doc_exec `insertHTML text))))
+    
     (request_save (function ()
                         (progn
                            (if (or options.path options.filename)
@@ -14001,12 +14342,14 @@
                         (-> Environment `get_namespace_handle options.namespace)
                         Environment))
     (menu_items (fn ()
-                   (conj rules_menu
+                   (conj [["Actions" rules_menu]]
                       [["Copy contents as Lisp Structure" (fn (e) (copy_text_to_clipboard (pretty_print (as_lisp (-> self `get)))))]
                        (if options.filename
-                          [(+ "Save " (get_editor_file_basename self)) (fn (e) (request_save))]
+                          [(+ (dtext "Save") " " (get_editor_file_basename self)) (fn (e) (request_save))]
                           [])
-                       ["Save as..." (fn (e) (save_as)) ]
+                       [(+ (dtext "Save as") "...") (fn (e) (save_as)) ]
+                       [(dtext "Select Evaluator")
+                           user_select_evaluator]
                        (if options.read_only
                                 [ (dtext "Allow Editing" ) (fn () (-> self `set_read_only false)) ]
                                 [ (dtext "Set Read-Only Mode") (fn () (-> self `set_read_only true)) ])])))
@@ -14073,27 +14416,229 @@
                                           (set_prop locked_span
                                              `innerText
                                              (dtext ""))))))))
-    (error_state false)      
+    (set_show_attributes (fn (state)
+                            (alert_on_error "Unable to show attributes"
+                                            (if state
+                                               (progn
+                                                  (set_prop options
+                                                     `show_attributes
+                                                     true)
+                                                  (add_class "juno-button-on" show_attributes_button)
+                                                  (-> sview `set_show_second_panel true))
+                                                  (progn
+                                                     (set_prop options
+                                                        `show_attributes
+                                                        false)
+                                                     (remove_class "juno-button-on" show_attributes_button)
+                                                     (-> sview `set_show_second_panel false))))))
+                                  
+    (accept_content (fn (files)
+                       (let
+                          ((fdata nil)
+                           (content_ok? 
+                              (let
+                                 ((is_image? false))
+                                 (for_each (file files)
+                                    (when file.type
+                                       (if (starts_with? "image/" file.type)
+                                           (= is_image? true)
+                                           (progn
+                                              (= is_image? false)
+                                              (break)))))
+                                 is_image?)))
+                          ;; if the content is an image or image, OK
+                          ;; otherwise send them to the standard import
+                       (if content_ok?
+                          (progn
+                             (for_each (file files)
+                                (let
+                                   ((new_image nil)
+                                    (id (gen_id "img")))
+                                   (= fdata (encode_to_base64 (read_file file { `read_as: "binary" })))
+                                   (= new_image 
+                                         (img { id: id style: "width: 500px; height: auto; " src: (+ "data:" file.type ";base64," fdata) }))
+                                   (doc_exec `insertHTML new_image.outerHTML)
+                                   (sleep 0.01)
+                                   (= new_image (get_by_id id))
+                                   (when new_image
+                                      (notify "Making resizable")
+                                      (wrap_in_resizable
+                                         new_image)))))
+                          (load_files files)))))
+    (error_state false)
     (on_destroy (fn ()
-                                                   (progn
+                   (progn
+                      (cond
+                         is_dirty?
+                         (progn
+                            (defvar response
+                               (request_user_input options.name
+                                                   "text"
+                                                   { input: (div { value: "remove" }
+                                                                 (dtext "The contents of this editor haven't been stored. Really remove?")) }))
+                            response)
+                         else
+                         true))))
+    (page_attribs {
+                    class: ""
+                    style: "" 
+                    })
+    (show_page_view_attributes (fn ()
+                                   (let
+                                      ((attrib_list (prop root_elem `attributes)))
+                                      (for_each (attrib_num (range (length attrib_list)))
+                                         (progn
+                                            (set_prop page_attribs
+                                               (resolve_path [ `attributes attrib_num `name ] root_elem)
+                                               (resolve_path [ `attributes attrib_num `value ] root_elem))))
+                                      (-> attributes_page_view
+                                                  `replaceChildren
+                                                  (div { `style: "width: calc(100% -5px);" }
+                                                       (value_to_dom page_attribs
+                                                                     {
+                                                                       table_style: "width: 100%;table-layout: fixed;"
+                                                                       key_style: "width: 150px"
+                                                                       input_class: "juno-full-width"
+                                                                       editable: true
+                                                                       disable_object_toggle: true
+                                                                       on_change: (function (path new_value)
+                                                                                     (progn
+                                                                                        (handle_attribute_change root_elem (first path) new_value)
+                                                                                        new_value))
+                                                                       }))))))
+    (attributes_showing? (fn ()
+                            (has_class? "juno-button-on" show_attributes_button)))
+    (displayed_element_for_attributes nil)
+    (show_attributes (fn (element)
+                        (if (and element
+                                 (not (== element displayed_element_for_attributes)))
+                           (let
+                              ((attrib_list (prop element `attributes))
+                               (attribs {
+                                   class: ""
+                                   style: ""
+                               }))
+                              (= displayed_element_for_attributes element)
+                              (for_each (attrib_num (range (length attrib_list)))
+                                 (progn
+                                    (set_prop attribs
+                                       (resolve_path [ `attributes attrib_num `name ] element)
+                                       (resolve_path [ `attributes attrib_num `value ] element))))
+                              (console.log "show_attributes: current_point: " current_point)
+                              (set_prop attributes_title
+                                `innerText
+                                (+  element.tagName))
+                              (-> attributes_content_view
+                                 `replaceChildren
+                                 (div { `style: "width: calc(100% -5px);" }
+                                      (value_to_dom attribs
+                                                    {
+                                                      table_style: "width: 100%;table-layout: fixed;"
+                                                      key_style: "width: 150px"
+                                                      input_class: " juno-full-width"
+                                                      editable: true
+                                                      disable_object_toggle: true
+                                                      on_change: (function (path new_value)
+                                                                     (progn
+                                                                        (handle_attribute_change element (first path) new_value)
+                                                                        new_value))
+                                                      })
+                                      ))))))
+    
+    (update_command (fn (element text)
+                       (progn
+                          (set_attribute element
+                             `command_text
+                             text)
+                          (set_prop  element 
+                             `onclick
+                              (eval_struct (read_lisp text))))))
+    
+    (handle_attribute_change (function (element key new_value)
+                                (progn
+                                   (when (not is_dirty?)
+                                      (add_class "juno-needs-save" title_span))
+                                   (= is_dirty? true)
                                    (cond
-                                      is_dirty?
+                                      (== key "class")
+                                      (progc
+                                         (log "handle_attribute_change: " element.classList.value)
+                                         
+                                         (let
+                                            ((current_classes (split_by " " element.classList.value))
+                                             (new_classes (split_by " " new_value)))
+                                            (log "adjusting classes: " current_classes "-> " new_classes)
+                                            (for_each (c current_classes)
+                                               (unless (contains? c new_classes)
+                                                  (remove_class c element)))
+                                            (for_each (c new_classes)
+                                               (unless (has_class? c element)
+                                                  (add_class c element)))
+                                            element.classList))
+                                      (== key "style")
                                       (progn
-                                         (defvar response
-                                            (request_user_input options.name
-                                                                "text"
-                                                                { input: (div { value: "remove" } 
-                                                                              (dtext "The contents of this editor haven't been stored. Really remove?")) }))
-                                         response)
-                                      else
-                                      true))))
+                                         (-> element `setAttribute "style" new_value)
+                                         new_value)
+                                      (== key "command_text")
+                                      (progn
+                                         (update_command element new_value)
+                                         new_value))
+                                   (when options.debug
+                                      (-> debug_elem `replaceChildren
+                                         (pre (pretty_print (element_to_lisp root_elem)))))
+                                   new_value
+                                      )))
+    (sorted_symbols [])
+    (cached_symbols nil)
+    (get_current_symbols (fn ()
+                            (let
+                               ((symbol_set (if evaluator_control
+                                                (-> evaluator_control `available_symbols)))
+                                (cns (if evaluator_control
+                                         (-> evaluator_control `current_namespace)))
+                                (in_path nil)
+                                (search_order nil))
+                               (when (== self nil)
+                                  (log_error "text_editor: getting current symbols and shouldn't be since we are destroyed!"))
+                               (when (is_object? symbol_set)
+                                  (= cached_symbols symbol_set)
+                                  (= search_order
+                                     (if cns
+                                        (conj [ cns `core ]
+                                              (reduce_sync (ns (keys cached_symbols) )
+                                                 (if (and (not (== ns `core))
+                                                          (not (== ns cns)))
+                                                     ns)))
+                                        (keys cached_symbols)))
+                                  (= sorted_symbols
+                                     (flatten
+                                        (for_each (ns search_order)
+                                           (progn
+                                              (if (or (== ns cns)
+                                                      (== ns `core))
+                                                  (= in_path true)
+                                                  (= in_path false))
+                                              (for_each (sym (keys (prop cached_symbols ns)))
+                                                 (if in_path
+                                                    sym
+                                                    (+ ns "/" sym))))))))
+                               
+                               (when evaluator_control
+                                  (set_prop ns_span
+                                     `innerText
+                                     (-> evaluator_control `current_namespace))))))
+    (evaluator_control nil)
+    (ns_notifier_id (gen_id "ns_notifier"))
+    (name_change_id (gen_id "name_change_notifier"))
     (init_context_menu (fn ()
                           (attach_context_menu
                              content_view
                              (fn (event)
                                 (let
                                    ()
-                                   [
+                                   (conj 
+                                      rules_menu 
+                                      [
                                     (if (is_clipboard_allowed?)
                                         [{
                                            text: "Cut"
@@ -14113,7 +14658,32 @@
                                             path: [`global `paste ]
                                             exec: paste_selection }]
                                         [])
-                                    ])))))
+                                    ]))))))
+    (set_evaluator_control (fn (control)
+                                      (if control.evaluate
+                                         (progn
+                                            (when options.evaluator_id
+                                               (remove_event_handler options.evaluator_id "evaluator_change" ns_notifier_id)
+                                               (remove_event_handler options.evaluator_id "control_name_change" name_change_id))
+                                            (= evaluator_control control)
+                                            (set_evaluator control.evaluate)
+                                            (set_prop options
+                                               `evaluator_id
+                                               control.options.id)
+                                            (register_event_handler options.evaluator_id "evaluator_change" ns_notifier_id get_current_symbols)
+                                            (register_event_handler options.evaluator_id "control_name_change" name_change_id change_evaluator_name)
+                                            (if control.name
+                                               (set_prop evaluator_span
+                                                  `innerText
+                                                  (+ "⭢ " control.name)))
+                                            (get_current_symbols)))))
+    (user_select_evaluator (fn (e)
+                              (progn
+                                 (aif (select_evaluator)
+                                      (progn
+                                         (set_evaluator_control it)
+                                         ;(display_context_message (+ (dtext "Evaluator set to ") it.options.name))
+                                         (notify (+ (dtext "Evaluator set to ") it.options.name)))))))
     (on_initialize (fn ()
                       (progc
                          (let
@@ -14160,7 +14730,7 @@
                                         (set_filename options.filename)
                                         ;(log "remote_content: " remote_content)
                                         (when (and remote_content (not is_fresh))
-                                           (= remote_content (eval (JSON.parse remote_content)))
+                                           (= remote_content (eval (read_lisp remote_content)))
                                            (-> root_elem `replaceWith remote_content)
                                            (= root_elem document_view.children.0)))
                                      (catch Error (e)
@@ -14214,21 +14784,35 @@
                                (load_rules)
                                (catch Error (e)
                                   (log "Error on load_rules: " e.message)))
-                            ;(log "loaded rules: key_sequence_rules: " key_sequence_rules)
-                            ;(log "loaded rules: prior_text_rules: " prior_text_rules)
                             
                             
-                            (attach_event_listener content_view
+                            (attach_event_listener root_elem.parentElement
                                `keyup
                                (fn (e) (key_up_event e)))
                             
-                            (attach_event_listener content_view
+                            (attach_event_listener root_elem.parentElement
                                `keydown
                                (fn (e)
                                   (key_down_event e)))
                             (if options.read_only
                                 (set_read_only true))
                             
+                            (attach_event_listener root_elem
+                               `click
+                               (fn (e)
+                                  (let
+                                     ((status (point_for e.srcElement)))
+                                     (= current_point status)
+                                     (when (attributes_showing?)
+                                        (show_attributes e.srcElement)))))
+                                     
+                                     
+                            
+                            (attach_event_listener show_attributes_button
+                               `click
+                               (fn (e)
+                                  (set_show_attributes (not (has_class? "juno-button-on" e.srcElement)))))
+                          
                             (attach_event_listener content_view
                                `paste
                                (fn (e)
@@ -14239,9 +14823,26 @@
                                      (setTimeout (fn ()
                                                     (check_for_unhandled_elements root_elem))
                                                  50))))
+                            
+                            (attach_event_listener attributes_view
+                               `focusin
+                               (fn (e)
+                                  (progn
+                                     (handle_event e)
+                                     (log "attributes_view: focus in"))))
+                            
+                            (attach_event_listener root_elem.parentElement
+                               `scroll
+                               (fn (e)
+                                  (progn
+                                     (when (> e.srcElement.scrollTop 0)
+                                        (= current_scroll e.srcElement.scrollTop)))))
                                   
+                            (attach_event_listener evaluator_span
+                                           `click
+                                           user_select_evaluator)
                             (init_context_menu)
-                                       
+                            ;(-> document `execCommand `defaultParagraphSeparator true `p)
                             (progc
                                (set_attribute root_elem
                                   `tabindex 0))
@@ -14252,22 +14853,50 @@
                             
                             (check_for_unhandled_elements root_elem)
                             (log "DOM_Editor: options: " options)
+                            
+                            
+                            
                             (setTimeout (fn ()
                                            (progn
-                                              (cond
-                                                 error_state  ;; unable to initialize - so remove ourselves
-                                                 (destroy_control self)
-                                                 (and (or options.content
-                                                          options.filename)
-                                                      (not is_fresh))
-                                                 (progn
-                                                    (log "selecting root elem")
-                                                    (select_element root_elem)
-                                                    (collapse_to_start (get_selection)))
-                                                 else
-                                                 (progn
-                                                    (log "Selecting starter")
-                                                    (select_element starter)))))
+                                              (declare (function setup_drop_file)
+                                                       (global setup_drop_file))
+                                               (setup_drop_file view
+                                                                accept_content)
+                                               (show_page_view_attributes)
+                                               
+                                               (if options.evaluator_id
+                                                  (let
+                                                     ((count 10)
+                                                      (evaluator_control nil))
+                                                     (= evaluator_control (get_control_by_id options.evaluator_id))
+                                                     (while (and (> count 0)
+                                                                 (not evaluator_control))
+                                                        (progn
+                                                           (sleep 1)
+                                                           (dec count)
+                                                           (= evaluator_control (get_control_by_id options.evaluator_id))))
+                                                     (if evaluator_control
+                                                        (set_evaluator_control evaluator_control)
+                                                        (notify "Unable to set evalator control for the buffer - id not found")))
+                                                  (when *system_repl*
+                                                     (set_evaluator_control *system_repl*)))
+                                                (if options.show_attributes
+                                                  (set_show_attributes true)
+                                                  (set_show_attributes false))
+                                               (cond
+                                                  error_state  ;; unable to initialize - so remove ourselves
+                                                  (destroy_control self)
+                                                  (and (or options.content
+                                                           options.filename)
+                                                       (not is_fresh))
+                                                  (progn
+                                                     (log "selecting root elem")
+                                                     (select_element root_elem)
+                                                     (collapse_to_start (get_selection)))
+                                                  else
+                                                  (progn
+                                                     (log "Selecting starter")
+                                                     (select_element starter)))))
                                         100))))))
    {
        control_bar: true
@@ -14277,11 +14906,21 @@
                 [`copy_selection copy_selection]
                 [`cut_selection cut_selection]
                 [`paste_selection paste_selection]
+                [`on_hide on_hide ]
+                [`set_evaluator (fn (new_evaluator)
+                                   (when (is_function? new_evaluator)
+                                      (set_evaluator new_evaluator)))]
+                [`set_evaluator_control set_evaluator_control]
+                [`get_evaluator (fn ()
+                                   evaluator)]
                 [`current_point (fn ()
                                    current_point) ]
-                [`editor {} ]  ;; just to indicate we are an editor type component
+                [`editor {
+                    focus: (fn ()
+                              (console.log "DOM_editor: editor.focus called."))
+                    }]
                 [`get (fn ()
-                         (element_to_lisp root_elem)) ]
+                         (pretty_print (element_to_lisp root_elem))) ]
                 [`root_elem (fn ()
                                root_elem) ]
                 [`set_read_only  set_read_only]
@@ -15315,7 +15954,7 @@
                         (locked_state (layout_locked? current_layout))
                         (f0 (frame_0))
                         (target_layout  f0)
-                        (target_control (get_control_by_id target_layout.options.last_focus_id))
+                        (target_control (or (get_control_by_id target_layout.options.last_focus_id) (default_focus)))
                         (control (file_tree_browser { 
                                                       create_mode: create_mode                          
                                                       on_select: (fn (stack)
@@ -15628,6 +16267,82 @@
                      "code.  <br>include_container:boolean - If true, the root container of the "
                      "layout is included, otherwise only the contents are included.<br> ")
 
+   })
+
+(defun setup_drop_file (dom_elem onload options)
+   (let
+      ((attached_file nil)
+       (files [])
+       (drop  (fn (e)
+                 (progn
+                    (console.log "DROP: " e)
+                    (handle_event e)
+                    (= files e.dataTransfer.files)
+                    (if options.on_drag_leave
+                       (options.on_drag_leave e.dataTransfer.files e))
+                    (onload files))))
+       (drag_enter (fn (e)
+                      (do
+                         (handle_event e)
+                         (= files e.originalEvent.dataTransfer.files)
+                         (if options.on_drag_enter
+                            (do
+                               (if (options.on_drag_enter files e)
+                                   true
+                                   false))
+                            (do
+                               (add_class (or options.drop_ok_class
+                                              "juno-file-drop-ok")
+                                          dom_elem)
+                               true)))))
+       (drag_over  (fn (e)
+                      (do
+                         (handle_event e)
+                         true)))
+       (drag_leave
+          (fn (e)
+             (do
+                (handle_event e)
+                (= files e.originalEvent.dataTransfer.files)
+                (if options.on_drag_leave
+                   (do
+                      (if (options.on_drag_leave files e)
+                          true
+                          false))
+                   (do
+                      (remove_class (or options.drop_ok_class
+                                        "juno-file-drop-ok")
+                                    dom_elem)
+                      true))))))
+      (when (eq nil dom_elem)
+         (throw Error "Invalid DOM Element"))
+      (-> dom_elem `addEventListener `dragenter drag_enter)
+      (-> dom_elem `addEventListener `dragover drag_over)
+      (-> dom_elem `addEventListener `drop drop)
+      (-> dom_elem `addEventListener `dragleave drag_leave)
+      dom_elem)
+   {
+     description: (+ "Given a DOM element and a function that accepts the file data, sets up "
+                     "a drag and drop interface the given DOM element.<br><br>#### Options "
+                     "<br><br>on_drag_enter:function-If present, the function signature (fn "
+                     "(file_array event)) is called when a drag enter event occurs on the DOM "
+                     "element. Return true to accept/false if not "
+                     "acceptable.<br>on_drag_leave:function-If present, the function signature (fn "
+                     "(file_array event)) is called when a drag leave event occurs on the DOM "
+                     "element. <br>drop_ok_class:string-A CSS class to add/remove when an element "
+                     "enters and leaves the DOM element. The default is `juno-file-drop-ok`. ")
+     usage: ["dom_elem:DOM Element" "onload:function" "options:object"]
+     tags: ["ui" "drag" "drop" "file"]
+     })
+
+(defun import_local_files ()
+   (-> resource_loader_button `click)
+   {
+     description: (+ "<br><br>Initiates the process of local file access via the browser.  This will "
+                     "open the Browser\'s file picker window and if a file is selected, will open the "
+                     "import dialog box to allow the user to determine how to process the files. ")
+     usage: []
+     tags: ["import" "local" "files" "resources" "browser" "ui"]
    })
 
 (defun export_system (layout_name options)
@@ -15980,6 +16695,7 @@
                ["Javascript Editor" (fn (e) (new_buffer { `content: "" `type: "javascript" })) ]
                ["CSS Editor" (fn (e) (new_buffer { `content: "" `type: "css" })) ]
                ["Text Editor" (fn (e) (new_buffer { `content: "" `type: "text" })) ]
+               ["Markdown Editor" (fn (e) (new_buffer { `content: "" `type: "markdown" })) ]
                ["JSON Editor" (fn (e) (new_buffer { `content: "" `type: "json" }))]]]
     (if is_served?
        ["Open File" edit_file ]
@@ -16029,7 +16745,7 @@
     [(+ (dtext "Browser Environment") "...")
      [
       [(dtext "Bundle And Save Current State") (fn (e) (export_system nil)) ]
-      [(dtext "Import Local File") (fn (e) (-> resource_loader_button `click)) ]
+      [(dtext "Import Local File") import_local_files ]
       (if is_served?
          ["--" nil])
       (if is_served?
@@ -16279,6 +16995,26 @@
                            "(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS"
                            "SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. "])
               })
+    
+    (setup_drop_file (get_by_id "body") 
+                 load_files
+                 {
+                   on_drag_enter: (fn (files e)
+                                     (progn
+                                        (setTimeout (fn ()
+                                                       (aif (get_by_id "drop_ok")
+                                                            (-> it `remove)))
+                                                    2500)
+                                        (sleep 0.1) ;; a delay allows any drag_leave events to clear first
+                                        (unless (get_by_id "drop_ok")
+                                           (-> (get_by_id "body")
+                                               `append (div { id: "drop_ok" style: "font-size: 2.0em; position: absolute; top: 45%; left: 45%; background: var(--highlight-bg-color); color: var(--highlight-color); padding: 5px; box-shadow: 2px 3px 8px 0px #00000040;" }
+                                                            "Drop To Import Files")))))
+                   on_drag_leave: (fn (files e)
+                                     (progn
+                                        (aif (get_by_id "drop_ok")
+                                             (-> it `remove))))
+                 })
     
     (attach_event_listener juno_container `click
                            (fn (e)

@@ -1856,7 +1856,12 @@ div.juno-symbol-browser {
   
 }
 
-.juno-list-item:hover {
+
+.juno-menu-item {
+  text-overflow: ellipsis;
+}
+
+.juno-menu-item:hover {
   background-color: var(--highlight-bg-color) !important;
   color: var(--highlight-color) !important;
 }
@@ -2190,11 +2195,15 @@ span.juno-editable:focus {
   margin-left: 2px;  
 }
 
-
 span.juno-tag {
     cursor: pointer; 
     margin-right: 5px; 
-    padding: 5px;
+    padding-bottom: 2px;
+    padding-top: 2px;
+    padding-left: 5px;
+    padding-right: 5px;
+    color: var(--value-modified-color);
+    display: inline-block;
     border: 1px solid var(--main-accent-line-hover);
     transition: all .1s ease-in-out;
 }
@@ -2261,6 +2270,11 @@ span.juno-hint {
     cursor: pointer;
 }
 
+.juno-dom-editor-root {
+    padding: 10px;
+    border: 1px dashed var(--main-accent-line);
+}
+
 .juno-non-value {
     opacity: 60%;
 }
@@ -2269,6 +2283,10 @@ span.juno-hint {
     padding: 5px;
     background: var(--main-accent-line);
     cursor: pointer;
+}
+
+.juno-full-width {
+    width: 100%;
 }
 
 .juno-bottom-bar {
@@ -2295,6 +2313,51 @@ span.juno-hint {
     justify-content: stretch;
     flex-direction: column;
 }
+
+ul.juno-tabs {
+    padding-inline-start: 0px;
+    padding: 0;
+}
+
+.juno-tabs li {
+    list-style: none;
+    display: inline-block;
+    padding: 5px;
+    border-right: 1px solid var(--main-accent-line);
+    margin-right: 0px;
+    min-width: 100px;
+    background: var(--main-bg-color);
+    text-align: center;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    
+}
+
+li.juno-tab-active {
+  border-bottom: 2px solid var(--selected-color);
+  font-weight: bold;
+}
+
+.juno-tab-content-section {
+    overflow: auto;
+    display: inline-block;
+    width: calc(100% - 5px);
+    height: calc(100% - 50px);
+}
+
+
+
+.juno-tab-content {
+  display: none;
+  opacity: 1;
+}
+
+div.juno-tab-active {
+  display: block;
+  opacity: 1;
+}
+
+
 
 /* Overrides - may be dealt with in a better way but for now
  * placing in the same as the main style set for easier
