@@ -575,7 +575,44 @@
                                    (new_buffer { mode: `markdown content: content })
                                    (new_buffer { mode: `markdown content: content } )))))))
      }
-     on_blank:{
+     on_space: {
+         on_event: `keydown
+         key_sequence: "Space"
+         control_menu: false
+         handle_event: true
+         qualifier: (fn (point ctl)
+                       (not (point_under_element_tag? "PRE" point)))
+         exec: (fn (point ctl event)
+                  (let
+                     ((pre_post (get_text_around_point point))
+                      (last_word (trim (last (split_by (String.fromCharCode 160) (trim (last (split_by " " (+ "" pre_post.0))))))))
+                      (selection nil)
+                      (classes nil)
+                      (text nil)
+                      (initial_elem nil))
+                     (if (and (starts_with? "`" last_word)
+                              (ends_with? "`" last_word)
+                              (> last_word.length 2))
+                         (progn
+                            
+                            (= selection (get_selection))
+                            (= initial_elem point.element)
+                            ;; move back the length of the symbol since it can contain characters that
+                            ;; aren't considered
+                            (for (idx (range last_word.length))
+                                 (-> selection `modify `extend `left `character))
+                            (sleep 0.001)
+                            (= text (-> last_word `substr 1 (- last_word.length 2)))
+                            (if (is_symbol? text)
+                                (progn
+                                   (= classes (+ "juno-type-" (lowercase (sub_type (get_global text nil))))))
+                                (= classes ""))
+                            (doc_exec `insertHTML (+ "<code spellcheck='false' class='" classes "'>" text "</code><span>&nbsp;</span>"))
+                            (sleep 0.001))
+                         (progn
+                            (doc_exec `insertText " ")))))
+     }
+     on_empty_doc:{
          on_event: `keyup
          key_sequence: "Backspace"
          control_menu: false
@@ -863,7 +900,7 @@
     (debug_container_elem (div { `style: "height: calc(100% - 10px); overflow: hidden;" }
                                status_elem
                                debug_elem))
-    (attributes_title (h4 { style: "margin-block-start: 10px; margin-block-end: 10px;" } "Attributes"))
+    (attributes_title (div { style: "margin-block-start: 10px; margin-block-end: 10px;" } "Attributes"))
     (attributes_header_view (div { style: "margin: 0px; padding: 2px; background: #00000010;" }
                                    attributes_title
                                    ))
@@ -1027,7 +1064,7 @@
                       (log "DOM_editor: on_hide: no current point"))
                    (when current_point
                       ;(= saved_point (clone current_point))
-                      (log "DOM_editor: saved_point: range: " saved_point.range)
+                      ;(log "DOM_editor: saved_point: range: " saved_point.range)
                       ;(set_prop saved_point
                       ;   `range (-> saved_point.range `cloneRange))
                       ;(-> saved_point.selection `removeAllRanges)
@@ -1044,7 +1081,7 @@
                              (move_to_point_a saved_point)
                              (set_prop root_elem.parentElement `scrollTop current_scroll)
                              ;(-> saved_point.element `scrollIntoView)
-                             ;(set_prop (first (get_by_tag "html")) `scrollTop 0)
+                             (set_prop (first (get_by_tag "html")) `scrollTop 0)
                              (= hide_state false))
                          (progn
                             (move_to_point_a saved_point)))
@@ -1186,8 +1223,13 @@
                                                    "text")))))
                             (= current_point status)
                             (= saved_point status)
+                           
                             (when (attributes_showing?)
                                (show_attributes status.element))
+                            (when current_point.element.tagName
+                               (set_prop attributes_title
+                                  `innerText
+                                  current_point.element.tagName))
                             ;(console.log "key_up_event: current_point: " current_point)
                             (= last_event_context (process_rules_for_event event))
                             (when (or (and (== key.length 1)
@@ -1256,10 +1298,47 @@
     
     (paste_selection (fn (e)
                         (let
-                           ((text (-> navigator.clipboard `readText)))
-                           (console.log "paste selection: " e.srcElement (is_input? e.srcElement))
-                           (doc_exec `insertHTML text))))
-    
+                           ((perms (navigator.permissions.query { `name: "clipboard-read" }))
+                            (contents nil)
+                            (pasted false)
+                            (id (gen_id "paste_content"))
+                            (new_image nil)
+                            (blob nil))
+                           (if (== perms.state "denied")
+                              (notify "Unable to paste due to invalid permissions")
+                              (progn
+                                 (= contents (-> navigator.clipboard `read))
+                                 (for_with (item contents)
+                                    (when (not pasted)
+                                       (log "clipboard item: " item)
+                                       (for_each (item_type item.types)
+                                          (progn
+                                             (log "..checking: " item_type)
+                                             (cond
+                                                (== item_type "text/html")
+                                                (progn
+                                                   (= pasted true)
+                                                   (doc_exec `insertHTML (-> navigator.clipboard `readText))
+                                                   (break))
+                                                (== item_type "text/plain")
+                                                (progn
+                                                   (= pasted true)
+                                                   (doc_exec `insertText (-> navigator.clipboard `readText))
+                                                   (break))
+                                                (starts_with? "image/" item_type)
+                                                (progn
+                                                   (= pasted true)
+                                                   (= blob (-> item `getType item_type))
+                                                   (= new_image 
+                                                      (img { id: id style: "width: 400px; height: auto; " src: (+ "data:" item_type ";base64," (encode_to_base64 blob)) }))
+                                                   (doc_exec `insertHTML new_image.outerHTML)
+                                                   (sleep 0.01)
+                                                   (= new_image (get_by_id id))
+                                                   (when new_image
+                                                      (wrap_in_resizable
+                                                         new_image))
+                                                   (break))))))))))))
+                     
     (request_save (function ()
                         (progn
                            (if (or options.path options.filename)
@@ -1454,7 +1533,8 @@
                               (console.log "show_attributes: current_point: " current_point)
                               (set_prop attributes_title
                                 `innerText
-                                (+  element.tagName))
+                                (+  element.tagName ": " (join " | " (get_text_around_point current_point))))
+                              
                               (-> attributes_content_view
                                  `replaceChildren
                                  (div { `style: "width: calc(100% -5px);" }
@@ -1515,6 +1595,64 @@
                                          (pre (pretty_print (element_to_lisp root_elem)))))
                                    new_value
                                       )))
+    (rename_editor (fn ()
+                      (let
+                         ((name_input (input { `tabindex: 0 `style: "width: 95%; font-weight: bold;" `value: options.name } ))
+                          (bbox (-> title_span `getBoundingClientRect))
+                          (rename_view
+                             (div { `id: "cmenu" `style: (+ "z-index: 10000; padding: 5px; margin: 0px; min-width: " (+ bbox.width 15) "px; background: inherit; position:absolute; top: " (- bbox.top 5) "px; left: "  bbox.left "px;") }
+                                  
+                                  name_input
+                                  (div { `style: "padding: 5px;"}
+                                       (cond
+                                          (and (is_array? options.path)
+                                               (== "filesystem" (first options.path)))
+                                          (div
+                                             (div { `style: "padding: 5px; font-weight: bold" } "Save To File")
+                                             (div { `style: "padding: 5px; " } (join " / " (rest options.path))))
+                                          (is_array? options.path)
+                                          (div
+                                             (div { `style: "padding: 5px; font-weight: bold" } "Save To Symbol")
+                                             (for_each (comp options.path)
+                                                (span { `style: "padding: 5px;" } comp)))
+                                          (eq nil options.path)
+                                          (div
+                                             (div { `style: "padding: 5px; font-weight: bold" } "Temporary Buffer" )
+                                             (div { `style: "padding: 5px;" } "No Path"))
+                                          else
+                                          (div
+                                             (div { `style: "padding: 5px; font-weight: bold" } "Check Path")
+                                             (div (as_lisp options.path)))))))
+                          (cmenu_remove (fn ()
+                                           (aif (get_by_id "cmenu")
+                                                (-> it `remove)))))
+                         
+                         (declare (function resolver))
+                         (log "renaming editor" bbox)
+                         (cmenu_remove)
+                         (sleep 0.01)
+                         (-> (get_by_id "body")
+                             `append rename_view)
+                         (-> name_input `select)
+                         (focus_to name_input)
+                         (attach_event_listener name_input
+                            `keyup
+                            (fn (e)
+                               (progn
+                                  (cond
+                                     (and (== e.key "Enter")
+                                          (not (blank? name_input.value)))
+                                     (progn
+                                        (set_name name_input.value)
+                                        (set_prop options
+                                           `group_name
+                                           options.name)
+                                        (cmenu_remove)
+                                        (focus_to_editor self))
+                                     (== e.key "Escape")
+                                     (progn
+                                        (cmenu_remove)
+                                        (focus_to_editor self)))))))))
     (sorted_symbols [])
     (cached_symbols nil)
     (get_current_symbols (fn ()
@@ -1712,7 +1850,10 @@
                                (catch Error (e)
                                   (log "Error on load_rules: " e.message)))
                             
-                            
+                             (attach_event_listener title_span 
+                                           `click
+                                           (fn (e)
+                                              (rename_editor e)))
                             (attach_event_listener root_elem.parentElement
                                `keyup
                                (fn (e) (key_up_event e)))
@@ -1780,8 +1921,6 @@
                             
                             (check_for_unhandled_elements root_elem)
                             (log "DOM_Editor: options: " options)
-                            
-                            
                             
                             (setTimeout (fn ()
                                            (progn

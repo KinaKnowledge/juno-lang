@@ -1253,6 +1253,20 @@
                  (id (gen_id "placeholder"))
                  (evaluator nil)
                  (elem nil)
+                 (insert_content_into_dom (fn (result)
+                                             (progn
+                                                
+                                                (doc_exec `insertHTML (+ "<span id='" (+ id "_pre") "' style=''>&nbsp;</span><span id='" id "' class='juno-type-" (lowercase (sub_type result)) "'>" result "</span><span id='" (+ id "_post") "' style=''>&nbsp;</span>") true)
+                                                (select_element (get_by_id id))
+                                                (doc_exec `removeFormat)
+                                                (select_element (get_by_id (+ id "_pre")))
+                                                (doc_exec `removeFormat)
+                                                (select_element (get_by_id (+ id "_post")))
+                                                (doc_exec `removeFormat)
+                                                (remove_attribute  (get_by_id (+ id "_pre")) `id)
+                                                (remove_attribute  (get_by_id id) `id)
+                                                (remove_attribute  (get_by_id (+ id "_post")) `id)
+                                                (collapse_to_end (get_selection)))))
                  (insert_result (fn (result)
                                    (cond
                                       (is_element? result)
@@ -1271,17 +1285,27 @@
                                          (insert_elem_at_point (pre
                                                                     (+ "" (pretty_print (as_lisp result))))))
                                       (is_string? result)
-                                      (doc_exec `insertHTML result)
+                                      (insert_content_into_dom result)
+                                      (is_number? result)
+                                      (insert_content_into_dom result)
                                       else
                                       (insert_elem_at_point (pre (+ "" (pretty_print (as_lisp result))))))))
                                 
                  (insert_elem (fn (result)
                                  (progn
-                                    (doc_exec `insertHTML (+ "<br/><div id='" id "'>PLACEHOLDER</div><div>&nbsp;</div>") true)
+                                    (log "inserting result")
+                                    (doc_exec `insertHTML (+ "<span id='" (+ id "_pre") "' style=''>&nbsp;</span><div id='" id "'>PLACEHOLDER</div><span id='" (+ id "_post") "' style=''>&nbsp;</span>") true)
                                     (sleep 0.1)
+                                    
                                     (= elem (get_by_id id))
-                                    (if elem
+                                    (when elem
                                        (-> elem `replaceWith result)
+                                       (select_element (get_by_id (+ id "_pre")))
+                                       (doc_exec `removeFormat)
+                                       (select_element (get_by_id (+ id "_post")))
+                                       (doc_exec `removeFormat)
+                                       (remove_attribute  (get_by_id (+ id "_pre")) `id)
+                                       (remove_attribute  (get_by_id (+ id "_post")) `id)
                                        (notify "Cannot find placeholder")))))
                  (text (when selected
                           (-> selected `toString)))
@@ -1305,8 +1329,8 @@
                            (progn
                               (alert_on_error (dtext "Evaluation Error")
                                               (= result (evaluator text false true true)))
-                              (-> selected `deleteFromDocument)
-                              (-> selected `collapseToStart)
+                              ;(-> selected `deleteFromDocument)
+                              ;(-> selected `collapseToStart)
                               (insert_result result))
                               
                            (notify (+ "No evaluator for control " ctl.name)))))))))

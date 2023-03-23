@@ -2345,8 +2345,6 @@ li.juno-tab-active {
     height: calc(100% - 50px);
 }
 
-
-
 .juno-tab-content {
   display: none;
   opacity: 1;
@@ -2355,6 +2353,27 @@ li.juno-tab-active {
 div.juno-tab-active {
   display: block;
   opacity: 1;
+}
+
+.juno-lower-left-expander {
+    position: absolute; 
+    right: 0px; 
+    bottom: -10px; 
+    width: 25px; 
+    height: 25px; 
+    cursor: nwse-resize; 
+    background: tranparent;
+    text-align: right;
+    font-size: 1em;
+    opacity: 0.0;
+    transition: all .1s ease-in-out;
+}
+
+.juno-lower-left-expander:hover {
+    opacity: 1;
+    font-size: 2em;
+    color: var(--primary-action-bg-color);
+    transition: all .1s ease-in-out;
 }
 
 

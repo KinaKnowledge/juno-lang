@@ -1082,7 +1082,7 @@
                        `(split_view_vertical ,#content_a ,#content_b ,#options)))
     intf)
   {
-    description: (+ "<br><br>The `split_view_vertical` and the `split_view_horizontal` functions "
+    description: (+ "The `split_view_vertical` and the `split_view_horizontal` functions "
                     "return a framing control that provides a vertical or horizontal partition "
                     "between two elements or controls.  The ratio of the left side to the right "
                     "side, or top side to the bottom side can be varied using a draggable "

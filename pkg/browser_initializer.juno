@@ -186,6 +186,237 @@
 (defmacro get_selection ()
       `(-> window `getSelection))
 
+
+(defun_sync get_cursor_position (element)
+  (javascript | {
+                  let position = 0;
+                  const isSupported = typeof window.getSelection !== "undefined";
+                  if (isSupported) {
+                       const selection = window.getSelection();
+                       if (selection.rangeCount !== 0) {
+                              const range = window.getSelection().getRangeAt(0);
+                              const preCaretRange = range.cloneRange();
+                              preCaretRange.selectNodeContents(element);
+                              preCaretRange.setEnd(range.endContainer, range.endOffset);
+                              position = preCaretRange.toString().length;
+                              }
+                       }
+                  return position;
+                  } |))
+
+(defun_sync get_caret_coordinates ()
+   (javascript | {
+                   let x = 0,
+                   y = 0;
+                   const isSupported = typeof window.getSelection !== "undefined";
+                   if (isSupported) {
+                                      const selection = window.getSelection();
+                                      if (selection.rangeCount !== 0) {
+                                                                        const range = selection.getRangeAt(0).cloneRange();
+                                                                        range.collapse(true);
+                                                                        const rect = range.getClientRects()[0];
+                                                                        if (rect) {
+                                                                                    x = rect.left;
+                                                                                    y = rect.top;
+                                                                                    }
+                                                                        }
+                                      }
+                   return { x, y };
+                   } | ))
+
+
+
+
+;; verbs for our editing command language
+
+
+(defun_sync get_range (selection index)
+   (-> selection `getRangeAt (or index 0)))
+
+(defmacro remove_all_ranges (selection)
+   `(-> ,#selection `removeAllRanges))
+
+(defmacro collapse_to_start (selection)
+   `(-> ,#selection `collapseToStart))
+
+(defmacro collapse_to_end (selection)
+   `(-> ,#selection `collapseToEnd))
+
+(defun_sync select_element (elem)
+      (-> (get_selection) `selectAllChildren elem))
+
+(defun_sync move_to_point (point_obj)
+   (progc
+      (when point_obj.selection
+         (focus_to (if (== point_obj.pos_type 1)
+                       point_obj.pos_node
+                       point_obj.pos_node.parentElement))
+         (defvar selection (get_selection))
+         (remove_all_ranges selection)
+         (-> selection `addRange point_obj.range))))
+
+(defun move_to_point_a (point_obj)
+   (progc
+      (when point_obj.selection
+         (set_attribute point_obj.element `contenteditable `true)
+         (focus_to point_obj.element)
+         (sleep 0.1)
+         (select_element point_obj.element)
+         (defvar selection (get_selection))
+         (collapse_to_start selection)
+         ;(remove_all_ranges selection)
+         ;(-> selection `addRange point_obj.range)
+         (if (== point_obj.pos_type 3)
+             (progn
+                (collapse_to_start selection)
+                (for_each (idx (range point_obj.position))
+                   (-> selection `modify `move `right  "character")))
+             (collapse_to_start selection)))))      
+   
+(defun_sync move_point (dir granularity)
+   (progc
+      (let
+         ((selection (get_selection)))
+         (when selection
+            (-> selection `modify `move dir (or granularity "character"))))))
+
+(defun_sync extend_from_point (dir granularity)
+   (progc
+      (let
+         ((selection (get_selection)))
+         (when selection
+            (-> selection `modify `extend dir (or granularity "character"))))))
+
+(defun point_for (root_element)
+   (let
+      ((selection (get_selection))
+       (selrange (get_range selection))
+       (selected_node selrange.startContainer)
+       (offset selrange.startOffset)
+       (last_element nil)
+       (position (progn
+                    (if (== selrange.startContainer.nodeType 3)
+                        (progn
+                           (get_cursor_position selrange.startContainer.parentElement))
+                        selrange.endOffset)))
+       (current_element selected_node)
+       (path []))
+      (while (and (not (eq current_element nil))
+                  (not (== current_element root_element)))
+         (progn
+            (prepend path current_element)
+            (when (and (eq nil last_element)
+                       (is_element? current_element))
+               (= last_element current_element))
+            (= current_element current_element.parentElement)))
+      { dom_path: path
+        position: position
+        pos_type: selected_node.nodeType
+        pos_node: selected_node
+        element: last_element
+        selection: selection
+        range: selrange
+        })
+   {
+     `description: (+ "Given a reference to a placed DOM element, returns an object " 
+                      "that contains the contextual details of the current cursor position and selection."
+                      "<br>#### Layout of Return Object<br>"
+                      "```"
+                      "{ dom_path: path\n  position: position\n  pos_type: selected_node.nodeType\n  pos_node: selected_node\n  selection: selection\n  range: selrange\n}"
+                      "```")
+     `usage: ["element:Element"]
+     `tags: ["DOM" "UI" "editor"]
+   })
+
+(defun_sync select_node_at_point ()
+   (let
+      ((selection (get_selection))
+       (selrange (get_range selection)))
+      (if (== selrange.startContainer.nodeType 3)
+         (-> selection `selectAllChildren selrange.startContainer.parentElement)
+         (-> selection `selectAllChildren selrange.startContainer))))
+       
+      
+(defun_sync get_text_around_point (point)
+   (let
+      ((text [])
+       (elem nil))
+      (progc
+         (when point
+            (cond 
+               (== point.pos_type 1)
+               (progn
+                  (= elem point.pos_node))
+               (== point.pos_type 3)
+               (progn
+                  (= elem point.pos_node.parentElement))))
+         (when elem
+            (push text
+               (-> elem.innerText `substr 0 point.position))
+            (push text
+               (-> elem.innerText `substr point.position)))
+         text))
+   {
+       description: (+ "Given a point object,returns an array that can "
+                       "contain up to two strings.  The first value, at position "
+                       "0, is the element text pior to the point's position. "
+                       "The second value is the text of the element after "
+                       "the point's position.")
+       usage: ["point_object:object"]
+       tags: ["DOM" "point" "edit" "selection" "editor" "select"]
+   })
+         
+            
+               
+(defun_sync point_tag_path (point)
+   (for_each (c point.dom_path)
+      (progn
+         (if (== 1 c.nodeType)
+             c.tagName
+             "text")))
+   {
+       `description: "Given a point object, returns the tag names that comprise the path to the point."
+       `usage: ["point:object"]
+       `tags: ["point" "editor" "DOM" "selection" "select"]
+   })
+
+
+
+(defun insert_elem_at_point (elem)
+      (try
+         (let
+            ((selection (get_selection))
+             (selrange (-> selection `getRangeAt 0))
+             (parent_element (if (== selrange.startContainer.nodeType 3)  ;; text node
+                                 selrange.startContainer.parentElement
+                                 selrange.startContainer))
+             (offset selrange.startOffset)
+             (remaining_text nil))
+            ;; extend it from the current point
+            
+            (-> selrange `setEndBefore parent_element.nextSibling)
+            (= remaining_text (-> selrange `toString))
+            (-> selection `deleteFromDocument)
+            (= selection (get_selection))
+            (remove_all_ranges selection)
+            (-> selection `addRange selrange)
+            (-> parent_element `append elem remaining_text)
+            (collapse_to_start selection))
+         (catch Error (e)
+            (log (+ "ERROR: insert_elem_at_point:" e.message)))))
+
+
+(defun_sync point_under_element_tag? (tag_name point)
+   (contains? tag_name (point_tag_path point))
+   {
+       description: (+ "Returns true if the provided editor point is in a "
+                        "DOM tree containing the provided tagname, otherwise false.")
+       usage: ["tag_name:string" "point:object"]
+       tags: ["editor" "point" "cursor" "DOM" "tree" "element"]
+   })
+
+
+
 (defmacro activity_box (options `& body_forms)
    `(let
       ((content_id (gen_id "content"))
@@ -2100,6 +2331,7 @@
            (found false))
           (console.log "switch_to_new_layout: layout_name: " layout_name)
           (= layout_holding_cell (get_layout_holding_cell))
+          (set_prop (first (get_by_tag "html")) `scrollTop 0)
           (cond 
              (and current_layout
                   (== current_layout.name layout_name))
@@ -2133,8 +2365,12 @@
                           true)
                        (control_tree ctl
                           (fn (control)
-                             (when (is_function? control.lock_ratio)
-                                (-> control `lock_ratio false))))
+                             (progn
+                                (when (is_function? control.lock_ratio)
+                                  (-> control `lock_ratio false))
+                                (when (is_function? control.on_hide)
+                                   (-> control `on_hide))
+                                )))
                        (-> ctl `initialize)  ;; if we need to initialize, do it
                        (= found true)
                        (sleep 0.01)
@@ -2645,6 +2881,8 @@
       
       (assert target_control "Unable to find the target control")
       (assert holding_tank "Unable to find the holding tank")
+      (progc
+         (set_prop (first (get_by_tag "HTML")) `scrollTop 0))
       (= position_details (control_position target_control))
       (when (> __VERBOSITY__ 0)
          (log (+ "container_view_operation: do: " command ": target:") target_layout.name target_control.name " new:" 
@@ -5880,6 +6118,20 @@
                  (id (gen_id "placeholder"))
                  (evaluator nil)
                  (elem nil)
+                 (insert_content_into_dom (fn (result)
+                                             (progn
+                                                
+                                                (doc_exec `insertHTML (+ "<span id='" (+ id "_pre") "' style=''>&nbsp;</span><span id='" id "' class='juno-type-" (lowercase (sub_type result)) "'>" result "</span><span id='" (+ id "_post") "' style=''>&nbsp;</span>") true)
+                                                (select_element (get_by_id id))
+                                                (doc_exec `removeFormat)
+                                                (select_element (get_by_id (+ id "_pre")))
+                                                (doc_exec `removeFormat)
+                                                (select_element (get_by_id (+ id "_post")))
+                                                (doc_exec `removeFormat)
+                                                (remove_attribute  (get_by_id (+ id "_pre")) `id)
+                                                (remove_attribute  (get_by_id id) `id)
+                                                (remove_attribute  (get_by_id (+ id "_post")) `id)
+                                                (collapse_to_end (get_selection)))))
                  (insert_result (fn (result)
                                    (cond
                                       (is_element? result)
@@ -5898,17 +6150,27 @@
                                          (insert_elem_at_point (pre
                                                                     (+ "" (pretty_print (as_lisp result))))))
                                       (is_string? result)
-                                      (doc_exec `insertHTML result)
+                                      (insert_content_into_dom result)
+                                      (is_number? result)
+                                      (insert_content_into_dom result)
                                       else
                                       (insert_elem_at_point (pre (+ "" (pretty_print (as_lisp result))))))))
                                 
                  (insert_elem (fn (result)
                                  (progn
-                                    (doc_exec `insertHTML (+ "<br/><div id='" id "'>PLACEHOLDER</div><div>&nbsp;</div>") true)
+                                    (log "inserting result")
+                                    (doc_exec `insertHTML (+ "<span id='" (+ id "_pre") "' style=''>&nbsp;</span><div id='" id "'>PLACEHOLDER</div><span id='" (+ id "_post") "' style=''>&nbsp;</span>") true)
                                     (sleep 0.1)
+                                    
                                     (= elem (get_by_id id))
-                                    (if elem
+                                    (when elem
                                        (-> elem `replaceWith result)
+                                       (select_element (get_by_id (+ id "_pre")))
+                                       (doc_exec `removeFormat)
+                                       (select_element (get_by_id (+ id "_post")))
+                                       (doc_exec `removeFormat)
+                                       (remove_attribute  (get_by_id (+ id "_pre")) `id)
+                                       (remove_attribute  (get_by_id (+ id "_post")) `id)
                                        (notify "Cannot find placeholder")))))
                  (text (when selected
                           (-> selected `toString)))
@@ -5932,8 +6194,8 @@
                            (progn
                               (alert_on_error (dtext "Evaluation Error")
                                               (= result (evaluator text false true true)))
-                              (-> selected `deleteFromDocument)
-                              (-> selected `collapseToStart)
+                              ;(-> selected `deleteFromDocument)
+                              ;(-> selected `collapseToStart)
                               (insert_result result))
                               
                            (notify (+ "No evaluator for control " ctl.name)))))))))
@@ -10189,7 +10451,6 @@
                           (log_view { `display_options: (or options.display_options { `show_timestamps: false } )
                                       `on_focus: (fn (e)
                                                     (progn
-                                                       (console.log "output_control: on_focus, calling our focus")
                                                        (on_focus true))) ;; suppress the focus loop but redirect the focus to this control
                                       `hide_command_button: true
                                       `additional_elements: [ control_button 
@@ -10671,11 +10932,14 @@
        
        (view sview.view)
        (non_whitespace_regex (new RegExp "\\\\s"))
+       (hidden false)
        (on_focus (fn (suppress_output_focus_call)
                    (progn
                       (console.log "visual_repl: on_focus: " suppress_output_focus_call)
                       (unless suppress_output_focus_call
                          (-> output_control `on_focus))
+                      (when hidden
+                         (= hidden false))
                     ;(-> input_container.editor `focus) ;; bring focus to the repl
                     (add_class "juno-focused" output_control.control_bar )
                     (set_prop intf
@@ -10684,6 +10948,11 @@
        (on_blur (fn ()
                   (progn
                    true)))
+       (on_hide (fn ()
+                   (progn
+                      (when output_control
+                         (-> output_control `on_hide))
+                      (= hidden true))))
        (destroy (fn ()
                   (if options.locked
                      (throw EvalError (+ "" options.name " is marked as locked and cannot be destroyed"))
@@ -10939,7 +11208,8 @@
                        (-> sview `resize))
              `menu_items: menu_items                           
              `on_focus: on_focus
-             `on_blur: on_blur           
+             `on_blur: on_blur  
+             `on_hide: on_hide
              `set_theme: (fn (theme_name)
                            (when (contains? theme_name (get_default [ `editor `themes ]))
                              (set_prop options `theme theme_name)
@@ -13175,235 +13445,6 @@
      `tags: ["view" "DOM" "tags" "edit" "manage" "tag" "element"]
      })
 
-(defun_sync get_cursor_position (element)
-  (javascript | {
-                  let position = 0;
-                  const isSupported = typeof window.getSelection !== "undefined";
-                  if (isSupported) {
-                       const selection = window.getSelection();
-                       if (selection.rangeCount !== 0) {
-                              const range = window.getSelection().getRangeAt(0);
-                              const preCaretRange = range.cloneRange();
-                              preCaretRange.selectNodeContents(element);
-                              preCaretRange.setEnd(range.endContainer, range.endOffset);
-                              position = preCaretRange.toString().length;
-                              }
-                       }
-                  return position;
-                  } |))
-
-(defun_sync get_caret_coordinates ()
-   (javascript | {
-                   let x = 0,
-                   y = 0;
-                   const isSupported = typeof window.getSelection !== "undefined";
-                   if (isSupported) {
-                                      const selection = window.getSelection();
-                                      if (selection.rangeCount !== 0) {
-                                                                        const range = selection.getRangeAt(0).cloneRange();
-                                                                        range.collapse(true);
-                                                                        const rect = range.getClientRects()[0];
-                                                                        if (rect) {
-                                                                                    x = rect.left;
-                                                                                    y = rect.top;
-                                                                                    }
-                                                                        }
-                                      }
-                   return { x, y };
-                   } | ))
-
-
-
-
-;; verbs for our editing command language
-
-
-(defun_sync get_range (selection index)
-   (-> selection `getRangeAt (or index 0)))
-
-(defmacro remove_all_ranges (selection)
-   `(-> ,#selection `removeAllRanges))
-
-(defmacro collapse_to_start (selection)
-   `(-> ,#selection `collapseToStart))
-
-(defmacro collapse_to_end (selection)
-   `(-> ,#selection `collapseToEnd))
-
-(defun_sync select_element (elem)
-   (-> (get_selection) `selectAllChildren elem))
-
-(defun_sync move_to_point (point_obj)
-   (progc
-      (when point_obj.selection
-         (focus_to (if (== point_obj.pos_type 1)
-                       point_obj.pos_node
-                       point_obj.pos_node.parentElement))
-         (defvar selection (get_selection))
-         (remove_all_ranges selection)
-         (-> selection `addRange point_obj.range))))
-
-(defun move_to_point_a (point_obj)
-   (progc
-      (when point_obj.selection
-         (set_attribute point_obj.element `contenteditable `true)
-         (focus_to point_obj.element)
-         (sleep 0.1)
-         (select_element point_obj.element)
-         (defvar selection (get_selection))
-         (collapse_to_start selection)
-         ;(remove_all_ranges selection)
-         ;(-> selection `addRange point_obj.range)
-         (if (== point_obj.pos_type 3)
-             (progn
-                (collapse_to_start selection)
-                (for_each (idx (range point_obj.position))
-                   (-> selection `modify `move `right  "character")))
-             (collapse_to_start selection)))))      
-   
-(defun_sync move_point (dir granularity)
-   (progc
-      (let
-         ((selection (get_selection)))
-         (when selection
-            (-> selection `modify `move dir (or granularity "character"))))))
-
-(defun_sync extend_from_point (dir granularity)
-   (progc
-      (let
-         ((selection (get_selection)))
-         (when selection
-            (-> selection `modify `extend dir (or granularity "character"))))))
-
-(defun point_for (root_element)
-   (let
-      ((selection (get_selection))
-       (selrange (get_range selection))
-       (selected_node selrange.startContainer)
-       (offset selrange.startOffset)
-       (last_element nil)
-       (position (progn
-                    (if (== selrange.startContainer.nodeType 3)
-                        (progn
-                           (get_cursor_position selrange.startContainer.parentElement))
-                        selrange.endOffset)))
-       (current_element selected_node)
-       (path []))
-      (while (and (not (eq current_element nil))
-                  (not (== current_element root_element)))
-         (progn
-            (prepend path current_element)
-            (when (and (eq nil last_element)
-                       (is_element? current_element))
-               (= last_element current_element))
-            (= current_element current_element.parentElement)))
-      { dom_path: path
-        position: position
-        pos_type: selected_node.nodeType
-        pos_node: selected_node
-        element: last_element
-        selection: selection
-        range: selrange
-        })
-   {
-     `description: (+ "Given a reference to a placed DOM element, returns an object " 
-                      "that contains the contextual details of the current cursor position and selection."
-                      "<br>#### Layout of Return Object<br>"
-                      "```"
-                      "{ dom_path: path\n  position: position\n  pos_type: selected_node.nodeType\n  pos_node: selected_node\n  selection: selection\n  range: selrange\n}"
-                      "```")
-     `usage: ["element:Element"]
-     `tags: ["DOM" "UI" "editor"]
-   })
-
-(defun_sync select_node_at_point ()
-   (let
-      ((selection (get_selection))
-       (selrange (get_range selection)))
-      (if (== selrange.startContainer.nodeType 3)
-         (-> selection `selectAllChildren selrange.startContainer.parentElement)
-         (-> selection `selectAllChildren selrange.startContainer))))
-       
-      
-(defun_sync get_text_around_point (point)
-   (let
-      ((text [])
-       (elem nil))
-      (progc
-         (when point
-            (cond 
-               (== point.pos_type 1)
-               (progn
-                  (= elem point.pos_node))
-               (== point.pos_type 3)
-               (progn
-                  (= elem point.pos_node.parentElement))))
-         (when elem
-            (push text
-               (-> elem.innerText `substr 0 point.position))
-            (push text
-               (-> elem.innerText `substr point.position)))
-         text))
-   {
-       description: (+ "Given a point object,returns an array that can "
-                       "contain up to two strings.  The first value, at position "
-                       "0, is the element text pior to the point's position. "
-                       "The second value is the text of the element after "
-                       "the point's position.")
-       usage: ["point_object:object"]
-       tags: ["DOM" "point" "edit" "selection" "editor" "select"]
-   })
-         
-            
-               
-(defun_sync point_tag_path (point)
-   (for_each (c point.dom_path)
-      (progn
-         (if (== 1 c.nodeType)
-             c.tagName
-             "text")))
-   {
-       `description: "Given a point object, returns the tag names that comprise the path to the point."
-       `usage: ["point:object"]
-       `tags: ["point" "editor" "DOM" "selection" "select"]
-   })
-
-
-
-(defun insert_elem_at_point (elem under_root)
-      (try
-         (let
-            ((selection (get_selection))
-             (selrange (-> selection `getRangeAt 0))
-             (parent_element (if (== selrange.startContainer.nodeType 3)  ;; text node
-                                 selrange.startContainer.parentElement
-                                 selrange.startContainer))
-             (offset selrange.startOffset)
-             (remaining_text nil))
-            ;; extend it from the current point
-            
-            (-> selrange `setEndBefore parent_element.nextSibling)
-            (= remaining_text (-> selrange `toString))
-            (-> selection `deleteFromDocument)
-            (= selection (get_selection))
-            (remove_all_ranges selection)
-            (-> selection `addRange selrange)
-            (-> parent_element `append elem remaining_text)
-            (collapse_to_start selection))
-         (catch Error (e)
-            (log (+ "ERROR: insert_elem_at_point:" e.message)))))
-
-
-(defun_sync point_under_element_tag? (tag_name point)
-   (contains? tag_name (point_tag_path point))
-   {
-       description: (+ "Returns true if the provided editor point is in a "
-                        "DOM tree containing the provided tagname, otherwise false.")
-       usage: ["tag_name:string" "point:object"]
-       tags: ["editor" "point" "cursor" "DOM" "tree" "element"]
-   })
-
-
 
 (defun DOM_to_markdown (quoted_dom _acc _ctx)
    (let
@@ -13596,7 +13637,44 @@
                                    (new_buffer { mode: `markdown content: content })
                                    (new_buffer { mode: `markdown content: content } )))))))
      }
-     on_blank:{
+     on_space: {
+         on_event: `keydown
+         key_sequence: "Space"
+         control_menu: false
+         handle_event: true
+         qualifier: (fn (point ctl)
+                       (not (point_under_element_tag? "PRE" point)))
+         exec: (fn (point ctl event)
+                  (let
+                     ((pre_post (get_text_around_point point))
+                      (last_word (trim (last (split_by (String.fromCharCode 160) (trim (last (split_by " " (+ "" pre_post.0))))))))
+                      (selection nil)
+                      (classes nil)
+                      (text nil)
+                      (initial_elem nil))
+                     (if (and (starts_with? "`" last_word)
+                              (ends_with? "`" last_word)
+                              (> last_word.length 2))
+                         (progn
+                            
+                            (= selection (get_selection))
+                            (= initial_elem point.element)
+                            ;; move back the length of the symbol since it can contain characters that
+                            ;; aren't considered
+                            (for (idx (range last_word.length))
+                                 (-> selection `modify `extend `left `character))
+                            (sleep 0.001)
+                            (= text (-> last_word `substr 1 (- last_word.length 2)))
+                            (if (is_symbol? text)
+                                (progn
+                                   (= classes (+ "juno-type-" (lowercase (sub_type (get_global text nil))))))
+                                (= classes ""))
+                            (doc_exec `insertHTML (+ "<code spellcheck='false' class='" classes "'>" text "</code><span>&nbsp;</span>"))
+                            (sleep 0.001))
+                         (progn
+                            (doc_exec `insertText " ")))))
+     }
+     on_empty_doc:{
          on_event: `keyup
          key_sequence: "Backspace"
          control_menu: false
@@ -13638,6 +13716,7 @@
                      (move_to_point point)
                      (move_point `forward `character)))
      }
+    
      ;; the next two rules implement the handling of newlines in the preformatted text node
      ;; the keydown acts to cancel the default behavior of the event 
      ;; the keyup then performs the correct newline behavior for insertion of newlines
@@ -13855,8 +13934,8 @@
                         false))
        (expander_elem (if just_enable
                           elem.parentElement.children.1
-                          (div { `style: "position: absolute; right: 0px; bottom: -10px; width: 15px; height: 15px; cursor: nwse-resize; background: tranparent;" }
-                           "")))
+                          (div { `contentEditable: `false `class: "juno-lower-left-expander"  }
+                               "⤡")))
                           
        (full_block (div { `style: "z-index: 8; width: 100%; height: 100%; position: absolute; top:0px; left: 0px;" }))
        (dims nil)
@@ -13980,7 +14059,7 @@
     (debug_container_elem (div { `style: "height: calc(100% - 10px); overflow: hidden;" }
                                status_elem
                                debug_elem))
-    (attributes_title (h4 { style: "margin-block-start: 10px; margin-block-end: 10px;" } "Attributes"))
+    (attributes_title (div { style: "margin-block-start: 10px; margin-block-end: 10px;" } "Attributes"))
     (attributes_header_view (div { style: "margin: 0px; padding: 2px; background: #00000010;" }
                                    attributes_title
                                    ))
@@ -14144,7 +14223,7 @@
                       (log "DOM_editor: on_hide: no current point"))
                    (when current_point
                       ;(= saved_point (clone current_point))
-                      (log "DOM_editor: saved_point: range: " saved_point.range)
+                      ;(log "DOM_editor: saved_point: range: " saved_point.range)
                       ;(set_prop saved_point
                       ;   `range (-> saved_point.range `cloneRange))
                       ;(-> saved_point.selection `removeAllRanges)
@@ -14161,7 +14240,7 @@
                              (move_to_point_a saved_point)
                              (set_prop root_elem.parentElement `scrollTop current_scroll)
                              ;(-> saved_point.element `scrollIntoView)
-                             ;(set_prop (first (get_by_tag "html")) `scrollTop 0)
+                             (set_prop (first (get_by_tag "html")) `scrollTop 0)
                              (= hide_state false))
                          (progn
                             (move_to_point_a saved_point)))
@@ -14303,8 +14382,13 @@
                                                    "text")))))
                             (= current_point status)
                             (= saved_point status)
+                           
                             (when (attributes_showing?)
                                (show_attributes status.element))
+                            (when current_point.element.tagName
+                               (set_prop attributes_title
+                                  `innerText
+                                  current_point.element.tagName))
                             ;(console.log "key_up_event: current_point: " current_point)
                             (= last_event_context (process_rules_for_event event))
                             (when (or (and (== key.length 1)
@@ -14373,10 +14457,47 @@
     
     (paste_selection (fn (e)
                         (let
-                           ((text (-> navigator.clipboard `readText)))
-                           (console.log "paste selection: " e.srcElement (is_input? e.srcElement))
-                           (doc_exec `insertHTML text))))
-    
+                           ((perms (navigator.permissions.query { `name: "clipboard-read" }))
+                            (contents nil)
+                            (pasted false)
+                            (id (gen_id "paste_content"))
+                            (new_image nil)
+                            (blob nil))
+                           (if (== perms.state "denied")
+                              (notify "Unable to paste due to invalid permissions")
+                              (progn
+                                 (= contents (-> navigator.clipboard `read))
+                                 (for_with (item contents)
+                                    (when (not pasted)
+                                       (log "clipboard item: " item)
+                                       (for_each (item_type item.types)
+                                          (progn
+                                             (log "..checking: " item_type)
+                                             (cond
+                                                (== item_type "text/html")
+                                                (progn
+                                                   (= pasted true)
+                                                   (doc_exec `insertHTML (-> navigator.clipboard `readText))
+                                                   (break))
+                                                (== item_type "text/plain")
+                                                (progn
+                                                   (= pasted true)
+                                                   (doc_exec `insertText (-> navigator.clipboard `readText))
+                                                   (break))
+                                                (starts_with? "image/" item_type)
+                                                (progn
+                                                   (= pasted true)
+                                                   (= blob (-> item `getType item_type))
+                                                   (= new_image 
+                                                      (img { id: id style: "width: 400px; height: auto; " src: (+ "data:" item_type ";base64," (encode_to_base64 blob)) }))
+                                                   (doc_exec `insertHTML new_image.outerHTML)
+                                                   (sleep 0.01)
+                                                   (= new_image (get_by_id id))
+                                                   (when new_image
+                                                      (wrap_in_resizable
+                                                         new_image))
+                                                   (break))))))))))))
+                     
     (request_save (function ()
                         (progn
                            (if (or options.path options.filename)
@@ -14571,7 +14692,8 @@
                               (console.log "show_attributes: current_point: " current_point)
                               (set_prop attributes_title
                                 `innerText
-                                (+  element.tagName))
+                                (+  element.tagName ": " (join " | " (get_text_around_point current_point))))
+                              
                               (-> attributes_content_view
                                  `replaceChildren
                                  (div { `style: "width: calc(100% -5px);" }
@@ -14632,6 +14754,64 @@
                                          (pre (pretty_print (element_to_lisp root_elem)))))
                                    new_value
                                       )))
+    (rename_editor (fn ()
+                      (let
+                         ((name_input (input { `tabindex: 0 `style: "width: 95%; font-weight: bold;" `value: options.name } ))
+                          (bbox (-> title_span `getBoundingClientRect))
+                          (rename_view
+                             (div { `id: "cmenu" `style: (+ "z-index: 10000; padding: 5px; margin: 0px; min-width: " (+ bbox.width 15) "px; background: inherit; position:absolute; top: " (- bbox.top 5) "px; left: "  bbox.left "px;") }
+                                  
+                                  name_input
+                                  (div { `style: "padding: 5px;"}
+                                       (cond
+                                          (and (is_array? options.path)
+                                               (== "filesystem" (first options.path)))
+                                          (div
+                                             (div { `style: "padding: 5px; font-weight: bold" } "Save To File")
+                                             (div { `style: "padding: 5px; " } (join " / " (rest options.path))))
+                                          (is_array? options.path)
+                                          (div
+                                             (div { `style: "padding: 5px; font-weight: bold" } "Save To Symbol")
+                                             (for_each (comp options.path)
+                                                (span { `style: "padding: 5px;" } comp)))
+                                          (eq nil options.path)
+                                          (div
+                                             (div { `style: "padding: 5px; font-weight: bold" } "Temporary Buffer" )
+                                             (div { `style: "padding: 5px;" } "No Path"))
+                                          else
+                                          (div
+                                             (div { `style: "padding: 5px; font-weight: bold" } "Check Path")
+                                             (div (as_lisp options.path)))))))
+                          (cmenu_remove (fn ()
+                                           (aif (get_by_id "cmenu")
+                                                (-> it `remove)))))
+                         
+                         (declare (function resolver))
+                         (log "renaming editor" bbox)
+                         (cmenu_remove)
+                         (sleep 0.01)
+                         (-> (get_by_id "body")
+                             `append rename_view)
+                         (-> name_input `select)
+                         (focus_to name_input)
+                         (attach_event_listener name_input
+                            `keyup
+                            (fn (e)
+                               (progn
+                                  (cond
+                                     (and (== e.key "Enter")
+                                          (not (blank? name_input.value)))
+                                     (progn
+                                        (set_name name_input.value)
+                                        (set_prop options
+                                           `group_name
+                                           options.name)
+                                        (cmenu_remove)
+                                        (focus_to_editor self))
+                                     (== e.key "Escape")
+                                     (progn
+                                        (cmenu_remove)
+                                        (focus_to_editor self)))))))))
     (sorted_symbols [])
     (cached_symbols nil)
     (get_current_symbols (fn ()
@@ -14829,7 +15009,10 @@
                                (catch Error (e)
                                   (log "Error on load_rules: " e.message)))
                             
-                            
+                             (attach_event_listener title_span 
+                                           `click
+                                           (fn (e)
+                                              (rename_editor e)))
                             (attach_event_listener root_elem.parentElement
                                `keyup
                                (fn (e) (key_up_event e)))
@@ -14897,8 +15080,6 @@
                             
                             (check_for_unhandled_elements root_elem)
                             (log "DOM_Editor: options: " options)
-                            
-                            
                             
                             (setTimeout (fn ()
                                            (progn
@@ -16995,10 +17176,12 @@
        (scratch_editor nil)
        (page_frame nil)
        (control nil)
+       (temp_editable nil)
        (key_mode (get_operating_platform))
        (repl_split nil))
                                                                
     (console.log "user/*initializer is running." )
+    
     
     ;(defglobal main_menu_button (li  { `class: "juno-menu-header" }
      ;                                        (span { `class: "juno-menu-item" `style: "" } "File")))
@@ -17011,7 +17194,13 @@
                 ["height" "1px"]] resource_loader_button)
     
     (-> (get_by_id "body") `appendChild resource_loader_button)
-       
+    
+    ;; this may be a bit of a hack - but it seems that the first editable div sets the template 
+    ;; (at least in chrome) for what newly inserted elements are to be modeled as..
+    (= temp_editable (div { `contentEditable: true `style: "display: inline-block;" `id: "temp" } ""))
+    (-> (get_by_id "body") `appendChild
+        temp_editable)
+    (-> temp_editable `remove)
     (defvalue $root_controls [])
     
     (when (resolve_path [ `ace `config] globalThis)
