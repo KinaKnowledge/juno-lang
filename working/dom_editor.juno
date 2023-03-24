@@ -90,11 +90,11 @@
 
 (defun move_to_point_a (point_obj)
    (progc
-      (when point_obj.selection
+      (when (and point_obj.selection
+                 point_obj.element)
          (set_attribute point_obj.element `contenteditable `true)
          (focus_to point_obj.element)
          (sleep 0.1)
-         (console.log "move_to_point_a: point_obj: " point_obj point_obj.range point_obj.position )
          (select_element point_obj.element)
          (defvar selection (get_selection))
          (collapse_to_start selection)
@@ -1072,24 +1072,27 @@
                       true))))
     (on_focus (fn (self)
                 (progc
-                   (when saved_point
-                      ;(focus_to saved_point.element)
-                      (sleep 0.1)
-                      (if hide_state
-                         (progn
-                             ;(collapse_to_start saved_point.selection )
-                             (move_to_point_a saved_point)
-                             (set_prop root_elem.parentElement `scrollTop current_scroll)
-                             ;(-> saved_point.element `scrollIntoView)
-                             (set_prop (first (get_by_tag "html")) `scrollTop 0)
-                             (= hide_state false))
-                         (progn
-                            (move_to_point_a saved_point)))
-                     
-                      (console.log "DOM_editor: on_focus: saved_point:  "  saved_point.element saved_point)
-                      (show_attributes saved_point.element)
-                      true
-                      ))))
+                   (if saved_point
+                      (progn
+                      
+                         (sleep 0.1)
+                         (if hide_state
+                            (progn
+                               ;(collapse_to_start saved_point.selection )
+                               (move_to_point_a saved_point)
+                               (set_prop root_elem.parentElement `scrollTop current_scroll)
+                               ;(-> saved_point.element `scrollIntoView)
+                               (set_prop (first (get_by_tag "html")) `scrollTop 0)
+                               (= hide_state false))
+                            (progn
+                               (move_to_point_a saved_point)))
+                         
+                         (console.log "DOM_editor: on_focus: saved_point:  "  saved_point.element saved_point)
+                         (show_attributes saved_point.element)
+                         true)
+                      (progn
+                         (sleep 0.1)
+                         (focus_to root_elem))))))
     (process_rules_for_event (fn (event)
                                 (let
                                    ((text (get_text_around_point current_point))

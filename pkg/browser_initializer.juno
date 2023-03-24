@@ -257,7 +257,8 @@
 
 (defun move_to_point_a (point_obj)
    (progc
-      (when point_obj.selection
+      (when (and point_obj.selection
+                 point_obj.element)
          (set_attribute point_obj.element `contenteditable `true)
          (focus_to point_obj.element)
          (sleep 0.1)
@@ -271,7 +272,7 @@
                 (collapse_to_start selection)
                 (for_each (idx (range point_obj.position))
                    (-> selection `modify `move `right  "character")))
-             (collapse_to_start selection)))))      
+             (collapse_to_start selection)))))     
    
 (defun_sync move_point (dir granularity)
    (progc
@@ -1754,7 +1755,6 @@
             nil))))
 
 
-
 (defun current_controls (no_subcontrols from_control)
    (let
       ((ctls (uniq (flatten (control_tree (if from_control
@@ -1993,6 +1993,26 @@
       tags: ["ui" "controls" "holding" "tank"]
   })
 
+
+(defun_sync frame_0 ()
+   (let
+      ((f0 nil))
+      (for_each (ctl $root_controls)
+         (when (and (== ctl.type "control_container")
+                    (not ctl.options.root_bundle))
+            (= f0 ctl)))
+      f0)
+   {
+     description: (+ "Frame 0 is defined as the first `control_container` type that is non "
+                     "bundled in the $root_controls.  It is the default where to place things.  Non "
+                     "bundled means that it doesn\'t have a `root_bundle` key and is therefore "
+                     "considered an open place to put new controls.  Because layouts can come and go, "
+                     "this function is a utility to help easily find the first container meeting this "
+                     "criteria. This function returns the container control representing frame 0. ")
+     usage: []
+     tags: ["layouts" "frame" "default" "ui" "controls" "control" ]
+   })
+
 (defun get_current_layout_control ()
    (let
       ((root_ctl nil))
@@ -2078,6 +2098,29 @@
 
 
 
+(defun jump_to_unlocked_layout ()
+   (let
+      ((current_layout (get_current_layout_control))
+       (f0 nil))
+      (declare (function switch_to_new_layout)
+               (global switch_to_new_layout))
+      (if (layout_locked? current_layout)
+          (progn
+             (= f0 (frame_0))
+             (switch_to_new_layout (prop f0 `name))
+             (sleep 0.01)
+             f0)
+          current_layout))
+   {
+     description: (+ "This function, which takes no arguments, is used to ensure that the "
+                     "layout operations to be performed will take place on an unlocked layout.  If "
+                     "the current layout is unlocked, it will return the current layout. If the "
+                     "current layout is locked, this function will move to the display to the first "
+                     "unlocked layout, which will typically be the Frame 0 layout.  It will then "
+                     "return the unlocked layout.   ")
+     usage: []
+     tags: ["layout" "controls" "control" "layouts" "ui" "panel" "DOM" "switch"]
+   })
 
 
 (defun control_for_dom_element (elem)
@@ -2193,24 +2236,6 @@
    `tags: [ `control `controls `position `heirarchy `path]
    })
 
-(defun_sync frame_0 ()
-   (let
-      ((f0 nil))
-      (for_each (ctl $root_controls)
-         (when (and (== ctl.type "control_container")
-                    (not ctl.options.root_bundle))
-            (= f0 ctl)))
-      f0)
-   {
-     description: (+ "Frame 0 is defined as the first `control_container` type that is non "
-                     "bundled in the $root_controls.  It is the default where to place things.  Non "
-                     "bundled means that it doesn\'t have a `root_bundle` key and is therefore "
-                     "considered an open place to put new controls.  Because layouts can come and go, "
-                     "this function is a utility to help easily find the first container meeting this "
-                     "criteria. This function returns the container control representing frame 0. ")
-     usage: []
-     tags: ["layouts" "frame" "default" "ui" "controls" "control" ]
-   })
 
 (defparameter *focus_suppress_timer* nil)
 
@@ -2716,6 +2741,7 @@
         (progn
            (console.log "swap_control: current layout is locked: " current_control_layout)
            (console.log "swap_control: target_control: " target_control "new_control: " new_control)
+           ;(log "swap_control: cannot swap: current_layout is locked: " current_control_layout.name (layout_locked? current_control_layout))
            (notify (dtext "Cannot swap out the current control - current layout is locked"))
            (= noop true)))
     (if (and new_control_layout
@@ -2732,7 +2758,10 @@
         (progn
            (set_focus_to target_control)
            (if target_control.editor
-              (focus_to target_control.editor)))
+              (try 
+                 (focus_to target_control.editor)
+                 (catch Error (e)
+                    (log_error (+ "swap_control cannot set focus to editor of " target_control.editor ": " e.message))))))
         (progn
            ;; get their position in the tree
            (= position_details_target (control_position target_control))
@@ -2746,7 +2775,7 @@
         (progn
            (= noop true)
            (notify (dtext "Cannot swap controls between different layouts"))))
-    (console.log "swap_control: from: " (control_name current_control_layout) (control_name target_control) "->" (control_name new_control_layout) (control_name new_control))
+    ;(log "swap_control: from: " (control_name current_control_layout) (control_name target_control) "->" (control_name new_control_layout) (control_name new_control))
     
     (cond
         (or (== target_control new_control)
@@ -3362,6 +3391,46 @@
      tags: ["controls" "layout" "controls" "switch" "ui" "layouts"]
    })
 
+(defun jump_to_symbol_definition ()
+   (let
+      ((syms [])
+       (dlist_id "symbol_names_datalist")
+       (dlist nil))
+      (declare (function dispatch_event request_user_input)
+               (global dispatch_event request_user_input))
+      (for_with (s (all_globals))
+         (push syms
+            s))
+      (aif (get_by_id dlist_id)
+           (-> it `remove))
+      (= dlist
+         (datalist { `id: dlist_id }
+                   (for (s (sort syms))
+                        (option s))))
+      (-> (first (get_by_tag "body")) `append dlist)
+      (aif (request_user_input (dtext "What is the name of the symbol?")
+                          nil
+                          {
+                            input: (input { list: dlist_id style: "width: 100%" } )
+                            on_destroy: (fn ()
+                                           (progn
+                                              (-> dlist `remove)
+                                              (= dlist nil))) })
+           (dispatch_event { command: "open_definition"
+                                     source: nil
+                                     args: [ it ] })))
+   {
+     description: (+ "Taking no arguments this function will present a modal dialog with a "
+                     "search box for the list of all global symbols for which the user can search for "
+                     "a symbol.  Once they have selected a symbol, they can press enter or click the "
+                     "OK button to be taken to a buffer containing the definition for the symbol.  "
+                     "The definition information as to where to find the symbol is taken from the "
+                     "symbols metadata.")
+     usage: []
+     tags: ["symbol" "global" "definition" "meta" "ui" "DOM" "symbols" ]
+
+   })
+
 (defun process_focus_chain (e originator_container)
    (progn
       (console.log "process_focus_chain: called: " e originator_container)
@@ -3870,6 +3939,8 @@
                       (clean_up (fn (val)
                                     (when (not completed)
                                         (= completed true)
+                                        (when options.on_destroy
+                                           (-> options `on_destroy))
                                         (resolve val)
                                         (-> dwin `remove)))))
                      
@@ -3929,28 +4000,34 @@
                         (and (is_function? user_input.select)
                              (-> user_input `select))))))
   {
-    description: (+ "This function will pause the flow of execution until the user makes a choice, "
-                    "selection or input and then will return the result of the user action.  If the "
-                    "user presses cancel or presses the Escape key, a return value of nil will be "
-                    "returned.<br>"
-                    "By default, the user is presented with a text input box in which text can "
-                    "entered.  Once the user presses return or clicks the OK button, the value is "
-                    "returned.  However, if the `type option is given as an input, the input will "
-                    "be of the specified type, such as \"number\" or \"date\". <br>"
-                    "Additionally options can be provided for more control over the interaction "
-                    "and value presentation.  If provided with a key of \"input\" and an input element, "
-                    "the provided input element will be displayed and the final value returned.  "
-                    "Other elements can be provided and as long as they either set a value property "
-                    "or value attribute on the element, that value will be returned.<br>"
-                    "Values can be validated by passing a \"validator\" function.  Upon the user "
-                    "pressing a key, the validation function will be called with the "
-                    "current value and if the validation function returns true, OK will be enabled, "
-                    "or if the user pressed enter, the validated value will be returned to the caller, "
-                    "otherwise the OK button will be disabled and the dialog box will not close. "
-                    "Note that the validator function is responsible for any prompting of "
-                    "or additional notices of how to comply with the validation rules.  This "
-                    "could be done by providing a more complicated element structure as an input that is in "
-                    "the closure of the validator whose values could be updated.")
+    description: (+ "This function will pause the flow of execution until the user makes a "
+                    "choice, selection or input and then will return the result of the user action. "
+                    "If the user presses cancel or presses the Escape key, a return value of nil "
+                    "will be returned.<br>By default, the user is presented with either a text input "
+                    "box in which text can entered, or an input element provided in the options. "
+                    "Once the user presses return or clicks the OK button, the value is "
+                    "returned. <br><br>#### Options <br><br>type:string -  If the `type option is "
+                    "given as an input, the input will be of the specified type, such as \"number\" or "
+                    "\"date\".<br>input:Element - If provided with a key of \"input\" and an input "
+                    "element, the provided input element will be displayed and the final value "
+                    "returned.  Other elements can be provided and as long as they either set a "
+                    "value property or value attribute on the element, that value will be "
+                    "returned.<br>validator:function - Values can be validated by passing a "
+                    "\"validator\" function.  Upon the user pressing a key, the validation function "
+                    "will be called with the current value and if the validation function returns "
+                    "true, OK will be enabled, or if the user pressed enter, the validated value "
+                    "will be returned to the caller, otherwise the OK button will be disabled and "
+                    "the dialog box will not close. Note that the validator function is responsible "
+                    "for any prompting of or additional notices of how to comply with the validation "
+                    "rules.  This could be done by providing a more complicated element structure as "
+                    "an input that is in the closure of the validator whose values could be "
+                    "updated.<br>on_destroy:function - Prior to the removal and clean up of the "
+                    "dialog box and after the user has closed the dialog (either via the cancel or "
+                    "OK mechanisms), this function can be called to remove any resources that may "
+                    "have been created (such as a datalist) for the presentation of the dialog.  "
+                    "This functionality can also be done external to the application, but this gives "
+                    "an opportunity prior to the removal of the UI elements from the DOM for user "
+                    "code to process the values from the inputs. ")
     usage: ["prompt:string" "type:string" "options:object"]
     tags: ["user" "input" "request" "collect" "wait" "ui" "DOM"]
     })
@@ -7230,7 +7307,6 @@
                (global edit_file new_buffer get_control_by_name activity_box))
       (activity_box { `style:  "width: 200px; height: 50px;" } 
             (set_content (+ (dtext "Locating symbol:") symbol))
-            (log "open_symbol_definition: symbol: " symbol namespace)
             (cond
                (eq nil symbol_def)
                (notify (+ "Unable to find the definition information for " symbol))
@@ -7248,7 +7324,6 @@
                (> comps.length 1)
                (= source_file symbol_def.source_name))
             
-            (log "open_symbol_definition: def: " source_file is_buffer?)
             (cond
                (and is_buffer?
                   source_file)
@@ -9583,15 +9658,20 @@
                (let
                   ((new_height (- (prop view.parentElement `offsetHeight) 5))
                    (new_width  (- (prop view.parentElement `offsetWidth) 0)))
-                  (when (and hide_state
-                             (> new_height 5))
-                     (= hide_state false)
-                     (set_prop output_container
-                        `scrollTop
-                        content_height)
-                     (set_prop view
-                        `scrollTop
-                        0)))))
+                  (cond 
+                     (and hide_state
+                        (> new_height 5))
+                     (progn
+                        (= hide_state false)
+                        (scroll_to_bottom)
+                        (set_prop view
+                           `scrollTop
+                           0))
+                     (and (> new_height 5)
+                          (== output_container.scrollTop 0))
+                     (progn
+                        (sleep 0.01)
+                        (scroll_to_bottom))))))
     (content_height 0)
     (add_result (fn (result command_text error_state)
                    (progn
@@ -13199,14 +13279,8 @@
   [[(dtext "Toggle Documentation") 
     (fn ()
        (toggle_help_panel)) ]
-   [(dtext "Lookup Symbol")
-        (fn (e)
-           (progn
-              (aif (request_user_input (dtext "What is the name of the symbol?"))
-                   (dispatch_event { command: "open_definition"
-                                     source: nil
-                                     args: [ it ] }))))
-              
+   [(dtext "Lookup Symbol Definition")
+        jump_to_symbol_definition
         ]
    [(dtext "Show Global Key Bindings")
     (fn ()
@@ -14231,24 +14305,27 @@
                       true))))
     (on_focus (fn (self)
                 (progc
-                   (when saved_point
-                      ;(focus_to saved_point.element)
-                      (sleep 0.1)
-                      (if hide_state
-                         (progn
-                             ;(collapse_to_start saved_point.selection )
-                             (move_to_point_a saved_point)
-                             (set_prop root_elem.parentElement `scrollTop current_scroll)
-                             ;(-> saved_point.element `scrollIntoView)
-                             (set_prop (first (get_by_tag "html")) `scrollTop 0)
-                             (= hide_state false))
-                         (progn
-                            (move_to_point_a saved_point)))
-                     
-                      (console.log "DOM_editor: on_focus: saved_point:  "  saved_point.element saved_point)
-                      (show_attributes saved_point.element)
-                      true
-                      ))))
+                   (if saved_point
+                      (progn
+                      
+                         (sleep 0.1)
+                         (if hide_state
+                            (progn
+                               ;(collapse_to_start saved_point.selection )
+                               (move_to_point_a saved_point)
+                               (set_prop root_elem.parentElement `scrollTop current_scroll)
+                               ;(-> saved_point.element `scrollIntoView)
+                               (set_prop (first (get_by_tag "html")) `scrollTop 0)
+                               (= hide_state false))
+                            (progn
+                               (move_to_point_a saved_point)))
+                         
+                         (console.log "DOM_editor: on_focus: saved_point:  "  saved_point.element saved_point)
+                         (show_attributes saved_point.element)
+                         true)
+                      (progn
+                         (sleep 0.1)
+                         (focus_to root_elem))))))
     (process_rules_for_event (fn (event)
                                 (let
                                    ((text (get_text_around_point current_point))
@@ -16027,9 +16104,6 @@
 
 
 
-
-
-
 (defun jump_to_frame_0 ()
    (aif (frame_0)
         (switch_to_new_layout it.name)
@@ -16037,7 +16111,7 @@
                    (dtext "Frame 0 cannot be found, check to make sure it exists"))))
 
 (defun new_buffer (options)
-  (let
+   (let
       ((options (cond
                    (is_array? options)
                    { `path: options `mode: "juno"}
@@ -16050,77 +16124,85 @@
                    { `path: [ options ] `mode: "juno" }
                    else
                    { `mode: "juno" }))
-       (target_container (or options.control_to_replace *last_focus*  (default_focus)))
+       (starting_layout (get_current_layout_control))
+       (target_layout (jump_to_unlocked_layout))
+       (target_container nil)
        (new_control nil)
-       (show_new_control (fn (new_control)
-                            (progn
-                               (cond
-                                  (is_top_control? target_container)
-                                  (container_view_operation "split_right"
-                                                            (first (-> target_container `controls))
-                                                            new_control)
-                                  else
-                                  (swap_control target_container
-                                                new_control))
-                               (sleep 0.1)
-                               (set_focus_to new_control))))
-       (symbol_data (cond 
-                       options.path
-                       { `path: options.path `namespace: (or options.namespace (current_namespace)) }
-                       (and (is_string? options.content)
-                            (not options.filename))
-                       nil
-                       else
-                       (symbol_chooser "Select a symbol to edit" options.mode)))
-       (extension (cond 
+       (symbol_data (if options.path
+                        { `path: options.path `namespace: (or options.namespace (current_namespace)) }
+                        (symbol_chooser "Select a symbol to edit" options.mode)))
+       (extension (cond
                      options.filename
                      (last (split_by "." options.filename))
                      (== options.mode "dom")
                      "dom"
                      else
                      "juno"))
-       (target_ns (if symbol_data
-                      symbol_data.namespace
-                      (current_namespace)))
+       (target_ns symbol_data.namespace)
+       (current_layout (get_current_layout_control))
        (target_env nil))
-    ;   (log "new_buffer: for: " options target_ns extension symbol_data)
-      (console.log "new_buffer: target_container: " target_container.name (is_top_control? target_container))
-    (when target_ns
-      (= target_env (-> Environment `get_namespace_handle symbol_data.namespace)))
-    (when (and target_env 
-               (is_object? symbol_data) 
-               (eq nil (resolve_path symbol_data.path target_env.global_ctx.scope)))
-       (make_path symbol_data.path target_env.global_ctx.scope ""))
-    
-    (cond 
-       symbol_data.path
-       (progn
-          (= new_control
-             (if (== extension `dom)
-                 (DOM_editor (+ { rules: [ `*markdown_rules* ] `hide_control_bar: false debug: false } options))
-                 (text_editor (+ { name: (last symbol_data.path) namespace: target_ns path: symbol_data.path mode: options.mode } options ))))
-          (show_new_control new_control))
-       (is_string? options.content)
-       (progn
-          (= new_control
-             (text_editor (+ {  namespace: target_ns  mode: options.mode } options )))
-          (show_new_control new_control))))
-  {
-      `description: (+ "Opens a new editor, if possible, in the currently focused control.  If necessary, it may "
-                       "split the view to the right for the new editor.  If no options are provided, the user "
-                       "will be prompted for a symbol to edit.  Options can be: <br>"
-                       "string: is considered a symbol name and the function will open or create the " 
-                       "specified symbol in the current namespace global context.<br>"
-                       "array: is considered a path to access, and if the path is present will open the path.  If not, "
-                       "will attempt to create the final value in the path as a string for editing.<br>"
-                       "object: if an object, the object can contain:<br>"
-                       "  path: array: the path to the symbol to be edited.  If the final path segment doesn't exist "
-                       "it will create it.<br>"
-                       "  namespace: string: the namespace to use for accessing the provided path.<br>"
-                       "  mode: the mode to open the editor in. The default mode is Juno.<br>")
-      `tags: ["editor" "edit" "buffer" "control"]
-      `usage: ["options:object?"]
-  })
+      
+      
+      (when (resolve_path [ `options `is_locked? ] current_layout)
+         (jump_to_frame_0)
+         (sleep 0.1))
+      
+      (= target_container (or (and (== starting_layout target_layout) 
+                                   options.control_to_replace  ;; first check easy thing
+                                   (== current_layout (get_current_layout_control)) ;; then the hard thing
+                                   options.control_to_replace) ;; then return the control to replace 
+                              (and target_layout.options.last_focus_id
+                                   (get_control_by_id target_layout.options.last_focus_id))
+                              *last_focus* 
+                              (default_focus)))
+                 
+      ;(log "new_buffer: target_container: " target_container.name (prop (get_current_layout_control) `name))
+      (when target_ns
+         (= target_env (-> Environment `get_namespace_handle symbol_data.namespace)))
+      (when (and target_env (eq nil (resolve_path symbol_data.path target_env.global_ctx.scope)))
+         (make_path symbol_data.path target_env.global_ctx.scope ""))
+     
+      (when symbol_data.path
+         (= new_control
+            (if (== extension `dom)
+                (DOM_editor (+ { rules: [ `*markdown_rules* ]
+                                       hide_control_bar: false
+                                       debug: false }
+                               options))
+                (text_editor (+ { name: (last symbol_data.path)
+                                       path_namespace: target_ns
+                                       namespace: target_ns
+                                       path: symbol_data.path
+                                       mode: options.mode }
+                                options ))))
+         (cond
+            (is_top_control? target_container)
+            (container_view_operation "split_right"
+                                      (first (-> target_container `controls))
+                                      new_control)
+            else
+            (progn
+               (log "new_buffer: swapping to control: "  new_control.name)
+               (swap_control target_container
+                             new_control)))
+         (sleep 0.1)
+         (set_focus_to new_control)))
+   {
+     `description: (+ "Opens a new editor, if possible, in the currently focused control.  If necessary, it may "
+                      "split the view to the right for the new editor.  If no options are provided, the user "
+                      "will be prompted for a symbol to edit.  Options can be: <br>"
+                      "string: is considered a symbol name and the function will open or create the "
+                      "specified symbol in the current namespace global context.<br>"
+                      "array: is considered a path to access, and if the path is present will open the path.  If not, "
+                      "will attempt to create the final value in the path as a string for editing.<br>"
+                      "object: if an object, the object can contain:<br>"
+                      "  path: array: the path to the symbol to be edited.  If the final path segment doesn't exist "
+                      "it will create it.<br>"
+                      "  namespace: string: the namespace to use for accessing the provided path.<br>"
+                      "  mode: the mode to open the editor in. The default mode is Juno.<br>")
+     `tags: ["editor" "edit" "buffer" "control"]
+     `usage: ["options:object?"]
+     })
 
 (defun new_top_level_frame ()
    (let
@@ -17417,7 +17499,12 @@
                                           exec: (fn () 
                                                   (show_help_panel true)) }
                  
-                 
+                 "lookup_symbol_definition" {
+                                              win: "Alt-Shift-L"
+                                              mac: "Alt-Shift-L"
+                                              description: "Lookup Symbol Definition"
+                                              exec: jump_to_symbol_definition
+                                              }
                  "save_environment" { win: "Ctrl-Shift-S"
                                       mac: "Command-Shift-S"
                                       description: "Saves the current state of the application"

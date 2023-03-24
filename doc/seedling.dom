@@ -34,7 +34,9 @@
   (div {} "The idea here is that there is less of a decoupling between the programmer and their program state.  The programmer is inside the program: building, inspecting and using.   From time to time, or as a direct objective, they can \"peel off\" a subset of the environment, as a stand alone program.  The \"peel-off\" may not contain any editors, or other non-requirements, and just be a stand alone application containing just HTML, Javascript, CSS, and data structures, not the full IDE.  Or somewhere in between.  ")
   (div {} (h3 {} "Components and Architecture"))
   (div {} "Seedling is meant to be hacked on, modified, customized and changed to meet the goals of the user.  The entire code base is open source, and highly introspective.  The following diagram provides a high level map of the system, with each layer generally dependent on the layer below it.  ")
-  (div {} (b {} "Figure 1: The layers and components of Seedling"))
+  (div { style: "border-bottom: 1px solid var(--;" }
+       (b { style: "" }
+          "Figure 1: The layers and components of Seedling"))
   (div {} (div { initializer: "wrap_in_resizable"
             class: "juno-shadow-on-hover"
             style: "padding: 0px;position: relative;display: inline-block;border: 1px solid transparent;width: 775.1286307053942px;height: 522px;: " }
@@ -236,6 +238,7 @@
        (br {}))
   (div {} ""
        "The resulting control object will be returned which contains a typical and minimal fingerprint for a control.")
+  (div {} (b {} "Figure 3: A simple minimalistic control interface"))
   (div { style: "line-height: 1.0em; font-family: var(--main-mono-space);" }
        (br {}) (details { class: "juno-obj-to-dom"
              open: "" }
@@ -420,7 +423,59 @@
        (span { style: "" }
              " "))
   (div {} (br {})) (div {} (b {} "Step 4: Serialization and Rehydration"))
-  (div {} (span { style: "" }
-          "  "))
-  (p {} (p {} (div {} "Components and Architecture Editor, REPL, Controls, Exporting, Importing, Documentation")
-        (div {} (br {})))))
+  (div {} "Controls can be serialized to a JSON representation and stored for later use in a \'rehydration\' process.  The ability to save and restore state is beneficial because it allows for a configuration of an application to be \'canned\'.  Since controls are essentially recursive structures, they can be stored as a group, in conjunction with other global state in JSON form.  This can happen at a defined time - such as a release point, or at intervals.  Since the JSON state can be embedded in a stand-alone HTML document, this is useful for distributing your application and the data without relying on a specific delivery mechanism, such as a web server or availability of other resources such as a specialized application program.  A modern, standards-compliant web browser such as Firefox, Chrome, Safari or Edge are all that is required.  ")
+  (div {} "A control should support serialization to properly work in this environment and not prevent startup issues or inconsistencies when the application image is restored.  Serialization is fundamentally fairly simple to support: The control simply support the "
+       (code { spellcheck: "false"
+               class: ""
+               style: "" }
+         "toJSON")
+       (span { style: "" }
+             " call as part of its interface."))
+  (div {} "The "
+       (code { spellcheck: "false"
+               class: ""
+               style: "" }
+         "toJSON")
+       (span { style: "" }
+             "  function is a synchronous function called by ")
+       (code {} "JSON.stringify")
+       (span { style: "" }
+             " when it is encoding a memory structure to serialized JSON.  For every object encountered in the traversal of the in-memory structure, if there is a toJSON method, it will be called and the output of it used as the serialized JSON.  The control, having implemented the call, returns the arguments to be used to initialize itself.  Here is the basic mechanism of ")
+       (code { spellcheck: "false"
+               class: "juno-type-asyncfunction"
+               style: "" }
+         "serialize_controls")
+       (span { style: "" }
+             " that is used to collect the state of the application:"))
+  (pre { style: "min-height: 2.4ch" }
+       "[(quote quote) (JSON.parse (JSON.stringify controls))]")
+  (div {} "where "
+       (code {} "controls")
+       " is an array of controls, such as "
+       (code { spellcheck: "false"
+               class: "juno-type-array"
+               style: "" }
+         "$root_controls")
+       (span { style: "" }
+             " .   "))
+  (div {} "To get a better understanding of the process, let\'s look at a typical "
+       (code {} "toJSON")
+       " call for controls.  In fact, lets look at one of the more complicated serializer functions, for the "
+       (code { spellcheck: "false"
+               class: "juno-type-asyncfunction"
+               style: "" }
+         "text_editor")
+       (span { style: "" }
+             " control itself, which is located in the interface of the control.  To visit the source you can click on the following (or evaluate the command on the REPL):    "))
+  (button { command_text: "(fn (e)\n   (open_symbol_definition \"text_editor\"))"
+            style: "font-family: var(--main-mono-space); padding: 5px;"
+            onclick: (javascript "async function(e) {\n    return await (await Environment.get_global(\"open_symbol_definition\"))(\"text_editor\")\n}")}
+    "(open_symbol_definition \"text_editor\")")
+  (div {} (b {} (br {}))) (div {} (b {} "Figure 4: Serialization for the text_editor control"))
+  (pre {} "(function ()\n   (progn ;; we may not have ever been initialized with an editor if never mounted to the DOM\n      (if (or (not initialized)\n              (not editor))\n          `(text_editor ,#options)\n          (progn\n             (if (is_symbol? `LZString)\n                 (progn\n                    (delete_prop options `content)\n                    (set_prop options\n                       `content_compressed\n                       (LZString.compressToBase64 (-> editor `getValue))))\n                 (set_prop options\n                    `content\n                    (-> editor `getValue)))\n             `(text_editor ,#options)))))")
+  (span { id: "placeholder_1679661264228_post" }
+        " When the JSON stringification pr")
+  (div {} (span {} " ")
+       (br {}))
+  (div {} (br {})) (div {} (br {})) (p {} (p {} (div {} "Components and Architecture Editor, REPL, Controls, Exporting, Importing, Documentation")
+          (div {} (br {})))))

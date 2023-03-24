@@ -380,9 +380,33 @@
                      "options:<br>edit_mode:boolean -If true, the returned DOM element will be "
                      "editable; a `contenteditable` attribute will be placed in element "
                      "returned.")])
-     
+  
+
+(defun jump_to_unlocked_layout ()
+   (let
+      ((current_layout (get_current_layout_control))
+       (f0 nil))
+      (if (layout_locked? current_layout)
+          (progn
+             (= f0 (frame_0))
+             (switch_to_new_layout (prop f0 `name))
+             (sleep 0.01)
+             f0)
+          current_layout))
+   {
+     description: (+ "This function, which takes no arguments, is used to ensure that the "
+                     "layout operations to be performed will take place on an unlocked layout.  If "
+                     "the current layout is unlocked, it will return the current layout. If the "
+                     "current layout is locked, this function will move to the display to the first "
+                     "unlocked layout, which will typically be the Frame 0 layout.  It will then "
+                     "return the unlocked layout.   ")
+     usage: []
+     tags: ["layout" "controls" "control" "layouts" "ui" "panel" "DOM" "switch"]
+   })
+         
+   
 (defun new_buffer (options)
-  (let
+   (let
       ((options (cond
                    (is_array? options)
                    { `path: options `mode: "juno"}
@@ -395,77 +419,85 @@
                    { `path: [ options ] `mode: "juno" }
                    else
                    { `mode: "juno" }))
-       (target_container (or options.control_to_replace *last_focus*  (default_focus)))
+       (starting_layout (get_current_layout_control))
+       (target_layout (jump_to_unlocked_layout))
+       (target_container nil)
        (new_control nil)
-       (show_new_control (fn (new_control)
-                            (progn
-                               (cond
-                                  (is_top_control? target_container)
-                                  (container_view_operation "split_right"
-                                                            (first (-> target_container `controls))
-                                                            new_control)
-                                  else
-                                  (swap_control target_container
-                                                new_control))
-                               (sleep 0.1)
-                               (set_focus_to new_control))))
-       (symbol_data (cond 
-                       options.path
-                       { `path: options.path `namespace: (or options.namespace (current_namespace)) }
-                       (and (is_string? options.content)
-                            (not options.filename))
-                       nil
-                       else
-                       (symbol_chooser "Select a symbol to edit" options.mode)))
-       (extension (cond 
+       (symbol_data (if options.path
+                        { `path: options.path `namespace: (or options.namespace (current_namespace)) }
+                        (symbol_chooser "Select a symbol to edit" options.mode)))
+       (extension (cond
                      options.filename
                      (last (split_by "." options.filename))
                      (== options.mode "dom")
                      "dom"
                      else
                      "juno"))
-       (target_ns (if symbol_data
-                      symbol_data.namespace
-                      (current_namespace)))
+       (target_ns symbol_data.namespace)
+       (current_layout (get_current_layout_control))
        (target_env nil))
-    ;   (log "new_buffer: for: " options target_ns extension symbol_data)
-      (console.log "new_buffer: target_container: " target_container.name (is_top_control? target_container))
-    (when target_ns
-      (= target_env (-> Environment `get_namespace_handle symbol_data.namespace)))
-    (when (and target_env 
-               (is_object? symbol_data) 
-               (eq nil (resolve_path symbol_data.path target_env.global_ctx.scope)))
-       (make_path symbol_data.path target_env.global_ctx.scope ""))
-    
-    (cond 
-       symbol_data.path
-       (progn
-          (= new_control
-             (if (== extension `dom)
-                 (DOM_editor (+ { rules: [ `*markdown_rules* ] `hide_control_bar: false debug: false } options))
-                 (text_editor (+ { name: (last symbol_data.path) namespace: target_ns path: symbol_data.path mode: options.mode } options ))))
-          (show_new_control new_control))
-       (is_string? options.content)
-       (progn
-          (= new_control
-             (text_editor (+ {  namespace: target_ns  mode: options.mode } options )))
-          (show_new_control new_control))))
-  {
-      `description: (+ "Opens a new editor, if possible, in the currently focused control.  If necessary, it may "
-                       "split the view to the right for the new editor.  If no options are provided, the user "
-                       "will be prompted for a symbol to edit.  Options can be: <br>"
-                       "string: is considered a symbol name and the function will open or create the " 
-                       "specified symbol in the current namespace global context.<br>"
-                       "array: is considered a path to access, and if the path is present will open the path.  If not, "
-                       "will attempt to create the final value in the path as a string for editing.<br>"
-                       "object: if an object, the object can contain:<br>"
-                       "  path: array: the path to the symbol to be edited.  If the final path segment doesn't exist "
-                       "it will create it.<br>"
-                       "  namespace: string: the namespace to use for accessing the provided path.<br>"
-                       "  mode: the mode to open the editor in. The default mode is Juno.<br>")
-      `tags: ["editor" "edit" "buffer" "control"]
-      `usage: ["options:object?"]
-  })
+      
+      
+      (when (resolve_path [ `options `is_locked? ] current_layout)
+         (jump_to_frame_0)
+         (sleep 0.1))
+      
+      (= target_container (or (and (== starting_layout target_layout) 
+                                   options.control_to_replace  ;; first check easy thing
+                                   (== current_layout (get_current_layout_control)) ;; then the hard thing
+                                   options.control_to_replace) ;; then return the control to replace 
+                              (and target_layout.options.last_focus_id
+                                   (get_control_by_id target_layout.options.last_focus_id))
+                              *last_focus* 
+                              (default_focus)))
+                 
+      ;(log "new_buffer: target_container: " target_container.name (prop (get_current_layout_control) `name))
+      (when target_ns
+         (= target_env (-> Environment `get_namespace_handle symbol_data.namespace)))
+      (when (and target_env (eq nil (resolve_path symbol_data.path target_env.global_ctx.scope)))
+         (make_path symbol_data.path target_env.global_ctx.scope ""))
+     
+      (when symbol_data.path
+         (= new_control
+            (if (== extension `dom)
+                (DOM_editor (+ { rules: [ `*markdown_rules* ]
+                                       hide_control_bar: false
+                                       debug: false }
+                               options))
+                (text_editor (+ { name: (last symbol_data.path)
+                                       path_namespace: target_ns
+                                       namespace: target_ns
+                                       path: symbol_data.path
+                                       mode: options.mode }
+                                options ))))
+         (cond
+            (is_top_control? target_container)
+            (container_view_operation "split_right"
+                                      (first (-> target_container `controls))
+                                      new_control)
+            else
+            (progn
+               (log "new_buffer: swapping to control: "  new_control.name)
+               (swap_control target_container
+                             new_control)))
+         (sleep 0.1)
+         (set_focus_to new_control)))
+   {
+     `description: (+ "Opens a new editor, if possible, in the currently focused control.  If necessary, it may "
+                      "split the view to the right for the new editor.  If no options are provided, the user "
+                      "will be prompted for a symbol to edit.  Options can be: <br>"
+                      "string: is considered a symbol name and the function will open or create the "
+                      "specified symbol in the current namespace global context.<br>"
+                      "array: is considered a path to access, and if the path is present will open the path.  If not, "
+                      "will attempt to create the final value in the path as a string for editing.<br>"
+                      "object: if an object, the object can contain:<br>"
+                      "  path: array: the path to the symbol to be edited.  If the final path segment doesn't exist "
+                      "it will create it.<br>"
+                      "  namespace: string: the namespace to use for accessing the provided path.<br>"
+                      "  mode: the mode to open the editor in. The default mode is Juno.<br>")
+     `tags: ["editor" "edit" "buffer" "control"]
+     `usage: ["options:object?"]
+     })
 
 
 
@@ -1668,7 +1700,6 @@
                (global edit_file new_buffer get_control_by_name activity_box))
       (activity_box { `style:  "width: 200px; height: 50px;" } 
             (set_content (+ (dtext "Locating symbol:") symbol))
-            (log "open_symbol_definition: symbol: " symbol namespace)
             (cond
                (eq nil symbol_def)
                (notify (+ "Unable to find the definition information for " symbol))
@@ -1686,17 +1717,18 @@
                (> comps.length 1)
                (= source_file symbol_def.source_name))
             
-            (log "open_symbol_definition: def: " source_file is_buffer?)
             (cond
                (and is_buffer?
                   source_file)
                (progn
+                  (log "open_symbol_definition: is_buffer: true c1")
                   (new_buffer { `mode: `juno `type: `juno `path: (if (is_array? source_file) source_file [ source_file ]) })
                   (aif (get_control_by_name (last (split_by "/" source_file)))
                        (when (not (== it.options.id initiating_control_id))
                           (-> it `jump_to_local_definition symbol))))
                source_file
                (progn
+                  (log "open_symbol_definition: source_file c2")
                   (edit_file { `filename: source_file })
                   (aif (get_control_by_name (last (split_by "/" source_file)))
                        (when (not (== it.options.id initiating_control_id))
