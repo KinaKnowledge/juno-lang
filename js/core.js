@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2023-03-13 09:10:30
-// Version: 2023.03.13.09.10
-export const DLISP_ENV_VERSION='2023.03.13.09.10';
+// Build Time: 2023-03-26 20:07:40
+// Version: 2023.03.26.20.07
+export const DLISP_ENV_VERSION='2023.03.26.20.07';
 
 
 
@@ -377,8 +377,8 @@ await Environment.set_global("check_type",async function(thing,type_name,error_s
 },{ "eval_when":{ "compile_time":true
 },"name":"check_type","macro":true,"fn_args":"(thing type_name error_string)","description":"If the type of thing (ascertained by sub_type) are not of the type type_name, will throw a TypeError with the optional error_string as the error message.","usage":["thing:*","type_name:string","error_string:string"],"tags":["types","validation","type","assert"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 });
-{
-     Environment.set_global("get_object_path",function(refname) {
+await (async function(){
+    return  Environment.set_global("get_object_path",function(refname) {
         if (check_true ((( refname["indexOf"].call(refname,".")>-1)|| ( refname["indexOf"].call(refname,"[")>-1)))){
             {
                 let chars;
@@ -451,7 +451,7 @@ await Environment.set_global("check_type",async function(thing,type_name,error_s
         }
     },{ "name":"get_object_path","fn_args":"(refname)","description":"get_object_path is used by the compiler to take a string based notation in the form of p[a][b] or p.a.b and returns an array of the components.","tags":["compiler"],"usage":["refname:string"],"requires":["split_by","push","join"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
+})();
 await Environment.set_global("do_deferred_splice",async function(tree) {
     let rval;
     let idx;
@@ -715,8 +715,8 @@ await Environment.set_global("type",async function(x) {
     } ()
 },{ "name":"type","fn_args":"(x)","usage":["value:*"],"description":"returns the type of value that has been passed.  Deprecated, and the sub_type function should be used.","tags":["types","value","what"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 });
-{
-     Environment.set_global("destructure_list",function(elems) {
+await (async function(){
+    return  Environment.set_global("destructure_list",function(elems) {
         let idx;
         let acc;
         let passed_rest;
@@ -770,7 +770,7 @@ await Environment.set_global("type",async function(x) {
         return acc
     },{ "name":"destructure_list","fn_args":"(elems)","description":"Destructure list takes a nested array and returns the paths of each element in the provided array.","usage":["elems:array"],"tags":["destructuring","path","array","nested","tree"],"requires":["push","is_array?","map","add","is_object?","pairs","is_string?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
+})();
 await Environment.set_global("destructuring_bind",async function(...args) {
     let bind_vars;
     let expression;
@@ -873,8 +873,8 @@ await Environment.set_global("destructuring_bind",async function(...args) {
 },{ "eval_when":{ "compile_time":true
 },"name":"destructuring_bind","macro":true,"fn_args":"(bind_vars expression \"&\" forms)","description":["=:+","The macro destructuring_bind binds the variable symbols specified in bind_vars to the corresponding ","values in the tree structure resulting from the evaluation of the provided expression.  The bound ","variables are then available within the provided forms, which are then evaluated.  Note that ","destructuring_bind only supports destructuring arrays. Destructuring objects is not supported."],"usage":["bind_vars:array","expression:array","forms:*"],"tags":["destructure","array","list","bind","variables","allocation","symbols"],"requires":["slice","random_int","destructure_list","is_array?","starts_with?","push","assert","is_value?","first","resolve_path","add","is_object?","second","join","conj","range","length"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 });
-{
-     Environment.set_global("split_by_recurse",function(token,container) {
+await (async function(){
+    return  Environment.set_global("split_by_recurse",function(token,container) {
         return   (function(){
             if (check_true ((container instanceof String || typeof container==='string'))) {
                 return (container).split(token)
@@ -886,7 +886,7 @@ await Environment.set_global("destructuring_bind",async function(...args) {
         } )()
     },{ "name":"split_by_recurse","fn_args":"(token container)","usage":["token:string","container:string|array"],"description":["=:+","Like split_by, splits the provided container at ","each token, returning an array of the split ","items.  If the container is an array, the function ","will recursively split the strings in the array ","and return an array containing the split values ","of that array.  The final returned array may contain ","strings and arrays."],"tags":["split","nested","recursion","array","string"],"requires":["is_string?","split_by","is_array?","map","split_by_recurse"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
+})();
 await Environment.set_global("defmacro",async function(name,lambda_list,...forms) {
     let macro_name;
     let macro_args;
@@ -1109,19 +1109,19 @@ await Environment.set_global("is_regex?",async function(x) {
 await Environment.set_global("bind_function",(await Environment.get_global("bind")),{
     description:"Reference bind and so has the exact same behavior.  Used for Kina legacy code. See bind description.",requires:["bind"],requires:["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],source_name:"core.lisp"
 });
-{
-     Environment.set_global("is_error?",function(val) {
+await (async function(){
+    return  Environment.set_global("is_error?",function(val) {
         return (val instanceof Error)
     },{ "name":"is_error?","fn_args":"(val)","description":"Returns true if the passed value is a instance of an Error type, otherwise returns false.","usage":["val:*"],"tags":["Error","types","predicate","type","instanceof"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
+})();
 await Environment.set_global("is_reference?",async function(val) {
     return ["=:and",["=:is_string?",val],["=:>",["=:length",val],2],["=:starts_with?",["=:quote","=:"],val]]
 },{ "eval_when":{ "compile_time":true
 },"name":"is_reference?","macro":true,"fn_args":"(val)","description":["=:+","Returns true if the quoted value is a binding string; in JSON notation this would be a string starting with \"=:\". ","Note that this function doesn't check if the provided value is a defined symbol, but only if it has been ","described in the JSON structure as a bounding string."],"usage":["val:string"],"tags":["reference","JSON","binding","symbol","predicate"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 });
-{
-     Environment.set_global("scan_str",function(regex,search_string) {
+await (async function(){
+    return  Environment.set_global("scan_str",function(regex,search_string) {
         let result;
         let last_result;
         let totals;
@@ -1194,7 +1194,7 @@ await Environment.set_global("is_reference?",async function(val) {
         return totals
     },{ "name":"scan_str","fn_args":"(regex search_string)","description":["=:+","Using a provided regex and a search string, performs a regex ","exec using the provided regex argument on the string argument. ","Returns an array of results or an empty array, with matched ","text, index, and any capture groups."],"usage":["regex:RegExp","text:string"],"tags":["regex","string","match","exec","array"],"requires":["is_regex?","not","push","to_object","keys"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
+})();
 await Environment.set_global("remove_prop",async function(obj,key) {
     if (check_true (await (await Environment.get_global("not"))((undefined===obj[key])))){
         {
@@ -1312,8 +1312,8 @@ await Environment.set_global("expand_dot_accessor",async function(val,ctx) {
     } ()
 },{ "name":"expand_dot_accessor","fn_args":"(val ctx)","description":"Used for compilation. Expands dotted notation of a.b.0.1 to a[\"b\"][0][1]","usage":["val:string","ctx:object"],"tags":["compiler","system"],"requires":["split_by","take","is_object?","contains?","object_methods","not","join","conj","flatten","is_number?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 });
-{
-     Environment.set_global("from_mixed_case",function(mixed_case_key) {
+await (async function(){
+    return  Environment.set_global("from_mixed_case",function(mixed_case_key) {
         let tokens;
         let acc;
         let ccode;
@@ -1354,9 +1354,9 @@ await Environment.set_global("expand_dot_accessor",async function(val,ctx) {
         return (acc).join("")
     },{ "name":"from_mixed_case","fn_args":"(mixed_case_key)","description":["=:+","<br><br>Given a mixed case string, will return the standardized key format ","representation of the string.  For example,  the string `myVariable` will be ","returned as `my_variable` with this function.  A TypeError will be thrown if a ","non-string argument is provided. "],"usage":["mixed_case_key:string"],"tags":["key","convert","snake","mixed","case","format"],"requires":["is_string?","split_by","push","lowercase","join"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
-{
-     Environment.set_global("to_mixed_case",function(snake_case_key) {
+})();
+await (async function(){
+    return  Environment.set_global("to_mixed_case",function(snake_case_key) {
         let tokens;
         let acc;
         let upmode;
@@ -1400,7 +1400,7 @@ await Environment.set_global("expand_dot_accessor",async function(val,ctx) {
         return (acc).join("")
     },{ "name":"to_mixed_case","fn_args":"(snake_case_key)","description":["=:+","<br><br>Given a snake case string, will return a mixed case key format ","representation of the string.  For example,  the string `my_variable` will be ","returned as `myVariable` with this function.  A TypeError will be thrown if a ","non-string argument is provided. "],"usage":["snake_case_key:string"],"tags":["key","convert","snake","mixed","case","format"],"requires":["is_string?","split_by","push","uppercase","join"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
+})();
 await Environment.set_global("new_ctx",async function(ctx) {
     let __new_ctx__88= async function(){
         return {
@@ -1600,15 +1600,15 @@ await Environment.set_global("ifa",async function(test,thenclause,elseclause) {
 },{ "eval_when":{ "compile_time":true
 },"name":"ifa","macro":true,"fn_args":"(test thenclause elseclause)","description":"Similar to if, the ifa macro is anaphoric in binding, where the it value is defined as the return value of the test form. Use like if, but the it reference is bound within the bodies of the thenclause or elseclause.","usage":["test:*","thenclause:*","elseclause:*"],"tags":["cond","it","if","anaphoric"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 });
-{
-     Environment.set_global("map_range",function(n,from_range,to_range) {
+await (async function(){
+    return  Environment.set_global("map_range",function(n,from_range,to_range) {
         ;
         return ((to_range && to_range["0"])+ (((n- (from_range && from_range["0"]))/ ((from_range && from_range["1"])- (from_range && from_range["0"])))* ((to_range && to_range["1"])- (to_range && to_range["0"]))))
     },{ "name":"map_range","fn_args":"(n from_range to_range)","usage":["n:number","from_range:array","to_range:array"],"tags":["range","scale","conversion"],"description":["=:+","Given an initial number n, and two numeric ranges, maps n from the first range ","to the second range, returning the value of n as scaled into the second range. "],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
-{
-     Environment.set_global("range_inc",function(start,end,step) {
+})();
+await (async function(){
+    return  Environment.set_global("range_inc",function(start,end,step) {
         if (check_true (end)){
             return  ( Environment.get_global("range"))(start, ( Environment.get_global("add"))(end,1),step)
         } else {
@@ -1616,7 +1616,7 @@ await Environment.set_global("ifa",async function(test,thenclause,elseclause) {
         }
     },{ "name":"range_inc","fn_args":"(start end step)","description":["=:+","Similar to range, but is end inclusive: [start end] returning an array containing values from start, including end. ","vs. the regular range function that returns [start end).  ","If just 1 argument is provided, the function returns an array starting from 0, up to and including the provided value."],"usage":["start:number","end?:number","step?:number"],"tags":["range","iteration","loop"],"requires":["range","add"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
+})();
 await Environment.set_global("HSV_to_RGB",async function(h,s,v) {
      {
              var r, g, b, i, f, p, q, t;
@@ -1880,8 +1880,8 @@ await Environment.set_global("use_quoted_initializer",async function(...args) {
 },{ "eval_when":{ "compile_time":true
 },"name":"use_quoted_initializer","macro":true,"fn_args":"[\"&\" forms]","description":["=:+","The macro `use_quoted_initializer` preserves the source form in the ","symbol definition object.  When the environment is saved, any source forms that ","wish to be preserved through the serialization process should be in the body of ","this macro.  This is a necessity for global objects that hold callable ","functions, or functions or structures that require initializers, such as things ","that connect or use environmental resources.  "],"usage":["forms:array"],"tags":["compilation","save_env","export","source","use","compiler","compile"],"requires":["slice","is_array?","is_object?","resolve_path","set_path","warn","is_string?","macroexpand"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 });
-{
-     Environment.set_global("but_last",function(arr) {
+await (async function(){
+    return  Environment.set_global("but_last",function(arr) {
         if (check_true ((arr instanceof Array))){
             return  ( Environment.get_global("slice"))(arr,0,((arr && arr.length)- 1))
         } else {
@@ -1890,9 +1890,9 @@ await Environment.set_global("use_quoted_initializer",async function(...args) {
         }
     },{ "name":"but_last","fn_args":"(arr)","description":["=:+","Given an array, returns all elements except the final element.  This ","function is the inverse of `last`.  If there are less than 2 elements in the ","array (0 or 1 elements), then an empty array is returned.  If a non-array is ","provided, the function will throw a `TypeError`. "],"usage":["arr:array"],"tags":["array","last","elements","front","head","rest"],"requires":["is_array?","slice","sub_type"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
-{
-     Environment.set_global("random_int",function(...args) {
+})();
+await (async function(){
+    return  Environment.set_global("random_int",function(...args) {
         let top;
         let bottom;
         top=0;
@@ -1908,9 +1908,9 @@ await Environment.set_global("use_quoted_initializer",async function(...args) {
         return  parseInt( ( Environment.get_global("add"))(( Math.random()* (top- bottom)),bottom))
     },{ "name":"random_int","fn_args":"[\"&\" \"args\"]","description":["=:+","Returns a random integer between 0 and the argument. ","If two arguments are provided then returns an integer ","between the first argument and the second argument."],"usage":["arg1:number","arg2?:number"],"tags":["rand","number","integer"],"requires":["length","add"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
-{
-     Environment.set_global("resolve_multi_path",function(path,obj,not_found) {
+})();
+await (async function(){
+    return  Environment.set_global("resolve_multi_path",function(path,obj,not_found) {
         return   (function(){
             if (check_true ((obj instanceof Object))) {
                 return   (function(){
@@ -1964,9 +1964,9 @@ await Environment.set_global("use_quoted_initializer",async function(...args) {
         } )()
     },{ "name":"resolve_multi_path","fn_args":"(path obj not_found)","tags":["path","wildcard","tree","structure"],"usage":["path:array","obj:object","not_found:?*"],"description":["=:+","Given a list containing a path to a value in a nested array, return the value at the given ","path. If the value * is in the path, the path value is a wild card if the passed object ","structure at the path position is a vector or list."],"requires":["is_object?","length","first","not","is_array?","resolve_multi_path","rest","values"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
-{
-     Environment.set_global("delete_path",function(path,obj) {
+})();
+await (async function(){
+    return  Environment.set_global("delete_path",function(path,obj) {
         let mpath;
         let key;
         let place_path;
@@ -2016,7 +2016,7 @@ await Environment.set_global("use_quoted_initializer",async function(...args) {
         } )()
     },{ "name":"delete_path","fn_args":"(path obj)","description":["=:+","Given a path and an target object, removes the specified value ","at the path and returns the original object, which will have been modified. ","If the value isn't found, there are no modifications to the object and the ","object is returned.  Will throw a TypeError if the obj argument isn't an ","object type, of if the path isn't an array with at least one element."],"usage":["path:array","obj:object"],"tags":["path","delete","remove","object","resolve","modify","value"],"requires":["pop","not","is_array?","is_object?","length","is_value?","delete_prop","resolve_path"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
+})();
 await Environment.set_global("symbol_tree",async function(quoted_form,_state,_current_path) {
     let acc;
     let allocators;
@@ -2431,8 +2431,8 @@ await Environment.set_global("each",async function(items,property) {
     } ()
 },{ "name":"each","fn_args":"(items property)","description":["=:+","Provided a list of items, provide a property name or ","a list of property names to be extracted and returned from the source array as a new list.","If property is an array, and contains values that are arrays, those arrays will be treated as a path."],"usage":["items:list","property:string|list|function|AsyncFunction"],"tags":["pluck","element","only","list","object","property"],"requires":["is_string?","is_number?","except_nil","sub_type","is_array?","push","resolve_path","is_function?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 });
-{
-     Environment.set_global("replace",function(...args) {
+await (async function(){
+    return  Environment.set_global("replace",function(...args) {
         if (check_true (((args && args.length)<3))){
             throw new SyntaxError("Invalid syntax for replace: requires at least three arguments, target value or regex, the replacement value, and at least one value (object list or string)");
             
@@ -2543,9 +2543,9 @@ await Environment.set_global("each",async function(items,property) {
         }
     },{ "name":"replace","fn_args":"[\"&\" args]","description":["=:+","Given at least 3 arguments, finds the first  argument, and replaces with the second argument, operating on the third plus argument.  ","This function will act to replace and find values in strings, arrays and objects.  When replacing values in strings, be aware that ","only the first matching value will be replaced.  To replace ALL values in strings, use a RegExp with the `g flag set, such as ","(new RegExp \"Target String\" `g).  For example, the following replaces all target values in the target string:<br>","(replace (new RegExp \"Indiana\" `g) \"Illinois\" \"The address of the location in Indiana has now been changed to 123 Main Street, Townville, Indiana.\")"],"usage":["target:string|regexp","replacement:string|number","container:string|array|object"],"tags":["replace","find","change","edit","string","array","object"],"requires":["slice","push","replace","keys","not","first"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
-{
-     Environment.set_global("get_symbol_details_for_ns",function(namespace,symbol_name) {
+})();
+await (async function(){
+    return  Environment.set_global("get_symbol_details_for_ns",function(namespace,symbol_name) {
         if (check_true (((namespace instanceof String || typeof namespace==='string')&& (symbol_name instanceof String || typeof symbol_name==='string')))){
             return  ( Environment.get_global("first"))( ( function(){
                 let __collector;
@@ -2588,7 +2588,7 @@ await Environment.set_global("each",async function(items,property) {
         }
     },{ "name":"get_symbol_details_for_ns","fn_args":"(namespace symbol_name)","description":"Given a namespace and a symbol name returns the details for the specific symbol in the namespace if found, or nil if not.","tags":["namespace","symbol","find","meta","details"],"usage":["namespace:string","symbol_name:string"],"requires":["is_string?","first","push","meta_for_symbol"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
+})();
 await Environment.set_global("env_encode_string",async function(text) {
     let te;
     let enc;
@@ -2649,8 +2649,8 @@ await Environment.set_global("cl_encode_string",async function(text) {
     }
 },{ "name":"cl_encode_string","fn_args":"(text)","requires":["is_string?","replace","add","split_by","join"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 });
-{
-     Environment.set_global("fn_signature",function(f) {
+await (async function(){
+    return  Environment.set_global("fn_signature",function(f) {
         if (check_true ((f instanceof Function|| (f instanceof String || typeof f==='string')))){
             {
                 let sig;
@@ -2749,7 +2749,7 @@ await Environment.set_global("cl_encode_string",async function(text) {
         }
     },{ "name":"fn_signature","fn_args":"(f)","description":["=:+","For a given function as an argument, returns an object with a ","type key containing the function type (async, sync) and an args ","key with an array for the arguments.  Note that a string value which ","is the result of a function serialized with the function's ","toString() method can also be passed."],"usage":["f:function|string"],"tags":["function","signature","arity","inspect"],"requires":["is_function?","is_string?","trim","first","split_by","replace","starts_with?","second","chop","index_of"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
+})();
 await Environment.set_global("path_to_js_syntax",async function(comps) {
     if (check_true ((comps instanceof Array))){
         if (check_true (((comps && comps.length)>1))){
@@ -3405,8 +3405,8 @@ await Environment.set_global("either",async function(...args) {
     }
 },{ "name":"either","fn_args":"[\"&\" args]","description":["=:+","Similar to or, but unlike or, returns the first non nil ","or undefined value in the argument list whereas or returns ","the first truthy value."],"usage":["values:*"],"tags":["nil","truthy","logic","or","undefined"],"requires":["slice","not"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 });
-{
-     Environment.set_global("sanitize_js_ref_name",function(symname) {
+await (async function(){
+    return  Environment.set_global("sanitize_js_ref_name",function(symname) {
         return   (function(){
             if (check_true ( ( Environment.get_global("not"))((symname instanceof String || typeof symname==='string')))) {
                 return symname
@@ -3467,7 +3467,7 @@ await Environment.set_global("either",async function(...args) {
         } )()
     },{ "name":"sanitize_js_ref_name","fn_args":"(symname)","requires":["not","is_string?","split_by","push","contains?","join"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
+})();
 await Environment.set_global("is_symbol?",async function(symbol_to_find) {
     return ["=:not",["=:or",["=:==",["=:typeof",symbol_to_find],"undefined"],["=:==",["=:->","=:Environment","get_global",symbol_to_find,"=:ReferenceError"],"=:ReferenceError"]]]
 },{ "eval_when":{ "compile_time":true
@@ -3788,12 +3788,12 @@ await Environment.set_global("bind_and_call",async function(...args) {
     }
 },{ "name":"bind_and_call","fn_args":"(target_object this_object method \"&\" args)","usage":["target_object:object","this_object:object","method:string","args0:*","argsn:*"],"description":"Binds the provided method of the target object with the this_object context, and then calls the object method with the optional provided arguments.","tags":["bind","object","this","context","call"],"requires":["slice","bind"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 });
-{
-     Environment.set_global("clamp",function(value,min,max) {
+await (async function(){
+    return  Environment.set_global("clamp",function(value,min,max) {
         return  Math.min( Math.max(min,value),max)
     },{ "name":"clamp","fn_args":"(value min max)","description":["=:+","Given a numeric value, along with minimum and maximum values for the provided value, ","the function will return the value if between the bounding values, otherwise ","the closest bounding value will be returned.  If the value is above the provided ","maximum, then the maximum will be returned.  If the value is below the minimum, then ","the minimum value is returned."],"tags":["value","number","min","max","bounds","boundary","range"],"usage":["value:number","min:number","max:number"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
+})();
 await Environment.set_global("document",new Object(),{
     requires:[],externals:["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],source_name:"core.lisp"
 });
@@ -4011,8 +4011,8 @@ await Environment.set_global("formatted_date",async function(dval,date_formatter
 await Environment.set_global("*LANGUAGE*",new Object(),{
     requires:[],externals:["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],source_name:"core.lisp"
 });
-{
-     Environment.set_global("dtext",function(default_text) {
+await (async function(){
+    return  Environment.set_global("dtext",function(default_text) {
         return ( ( function(){
             let __targ__271=( Environment.get_global("*LANGUAGE*"));
             if (__targ__271){
@@ -4021,7 +4021,7 @@ await Environment.set_global("*LANGUAGE*",new Object(),{
         })()|| default_text)
     },{ "name":"dtext","fn_args":"(default_text)","usage":["text:string","key:string?"],"description":["=:+","Given a default text string and an optional key, if a key ","exists in the global object *LANGUAGE*, return the text associated with the key. ","If no key is provided, attempts to find the default text as a key in the *LANGUAGE* object. ","If that is a nil entry, returns the default text."],"tags":["text","multi-lingual","language","translation","translate"],"requires":["*LANGUAGE*"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
+})();
 await Environment.set_global("nth",async function(idx,collection) {
     return await async function(){
         if (check_true ((idx instanceof Array))) {
@@ -4038,14 +4038,14 @@ await Environment.set_global("nth",async function(idx,collection) {
     } ()
 },{ "name":"nth","fn_args":"(idx collection)","description":["=:+","Based on the index or index list passed as the first argument, ","and a collection as a second argument, return the specified values ","from the collection. If an index value is negative, the value ","retrieved will be at the offset starting from the end of the array, ","i.e. -1 will return the last value in the array."],"tags":["filter","select","pluck","object","list","key","array"],"usage":["idx:string|number|array","collection:list|object"],"requires":["is_array?","map","nth","is_number?","length","add"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 });
-{
-     Environment.set_global("max_index",function(container) {
+await (async function(){
+    return  Environment.set_global("max_index",function(container) {
         return  Math.max(0,( ( Environment.get_global("length"))(container)- 1))
     },{ "name":"max_index","fn_args":"(container)","description":["=:+","Given a container, typically an Array or derivative, ","return the max index value, calculated as length - 1.<br>"],"usage":["container:array"],"tags":["length","array","container","max","index","range","limit"],"requires":["length"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
-{
-     Environment.set_global("decode_text",function(buffer) {
+})();
+await (async function(){
+    return  Environment.set_global("decode_text",function(buffer) {
         return  ( function() {
             {
                  let __call_target__=new TextDecoder(), __call_method__="decode";
@@ -4054,9 +4054,9 @@ await Environment.set_global("nth",async function(idx,collection) {
         })()
     },{ "name":"decode_text","fn_args":"(buffer)","description":"Given a source buffer, such as a Uint8Array, decode into utf-8 text.","usage":["buffer:ArrayBuffer"],"tags":["decode","encode","string","array","text"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
-{
-     Environment.set_global("encode_text",function(text) {
+})();
+await (async function(){
+    return  Environment.set_global("encode_text",function(text) {
         return  ( function() {
             {
                  let __call_target__=new TextEncoder(), __call_method__="encode";
@@ -4065,7 +4065,7 @@ await Environment.set_global("nth",async function(idx,collection) {
         })()
     },{ "name":"encode_text","fn_args":"(text)","description":"Given a source buffer, such as a Uint8Array, decode into utf-8 text.","usage":["buffer:ArrayBuffer"],"tags":["decode","encode","string","array","text"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
+})();
 await Environment.set_global("hostname",async function() {
     return await Deno.hostname()
 },{ "name":"hostname","fn_args":"[]","description":"Returns the hostname of the system the environment is running on.","usage":[],"tags":["hostname","server","environment"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
@@ -4262,16 +4262,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__288=async function(req) {
                                             {
-                                                let _expr_80679;
+                                                let _expr_12713;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_80679=await (async function(){
+                                                _expr_12713=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_80679 && _expr_80679["0"]);
-                                                req_ns=(_expr_80679 && _expr_80679["1"]);
-                                                explicit=(_expr_80679 && _expr_80679["2"]);
+                                                req_sym=(_expr_12713 && _expr_12713["0"]);
+                                                req_ns=(_expr_12713 && _expr_12713["1"]);
+                                                explicit=(_expr_12713 && _expr_12713["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -4374,13 +4374,13 @@ await Environment.set_global("sort_dependencies",async function() {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_23482;
+                    let _expr_81258;
                     let nspace;
-                    _expr_23482=await (async function(){
+                    _expr_81258=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_23482 && _expr_23482["0"]);
-                    nspace=(_expr_23482 && _expr_23482["1"]);
+                    sym=(_expr_81258 && _expr_81258["0"]);
+                    nspace=(_expr_81258 && _expr_81258["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);
@@ -5019,8 +5019,8 @@ await Environment.set_global("process_tree_symbols",async function(tree,prefix,_
     return rval
 },{ "name":"process_tree_symbols","fn_args":"(tree prefix _ctx)","usage":["tree:*"],"description":["=:+","Given a JSON structure, such as produced by the reader, returns an object containing the various determined types of the provided structure:<br>","allocations:array - All locally allocated symbols<br>","symbols:array - All identified symbols<br>","keywords:array - All keywords used in the structure","literals:array - All identified literals (i.e. not a symbol)","globals:array - All referenced globals"],"tags":["editor","usage","scope","structure"],"requires":["as_lisp","not","is_array?","process_tree_symbols","contains?","*formatting_rules*","meta_for_symbol","length","is_string?","starts_with?","is_number?","is_function?","is_object?","pairs","to_array"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 });
-{
-     Environment.set_global("keys*",function(obj) {
+await (async function(){
+    return  Environment.set_global("keys*",function(obj) {
         if (check_true ((obj instanceof Object))){
             {
                 let current_obj;
@@ -5088,9 +5088,9 @@ await Environment.set_global("process_tree_symbols",async function(tree,prefix,_
     }
 },{ "name":"keys*","fn_args":"(obj)","description":["=:+","Like keys, but where keys uses Object.keys, keys* uses the function Object.getOwnpropertynames and returns the ","prototype keys as well."],"usage":["obj:Object"],"tags":["object","array","keys","property","properties","introspection"],"requires":["is_object?","first","push","flatten"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
-{
-     Environment.set_global("pairs*",function(obj) {
+})();
+await (async function(){
+    return  Environment.set_global("pairs*",function(obj) {
         if (check_true ((obj instanceof Object))){
             return  ( function() {
                 let __for_body__354=function(k) {
@@ -5118,7 +5118,7 @@ await Environment.set_global("process_tree_symbols",async function(tree,prefix,_
         }
     },{ "name":"pairs*","fn_args":"(obj)","description":"Like pairs, but where keys uses Object.keys, pairs* returns the key-value pairs prototype heirarchy as well.","usage":["obj:Object"],"tags":["object","array","keys","property","properties","introspection","values"],"requires":["is_object?","keys*"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
+})();
 await Environment.set_global("for",async function(...args) {
     let symbol_list;
     let array_ref;
@@ -5138,8 +5138,8 @@ await Environment.set_global("for",async function(...args) {
 },{ "eval_when":{ "compile_time":true
 },"name":"for","macro":true,"fn_args":"[(symbol_list array_ref) \"&\" body_forms]","description":["=:+","The for macro provides a facility for looping through arrays, ","destructuring their contents into local symbols that can be used in a block.  ","The `for` macro is a higher level construct than the `for_each` operator, as it ","allows for multiple symbols to be mapped into the contents iteratively, vs. ","for_each allowing only a single symbol to be bound to each top level element in ","the provided array.<br>The symbol_list is provided as the lambda list to a ","`destructuring_bind` if multiple symbols are provided, otherwise, if only a ","single variable is provided, the `for` macro will convert to  a for_each call, ","with the `body_forms` enclosed in a `progn` block.  <br><br>#### Examples ","<br><br>An example of a multiple bindings is below.  The values of `positions` ","are mapped (destructured) into x, y, w and h, respectively, each iteration ","through the loop mapping to the next structured element of the array:```(let\n ","((positions\n      [[[1 2] [5 3]]\n       [[6 3] [10 2]]]))\n  (for ([[x y] [w h]] ","positions)\n       (log \"x,y,w,h=\" x y w h)\n       (+ \"\" x \",\" y \"+\"  w \",\" h ",")))```<br><br>Upon evaluation the log output is as follows:```\"x,y,w,h=\" 1 2 5 ","3```<br>```\"x,y,w,h=\" 6 3 10 2```<br><br>The results returned from the ","call:```[\"1,2+5,3\"\n \"6,3+10,2\"]```<br><br>Notice that the `for` body is wrapped ","in an explicit `progn` such that the last value is accumulated and returned ","from the `for` operation.<br>An example of single bindings, which essentially ","transforms into a `for_each` call with an implicit `progn` around the body ","forms.  This form is essentially a convenience call around `for_each`.  ```(for ","(x [1 2 3])\n     (log \"x is: \" x) \n     (+ x 2))```<br><br>Both the log form ","and the final body form `(+ x 2)` are the body forms and will be evaluated in ","sequence, the final form results accumulating to be returned to the ","caller.<br>Log output from the above:```\"x is: \" 1\n\"x is: \" 2\n\"x is: \" ","3```<br><br>Return value:```[3 4 5]```<br>"],"usage":["allocations_and_values:array","body_forms:*"],"tags":["iteration","loop","for","array","destructuring"],"requires":["slice","is_array?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 });
-{
-     Environment.set_global("word_wrap",function(text,ncols) {
+await (async function(){
+    return  Environment.set_global("word_wrap",function(text,ncols) {
         let line_length;
         let words;
         let max_cols;
@@ -5192,7 +5192,7 @@ await Environment.set_global("for",async function(...args) {
         return lines
     },{ "name":"word_wrap","fn_args":"(text ncols)","description":["=:+","Given a string of text and an optional column length ","returns an array of lines wrapped at or before the ","column length.  If no column length is provided, ","the default is 80."],"usage":["text:string","ncols:?number"],"tags":["text","string","wrap","format"],"requires":["split_by","length","push","join","add"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
+})();
 await Environment.set_global("progc",async function(...args) {
     let forms;
     forms=await (await Environment.get_global("slice"))(args,0);
@@ -5200,8 +5200,8 @@ await Environment.set_global("progc",async function(...args) {
 },{ "eval_when":{ "compile_time":true
 },"name":"progc","macro":true,"fn_args":"[\"&\" forms]","description":["=:+","This macro wraps the provided forms in a ","try-catch, and returns the last value if ","no errors, like progn, or if an error ","occurs, logs to the console.  Simple ","help for debugging."],"tags":["debug","error","catch","handler","progn","eval"],"usage":["forms:*"],"requires":["slice"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 });
-{
-     Environment.set_global("reverse_string",function(text) {
+await (async function(){
+    return  Environment.set_global("reverse_string",function(text) {
         return ( ( function() {
             {
                  let __call_target__=(text).split(""), __call_method__="reverse";
@@ -5210,9 +5210,9 @@ await Environment.set_global("progc",async function(...args) {
         })()).join("")
     },{ "name":"reverse_string","fn_args":"(text)","description":"Given a string, returns the characters in reverse order.","usage":["text:string"],"tags":["string","text","reverse","modify"],"requires":["join","split_by"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
-{
-     Environment.set_global("last_n_chars",function(n,text) {
+})();
+await (async function(){
+    return  Environment.set_global("last_n_chars",function(n,text) {
         if (check_true ((text instanceof String || typeof text==='string'))){
             return  text["substr"].call(text,(-1* n))
         } else {
@@ -5220,9 +5220,9 @@ await Environment.set_global("progc",async function(...args) {
         }
     },{ "name":"last_n_chars","fn_args":"(n text)","description":"For a given string, returns the last n characters as a string.","usage":["n:number","text:string"],"tags":["string","text","last","amount","end","tail"],"requires":["is_string?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
-{
-     Environment.set_global("last_n",function(n,arr) {
+})();
+await (async function(){
+    return  Environment.set_global("last_n",function(n,arr) {
         if (check_true ((arr instanceof Array))){
             return  arr["slice"].call(arr,(-1* n))
         } else {
@@ -5230,9 +5230,9 @@ await Environment.set_global("progc",async function(...args) {
         }
     },{ "name":"last_n","fn_args":"(n arr)","description":"For a given array, returns the last n elements as an array.","usage":["n:number","arr:array"],"tags":["array","list","text","last","amount","end","tail"],"requires":["is_array?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
-{
-     Environment.set_global("analyze_text_line",function(line) {
+})();
+await (async function(){
+    return  Environment.set_global("analyze_text_line",function(line) {
         let delta;
         let indent_spaces;
         let base_indent;
@@ -5311,9 +5311,9 @@ await Environment.set_global("progc",async function(...args) {
         }
     },{ "name":"analyze_text_line","fn_args":"(line)","description":["=:+","Given a line of text, analyzes the text for form/block openers, identified as ","(,{,[ and their corresponding closers, which correspod to ),},].  It then returns ","an object containing the following: <br><br>","{ delta:int   - a positive or negative integer that is represents the positive or negative depth change, <br>","  final_type: string - the final delimiter character found which can either be an opener or a closer, <br>","  final_pos: int - the position of the final delimiter, <br>","  line: string - the line of text analyzed, <br>","  indent: int - the indentation space count found in the line, <br>","  openers: array - an array of integers representing all column positions of found openers in the line.<br>","  closers: array - an array of integers representing all column positions of found closers in the line. }<br><br>","The function does not count opening and closing tokens if they appear in a string."],"tags":["text","tokens","form","block","formatting","indentation"],"usage":["line:string"],"requires":["not","push","split_by"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
-{
-     Environment.set_global("calculate_indent_rule",function(delta,movement_needed) {
+})();
+await (async function(){
+    return  Environment.set_global("calculate_indent_rule",function(delta,movement_needed) {
         let lisp_line;
         let remainder_pos;
         let remainder;
@@ -5473,9 +5473,9 @@ await Environment.set_global("progc",async function(...args) {
         return delta
     },{ "name":"calculate_indent_rule","fn_args":"(delta movement_needed)","description":["=:+","Given a delta object as returned from analyze_text_line, and an integer representing the ","the amount of tree depth to change, calculates the line indentation required for the ","given delta object, and creates an indent property in the delta object containing ","the given amount of spaces to prepend to the line.  References the *formatting_rules* ","object as needed to determine minor indentation from standard indentation, as well as ","which symbols are identified as keywords.  Returns the provided delta object with the ","indent key added."],"tags":["indentation","text","formatting"],"usage":["delta:object","movement_needed:int"],"requires":["first","not","blank?","push","split_by","contains?","meta_for_symbol","starts_with?","*formatting_rules*","length","built_ins"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
-{
-     Environment.set_global("format_lisp_line",function(line_number,get_line) {
+})();
+await (async function(){
+    return  Environment.set_global("format_lisp_line",function(line_number,get_line) {
         if (check_true (((line_number>0)&& get_line instanceof Function))){
             {
                 let current_row;
@@ -5623,7 +5623,7 @@ await Environment.set_global("progc",async function(...args) {
         }
     },{ "name":"format_lisp_line","fn_args":"(line_number get_line)","description":["=:+","Given a line number and an accessor function (synchronous), returns a","a text string representing the computed indentation for the provided ","line number. The get_line function to be provided will be called with ","a single integer argument representing a requested line number from ","the text buffer being analyzed.  The provided get_line function should ","return a string representing the line of text from the buffer containing ","the requested line. Once the string is returned, it is mandatory to update ","the line buffer with the updated indented string, otherwise the function ","will not work properly."],"tags":["formatting","indentation","text","indent"],"usage":["line_number:integer","get_line:function"],"requires":["is_function?","trim","analyze_text_line","calculate_indent_rule","join","range"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
+})();
 await Environment.set_global("set_default",async function(path,value) {
     let real_path;
     real_path=await (async function(){
@@ -5726,8 +5726,8 @@ await Environment.set_global("traverse",async function(structure,operator_functi
     }
 },{ "name":"traverse","fn_args":"(structure operator_function _path)","description":["=:+","Given a structure such as an object or an array, and an operator ","function argument, the function will recursively call the operator function ","with the value and the path to each value in the structure.   The operator ","function can choose to operate on the value at the path by calling `set_path` ","for the root object, or otherwise examine the value and the path.  The return ","value of the operator function is ignored.  The operator function signature is ","called with `(value path_to_value)` as a signature.<br><br> "],"usage":["structure:object","operator_function:function"],"tags":["recursion","recurse","structure","object","array","search","find"],"requires":["is_array?","map","traverse","conj","is_object?","pairs"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 });
-{
-     Environment.set_global("all_global_functions",function() {
+await (async function(){
+    return  Environment.set_global("all_global_functions",function() {
         let acc;
         let env_a;
         acc=new Set();
@@ -5769,9 +5769,9 @@ await Environment.set_global("traverse",async function(structure,operator_functi
         return acc
     },{ "name":"all_global_functions","fn_args":"[]","description":"Returns a Set object of all accessible functions in the environment, including all namespaces.","usage":[],"tags":["global","function","scope","environment"],"requires":["is_function?","pairs","namespaces"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
-{
-     Environment.set_global("pretty_print",function(in_struct,report_callout) {
+})();
+await (async function(){
+    return  Environment.set_global("pretty_print",function(in_struct,report_callout) {
         let in_text;
         let chars;
         let key_words;
@@ -6245,7 +6245,7 @@ await Environment.set_global("traverse",async function(structure,operator_functi
         return (lines).join("")
     },{ "name":"pretty_print","fn_args":"(in_struct report_callout)","description":["=:+","The pretty_print function attempts to format the presented input, provided ","either as a string or JSON. The return is a string with the formatted input."],"tags":["format","pretty","lisp","display","output"],"usage":["input:array|string"],"requires":["is_object?","as_lisp","is_string?","split_by","*formatting_rules*","all_global_functions","push","join","contains?","ends_with?","not","starts_with?","last","last_n","format_lisp_line","range"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
+})();
 await Environment.set_global("get_dependencies",async function(global_symbol,_deps,_req_ns,_externs) {
     let comps;
     let target_symbol;
@@ -6391,8 +6391,8 @@ await Environment.set_global("get_dependencies",async function(global_symbol,_de
     }
 },{ "name":"get_dependencies","fn_args":"(global_symbol _deps _req_ns _externs)","description":["=:+","<br><br>Given a symbol in string form, returns the global dependencies that the ","symbol is dependent on in the runtime environment.  The return structure is in ","the form:```{\n  dependencies: []\n  namespaces: []   \n  externals: ","[]\n}```<br><br>The return structure will contain all the qualified and ","non-qualified symbols referenced by the provided target symbol, plus the ","dependencies of the required symbols.  <br>The needed namespace environments ","are also returned in the `namespaces` value.\n<br>References to external global ","Javascript values are listed in the `externals` result.  These values are ","defined as dependencies for the provided symbol, but are not defined in a Juno ","Environment.<br> "],"usage":["quoted_symbol:string"],"tags":["dependencies","tree","required","dependency"],"requires":["split_by","second","first","current_namespace","not","get_dependencies","to_array"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 });
-{
-     Environment.set_global("pad_left",function(value,pad_amount,padchar) {
+await (async function(){
+    return  Environment.set_global("pad_left",function(value,pad_amount,padchar) {
         return  ( function() {
             {
                  let __call_target__=(""+ value), __call_method__="padStart";
@@ -6401,7 +6401,7 @@ await Environment.set_global("get_dependencies",async function(global_symbol,_de
         })()
     },{ "name":"pad_left","fn_args":"(value pad_amount padchar)","description":["=:+","<br><br>Given a value (number or text). an amount to pad, and an optional ","character to use a padding value, returns a string that will contain pad amount ","leading characters of the padchar value.<br><br>#### Example <br>```(pad_left ","23 5 `0)\n<- \"00023\"\n\n(pad_left 4 5)\n<- \"    4\"```<br> "],"usage":["value:number|string","pad_amount:number","padchar:?string"],"tags":["pad","string","text","left"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
+})();
 await Environment.set_global("symbol_dependencies",async function(symbol_array) {
     if (check_true ((symbol_array instanceof Array))){
         {
@@ -6444,8 +6444,8 @@ await Environment.set_global("symbol_dependencies",async function(symbol_array) 
     }
 },{ "name":"symbol_dependencies","fn_args":"(symbol_array)","description":["=:+","Given an array of symbols in string form, returns the global dependencies that the ","symbols are dependent on in the runtime environment.  The return structure is in ","the form:```{\n  dependencies: []\n  namespaces: []\n}```<br><br>The return ","structure will contain all the qualified and non-qualified symbols referenced ","by the provided target symbol, plus the dependencies of the required ","symbols.  <br>The needed namespace environments are also returned in the ","namespaces value.<br> "],"usage":["quoted_symbol:array"],"tags":["dependencies","tree","required","dependency"],"requires":["is_array?","get_dependencies","to_array"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 });
-{
-     Environment.set_global("keyword_mapper",function(token) {
+await (async function(){
+    return  Environment.set_global("keyword_mapper",function(token) {
         if (check_true ( ( Environment.get_global("contains?"))(token,( Environment.get_global("*formatting_rules*.keywords"))))){
             return "keyword"
         } else {
@@ -6453,7 +6453,7 @@ await Environment.set_global("symbol_dependencies",async function(symbol_array) 
         }
     },{ "name":"keyword_mapper","fn_args":"(token)","requires":["contains?","*formatting_rules*"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
+})();
 await Environment.set_global("with_each_entry",async function(...args) {
     let binding_sym;
     let iteration_form;
@@ -6465,32 +6465,32 @@ await Environment.set_global("with_each_entry",async function(...args) {
 },{ "eval_when":{ "compile_time":true
 },"name":"with_each_entry","macro":true,"fn_args":"[(binding_sym) iteration_form \"&\" body_forms]","description":["=:+","Given a binding symbol, a form or symbol that resolves to an iteration ","object with a `next` function, and the body forms to be used with the ","binding_symbol, will call the binding forms for every value in the iterator, ","with the binding symbol being set to the next value each time through the ","loop.<br><br>#### Example <br>```(with_each_value (entries)\n   (-> ","request_headers `entries) ;; will return an iterator\n   (if (== entries.0 ","\"content-type\")\n       (= content_type entries.1)))```<br><br><br> "],"usage":["binding_sym:array","iteration_form:*","body_forms:*"],"tags":["iteration","loop","iterator","entries","flow","values"],"requires":["slice"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 });
-{
-    {
-         Environment.set_global("operating_system",function() {
+await (async function(){
+    await (async function(){
+        return  Environment.set_global("operating_system",function() {
             return  ( Environment.get_global("resolve_path"))(["build","os"],Deno)
         },{ "name":"operating_system","fn_args":"[]","description":"Returns a text string of the operating system name: darwin, linux, windows","usage":[],"tags":["os","environment","build","platform","env"],"requires":["resolve_path"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
     })
-};
-{
-     Environment.set_global("platform_architecture",function() {
+})();
+await (async function(){
+    return  Environment.set_global("platform_architecture",function() {
         return  ( Environment.get_global("resolve_path"))(["build","arch"],Deno)
     },{ "name":"platform_architecture","fn_args":"[]","description":"Returns a text string of the underlying hardware architecture, for example aarch64 or X86_64.","usage":[],"tags":["os","platform","architecture","hardware","type","build"],"requires":["resolve_path"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
-{
-     Environment.set_global("platform",function() {
+})();
+await (async function(){
+    return  Environment.set_global("platform",function() {
         return Deno["build"]
     },{ "name":"platform","fn_args":"[]","description":"Returns an object with keys for 'target', 'arch', 'os' and 'vendor'.  ","usage":[],"tags":["os","platform","architecture","hardware","type","build"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
-{
-     Environment.set_global("exit",function(return_code) {
+})();
+await (async function(){
+    return  Environment.set_global("exit",function(return_code) {
         return  Deno.exit(return_code)
     },{ "name":"exit","fn_args":"(return_code)","description":"Exits the system and returns the provided integer return code","usage":["return_code:?number"],"tags":["exit","quit","return","leave"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
-await Environment.set_global("permissions",async function() {
+})();
+return await Environment.set_global("permissions",async function() {
     let perms;
     perms=["run","env","write","read","net","ffi","sys"];
     return await (await Environment.get_global("to_object"))(await (async function() {
@@ -6532,7 +6532,7 @@ await Environment.set_global("permissions",async function() {
     })())
 },{ "name":"permissions","fn_args":"[]","requires":["to_object"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
-};
+})();
 return true
 }
 }

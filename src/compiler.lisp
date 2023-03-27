@@ -78,38 +78,38 @@
          (defvar get_global opts.env.get_global)
          ;(console.log "compiler: options: " (clone opts))
          (let
-            ((`tree quoted_lisp)  ;; the JSON source provided
+            ((tree quoted_lisp)  ;; the JSON source provided
              
              ;; when we are compiling forms that are compile time manipulated by functions,
              ;; expanded_tree will hold the tree structure that is the result of those
              ;; macro expansions
              
-             (`expanded_tree (clone tree))
-             (`op nil)
+             (expanded_tree (clone tree))
+             (op nil)
              
-             (`default_safety_level (or Environment.declarations.safety.level 1))
-             (`source_name (or opts.source_name "anonymous"))
-             (`build_environment_mode (or opts.build_environment false))
-             (`env_ref (if build_environment_mode
+             (default_safety_level (or Environment.declarations.safety.level 1))
+             (source_name (or opts.source_name "anonymous"))
+             (build_environment_mode (or opts.build_environment false))
+             (env_ref (if build_environment_mode
                            ""
                            "Environment."))
-             (`operator nil)
-             (`break_out "__BREAK__FLAG__")
-             (`tokens [])
-             (`tokenized nil)
-             (`target_namespace nil)  ;; if nil the current namespace environment will be used - set with declare at the top level
-             (`errors [])
-             (`external_dependencies {})
-             (`first_level_setup [])
-             (`needs_first_level true)
-             (`signal_error (fn (message)
+             (operator nil)
+             (break_out "__BREAK__FLAG__")
+             (tokens [])
+             (tokenized nil)
+             (target_namespace nil)  ;; if nil the current namespace environment will be used - set with declare at the top level
+             (errors [])
+             (external_dependencies {})
+             (first_level_setup [])
+             (needs_first_level true)
+             (signal_error (fn (message)
                                (new LispSyntaxError message)))
-             (`warnings [])
-             (`blk_counter 0)
-             (`ctx nil)
-             (`output nil)
-             (`log console.log)
-             (`defclog (fn (opts)
+             (warnings [])
+             (blk_counter 0)
+             (ctx nil)
+             (output nil)
+             (log console.log)
+             (defclog (fn (opts)
                           (let
                              ((`style (+ "padding: 5px;"
                                          (if opts.background
@@ -125,18 +125,18 @@
                                                                (take args)))
                                        (conj [ style ]
                                              args))))))
-             (`quiet_mode (if opts.quiet_mode
+             (quiet_mode (if opts.quiet_mode
                               (do
                                  (= log console.log)
                                  true)
                               false))
-             (`show_hints nil)
-             (`error_log (defclog { `prefix: "Compile Error" `background: "#CA3040" `color: "white" } ))
-             (`dynamic_references? false)
-             (`assembly []) ;; the output structure that holds the compiled code
+             (show_hints nil)
+             (error_log (defclog { `prefix: "Compile Error" `background: "#CA3040" `color: "white" } ))
+             (dynamic_references? false)
+             (assembly []) ;; the output structure that holds the compiled code
              
-             (`async_function_type_placeholder (fn () true))
-             (`function_type_placeholder (function () true))
+             (async_function_type_placeholder (fn () true))
+             (function_type_placeholder (function () true))
              
              ;; Type Markers are a type of instruction object.
              
@@ -153,23 +153,23 @@
              ;; the final assembly is flattened and emitted as JS code.
              
              
-             (`type_marker (fn (type)
+             (type_marker (fn (type)
                               (set_prop
                                  (new Object)
                                  `ctype type
                                  `args [])
                               ))
              
-             (`return_marker (fn ()
+             (return_marker (fn ()
                                 { `mark: "rval" }))
-             (`entry_signature nil)
+             (entry_signature nil)
              
              ;; TODO: Need to add pathing to the following structure, or instead, deprecate and use a
              ;; more direct approach.  Relevant to build_fn_with_assignment and build_anon_fn
              
-             (`temp_fn_asn_template [{"type":"special","val":(quotel "=:defvar"),"ref":true,"name":"defvar"},{"type":"literal","val":"\"\"","ref":false,"name":""},{"type":"arr","val":[{"type":"special","val":(quotel "=:fn"),"ref":true,"name":"fn"},{"type":"arr","val":[],"ref":false,"name":"=:nil"},{"type":"arr","val":[],"ref":false,"name":"=:nil"}],"ref":false,"name":"=:nil"}])
-             (`anon_fn_template (-> temp_fn_asn_template `slice 2))
-             (`build_fn_with_assignment (fn (tmp_var_name body args ctx)
+             (temp_fn_asn_template [{"type":"special","val":(quotel "=:defvar"),"ref":true,"name":"defvar"},{"type":"literal","val":"\"\"","ref":false,"name":""},{"type":"arr","val":[{"type":"special","val":(quotel "=:fn"),"ref":true,"name":"fn"},{"type":"arr","val":[],"ref":false,"name":"=:nil"},{"type":"arr","val":[],"ref":false,"name":"=:nil"}],"ref":false,"name":"=:nil"}])
+             (anon_fn_template (-> temp_fn_asn_template `slice 2))
+             (build_fn_with_assignment (fn (tmp_var_name body args ctx)
                                            (let
                                               ((`tmp_template (clone temp_fn_asn_template)))
                                               ;; [ 2 0 ] path to fn keyword
@@ -198,7 +198,7 @@
                                                  body)
                                               tmp_template)))
              ;; to do: remove
-             (`build_anon_fn (fn (body args)
+             (build_anon_fn (fn (body args)
                                 (let
                                    ((`tmp_template (clone anon_fn_template)))
                                    (when (verbosity ctx)
@@ -215,7 +215,7 @@
              
              
              ;; the types of statements that return completion types
-             (`completion_types [ `return `throw `yield ])
+             (completion_types [ `return `throw `yield ])
              
              ;; For optimizations, and dependency tracking, keep track 
              ;; of referenced global symbols.  If defined with the constant attribute,
@@ -224,12 +224,12 @@
              ;; inlined to the declaring symbol (since one cannot
              ;; assume that there is a defined environment yet).
              
-             (`referenced_global_symbols (new Set))
+             (referenced_global_symbols (new Set))
              
              ;; external accessible JS references 
              ;; will be returned for dependency tracking
              
-             (`referenced_externals (new Set))
+             (referenced_externals (new Set))
              
              ;; A compilation lexical context is established where we
              ;; can store state about declared varables, compilation states,
@@ -239,7 +239,7 @@
              ;; root scope if parent is nil, or a contained scope if passed another
              ;; context.
              
-             (`new_ctx (function (parent)
+             (new_ctx (function (parent)
                           (let
                              ((`ctx_obj (new Object)))
                              (set_prop ctx_obj
@@ -282,13 +282,13 @@
              
              
              
-             (`set_ctx_log (if opts.quiet_mode
+             (set_ctx_log (if opts.quiet_mode
                                log
                                (defclog { `prefix: "set_ctx" `background: `darkgreen `color: `white } )))
              
              ;; given a ctype value, returns a type value
              ;; for the ctype.
-             (`map_ctype_to_value (fn (ctype value)
+             (map_ctype_to_value (fn (ctype value)
                                      (cond
                                         (== ctype "Function")
                                         Function
@@ -313,7 +313,7 @@
                                         value)))
              
              
-             (`map_value_to_ctype (fn (value)
+             (map_value_to_ctype (fn (value)
                                      (cond
                                         (== Function value)
                                         "Function"
@@ -339,7 +339,7 @@
              
              ;; Sets a value in the current compilation context
              
-             (`set_ctx (fn (ctx name value)
+             (set_ctx (fn (ctx name value)
                           (do
                              (defvar `sanitized_name (sanitize_js_ref_name name))
                              (if (and (is_array? value)
@@ -361,7 +361,7 @@
              
              ;; Retrieves a value from the current compilation context - no santization
              
-             (`get_ctx (fn (ctx name)
+             (get_ctx (fn (ctx name)
                           (let
                              ((`ref_name nil))
                              (cond
@@ -382,7 +382,7 @@
                                       (get_ctx ctx.parent ref_name)))))))
              
              ;; preferred entry point - sanitizes
-             (`get_ctx_val (fn (ctx name)
+             (get_ctx_val (fn (ctx name)
                               (let
                                  ((`ref_name nil)
                                   (`declared_type_value nil))
@@ -431,7 +431,7 @@
              ;; compiler functions use the following functions to manipulate
              ;; the declarations.
              
-             (`get_declarations (fn (ctx name _tagged)
+             (get_declarations (fn (ctx name _tagged)
                                    (let
                                       ((`ref_name nil)
                                        (`oname name)
@@ -461,7 +461,7 @@
                                                ctx.parent
                                                (get_declarations ctx.parent ref_name true)))))))
              
-             (`set_declaration (fn (ctx name declaration_type value)
+             (set_declaration (fn (ctx name declaration_type value)
                                   (let
                                      ((`sname (sanitize_js_ref_name name))
                                       (`dec_struct (get_declarations ctx sname)))
@@ -500,7 +500,7 @@
              ;; at points by the compiler.
              
              
-             (`is_ambiguous? (fn (ctx name)
+             (is_ambiguous? (fn (ctx name)
                                 (let
                                    ((`ref_name nil))
                                    (cond
@@ -522,22 +522,22 @@
                                             ctx.parent
                                             (is_ambiguous? ctx.parent ref_name)))))))
              
-             (`set_ambiguous (fn (ctx name)
+             (set_ambiguous (fn (ctx name)
                                 (set_prop ctx.ambiguous
                                    name
                                    true)))
              
-             (`unset_ambiguous (fn (ctx name)
+             (unset_ambiguous (fn (ctx name)
                                   (delete_prop ctx.ambiguous
                                      name)))
              
              ;; Lisp symbol names can be broader in allowable symbols then JS, so we need to be able
              ;; to deal with managing this mismatch...
              
-             (`invalid_js_ref_chars "+?-%&^#!*[]~{}/|")
-             (`invalid_js_ref_chars_regex (new RegExp "[/\\%\\+\\[\\>\\?\\<\\\\}\\{&\\#\\^\\=\\~\\*\\!\\)\\(\\-]+" `g))
+             (invalid_js_ref_chars "+?-%&^#!*[]~{}/|")
+             (invalid_js_ref_chars_regex (new RegExp "[/\\%\\+\\[\\>\\?\\<\\\\}\\{&\\#\\^\\=\\~\\*\\!\\)\\(\\-]+" `g))
              
-             (`check_invalid_js_ref (fn (symname)
+             (check_invalid_js_ref (fn (symname)
                                        (cond
                                           (not (is_string? symname))
                                           false
@@ -547,12 +547,12 @@
                                           (> (length (scan_str invalid_js_ref_chars_regex symname)) 0))))
              
              ;; Ensure that allowed lisp symbols are transformed into allowed Javascript representations
-             (`sanitize_js_ref_name sanitize_js_ref_name)
+             (sanitize_js_ref_name sanitize_js_ref_name)
              
              ;; find_in_context - returns the contextual details about where and what
              ;; a symbol or reference refers to, or the literal value itself.
              
-             (`find_in_context (fn (ctx name)
+             (find_in_context (fn (ctx name)
                                   (let
                                      ((`symname (cond (and (is_string? name)
                                                            (> (length name) 2)
@@ -669,7 +669,7 @@
              ;; returns the original back trace from the token structure
              ;; which means that it is source code after all macro expansions
              
-             (`source_chain (fn (cpath tree sources)
+             (source_chain (fn (cpath tree sources)
                                (if (and (is_array? cpath)
                                         tree)
                                    (let
@@ -691,7 +691,7 @@
              ;; this function takes the path value from the tokens
              ;; and returns the value from the source tree.
              
-             (`source_from_tokens (fn (tokens tree collect_parents?)
+             (source_from_tokens (fn (tokens tree collect_parents?)
                                      (let
                                         ()
                                         (cond
@@ -717,20 +717,20 @@
                                               (when (verbosity ctx)
                                                  (console.warn "source_from_tokens: unable to determine source path from: " (clone tokens)))
                                               "")))))
-             (`source_comment    (fn (tokens){ `comment: (source_from_tokens tokens expanded_tree) }))
+             (source_comment    (fn (tokens){ `comment: (source_from_tokens tokens expanded_tree) }))
              
              
              ;; the signal from the passed environment when an item is not found
              
-             (`NOT_FOUND         "__!NOT_FOUND!__")
+             (NOT_FOUND         "__!NOT_FOUND!__")
              
-             (`THIS_REFERENCE    (fn () "this"))
+             (THIS_REFERENCE    (fn () "this"))
              
              ;; internal compiler representation of the meaning something wasn't found
              
-             (`NOT_FOUND_THING   (fn () true))
+             (NOT_FOUND_THING   (fn () true))
              
-             (`get_lisp_ctx_log (if opts.quiet_mode
+             (get_lisp_ctx_log (if opts.quiet_mode
                                     log
                                     (defclog { `prefix: "get_lisp_ctx"  `color: "darkgreen"  `background: "#A0A0A0"} )))
              
@@ -738,7 +738,7 @@
              ;; used to get or find a lisp global in the environment...
              ;; or an "external" reference, such as a globalThis thing.
              
-             (`get_lisp_ctx (fn (ctx name)
+             (get_lisp_ctx (fn (ctx name)
                                (if (not (is_string? name))
                                    (throw Error "Compiler Error: get_lisp_ctx passed a non string identifier")
                                    (let
@@ -771,8 +771,8 @@
                                                  (progn
                                                     (-> it `add ref_name)))))
                                       
-                                      (when (verbosity root_ctx)
-                                         (get_lisp_ctx_log "name: " name "type: " ref_type "components: " comps))
+                                      ;(when (verbosity root_ctx)
+                                       ;  (get_lisp_ctx_log "name: " name "type: " (sub_type ref_type) "not found: " (== NOT_FOUND_THING ref_type)  "components: " comps))
                                       (cond
                                          (== NOT_FOUND_THING ref_type)
                                          undefined
@@ -824,7 +824,7 @@
              
              ;; internally used to get a local value in a compilation scope..
              
-             (`get_val (fn (token ctx)
+             (get_val (fn (token ctx)
                           (do
                              (cond
                                 token.ref
@@ -860,7 +860,7 @@
              ;; the environment bound in, and then the compiler produced
              ;; function is called with the bound environment.
              
-             (`has_lisp_globals false)
+             (has_lisp_globals false)
              
              ;; The global context for everything inside a compilation.
              ;; This can be passed in with the parameters object (opts)
@@ -870,7 +870,7 @@
              ;; passed in separately and is kept distinct from the root
              ;; compiler context.
              
-             (`root_ctx   (new_ctx (or opts.ctx)))
+             (root_ctx   (new_ctx (or opts.ctx)))
              
              ;; Tokenization starts here, as the first pass.  The tree is read, each
              ;; JSON element is categorized and tagged.
@@ -881,7 +881,7 @@
              
              ;; This is how defmacro and the macro facilty are actualized.
              
-             (`tokenize_object (fn (obj ctx _path)
+             (tokenize_object (fn (obj ctx _path)
                                   (do
                                      (defvar ser nil)
                                         (progn
@@ -904,7 +904,7 @@
                                                   (do
                                                      {`type: `keyval `val: (tokenize pset ctx `path: (+ _path pset.0)) `ref: false `name: (desym_ref pset.0) `__token__:true })))))))
              
-             (`tokenize_quote (fn (args _path)
+             (tokenize_quote (fn (args _path)
                                  (do
                                     (cond
                                        (== args.0 (quote "=:quote"))
@@ -919,7 +919,7 @@
              ;; The entry point to this recursive process
              ;; Build up a structure containing categorizations of the code to be compiled...
              
-             (`tokenize   (fn (args ctx _path _suppress_comptime_eval)
+             (tokenize   (fn (args ctx _path _suppress_comptime_eval)
                              (let
                                 ((`argtype nil)
                                  (`rval nil)
@@ -1052,8 +1052,8 @@
              ;; a compile time function, as registered in the environment's definitions
              ;; structure
              
-             (`comp_time_log (defclog { `prefix: "compile_time_eval" `background: "#C0C0C0" `color: "darkblue" }))
-             (`compile_time_eval
+             (comp_time_log (defclog { `prefix: "compile_time_eval" `background: "#C0C0C0" `color: "darkblue" }))
+             (compile_time_eval
                 (fn (ctx lisp_tree path)
                    (if (and (is_array? lisp_tree)
                             (is_reference? lisp_tree.0)
@@ -1062,13 +1062,10 @@
                                  (resolve_path [ `eval_when `compile_time ] it)))
                        
                        (let
-                          ((`ntree nil)
-                           (`precompile_function (-> Environment `get_global (-> lisp_tree.0 `substr 2))))
-                          
-                          
+                          ((ntree nil)
+                           (precompile_function (-> Environment `get_global (-> lisp_tree.0 `substr 2))))
                           (when (verbosity ctx)
                              (comp_time_log path "->" (-> lisp_tree.0 `substr 2) lisp_tree "to function: " (-> lisp_tree `slice 1)) )
-                          
                           (try
                              (= ntree (apply precompile_function (-> lisp_tree `slice 1)))
                              
@@ -1179,7 +1176,7 @@
              ;; but the nesting is completely flattened when the javascript tokens are assembled
              ;; into the final output text.
              
-             (`compile_set_prop (fn (tokens ctx)
+             (compile_set_prop (fn (tokens ctx)
                                    (let
                                       ((`acc [])
                                        (`wrapper [])
@@ -1240,7 +1237,7 @@
                                              wrapper)))))
              
              
-             (`compile_prop  (fn (tokens ctx)
+             (compile_prop  (fn (tokens ctx)
                                 (if (not (== tokens.length 3))
                                     (do
                                        (throw SyntaxError "prop requires exactly 2 arguments"))
@@ -1264,7 +1261,7 @@
                                                   "if" " " "(" target_val ")" "{" " " "return" "(" target_val ")" "[" idx_key "]" "}" " " "}" ")" "()" ]))
                                            [ "(" target ")" "[" idx_key "]"])))))
              
-             (`compile_elem (fn (token ctx)
+             (compile_elem (fn (token ctx)
                                (let
                                   ((`rval nil))
                                   (console.warn "compile_elem - deprecated: check call: " token)
@@ -1294,7 +1291,7 @@
              ;; Most of the compile_* functions are essentially inline generators of
              ;; varying sophistication.
              
-             (`compile_inline (fn (tokens ctx)
+             (compile_inline (fn (tokens ctx)
                                  (let
                                     ((`rval nil)
                                      (`stmt nil)
@@ -1320,7 +1317,7 @@
                                         (throw ReferenceError (+ "no source for named lib function " tokens.0.name)))
                                     rval)))
              
-             (`compile_push (fn (tokens ctx)
+             (compile_push (fn (tokens ctx)
                                (let
                                   ((`acc [])
                                    (`place (compile_wrapper_fn tokens.1 ctx))
@@ -1340,7 +1337,7 @@
              ;; So compile_list just compiles each argument and returns
              ;; an array with those values.
              
-             (`compile_list  (fn (tokens ctx)
+             (compile_list  (fn (tokens ctx)
                                 (let
                                    ((`acc ["["])
                                     (`compiled_values []))
@@ -1354,7 +1351,7 @@
                                    (push acc "]")
                                    acc)))
              
-             (`compile_typeof  (fn (tokens ctx)
+             (compile_typeof  (fn (tokens ctx)
                                   (do
                                      (defvar local_details (if tokens.1.ref
                                                                (get_ctx_val ctx tokens.1.name)
@@ -1379,7 +1376,7 @@
                                         else
                                         ["typeof" " " (compile_wrapper_fn tokens.1 ctx) ]))))
              
-             (`compile_instanceof  (fn (tokens ctx)
+             (compile_instanceof  (fn (tokens ctx)
                                       (let
                                          ((`acc []))
                                          
@@ -1402,7 +1399,7 @@
              
              ;; Comparisons between values for various built in operators
              
-             (`compile_compare (fn (tokens ctx)
+             (compile_compare (fn (tokens ctx)
                                   (let
                                      ((`acc [{ `ctype: "expression" } ])
                                       (`ctx (new_ctx ctx))
@@ -1434,7 +1431,7 @@
                                      (push acc ")")
                                      acc)))
              
-             (`compile_assignment
+             (compile_assignment
                 (fn (tokens ctx)
                    (let
                       ((`acc [])
@@ -1524,8 +1521,8 @@
              ;; as a top level form in the same processing mode.  Otherwise, they are compiled and evaluated as a
              ;; unit in a lambda.
              
-             (`top_level_log (defclog { `prefix: "top-level" `color: `darkgreen `background: "#300010" } ))
-             (`compile_toplevel
+             (top_level_log (defclog { `prefix: "top-level" `color: `darkgreen `background: "#300010" } ))
+             (compile_toplevel
                 (fn (lisp_tree ctx block_options)
                    (if (get_ctx_val ctx `__IN_LAMBDA__)
                        (throw EvalError "Compiler attempt to compile top-level in lambda (most likely a bug)")
@@ -1572,15 +1569,22 @@
              
              ;; detemines if to place a return on the final statement in the statement list
              ;; call after each block (root or sub)
-             (`check_statement_completion (fn (ctx stmts)
+             (check_statement_completion (fn (ctx stmts)
                                              (let
                                                 ((stmt (if (eq nil stmts)
                                                            (throw "compiler error: check_statement_completion: received undefined/nil statement array.")
                                                            (last stmts)))
-                                                 (cmp_rec (get_ctx ctx `__COMPLETION_SCOPE__)))  ;; get the completion scope record from context...
+                                                 (cmp_rec (get_ctx ctx `__COMPLETION_SCOPE__))
+                                                 (clog (if quiet_mode
+                                                            log
+                                                            (defclog { `prefix: (+ "check_statement_completion (bid: " ctx.block_id " cid: " cmp_rec.id  "):")
+                                                                  `background: "#704080" `color: "white"})))
+                                                 )  ;; get the completion scope record from context...
                                                 ;; check to see if it is the final root block step..
                                                 ;; and doesn't already contain a completion structure..if it does mark it
                                                 
+                                                (when (verbosity ctx)
+                                                   (clog "check_statement_completion: lambda_step: " (get_ctx ctx `__LAMBDA_STEP__)))
                                                 (if  (and (== ctx.block_step 0)
                                                           (not (contains? stmt.0.ctype ["block" "ifblock" "tryblock" "letblock"]))
                                                           (not (contains? stmt.0.completion completion_types))
@@ -1589,7 +1593,7 @@
                                                           (not (== stmt.0.0 "yield")))
                                                     
                                                     (do
-                                                       
+                                                       (when (verbosity ctx) (clog "rule 1" (clone cmp_rec) (clone stmts)))
                                                        (pop stmts) ;; remove the last statement - we already have it
                                                        (assert cmp_rec "compiler error: check_statement_completion unable to find completion_scope record in context")
                                                        (if (and (is_object? stmt.0)
@@ -1603,6 +1607,7 @@
                                                                      [ stmt ])
                                                                   (push stmts
                                                                      [ stmt.0 "return " (rest stmt) ]))
+                                                              (when (verbosity ctx) (clog "added return rule 1A"))
                                                               (push cmp_rec.completion_records
                                                                  {
                                                                    `block_id: ctx.block_id
@@ -1616,6 +1621,7 @@
                                                                        (not (== cmp_rec.scope_type `generator)))
                                                                   (push stmts
                                                                      [ { `completion: "return" } "return " stmt]))
+                                                              (when (verbosity ctx) (clog "added return rule 1B"))
                                                               (push cmp_rec.completion_records
                                                                  {
                                                                    `block_id: ctx.block_id
@@ -1624,9 +1630,10 @@
                                                                    `stmt: (last stmts)
                                                                    })))
                                                        stmts)
-                                                    stmts))))
+                                                    (do
+                                                       stmts)))))
              
-             (`compile_block (fn (tokens ctx block_options)
+             (compile_block (fn (tokens ctx block_options)
                                 (let
                                    ((`acc [])
                                     (`block_id (or (and block_options.name
@@ -1653,8 +1660,7 @@
                                     (`idx 0))
                                    (when (eq nil ctx)
                                       (throw ReferenceError "undefined ctx passed to compile block"))
-                                   (when (verbosity ctx)
-                                      (clog "->" tokens ctx block_options))
+                                   
                                    (when needs_first_level
                                       (= is_first_level true)
                                       (= needs_first_level false))  ;; set a rapid way to determine this since we only do this once per compilation
@@ -1667,7 +1673,14 @@
                                    (set_prop ctx
                                       `block_id
                                       block_id)
-                                   
+                                   (when (verbosity ctx)
+                                      (clog "source ->" (if (and (is_array? tokens)
+                                                                 (== tokens.0 "PLACEHOLDER"))
+                                                            (source_from_tokens tokens.1 expanded_tree)
+                                                            (source_from_tokens tokens expanded_tree)))
+                                      (clog "tokens:" tokens)
+                                      (clog "block_options: " (clone block_options) "ctx: " (clone ctx))
+                                      (clog "initial_completion_scope: " (clone completion_scope)))
                                    (assert completion_scope "block called with no completion scope")
                                    (assert (is_object? completion_scope) "block called with an invalid completion scope")
                                    (if completion_scope.root_block_id
@@ -1725,6 +1738,8 @@
                                             (set_ctx ctx "__LAMBDA_STEP__"
                                                      (- tokens.length 1 idx)))
                                          
+                                         (when (verbosity ctx)
+                                            (clog "sbs: " (- tokens.length 1 idx) block_type "block step: " ctx.block_step (source_from_tokens token expanded_tree) token))
                                          ;; get the compiled statement
                                          
                                          (cond
@@ -1751,6 +1766,13 @@
                                                    (= stmt (compile_if token.val subctx))
                                                    (= stmt (compile_try token.val subctx))))
                                             
+                                            (and (> (- tokens.length 1 idx) 0)
+                                                 (== token.val.0.type "special")
+                                                 (contains? token.val.0.name [ "progn" "do" "let" ]))
+                                            (progn 
+                                               (when (verbosity ctx)
+                                                  (clog "candidate problem: compiling wrapper"))
+                                               (= stmt (compile_wrapper_fn token ctx)))
                                             ;; compile the statement
                                             else
                                             (= stmt (compile token ctx)))
@@ -1792,7 +1814,7 @@
              (`UnknownType (new Function "" " { return \"unknown\"} "))
              (`ArgumentType (new Function "" " { return \"argument\" }"))
              
-             (`compile_defvar (fn (tokens ctx opts)
+             (compile_defvar (fn (tokens ctx opts)
                                  (let
                                     ((`target (clean_quoted_reference (sanitize_js_ref_name tokens.1.name)))
                                      (`wrap_as_function? nil)
@@ -1852,7 +1874,7 @@
              ;; checks to see what has been declared during compilation and returns where
              ;; it only checks for declarations that have occurred during the compile phase
              
-             (`get_declaration_details (fn (ctx symname _levels_up)
+             (get_declaration_details (fn (ctx symname _levels_up)
                                           (progn
                                              
                                              (cond
@@ -1896,7 +1918,7 @@
                                                   
                                                   `declared_global: true }))))
              
-             (`clean_quoted_reference
+             (clean_quoted_reference
                 (fn (name)
                    (cond
                       (and (is_string? name)
@@ -1907,7 +1929,7 @@
                       else
                       name)))
              
-             (`compile_let (fn (tokens ctx)
+             (compile_let (fn (tokens ctx)
                               (let
                                  ((`acc [])
                                   (`ctx (new_ctx ctx))
@@ -1961,6 +1983,9 @@
                                           true)
                                  
                                  
+                                 (when (verbosity ctx)
+                                    (clog "->" (source_from_tokens tokens expanded_tree))
+                                    (clog "ctx: " (clone ctx)))
                                  ;; start the main block
                                  (push acc "{")
                                  (inc sub_block_count)
@@ -2195,6 +2220,7 @@
                                        (push stmt ";")
                                        (push acc stmt)))
                                  
+                                 
                                  (push acc (compile_block (conj ["PLACEHOLDER"]
                                                                 block)
                                                           ctx
@@ -2213,19 +2239,20 @@
                                        acc)))))
              
              
-             (`in_sync? (fn (ctx)
+             (in_sync? (fn (ctx)
                            (get_ctx ctx "__SYNCF__")))
-             (`await? (fn (ctx)
+             (await? (fn (ctx)
                          (if (in_sync? ctx)
                              ""
                              "await")))
-             (`calling_preamble (fn (ctx)
+             (calling_preamble (fn (ctx)
                                    (if (in_sync? ctx)
                                        ["" "" { `ctype: "Function" `block_step: 0 } "(" ")" ]
                                        ["await" "async" { `ctype: "AsyncFunction" `block_step: 0 } "" "" ])))
-             (`fn_log (defclog { `prefix: "compile_fn" `background: "black" `color: `lightblue }))
-             (`completion_scope_id 0)
-             (`set_new_completion_scope (fn (ctx)
+             (fn_log (defclog { `prefix: "compile_fn" `background: "black" `color: `lightblue }))
+             (comp_scope_log (defclog { `prefix: "set_new_completion_scope" `background: "#A000A0" `color: `white }))
+             (completion_scope_id 0)
+             (set_new_completion_scope (fn (ctx)
                                            (let
                                               ((completion_scope {
                                                                    id: (inc completion_scope_id)
@@ -2239,8 +2266,10 @@
                                               (set_ctx ctx
                                                        `__COMP_INFIX_OPS__
                                                        nil)
+                                              (when (verbosity ctx)
+                                                 (comp_scope_log "-> id: " completion_scope.id  completion_scope (clone ctx)))
                                               completion_scope)))
-             (`compile_fn (fn (tokens ctx fn_opts)
+             (compile_fn (fn (tokens ctx fn_opts)
                              (let
                                 ((`acc [])
                                  (`idx -1)
@@ -2250,15 +2279,26 @@
                                  (`body tokens.2)
                                  (`external_declarations tokens.3)
                                  (`type_mark nil)
-                                 (`completion_scope (set_new_completion_scope ctx))
+                                 (`source (if (verbosity ctx)
+                                              (source_from_tokens tokens expanded_tree)
+                                              nil))
+                                 (`completion_scope nil)
                                  (`nbody nil))
                                 
+                                (set_prop ctx.scope
+                                   `__SOURCE__ source)
+                                (when (verbosity ctx)
+                                   (fn_log "->" source (clone ctx) (clone fn_opts)))
+                                   
+                                (= completion_scope (set_new_completion_scope ctx))
                                 (when (eq undefined body)
                                    (throw SyntaxError "Invalid function call syntax"))
                                 
                                 (set_prop ctx
                                    `return_point
                                    0)
+                                
+                                
                                 
                                 (set_ctx ctx
                                          `__IN_LAMBDA__
@@ -2321,6 +2361,7 @@
                                          `scope_type
                                          `function)
                                       (push acc "function")))
+                                
                                 (push acc "(")
                                 (while (< idx (- fn_args.length 1))
                                    (do
@@ -2367,10 +2408,14 @@
                                 (cond
                                    (== body.val.0.name `let)
                                    (do
+                                      (when (verbosity ctx)
+                                         (fn_log "calling compile: block is a let"))
                                       (push acc (compile body.val
                                                    ctx)))
                                    (contains? body.val.0.name [ `do `progn `progl ])
                                    (do
+                                      (when (verbosity ctx)
+                                         (fn_log "calling compile_block due to: " body.val.0.name))
                                       (push acc (compile_block body.val
                                                                ctx
                                                                )))
@@ -2388,6 +2433,8 @@
                                          `return_last_value
                                          true)
                                       (push acc { `mark: "nbody"  } )
+                                      (when (verbosity ctx)
+                                         (fn_log "calling compile_block after making a psuedo-block"))
                                       (push acc (compile_block nbody
                                                                ctx))))
                                 ;; validate completion records
@@ -2406,7 +2453,7 @@
                                    true)  ;; stub
                                 acc)))
              
-             (`compile_jslambda (fn (tokens ctx)
+             (compile_jslambda (fn (tokens ctx)
                                    (let
                                       ((`acc [])
                                        (`fn_args tokens.1.val)
@@ -2451,7 +2498,7 @@
              
              
              
-             (`compile_yield (fn (tokens ctx)
+             (compile_yield (fn (tokens ctx)
                                 (let
                                    ((`acc [])
                                     (`expr nil)
@@ -2475,7 +2522,7 @@
              
              (`if_id 0)
              
-             (`compile_cond (fn (tokens ctx)
+             (compile_cond (fn (tokens ctx)
                                (let
                                   ((`preamble (calling_preamble ctx))
                                    (`ctx (new_ctx ctx)))
@@ -2483,7 +2530,7 @@
                                   (set_new_completion_scope ctx)
                                   [preamble.2  preamble.0 " " preamble.1 " " preamble.3 "function" "()" "{" (compile_cond_inner tokens ctx) "} " preamble.4 "()"])))
              
-             (`compile_cond_inner
+             (compile_cond_inner
                 (fn (tokens ctx)
                    (let
                       ((acc [])
@@ -2543,7 +2590,7 @@
                                    tokens
                                    [ "PLACEHOLDER"  tokens ])))
              
-             (`compile_if (fn (tokens ctx)
+             (compile_if (fn (tokens ctx)
                              (let
                                 ((acc [])
                                  (subacc [])
@@ -2590,10 +2637,10 @@
                                 acc)))
              
              
-             (`compile_as_call (fn (tokens ctx)
+             (compile_as_call (fn (tokens ctx)
                                   (compile_wrapper_fn tokens ctx { `force: true })))
-             
-             (`compile_wrapper_fn (fn (tokens ctx opts)
+             (rwfnlog (defclog { `prefix: "compile_wrapper_fn" `background: "black" color: `yellow }))
+             (compile_wrapper_fn (fn (tokens ctx opts)
                                      (let
                                         ((`acc [])
                                          (`ctx ctx)
@@ -2620,6 +2667,9 @@
                                            opts.force
                                            (do
                                               (= ctx (new_ctx ctx))
+                                              (when (verbosity ctx)
+                                                 (rwfnlog "compile_wrapper_fn: -> "(source_from_tokens tokens expanded_tree))
+                                                 (rwfnlog "compile_wrapper_fn: " opts "ctx: " (clone ctx)))
                                               (set_new_completion_scope ctx)
                                               (= acc (compile_block_to_anon_fn tokens ctx opts)))
                                            
@@ -2627,6 +2677,9 @@
                                            (do
                                               
                                               (= ctx (new_ctx ctx))
+                                              (when (verbosity ctx)
+                                                 (rwfnlog "compile_wrapper_fn: -> "(source_from_tokens tokens expanded_tree))
+                                                 (rwfnlog "compile_wrapper_fn: " opts "ctx: " (clone ctx)))
                                               (set_new_completion_scope ctx)
                                               (set_prop ctx
                                                  `block_step
@@ -2640,6 +2693,9 @@
                                                          (get_ctx ctx "__COMP_INFIX_OPS__"))))
                                            (do
                                               (= ctx (new_ctx ctx))
+                                              (when (verbosity ctx)
+                                                 (rwfnlog "compile_wrapper_fn: -> "(source_from_tokens tokens expanded_tree))
+                                                 (rwfnlog "compile_wrapper_fn: " opts "ctx: " (clone ctx)))
                                               (set_new_completion_scope ctx)
                                               (set_prop ctx
                                                  `block_step
@@ -2657,6 +2713,9 @@
                                            (is_array? tokens)
                                            (do
                                               (= ctx (new_ctx ctx))
+                                              (when (verbosity ctx)
+                                                 (rwfnlog "compile_wrapper_fn: -> "(source_from_tokens tokens expanded_tree))
+                                                 (rwfnlog "compile_wrapper_fn: " opts "ctx: " (clone ctx)))
                                               (set_new_completion_scope ctx)
                                               (= acc (compile_block_to_anon_fn tokens ctx opts)))
                                            
@@ -2678,6 +2737,9 @@
                                            ;(contains? tokens.val.0.name ["do" "progn" "lets" "try" "throw"]))
                                            (do
                                               (= ctx (new_ctx ctx))
+                                              (when (verbosity ctx)
+                                                 (rwfnlog "compile_wrapper_fn: -> "(source_from_tokens tokens expanded_tree))
+                                                 (rwfnlog "compile_wrapper_fn: " opts "ctx: " (clone ctx)))
                                               (set_new_completion_scope ctx)
                                               (= acc (compile_block_to_anon_fn tokens.val ctx opts)))
                                            else
@@ -2686,7 +2748,7 @@
                                            [preamble.0 " " acc]
                                            acc))))
              
-             (`compile_block_to_anon_fn (fn (tokens ctx opts)
+             (compile_block_to_anon_fn (fn (tokens ctx opts)
                                            (let
                                               ((`acc [])
                                                (`preamble (calling_preamble ctx))
@@ -2772,7 +2834,7 @@
                                       place)))
              
              
-             (`compile_new (fn (tokens ctx)
+             (compile_new (fn (tokens ctx)
                               (let
                                  ((`acc [])
                                   (`prebuild [])
@@ -2854,7 +2916,7 @@
                                  acc)))
              
              
-             (`compile_val_mod (fn (tokens ctx)
+             (compile_val_mod (fn (tokens ctx)
                                   (let
                                      ((`target (or tokens.1.name
                                                    (progn
@@ -2924,7 +2986,7 @@
                                         else
                                         [sanitized operation how_much]))))
              
-             (`compile_try
+             (compile_try
                 (fn (tokens ctx)
                    ;; when ctx block step is nil, this means that try was called directly from
                    ;; the top level, and needs to be in an explicit block that would contain
@@ -2933,7 +2995,7 @@
                        (compile_block (ensure_block tokens) ctx)
                        (compile_try_inner tokens ctx))))
              
-             (`compile_try_inner
+             (compile_try_inner
                 (fn (tokens ctx)
                    (let
                       ((acc [])
@@ -3000,7 +3062,7 @@
                       (push acc catch_stmts)
                       acc)))
              
-             (`compile_throw (fn (tokens ctx)
+             (compile_throw (fn (tokens ctx)
                                 (let
                                    ((`acc [])
                                     (`error_message nil)
@@ -3044,9 +3106,9 @@
                                    acc)))
              
              
-             (`compile_break (fn (tokens ctx)
+             (compile_break (fn (tokens ctx)
                                 [break_out "=" "true" ";" "return"]))
-             (`compile_return (fn (tokens ctx)
+             (compile_return (fn (tokens ctx)
                                  (let
                                     ((`acc [])
                                      (`return_val_reference (gen_temp_name "return"))
@@ -3075,7 +3137,7 @@
                              log
                              (defclog { `prefix: "compile_apply" `background: "sienna" `color: "white" })))
              
-             (`compile_apply (fn (tokens ctx)
+             (compile_apply (fn (tokens ctx)
                                 (let
                                    ((`acc [])
                                     (`fn_ref tokens.1)
@@ -3152,7 +3214,7 @@
                                    
                                    [ preamble.0 " " "(" preamble.1 " " "function" "()" "{" acc "}" ")" "()"])))
              
-             (`compile_call (fn (tokens ctx)
+             (compile_call (fn (tokens ctx)
                                (let
                                   ((`preamble (calling_preamble ctx))
                                    (`simple_target? (if (== tokens.1.ref true)
@@ -3172,11 +3234,13 @@
                                      else
                                      (do
                                         (= ctx (new_ctx ctx))
+                                        (when (verbosity ctx)
+                                           (console.log "compile_call: -> " (source_from_tokens tokens expanded_tree)))
                                         (set_new_completion_scope ctx)
                                         [preamble.2 preamble.0 " " "(" preamble.1 " " "function" "()" " " "{"
                                          (compile_call_inner tokens ctx { `type: 2 `preamble: preamble })
                                          " " "}" ")" "()" ])))))
-             (`compile_call_inner (fn (tokens ctx opts)
+             (compile_call_inner (fn (tokens ctx opts)
                                      (let
                                         ((`acc [])
                                          (`target nil)
@@ -3251,7 +3315,7 @@
              ;; static import
              ;; really used when exporting files
              
-             (`compile_import
+             (compile_import
                 (fn (tokens ctx)
                    (let
                       ((`symbol_tokens tokens.1)
@@ -3286,7 +3350,7 @@
              ;; dynamic import
              ;; (dynamic_import source_location)
              
-             (`compile_dynamic_import
+             (compile_dynamic_import
                 (fn (tokens ctx)
                    (let
                       ((`from_tokens nil)
@@ -3332,7 +3396,7 @@
              ;;      abc = abc * 10 |)
              ;;    abc)
              
-             (`compile_javascript
+             (compile_javascript
                 (fn (tokens ctx)
                    (let
                       ((`acc [ { `ctype: "__JS__" } ])
@@ -3349,7 +3413,7 @@
                       
                       acc)))
              
-             (`compile_set_global
+             (compile_set_global
                 (fn (tokens ctx opts)
                    (let
                       ((`target tokens.1.name)
@@ -3490,14 +3554,14 @@
                                      (is_object? t.0)
                                      t.0.__token__))))
              
-             (`compile_quote (fn (lisp_struct ctx)
+             (compile_quote (fn (lisp_struct ctx)
                                 (let
                                    ((`acc [])
                                     (`ctx (new_ctx ctx)))
                                    (= acc (compile_quotem lisp_struct ctx))
                                    acc)))
              
-             (`compile_quotel (fn (lisp_struct ctx)
+             (compile_quotel (fn (lisp_struct ctx)
                                  (let
                                     ((`acc []))
                                     (= acc (JSON.stringify lisp_struct.1))
@@ -3715,7 +3779,7 @@
                               log
                               (defclog {`prefix: "compile_quotem" `background: "#503090" `color: "white" } )))
              
-             (`compile_quotem (fn (lisp_struct ctx)
+             (compile_quotem (fn (lisp_struct ctx)
                                  (let
                                     ((`acc [])
                                      (`ctx (new_ctx ctx))
@@ -3738,7 +3802,7 @@
                                        (quotem_log "<-" (as_lisp quoted_js)))
                                     quoted_js)))
              
-             (`compile_unquotem (fn (lisp_struct ctx)
+             (compile_unquotem (fn (lisp_struct ctx)
                                    (let
                                       ((`acc []))
                                       (push acc
@@ -3752,7 +3816,7 @@
              ;; eval takes the output of evalq and evaluates the returned function, and returns the
              ;; results
              
-             (`compile_eval
+             (compile_eval
                 (fn (tokens ctx)
                    (let
                       ((`assembly nil)
@@ -3772,21 +3836,23 @@
                       (= result [ "(" "await" " " "Environment" "." "eval" "(" preamble.0 " " preamble.1 " " "function" "()" ["{" "return" " " assembly "}" "()" ",null" (if eval_opts [ ", " eval_opts]  "")    ")" ")" ]])
                       result)))
              
-             (`compile_debug (fn (tokens ctx)
+             (compile_debug (fn (tokens ctx)
                                 [{ `ctype: "statement" } "debugger" ";"]))
              
-             (`compile_for_each
+             (compile_for_each
                 (fn (tokens ctx)
                    (let
                       ((`preamble (calling_preamble ctx))
                        (`ctx (new_ctx ctx)))
                       (declare (string preamble.0 preamble.1))
+                      (when (verbosity ctx)
+                         (console.log "compile_for_each: -> " (source_from_tokens tokens expanded_tree)))
                       (set_new_completion_scope ctx)
                       [preamble.2 preamble.0 " " "(" preamble.1 " " "function" "()" " " "{"
                        (compile_for_each_inner tokens ctx preamble)
                        " " "}" ")" "()" ])))
              
-             (`compile_for_each_inner
+             (compile_for_each_inner
                 (fn (tokens ctx preamble)
                    (let
                       ((`acc [])
@@ -3868,7 +3934,7 @@
                       acc)))
              
              
-             (`compile_while
+             (compile_while
                 (fn (tokens ctx)
                    (let
                       ((`acc [])
@@ -3883,6 +3949,8 @@
                        (`prebuild []))
                       
                       (declare (string preamble.0 preamble.1))
+                      (when (verbosity ctx)
+                         (console.log "compile_while: " (source_from_tokens tokens expanded_tree)))
                       (set_new_completion_scope ctx)
                       (set_ctx ctx
                                break_out
@@ -3907,7 +3975,7 @@
                          (push acc t))
                       acc)))
              
-             (`compile_for_with
+             (compile_for_with
                 (fn (tokens ctx preamble)
                    (let
                       ((`preamble (calling_preamble ctx))
@@ -3918,7 +3986,7 @@
                        (compile_for_with_inner tokens ctx preamble)
                        " " "}" ")" "()" ])))
              
-             (`compile_for_with_inner
+             (compile_for_with_inner
                 (fn (tokens ctx preamble)
                    (let
                       ((`acc [])
@@ -4004,7 +4072,7 @@
              (`declare_log (if opts.quiet_mode
                                log
                                (defclog { `prefix: "DECLARE" `color: "white" `background: "black" })))
-             (`compile_declare (fn (tokens ctx)
+             (compile_declare (fn (tokens ctx)
                                   (let
                                      ((`expressions (rest tokens))
                                       (`targeted nil)
@@ -4165,7 +4233,7 @@
                                          (sub_type (get_lisp_ctx ctx name))
                                          (sub_type rtype)))))
              
-             (`compile_scoped_reference
+             (compile_scoped_reference
                 (fn (tokens ctx)
                    (let
                       ((`acc [])
@@ -4314,7 +4382,7 @@
                       ;(sr_log "<-" acc)
                       acc)));(flatten acc))))
              
-             (`compile_lisp_scoped_reference
+             (compile_lisp_scoped_reference
                 (fn (refname ctx defer_not_found)
                    (let
                       ((`refval (get_lisp_ctx ctx refname))
@@ -4494,7 +4562,7 @@
                                                      (log "compiler: bad character: " (-> output_str `substr (- issue.index 10) 20))))
                                               output_str)))))
                                         
-             (`compile_obj_literal
+             (compile_obj_literal
                 (fn (tokens ctx)
                    (let
                       ((`acc [])
@@ -4582,17 +4650,18 @@
                             
                             acc)))))
              
-             (`is_literal? (fn (val)
+             (is_literal? (fn (val)
                               (or (is_number? val)
                                   (is_string? val)
                                   (== false val)
                                   (== true val))))
-             (`comp_warn (defclog { `prefix: "compile: [warn]:" `background: "#fcffc8" `color: "brown" } ))
+             (comp_warn (defclog { `prefix: "compile: [warn]:" `background: "#fcffc8" `color: "brown" } ))
              ;; main entry wrapper for the compilation function - all call this, not compile_inner
-             (`compile (fn (tokens ctx _cdepth)
+             (compile (fn (tokens ctx _cdepth)
                           (if is_error
                              is_error  ;; unwind
                              (do
+                                
                                 (defvar `rval (compile_inner tokens ctx _cdepth))
                                 (if is_error
                                    (do
@@ -4606,7 +4675,7 @@
                                             (throw error)))))
                                 rval))))
              ;; main recursive structure
-             (`compile_inner
+             (compile_inner
                 (fn (tokens ctx _cdepth)
                    (let
                       ((`operator_type nil)
@@ -4677,7 +4746,8 @@
                                           (`symbolic_replacements [])
                                           (`compiled_values []))
                                          
-                                         
+                                         (when (verbosity ctx)
+                                            (comp_log (+ "compile: " _cdepth " array: ") "compiling: " (source_from_tokens tokens tokens expanded_tree)))
                                          (set_new_completion_scope ctx)
                                          
                                          ;; in this case we need to compile the contents of the array

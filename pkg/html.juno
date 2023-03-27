@@ -558,22 +558,28 @@
          })
 
 
-(defun adjust_element_position (element)
+(defun adjust_element_position (element relative_base)
    (let
       ((dims nil))
       (= dims (-> element `getBoundingClientRect))
+      (log "adjust: dims: " dims element.innerText)
       (when (> dims.bottom window.innerHeight)
-         (set_style [["top" (+ "" (- dims.top dims.height 10) "px") ]] element))
+         (if (is_number? relative_base)
+            (set_style [[ "top" (+ "" (- relative_base dims.height) "px") ]] element)
+            (set_style [["top" (+ "" (- dims.top dims.height 10) "px") ]] element)))
       (when (> dims.right  window.innerWidth)
-         (set_style [["left" (+ "" (- window.innerWidth dims.width 5) "px") ]] element))
+         (if (is_number? relative_base)
+            (set_style [[ "left" (+ "" (- relative_base dims.width) "px") ]] element)
+            (set_style [["left" (+ "" (- window.innerWidth dims.width 5) "px") ]] element)))
       element)
    {
      description: (+ "Given an absolute positioned HTML Element, makes sure that the element "
                      "bottom and right are not partially displayed off screen.  Will adjust the "
                      "elements position if the geometry is determined to be out of bounds.  Returns "
-                     "the element. ")
+                     "the element. If relative_base is a non-nil number, then the left and top are "
+                     "adjusted relative_base to the provided number, vs. an absolute placement.")
      tags: ["ui" "element" "DOM" "position" ]
-     usage: ["element:Element"]
+     usage: ["element:Element" "relative_base:?number"]
    })
 
 (defun editable_element (`& args)
@@ -1565,10 +1571,23 @@
               [])
          (tbody
             (for_each (row (or row_data []))
-               (tr
+               (tr { `class: "juno-dtable" }
                   (for_each (cell row)
-                     (td { `style: "padding: 3px;" } 
-                         cell)))))))
+                     (td { `class: "juno-dtable" } 
+                         cell))))))
+   {
+     description: (+ "Given two dimensional row data in the form of nested arrays, and an "
+                     "optional options object, returns a DOM structure representing the data in an "
+                     "HTMLTable.<br>The row_data should be in the following form:```[[\"Betty Sue\" "
+                     "80]\n [\"John Smith\" 75]\n [\"Harvey Jones\" 70]]```<br><br>where the ordered "
+                     "structure is by row, then by column.<br><br>#### Options <br><br>columns:array "
+                     "- When provided, the columns array provides the table header information.  If "
+                     "the column object contains an array of strings, then the values in the array "
+                     "are used for the column names.  If the columns array contains objects, then "
+                     "the `name` key will determine the displayed name for the column. <br> ")
+     usage: ["row_data:array" "options:object"]
+     tags: ["table" "data" "DOM" "ui" "element"]
+   })
 
 (defun tabs (tab_list options)
    (let
@@ -1672,6 +1691,39 @@
      
      })
 
+(defun quick_alert (text display_ms)
+   (if (get_default [ `application `quick_alerts `display ] )
+      (let
+         ((display_elem (div { `id: `quick_alert `class: "juno-centered juno-quick-alert" }
+                             text))
+          (existing_quick_alert (get_by_id `quick_alert))
+          (display_ms (or display_ms (get_default [ `application `quick_alerts `default_display_time ] 1000 ))))
+         (declare (number *quick_alert_timer*)
+                  (global *quick_alert_timer*))
+         
+         (if (is_symbol? `*quick_alert_timer*)
+             (clearTimeout *quick_alert_timer*)
+             (defparameter *quick_alert_timer* nil))
+         (if existing_quick_alert
+              (-> existing_quick_alert `remove))
+         
+         (-> (get_by_id `body) `append display_elem)
+         
+         (= *quick_alert_timer*
+            (setTimeout (fn ()
+                           (aif (get_by_id `quick_alert)
+                                (-> it `remove)))
+                        display_ms))))
+   {
+     description: (+ "The `quick_alert` box takes a string and an optional display time in "
+                     "milliseconds which it then uses to show a centered popup box in the middle of "
+                     "the display for the specified time. <br>The display of the pop up message can "
+                     "be disabled via the default in `*env_config*` under the path [ `application "
+                     "`quick_alerts `display ].  The default display time of the message is set via "
+                     "the path [ `application `quick_alerts `default_display_time ]. ")
+     usage: ["text:string" "display_ms:?number"]
+     tags: ["ui" "alert" "popup" "millis" "DOM" "display"]
+   })
 
 (set_prop (get_by_id "juno-css")
           `textContent

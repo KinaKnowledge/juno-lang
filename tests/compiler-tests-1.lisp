@@ -2549,5 +2549,29 @@
      []
      0
      "Arrow functions with block operator suppress return - top level"]
-
+  ["(let
+      ((acc [])
+       (noop (fn ()
+                true))
+       (search_handler (fn ()
+                          (let
+                             ((found false)
+                              (elem 123))
+                            (progn
+                                (push acc `Z)
+                                (let 
+                                   [(d (-> (new Date) `toString))
+                                    (n nil) 
+                                    (elem null)]
+                                   (for_each (r [ 0 1 2 3])
+                                      (progn 
+                                         (noop 1)
+                                         (push acc r)))
+                                (push acc `A)))))))
+      (search_handler)
+      (and (== acc.length 6) (== (first acc) `Z) (== (last acc) `A)))"
+    []
+    true
+    "Nested blocks with let with proper return point"
+    ]
 ])

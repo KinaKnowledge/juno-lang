@@ -1,7 +1,7 @@
 // Source: core-ext.lisp  
-// Build Time: 2023-03-13 09:10:30
-// Version: 2023.03.13.09.10
-export const DLISP_ENV_VERSION='2023.03.13.09.10';
+// Build Time: 2023-03-26 20:07:40
+// Version: 2023.03.26.20.07
+export const DLISP_ENV_VERSION='2023.03.26.20.07';
 
 
 
@@ -272,8 +272,8 @@ await Environment.set_global("sleep",async function(seconds) {
 },{ "name":"sleep","fn_args":"(seconds)","usage":["seconds:number"],"tags":["time","timing","pause","control"],"description":"Pauses execution for the number of seconds provided to the function.","requires":[],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"core-ext.lisp"
 });
 null;
-{
-     Environment.set_global("from_universal_time",function(seconds) {
+await (async function(){
+    return  Environment.set_global("from_universal_time",function(seconds) {
         let d;
         let ue;
         d=new Date(0);
@@ -282,7 +282,7 @@ null;
         return d
     },{ "name":"from_universal_time","fn_args":"(seconds)","description":"Given a universal_time_value (i.e. seconds from Jan 1 1900) returns a Date object.","usage":["seconds:number"],"tags":["date","time","universal","1900"],"requires":[],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"core-ext.lisp"
 })
-};
+})();
 await Environment.set_global("+=",async function(...args) {
     let symbol;
     symbol=(args && args["0"]);
@@ -476,8 +476,8 @@ await Environment.set_global("form_id",async function(name) {
     return await (await Environment.get_global("replace"))(new RegExp("W","g"),"_",await (await Environment.get_global("replace"))(new RegExp("[+?':]","g"),"sssymss1",await (await Environment.get_global("replace"))("!","sexcs1",await (await Environment.get_global("replace"))("<","slts1",await (await Environment.get_global("replace"))(">","sgts1",(await (await Environment.get_global("split"))((name).toLowerCase()," ")).join("_"))))))
 },{ "name":"form_id","fn_args":"(name)","usage":["name:string"],"description":"Given a standard string returns a compliant HTML ID suitable for forms.","requires":["replace","join","split","lowercase"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"core-ext.lisp"
 });
-{
-     Environment.set_global("from_key",function(value,sep_ques_,ignore_ques_) {
+await (async function(){
+    return  Environment.set_global("from_key",function(value,sep_ques_,ignore_ques_) {
         if (check_true ((value instanceof String || typeof value==='string'))){
             {
                 if (check_true (ignore_ques_)){
@@ -512,15 +512,15 @@ await Environment.set_global("form_id",async function(name) {
         }
     },{ "name":"from_key","fn_args":"(value sep? ignore?)","usage":["value:string","separator?:string"],"description":["=:+","Takes a key formatted value such as \"last_name\" and returns a \"prettier\" string that contains spaces ","in place of the default separator, '_' and each word's first letter is capitalized. ","An optional separator argument can be provided to use an alternative separator token.<br>E.G. last_name becomes \"Last Name\"."],"tags":["string","split","key","hash","record","form","ui"],"requires":["is_string?","dtext","join","split_by"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"core-ext.lisp"
 })
-};
-{
-     Environment.set_global("from_key1",function(v) {
+})();
+await (async function(){
+    return  Environment.set_global("from_key1",function(v) {
         return  ( Environment.get_global("from_key"))(v)
     },{ "name":"from_key1","fn_args":"(v)","description":"Useful for calling with map, since this function prevents the other values being passed as arguments by map from being passed to the from_key function.","tags":["map","function","key","pretty","ui","to_key"],"usage":["value:string"],"requires":["from_key"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"core-ext.lisp"
 })
-};
-{
-     Environment.set_global("to_key",function(value,sep_ques_,ignore_ques_) {
+})();
+await (async function(){
+    return  Environment.set_global("to_key",function(value,sep_ques_,ignore_ques_) {
         if (check_true ((value instanceof String || typeof value==='string'))){
             {
                 if (check_true (ignore_ques_)){
@@ -556,7 +556,7 @@ await Environment.set_global("form_id",async function(name) {
         }
     },{ "name":"to_key","fn_args":"(value sep? ignore?)","usage":["value:string","separator?:string"],"description":["=:+","Takes a value such as \"Last Name\" and returns a string that has the spaces removed and the characters replaced ","by the default separator, '_'.  Each word is converted to lowercase characters as well.","An optional separator argument can be provided to use an alternative separator token.<br>E.G. \"Last Name\" becomes \"last_name\"."],"tags":["string","split","key","hash","record","form","ui"],"requires":["is_string?","lowercase","split_by","join"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"core-ext.lisp"
 })
-};
+})();
 await Environment.set_global("is_date?",async function(x) {
     return (await (await Environment.get_global("sub_type"))(x)==="Date")
 },{ "name":"is_date?","fn_args":"(x)","description":"for the given value x, returns true if x is a Date object.","usage":["arg:value"],"tags":["type","condition","subtype","value","what"],"requires":["sub_type"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"core-ext.lisp"
@@ -1305,8 +1305,8 @@ await Environment.set_global("match_all",async function(regex_str,search_string)
     return await (await Environment.get_global("match_all_js"))(regex_str,search_string)
 },{ "name":"match_all","fn_args":"(regex_str search_string)","usage":["regex_str:string","search_string:string"],"description":"Given a regex expression as a string, and the string to search through, returns all matched items via matchAll.","tags":["match","regex","string","find","scan"],"requires":["match_all_js"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"core-ext.lisp"
 });
-{
-     Environment.set_global("chop_front",function(container,amount) {
+await (async function(){
+    return  Environment.set_global("chop_front",function(container,amount) {
         amount=(amount|| 1);
         return   (function(){
             if (check_true ((container instanceof String || typeof container==='string'))) {
@@ -1320,7 +1320,7 @@ await Environment.set_global("match_all",async function(regex_str,search_string)
         } )()
     },{ "name":"chop_front","fn_args":"(container amount)","usage":["container:array|string","amount:integer"],"mutates":false,"tags":["text","string","list","reduce"],"description":"Given a string or array, returns a new container with the first value removed from the provided container.  An optional amount can be provided to remove more than one value from the container.","requires":["is_string?","is_array?"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"core-ext.lisp"
 })
-};
+})();
 [];
 await Environment.set_global("compile_lisp",async function(text) {
     if (check_true (text)){
@@ -2091,22 +2091,22 @@ await Environment.set_global("show",async function(thing) {
     } ()
 },{ "name":"show","fn_args":"(thing)","usage":["thing:function"],"description":"Given a name to a compiled function, returns the source of the compiled function.  Otherwise just returns the passed argument.","tags":["compile","source","javascript","js","display"],"requires":["is_function?"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"core-ext.lisp"
 });
-{
-     Environment.set_global("rotate_right",function(array_obj) {
+await (async function(){
+    return  Environment.set_global("rotate_right",function(array_obj) {
         (array_obj).unshift((array_obj).pop());
         return array_obj
     },{ "name":"rotate_right","fn_args":"(array_obj)","description":["=:+","Given an array, takes the element at the last ","position (highest index), removes it and places ","it at the front (index 0) and returns the array. "],"usage":["array_obj:array"],"tags":["array","rotation","shift","right"],"requires":["prepend","pop"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"core-ext.lisp"
 })
-};
-{
-     Environment.set_global("rotate_left",function(array_obj) {
+})();
+await (async function(){
+    return  Environment.set_global("rotate_left",function(array_obj) {
         (array_obj).push((array_obj).shift());
         return array_obj
     },{ "name":"rotate_left","fn_args":"(array_obj)","description":["=:+","Given an array, takes the element at the first ","position (index 0), removes it and places ","it at the front (highest index) and returns the array. "],"usage":["array_obj:array"],"tags":["array","rotation","shift","left"],"requires":["push","take"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"core-ext.lisp"
 })
-};
-{
-     Environment.set_global("interpolate",function(from,to,steps) {
+})();
+await (async function(){
+    return  Environment.set_global("interpolate",function(from,to,steps) {
         let cur;
         let step_size;
         let tmp;
@@ -2171,7 +2171,7 @@ await Environment.set_global("show",async function(thing) {
         return acc
     },{ "name":"interpolate","fn_args":"(from to steps)","description":"Returns an array of length steps which has ascending or descending values inclusive of from and to.","usage":["from:number","to:number","steps:number"],"tags":["range","interpolation","fill"],"requires":["assert","is_number?","push"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"core-ext.lisp"
 })
-};
+})();
 await Environment.set_global("encode_to_base64",async function(array_buffer_data) {
     return new Promise(async function(resolve) {
         let __reader__172= async function(){

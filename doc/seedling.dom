@@ -2,7 +2,8 @@
        tabindex: "0"
        class: "juno-dom-editor-root"
        style: "background: #FFFFFF30; max-width: 800px;margin:auto; font-size: 1.1em; line-height: 1.8em;" }
-  (h2 {} "Seedling, an Introduction")
+  (h2 { class: "" }
+      "Seedling, an Introduction")
   (div {} "Seedling is an integrated development environment (IDE) written in Juno, a Lisp dialect that is compiled to JavaScript.  It runs in the browser and is a full Lisp environment.  This allows for writing programs and working in Lisp, with the resources that are available to JavaScript. It provides the ability to produce stand alone applications that can be served from any web server, with these files being able to fully encapsulate the resources and assets that they require.  Or, they can be referenced as remote resources like a traditional web page.  From within the Seedling Environment, you can manage the look and feel, and iteratively build your application, compiling new functions and CSS directives as needed in an interactive way.  An emitted HTML application built with Seedling can be used by itself (with no server), with others via a server, sent to others easily, and requires no external dependencies except an installed browser, making it useful in situations where you might want a power tool, but you have nothing available on hand except a browser environment.  ")
   (div {} "The name Seedling comes from the concept of \""
        (b {} "S")
@@ -32,11 +33,14 @@
   (div {} "Developing with Seedling differs from the traditional bifurcated approach of coding a program distinct from the running of the program.   Instead, the development process is integrated within the running environment.   Starting at the \"top level\", or global environment, the programmer can create and manipulate various scopes and closures locally and remotely.  This is done within buffers, which can represent files, or memory locations accessed as symbols or paths into structures.  It can be done via the REPL, or with programmatic means.  The environment is live - and the programmer chisels and shapes it, all the while using it.  In this regard, Seedling is similar to other Lisp machine like environments such as Emacs, where program state and function can be manipulated via Emacs Lisp.  It is also similar to a spreadsheet, where the data and the formulas to manipulate that data intermingle.  Just like the spreadsheet saves its state, so does Seedling, as a single HTML file.  Presently the total Seedling IDE is a roughly 5MB HTML file in size at the initial build, uncompressed. ")
   (div {} "Seedling itself is developed in this way.   As a given feature, such as a function or control, is developed, evaluated, tested and used, eventually it is added to an initial image files, which constitutes the source code to this IDE. When the IDE is rebuilt from the sources, the new feature becomes part of the initial starting image.  If all works, then the rebuilt environment is committed to source control along with the source files used to construct it.")
   (div {} "The idea here is that there is less of a decoupling between the programmer and their program state.  The programmer is inside the program: building, inspecting and using.   From time to time, or as a direct objective, they can \"peel off\" a subset of the environment, as a stand alone program.  The \"peel-off\" may not contain any editors, or other non-requirements, and just be a stand alone application containing just HTML, Javascript, CSS, and data structures, not the full IDE.  Or somewhere in between.  ")
-  (div {} (h3 {} "Components and Architecture"))
+  (div { class: "" }
+       (h3 { class: "" }
+           "Components and Architecture"))
   (div {} "Seedling is meant to be hacked on, modified, customized and changed to meet the goals of the user.  The entire code base is open source, and highly introspective.  The following diagram provides a high level map of the system, with each layer generally dependent on the layer below it.  ")
-  (div { style: "border-bottom: 1px solid var(--;" }
-       (b { style: "" }
-          "Figure 1: The layers and components of Seedling"))
+  (div { style: "border-bottom: 1px solid var(--;"
+         class: "" }
+    (b { style: "" }
+       "Figure 1: The layers and components of Seedling"))
   (div {} (div { initializer: "wrap_in_resizable"
             class: "juno-shadow-on-hover"
             style: "padding: 0px;position: relative;display: inline-block;border: 1px solid transparent;width: 775.1286307053942px;height: 522px;: " }
@@ -47,14 +51,16 @@
               ""))
     (br {}))
   (div {} "In Seedling, when coding, most work will occur in a buffer, which can represent a file but not always.  The term `buffer` is used because it more accurately represents the mechanism at work: Data can be copied into a buffer from a location, modified, and saved back to the location.  Seedling therefore follows the Emacs model, to which this application owes a lot as a useful archetype.   Key concepts in this regard are discussed in the following sections.  ")
-  (div { style: "background: rgba(0, 0, 0, 0.03); padding: 5px; border: 2px dotted var(--main-accent-color);" }
-       "☞ Relevant documentation tags are included in the sections so that if you want to dive deeper into the documentation and API you can do so by clicking on them.  They look like this: "
-       (span {} " ")
-       (span { class: "juno-tag"
-               onclick: (javascript "async function() {\n        return await (await Environment.get_global(\"display_tag\"))(\"controls\")\n    }")}
-         "controls")
-       ".")
-  (h4 {} "Files and Buffers")
+  (div { style: "background: rgba(0, 0, 0, 0.03); padding: 5px; border: 2px dotted var(--main-accent-color);"
+         class: "" }
+    "☞ Relevant documentation tags are included in the sections so that if you want to dive deeper into the documentation and API you can do so by clicking on them.  They look like this: "
+    (span {} " ")
+    (span { class: "juno-tag"
+            onclick: (javascript "async function() {\n        return await (await Environment.get_global(\"display_tag\"))(\"controls\")\n    }")}
+      "controls")
+    ".")
+  (h4 { class: "" }
+      "Files and Buffers")
   (span { class: "juno-tag"
           onclick: (javascript "async function() {\n        return await (await Environment.get_global(\"display_tag\"))(\"buffer\")\n    }")}
     "buffer"
@@ -139,7 +145,8 @@
          "/working/udp_listener.juno")
        " "
        "file via the file API.  ")
-  (div {} (h4 {} "Layouts and Panels")
+  (div {} (h4 { class: "" }
+          "Layouts and Panels")
        (span { class: "juno-tag"
                onclick: (javascript "async function() {\n        return await (await Environment.get_global(\"display_tag\"))(\"layout\")\n    }")}
          "layout"
@@ -231,12 +238,16 @@
        (span { style: "" }
              "control then takes that DOM structure and plugs it into a new panel.  ")
        (br {}))
-  (pre { style: "min-height: 2.4ch" }
-       "(defglobal *my_panel* (panel \"Key Bindings\" (show_key_bindings)))")
-  (div {} (i { style: "" }
+  (pre { style: "min-height: 2.4ch"
+         spellcheck: "false"
+         class: "" }
+    "(defglobal *my_panel* (panel \"Key Bindings\" (show_key_bindings)))")
+  (div { class: "" }
+       (i { style: "" }
           "Code examples should be clickable and should evaluate for results.  Need to think about the best way to do this - probably with an initializer type of mechanism.")
        (br {}))
-  (div {} ""
+  (div { class: "" }
+       ""
        "The resulting control object will be returned which contains a typical and minimal fingerprint for a control.")
   (div {} (b {} "Figure 3: A simple minimalistic control interface"))
   (div { style: "line-height: 1.0em; font-family: var(--main-mono-space);" }
@@ -246,127 +257,131 @@
                     tabindex: "0"
                     class: "juno-obj-to-dom" }
            (span {} "Object"))
-         (table {} (tbody {} (tr {} (td { class: "juno-obj-to-dom-key" }
-                             "initialize")
-                          (td { class: "juno-obj-to-dom-value" }
-                              (details {} (summary { tabindex: "0"
-                                            lpath: "initialize"
-                                            class: "juno-value juno-type-function" }
-                                         (span { lpath: "initialize"
-                                                 class: "juno-value juno-type-function"
-                                                 style: "margin-left: 5px; font-style: italic;" }
-                                           "(function ())"))
-                                (span { class: "juno-in-expansion" }
-                                      "Opening..."))))
-                   (tr {} (td { class: "juno-obj-to-dom-key" }
-                          "name")
-                       (td { class: "juno-obj-to-dom-value" }
-                           (span { lpath: "name"
-                                   tabindex: "0"
-                                   class: "juno-value juno-type-string" }
-                             "\"Panel\"")))
-                   (tr {} (td { class: "juno-obj-to-dom-key" }
-                          "on_destroy")
-                       (td { class: "juno-obj-to-dom-value" }
-                           (details {} (summary { tabindex: "0"
-                                         lpath: "on_destroy"
-                                         class: "juno-value juno-type-asyncfunction" }
-                                      (span { lpath: "on_destroy"
-                                              class: "juno-value juno-type-asyncfunction"
-                                              style: "margin-left: 5px; font-style: italic;" }
-                                        "(fn ())"))
-                             (span { class: "juno-in-expansion" }
-                                   "Opening..."))))
-                   (tr {} (td { class: "juno-obj-to-dom-key" }
-                          "on_focus")
-                       (td { class: "juno-obj-to-dom-value" }
-                           (details {} (summary { tabindex: "0"
-                                         lpath: "on_focus"
-                                         class: "juno-value juno-type-asyncfunction" }
-                                      (span { lpath: "on_focus"
-                                              class: "juno-value juno-type-asyncfunction"
-                                              style: "margin-left: 5px; font-style: italic;" }
-                                        "(fn ())"))
-                             (span { class: "juno-in-expansion" }
-                                   "Opening..."))))
-                   (tr {} (td { class: "juno-obj-to-dom-key" }
-                          "options")
-                       (td { class: "juno-obj-to-dom-value" }
-                           (details { class: "juno-obj-to-dom" }
-                                    (summary { lpath: "options"
-                                               tabindex: "0"
-                                               class: "juno-obj-to-dom" }
-                                      (span {} "Object"))
-                                    (table {} (tbody {} (tr {} (td { class: "juno-obj-to-dom-key" }
-                                                        "id")
-                                                     (td { class: "juno-obj-to-dom-value" }
-                                                         (span { lpath: "options~id"
-                                                                 tabindex: "0"
-                                                                 class: "juno-value juno-type-string" }
-                                                           "\"control-1679574130918-4940740\"")))
-                                              (tr {} (td { class: "juno-obj-to-dom-key" }
-                                                     "name")
-                                                  (td { class: "juno-obj-to-dom-value" }
-                                                      (span { lpath: "options~name"
-                                                              tabindex: "0"
-                                                              class: "juno-value juno-type-string" }
-                                                        "\"Panel\""))))))))
-                   (tr {} (td { class: "juno-obj-to-dom-key" }
-                          "resize")
-                       (td { class: "juno-obj-to-dom-value" }
-                           (details {} (summary { tabindex: "0"
-                                         lpath: "resize"
-                                         class: "juno-value juno-type-asyncfunction" }
-                                      (span { lpath: "resize"
-                                              class: "juno-value juno-type-asyncfunction"
-                                              style: "margin-left: 5px; font-style: italic;" }
-                                        "(fn ())"))
-                             (span { class: "juno-in-expansion" }
-                                   "Opening..."))))
-                   (tr {} (td { class: "juno-obj-to-dom-key" }
-                          "show_control_bar")
-                       (td { class: "juno-obj-to-dom-value" }
-                           (details {} (summary { tabindex: "0"
-                                         lpath: "show_control_bar"
-                                         class: "juno-value juno-type-asyncfunction" }
-                                      (span { lpath: "show_control_bar"
-                                              class: "juno-value juno-type-asyncfunction"
-                                              style: "margin-left: 5px; font-style: italic;" }
-                                        "(fn (state))"))
-                             (span { class: "juno-in-expansion" }
-                                   "Opening..."))))
-                   (tr {} (td { class: "juno-obj-to-dom-key" }
-                          "toJSON")
-                       (td { class: "juno-obj-to-dom-value" }
-                           (details {} (summary { tabindex: "0"
-                                         lpath: "toJSON"
-                                         class: "juno-value juno-type-function" }
-                                      (span { lpath: "toJSON"
-                                              class: "juno-value juno-type-function"
-                                              style: "margin-left: 5px; font-style: italic;" }
-                                        "(function ())"))
-                             (span { class: "juno-in-expansion" }
-                                   "Opening..."))))
-                   (tr {} (td { class: "juno-obj-to-dom-key" }
-                          "type")
-                       (td { class: "juno-obj-to-dom-value" }
-                           (span { lpath: "type"
-                                   tabindex: "0"
-                                   class: "juno-value juno-type-string" }
-                             "\"panel\"")))
-                   (tr {} (td { class: "juno-obj-to-dom-key" }
-                          "view")
-                       (td { class: "juno-obj-to-dom-value" }
-                           (div { tabindex: "0"
-                                  control_id: "control-1679574130918-4940740"
-                                  class: "juno-view-container" }
-                             (div { class: "juno-buffer-bar" }
-                                  (br {})))))))))
+         (table { class: "" }
+                (tbody { class: "" }
+                       (tr {} (td { class: "juno-obj-to-dom-key" }
+                              "initialize")
+                           (td { class: "juno-obj-to-dom-value" }
+                               (details { open: "" }
+                                        (summary { tabindex: "0"
+                                                   lpath: "initialize"
+                                                   class: "juno-value juno-type-function" }
+                                          (span { lpath: "initialize"
+                                                  class: "juno-value juno-type-function"
+                                                  style: "margin-left: 5px; font-style: italic;" }
+                                            "(function ())"))
+                                        (i {} "Function Contents Not Shown"))))
+                       (tr {} (td { class: "juno-obj-to-dom-key" }
+                              "name")
+                           (td { class: "juno-obj-to-dom-value" }
+                               (span { lpath: "name"
+                                       tabindex: "0"
+                                       class: "juno-value juno-type-string" }
+                                 "\"Panel\"")))
+                       (tr {} (td { class: "juno-obj-to-dom-key" }
+                              "on_destroy")
+                           (td { class: "juno-obj-to-dom-value" }
+                               (details {} (summary { tabindex: "0"
+                                             lpath: "on_destroy"
+                                             class: "juno-value juno-type-asyncfunction" }
+                                          (span { lpath: "on_destroy"
+                                                  class: "juno-value juno-type-asyncfunction"
+                                                  style: "margin-left: 5px; font-style: italic;" }
+                                            "(fn ())"))
+                                 (i {} "Function Contents Not Shown"))))
+                       (tr {} (td { class: "juno-obj-to-dom-key" }
+                              "on_focus")
+                           (td { class: "juno-obj-to-dom-value" }
+                               (details {} (summary { tabindex: "0"
+                                             lpath: "on_focus"
+                                             class: "juno-value juno-type-asyncfunction" }
+                                          (span { lpath: "on_focus"
+                                                  class: "juno-value juno-type-asyncfunction"
+                                                  style: "margin-left: 5px; font-style: italic;" }
+                                            "(fn ())"))
+                                 (i {} "Function Contents Not Shown"))))
+                       (tr {} (td { class: "juno-obj-to-dom-key" }
+                              "options")
+                           (td { class: "juno-obj-to-dom-value" }
+                               (details { class: "juno-obj-to-dom"
+                                          open: "" }
+                                 (summary { lpath: "options"
+                                            tabindex: "0"
+                                            class: "juno-obj-to-dom" }
+                                   (span {} "Object"))
+                                 (table { class: "" }
+                                        (tbody { class: "" }
+                                               (tr {} (td { class: "juno-obj-to-dom-key" }
+                                                      "id")
+                                                   (td { class: "juno-obj-to-dom-value" }
+                                                       (span { lpath: "options~id"
+                                                               tabindex: "0"
+                                                               class: "juno-value juno-type-string" }
+                                                         "\"control-1679574130918-4940740\"")))
+                                               (tr { class: "" }
+                                                   (td { class: "juno-obj-to-dom-key" }
+                                                       "name")
+                                                   (td { class: "juno-obj-to-dom-value" }
+                                                       (span { lpath: "options~name"
+                                                               tabindex: "0"
+                                                               class: "juno-value juno-type-string" }
+                                                         "\"Panel\""))))))))
+                       (tr {} (td { class: "juno-obj-to-dom-key" }
+                              "resize")
+                           (td { class: "juno-obj-to-dom-value" }
+                               (details {} (summary { tabindex: "0"
+                                             lpath: "resize"
+                                             class: "juno-value juno-type-asyncfunction" }
+                                          (span { lpath: "resize"
+                                                  class: "juno-value juno-type-asyncfunction"
+                                                  style: "margin-left: 5px; font-style: italic;" }
+                                            "(fn ())"))
+                                 (i {} "Function Contents Not Shown"))))
+                       (tr {} (td { class: "juno-obj-to-dom-key" }
+                              "show_control_bar")
+                           (td { class: "juno-obj-to-dom-value" }
+                               (details {} (summary { tabindex: "0"
+                                             lpath: "show_control_bar"
+                                             class: "juno-value juno-type-asyncfunction" }
+                                          (span { lpath: "show_control_bar"
+                                                  class: "juno-value juno-type-asyncfunction"
+                                                  style: "margin-left: 5px; font-style: italic;"
+                                                  spellcheck: "false" }
+                                            "(fn (state))"))
+                                 (span { class: "juno-in-expansion" }
+                                       (i {} "Function Contents Not Shown")))))
+                       (tr {} (td { class: "juno-obj-to-dom-key" }
+                              "toJSON")
+                           (td { class: "juno-obj-to-dom-value" }
+                               (details {} (summary { tabindex: "0"
+                                             lpath: "toJSON"
+                                             class: "juno-value juno-type-function" }
+                                          (span { lpath: "toJSON"
+                                                  class: "juno-value juno-type-function"
+                                                  style: "margin-left: 5px; font-style: italic;" }
+                                            "(function ())"))
+                                 (i {} "Function Contents Not Shown"))))
+                       (tr {} (td { class: "juno-obj-to-dom-key" }
+                              "type")
+                           (td { class: "juno-obj-to-dom-value" }
+                               (span { lpath: "type"
+                                       tabindex: "0"
+                                       class: "juno-value juno-type-string" }
+                                 "\"panel\"")))
+                       (tr {} (td { class: "juno-obj-to-dom-key" }
+                              "view")
+                           (td { class: "juno-obj-to-dom-value" }
+                               (div { tabindex: "0"
+                                      control_id: "control-1679574130918-4940740"
+                                      class: "juno-view-container" }
+                                 (div { class: "juno-buffer-bar" }
+                                      (br {})))))))))
   (div {} "There can be many more keys to the returned object, with much more exposed functionality, but a control must provide the minimal interface as shown above.  The macro "
        (span { style: "font-size: 1.1em; caret-color: red; color: var(--main-color); font-family: var(--main-app-font);" }
              " ")
        (code { style: ""
-               class: "juno-type-asyncfunction" }
+               class: "juno-type-asyncfunction"
+               spellcheck: "false" }
          "defcontrol")
        (span { style: "" }
              " is used to define controls and handles the underlying construction of the boiler-plate code.  The constructor for creating instances of the control is a function, typically the output of the ")
@@ -404,10 +419,11 @@
              "."))
   (div {} "At this point the control should be accessible within the user interface.")
   (div {} (b {} "Step 3: Initialization"))
-  (div {} "Prior to use, the control\'s "
+  (div { class: "" }
+       "Prior to use, the control\'s "
        (code { spellcheck: "false"
                class: ""
-               style: "font-size: 1.1em; caret-color: red; color: var(--main-color);" }
+               style: "" }
          "initialize")
        (span { style: "" }
              " function is called, which allows the control to prepare itself for use.  This is typically done automatically by the functions that place the control in the user interface.   The initialization function is called after the control has been placed in the DOM, so in this way the control can  properly set itself up for use in the interface context with which it resides.  Once a control\'s initializer function has been called, and returns "
@@ -424,7 +440,7 @@
              " "))
   (div {} (br {})) (div {} (b {} "Step 4: Serialization and Rehydration"))
   (div {} "Controls can be serialized to a JSON representation and stored for later use in a \'rehydration\' process.  The ability to save and restore state is beneficial because it allows for a configuration of an application to be \'canned\'.  Since controls are essentially recursive structures, they can be stored as a group, in conjunction with other global state in JSON form.  This can happen at a defined time - such as a release point, or at intervals.  Since the JSON state can be embedded in a stand-alone HTML document, this is useful for distributing your application and the data without relying on a specific delivery mechanism, such as a web server or availability of other resources such as a specialized application program.  A modern, standards-compliant web browser such as Firefox, Chrome, Safari or Edge are all that is required.  ")
-  (div {} "A control should support serialization to properly work in this environment and not prevent startup issues or inconsistencies when the application image is restored.  Serialization is fundamentally fairly simple to support: The control simply support the "
+  (div {} "A control should support serialization to properly work in this environment and not prevent startup issues or inconsistencies when the application image is restored.  Serialization is fundamentally fairly simple to support: The control simply supports the "
        (code { spellcheck: "false"
                class: ""
                style: "" }
@@ -438,7 +454,8 @@
          "toJSON")
        (span { style: "" }
              "  function is a synchronous function called by ")
-       (code {} "JSON.stringify")
+       (code { spellcheck: "false" }
+             "JSON.stringify")
        (span { style: "" }
              " when it is encoding a memory structure to serialized JSON.  For every object encountered in the traversal of the in-memory structure, if there is a toJSON method, it will be called and the output of it used as the serialized JSON.  The control, having implemented the call, returns the arguments to be used to initialize itself.  Here is the basic mechanism of ")
        (code { spellcheck: "false"
@@ -447,8 +464,9 @@
          "serialize_controls")
        (span { style: "" }
              " that is used to collect the state of the application:"))
-  (pre { style: "min-height: 2.4ch" }
-       "[(quote quote) (JSON.parse (JSON.stringify controls))]")
+  (pre { style: "min-height: 2.4ch"
+         spellcheck: "false" }
+    "[(quote quote) (JSON.parse (JSON.stringify controls))]")
   (div {} "where "
        (code {} "controls")
        " is an array of controls, such as "
@@ -460,22 +478,75 @@
              " .   "))
   (div {} "To get a better understanding of the process, let\'s look at a typical "
        (code {} "toJSON")
-       " call for controls.  In fact, lets look at one of the more complicated serializer functions, for the "
+       " call for controls.  In fact, we will look at one of the more complicated serializer functions, for the "
        (code { spellcheck: "false"
                class: "juno-type-asyncfunction"
                style: "" }
          "text_editor")
        (span { style: "" }
-             " control itself, which is located in the interface of the control.  To visit the source you can click on the following (or evaluate the command on the REPL):    "))
+             " control itself, which is located in the interface of the control.  To visit the source you can click on the following (or evaluate the command on the REPL).  The source below is found at the end, where the interface for the editor control is returned.  "))
   (button { command_text: "(fn (e)\n   (open_symbol_definition \"text_editor\"))"
             style: "font-family: var(--main-mono-space); padding: 5px;"
             onclick: (javascript "async function(e) {\n    return await (await Environment.get_global(\"open_symbol_definition\"))(\"text_editor\")\n}")}
     "(open_symbol_definition \"text_editor\")")
-  (div {} (b {} (br {}))) (div {} (b {} "Figure 4: Serialization for the text_editor control"))
-  (pre {} "(function ()\n   (progn ;; we may not have ever been initialized with an editor if never mounted to the DOM\n      (if (or (not initialized)\n              (not editor))\n          `(text_editor ,#options)\n          (progn\n             (if (is_symbol? `LZString)\n                 (progn\n                    (delete_prop options `content)\n                    (set_prop options\n                       `content_compressed\n                       (LZString.compressToBase64 (-> editor `getValue))))\n                 (set_prop options\n                    `content\n                    (-> editor `getValue)))\n             `(text_editor ,#options)))))")
-  (span { id: "placeholder_1679661264228_post" }
-        " When the JSON stringification pr")
-  (div {} (span {} " ")
-       (br {}))
-  (div {} (br {})) (div {} (br {})) (p {} (p {} (div {} "Components and Architecture Editor, REPL, Controls, Exporting, Importing, Documentation")
-          (div {} (br {})))))
+  (div {} (b {} (br {}))) (div {} (b {} "Figure 4: The toJSON serialization for the text_editor control"))
+  (pre { spellcheck: "false" }
+       "(function ()\n   (progn ;; we may not have ever been initialized with an editor if never mounted to the DOM\n      (if (or (not initialized)\n              (not editor))\n          `(text_editor ,#options)\n          ("
+       "progn"
+       "\n             (if (is_symbol? `LZString)\n                 (progn\n                    (delete_prop options `content)\n                    (set_prop options\n                       `content_compressed\n                       (LZString.compressToBase64 (-> editor `getValue))))\n                 (set_prop options\n                    `content\n                    (-> editor `getValue)))\n             `(text_editor ,#options)))))")
+  (span { id: ""
+          class: "" }
+    " When the serialization process runs, the above ")
+  (code { spellcheck: "false"
+          class: "" }
+    "toJSON")
+  (span { class: "" }
+        " function is called.  The first thing that happens is a check to see if the control has been initialized.  It can occur that a control is instantiated but not yet mounted in the DOM and therefore will not be initialized.  In this scenario, a quoted form is returned via: ")
+  (pre { style: "min-height: 2.4ch" }
+       "`(text_editor ,#options)")
+  (div {} "The options provided to the control are unquoted and so the final result back to the calling serialization process will be a form that represents what the "
+       (code { spellcheck: "false"
+               class: "juno-type-asyncfunction"
+               style: "font-size: 1.1em; caret-color: red;" }
+         "text_editor")
+       (span { style: "" }
+             " control was initialized with."))
+  (div {} (span { style: "" }
+          "If the control has been initialized, the current contents of the control are retrieved via the call:"))
+  (pre { style: "min-height: 2.4ch" }
+       "(-> editor `getValue)")
+  (div {} "and then compressed to via the "
+       (code { spellcheck: "false"
+               class: "juno-type-object"
+               style: "font-size: 1.1em; caret-color: red; color: var(--main-color);" }
+         "LZString")
+       (span { style: "" }
+             " library to a base64 encoded format.  The options object is then updated, and, like the uninitialized version, the same quoted form is returned:"))
+  (pre { style: "min-height: 2.4ch" }
+       "`(text_editor ,#options)")
+  (div { class: "" }
+       "Since the "
+       (code { spellcheck: "false"
+               class: "juno-type-asyncfunction"
+               style: "font-size: 1.1em; caret-color: red;" }
+         "text_editor")
+       (span { style: ""
+               class: "" }
+         " control is initialized via an object passed in as options, the control, and any state is saved via the options.  When any modifications or updates are made to an instantiated control, the options object is updated to reflect those updates.  During the next time it is initialized, the options will be interrogated and applied, with the result being the rehydrated control in the same state as it previously in.  Therefore, any state you wish to preserve through the serialization process for a control should be kept in the options.  This can be done when the runtime state is changed, for example, setting the control to a read only mode, or it can be done at the time of serialization, such as with the text content of the ")
+       (code { spellcheck: "false"
+               class: "juno-type-asyncfunction" }
+         "text_editor")
+       (span {} " ")
+       (span { style: "" }
+             "control above.  "))
+  (div {} (span { style: "" }
+          (br {})))
+  (div { class: "" }
+       (span { style: ""
+               class: "" }
+         "  "))
+  (div {} (br {})) (div {} (span { class: "" }
+          " ")
+       (div {} (span {} " "))
+       (div {} (br {})) (p {} (p {} (div {} "Components and Architecture Editor, REPL, Controls, Exporting, Importing, Documentation")
+               (div {} (br {}))))))

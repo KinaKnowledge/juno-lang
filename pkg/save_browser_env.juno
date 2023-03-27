@@ -117,6 +117,10 @@
                 global_theme: "juno_light"; "idle_fingers"
                 max_log_lines: 100
                 name: "Seedling"
+                quick_alerts:  {
+                                 display: true
+                                 default_display_time: 750
+                                 }
                }))
   
   

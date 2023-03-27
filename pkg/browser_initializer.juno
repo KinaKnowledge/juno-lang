@@ -1141,10 +1141,13 @@
 (defun select_all_for_control (e)
    (cond
       (and *last_focus*
+         *last_focus*.select_all)
+      (-> *last_focus* `select_all)
+      (and *last_focus*
          *last_focus*.editor)
       (-> *last_focus*.editor `selectAll)
       else
-      nil))
+      (notify (dtext "Current control doesn't have a select_all method"))))
 
 (defun copy_text_to_clipboard (text)
         (if text
@@ -2407,7 +2410,7 @@
                            (if (not (== ctl (get_layout_for_control control_to_focus_to)))
                                (= control_to_focus_to (default_focus)))
                            (= control_to_focus_to (default_focus)))
-                              
+                       (quick_alert layout_name 750)
                        (setTimeout (fn ()
                                       (progn
                                          (set_focus_to control_to_focus_to))) 40)
@@ -2595,7 +2598,6 @@
           
           (aif (switch_to_new_layout layout_control.name)
                (progn
-                  (notify (+ "Layout switched to " layout_control.name))
                   it)
                (progn
                   (notify "Unable to switch to the new layout")
@@ -2741,7 +2743,7 @@
         (progn
            (console.log "swap_control: current layout is locked: " current_control_layout)
            (console.log "swap_control: target_control: " target_control "new_control: " new_control)
-           ;(log "swap_control: cannot swap: current_layout is locked: " current_control_layout.name (layout_locked? current_control_layout))
+           (log "swap_control: cannot swap: current_layout is locked: " current_control_layout.name (layout_locked? current_control_layout))
            (notify (dtext "Cannot swap out the current control - current layout is locked"))
            (= noop true)))
     (if (and new_control_layout
@@ -2790,6 +2792,7 @@
               (progn
                (-> position_details_new.parent `set_content position_details_new.child_position position_details_target.child)
                (cascade_resize)
+               (quick_alert (control_name new_control) 750)
                (set_focus_to position_details_target.child)
                (focus_to_editor))
                 position_details_target.child))
@@ -2800,6 +2803,7 @@
          (-> holding_tank `remove_control position_details_new.child) ;; ensure the child is removed from the holding tank (if in it)
          (-> position_details_target.parent `set_content position_details_target.child_position position_details_new.child)         
          (-> holding_tank `hide)
+         (quick_alert (control_name new_control) 750)
          (cascade_resize)
          (set_focus_to position_details_new.child))
         
@@ -2813,6 +2817,7 @@
                                              position_details_new.child_position 
                                              position_details_target.child)
             (set_focus_to position_details_new.child)
+            (quick_alert (control_name new_control) 750)
             (cascade_resize)
             (focus_to_editor)
             target_control)
@@ -2829,6 +2834,7 @@
              position_details_new.child)
          (-> holding_tank `show)
          (cascade_resize)
+         (quick_alert (control_name holding_tank) 750)
          (set_focus_to position_details_new.child)
          (focus_to_editor)
          target_control)
@@ -2844,6 +2850,7 @@
                                                 position_details_new.child)
             (console.log "swap_control D: setting focus to: " position_details_new.child)
             (set_focus_to position_details_new.child)
+            (quick_alert (control_name new_control) 750)
             (cascade_resize)
             
             position_details_new.child)
@@ -2856,6 +2863,7 @@
                                                 position_details_new.child)
             (-> holding_tank `add_control position_details_target.child)
             (cascade_resize)
+            (quick_alert (control_name new_control) 750)
             (set_focus_to position_details_new.child)
             (focus_to_editor))
         (and (-> holding_tank `has_control? position_details_new.child)
@@ -2868,6 +2876,7 @@
            ;; remove from the holding tank
            (-> holding_tank `remove_control position_details_new.child)
            (-> holding_tank `add_control position_details_target.child)
+           (quick_alert (control_name new_control) 750)
            (cascade_resize)
            (set_focus_to position_details_new.child)
            (focus_to_editor))
@@ -3535,11 +3544,15 @@
                            (clearTimeout timer))
                         (= timer
                            (setTimeout (fn ()
-                                          (set_style [["display" "inline-block" ]
-                                                      ["position" "absolute"]
-                                                      ["top" "0px"]
-                                                      ["left" (+ "" e.srcElement.offsetWidth "px") ]]
-                                                     view.children.1))
+                                          (progn
+                                             (set_style [["display" "inline-block" ]
+                                                         ["position" "absolute"]
+                                                         ["top" "0px"]
+                                                         ["left" (+ "" e.srcElement.offsetWidth "px") ]]
+                                                        view.children.1)
+                                             
+                                             (adjust_element_position view.children.1 30)
+                                             ))
                                        150)))))
                (attach_event_listener view
                   `mouseleave
@@ -3656,7 +3669,9 @@
                       [])))
                 items)))
     (if (> path.length 0)      
-       view
+      (progn
+         (adjust_element_position view)
+         view)
       (progn
        (attach_event_listener view
                               `click
@@ -3902,6 +3917,7 @@
                                                  { `value: options.value } 
                                                  {})
                                                 ))))
+                      (current_focus *last_focus*)
                       (completed false)
                       (ok_button (button { `class: "juno-primary" `style: "float:right" } (dtext "OK")))
                       (cancel_button (button { `class: "juno-secondary" }  (dtext "Cancel")))
@@ -3942,7 +3958,9 @@
                                         (when options.on_destroy
                                            (-> options `on_destroy))
                                         (resolve val)
-                                        (-> dwin `remove)))))
+                                        (-> dwin `remove)
+                                        (when current_focus
+                                           (set_focus_to current_focus))))))
                      
                      
                      
@@ -6216,7 +6234,10 @@
                                       (or (is_control? result)
                                           (and (is_object? result)
                                                result.view))
-                                      (insert_elem result.view)
+                                      (progn
+                                         (insert_elem result.view true)
+                                         (when (is_function? result.initialize)
+                                            (-> result `initialize )))
                                       (is_array? result)
                                       (for (val result)
                                          (insert_result val))
@@ -6233,27 +6254,30 @@
                                       else
                                       (insert_elem_at_point (pre (+ "" (pretty_print (as_lisp result))))))))
                                 
-                 (insert_elem (fn (result)
+                 (insert_elem (fn (result containerize?)
                                  (progn
                                     (log "inserting result")
                                     (doc_exec `insertHTML (+ "<span id='" (+ id "_pre") "' style=''>&nbsp;</span><div id='" id "'>PLACEHOLDER</div><span id='" (+ id "_post") "' style=''>&nbsp;</span>") true)
                                     (sleep 0.1)
                                     
                                     (= elem (get_by_id id))
-                                    (when elem
-                                       (-> elem `replaceWith result)
-                                       (select_element (get_by_id (+ id "_pre")))
-                                       (doc_exec `removeFormat)
-                                       (select_element (get_by_id (+ id "_post")))
-                                       (doc_exec `removeFormat)
-                                       (remove_attribute  (get_by_id (+ id "_pre")) `id)
-                                       (remove_attribute  (get_by_id (+ id "_post")) `id)
+                                    (if elem
+                                       (progn
+                                          (-> elem `replaceWith result)
+                                          (select_element (get_by_id (+ id "_pre")))
+                                          (doc_exec `removeFormat)
+                                          (select_element (get_by_id (+ id "_post")))
+                                          (doc_exec `removeFormat)
+                                          (remove_attribute  (get_by_id (+ id "_pre")) `id)
+                                          (remove_attribute  (get_by_id (+ id "_post")) `id)
+                                          (if containerize?
+                                             (wrap_in_resizable result true)))
                                        (notify "Cannot find placeholder")))))
                  (text (when selected
                           (-> selected `toString)))
                  (result nil))
-                (declare (function insert_elem_at_point get_control_by_id)
-                         (global insert_elem_at_point get_control_by_id))
+                (declare (function insert_elem_at_point get_control_by_id wrap_in_resizable)
+                         (global insert_elem_at_point get_control_by_id wrap_in_resizable))
                 (if (blank? text)
                     (notify (dtext "Nothing to evaluate at the cursor position"))
                     (progn
@@ -8815,6 +8839,12 @@
                                             (set_display_control_bar false))
                                         
                                         (init_context_menu)
+                                        
+                                        (when control_bar
+                                           (attach_event_listener control_bar
+                                              `click
+                                              (fn (e)
+                                                 (set_focus_to intf))))
                                         
                                         (attach_event_listener nav_forward_button
                                            `click
@@ -14000,7 +14030,7 @@
    true)
    
 
-(defun wrap_in_resizable (elem)
+(defun wrap_in_resizable (elem unlock_ratio)
    (let
       ((move_state nil)
        (just_enable (if elem.parentElement
@@ -14055,7 +14085,9 @@
                          (when resize_mode
                             (set_style [["height" (+ "" (Math.min (- max_dims.height 30) (+ dims.height (- e.pageY move_state.my))) "px")]]
                                        frame)
-                            (set_style [["width" (+ "" (* initial_ratio frame.offsetHeight) "px") ]] frame)
+                            (if unlock_ratio
+                               (set_style [["width" (+ "" (Math.min (- max_dims.width 30) (+ dims.width (- e.pageX move_state.mx))) "px") ]] frame)
+                               (set_style [["width" (+ "" (* initial_ratio frame.offsetHeight) "px") ]] frame))
                             (set_style [["height" (+ "" frame.offsetHeight "px")]
                                         ["width" (+ "" frame.offsetWidth "px") ]] elem)
                             ))))
@@ -14096,12 +14128,13 @@
          (-> frame `append expander_elem))
       frame)
    {
-     `description: (+ "<br><br>Given an element, will wrap it in a resizable element that preserves "
+     `description: (+ "Given an element, will wrap it in a resizable element that preserves "
                       "aspect ratio. The provided element will be replaced with the wrapped element.  "
                       "The element will have a transparent handle on the lower right side that when "
-                      "hovered over, will indicate that the element can be resized.  ")
-
-       `usage: ["element:Element"]
+                      "hovered over, will indicate that the element can be resized.  <br>If the "
+                      "argument `unlocked_ratio` is true, the aspect ratio of the content is not "
+                      "fixed, and can independently resized in either the X or Y axis.  ")
+       `usage: ["element:Element" "unlocked_aspect_ratio:?boolean"]
        `tags: ["DOM" "element" "UI" "resize" ]
    })
 
@@ -14133,10 +14166,13 @@
     (debug_container_elem (div { `style: "height: calc(100% - 10px); overflow: hidden;" }
                                status_elem
                                debug_elem))
+    (add_attribute_button (button {} (dtext "Add Attribute")))
+    (delete_element_button (button {} (dtext "Remove Element")))
     (attributes_title (div { style: "margin-block-start: 10px; margin-block-end: 10px;" } "Attributes"))
     (attributes_header_view (div { style: "margin: 0px; padding: 2px; background: #00000010;" }
                                    attributes_title
-                                   ))
+                                   (div { `style: "display: flex" } add_attribute_button delete_element_button)))
+    
     (attributes_page_view (div {
                                  style: "height: calc(100% - 50px); overflow: auto; background: var(--editor-bg-color);  line-height: 1.5em; font-size: 1.0em;  padding: 5px; margin-top: 0px;margin-bottom: 0px";
                                  } "-"))
@@ -14149,33 +14185,35 @@
                             ["Section"
                              (div {} attributes_header_view
                                   attributes_content_view)]
-                            ["Page" 
+                            ["Document" 
                              attributes_page_view]]))
     (attributes_view (div {
                             style: "height: calc(100% - 0px); min-width: 300px; overflow: hidden; background: var(--editor-bg-color); font-size: 1.0em;  padding: 0px; margin: 0px;"
                             }
                        attributes_tabs.view))
     (ns_span (span { `title: "Namespace" `class: "juno-namespace" `style: "display:inline-block; padding-left: 30px; padding-right: 5px;" } nseval.namespace))
-    (sview (split_view_horizontal 
+    (sview (split_view_vertical 
                                 (if options.debug
-                                   (split_view_vertical document_view  debug_container_elem)
+                                   (split_view_horizontal document_view  debug_container_elem)
                                    {
                                      `view: document_view
                                      })
                                 attributes_view
                                 {
-                                    ratio: 0.8
+                                    ratio: 0.7
                                 }))
     (content_view (div { `style: "background: var(--control-bg-color); overflow: hidden; width: 100%; height: 100%;" }
                        sview.view))
     (show_attributes_button (button { `style: "float: right;" `class: "juno-button-on" } "Attributes"))
     (on_resize (fn (self)
                   (progc
+                     
                      (= debug_offset_height (+ 45 (Math.max 5 control_status.offsetHeight)))
                      
                      (set_style [["height" (+ "calc(100% - " debug_offset_height "px)")]] debug_elem)
                      (if (not options.debug) 
                          (set_style [["height" (+ "calc(100% - " control_status.offsetHeight "px)")]] document_view))
+                     (set_prop root_elem.parentElement `scrollTop current_scroll)
                      )))
     (control_bar_elements [ ns_span evaluator_span locked_span show_attributes_button ])
     (rules nil) 
@@ -14463,9 +14501,9 @@
                             (when (attributes_showing?)
                                (show_attributes status.element))
                             (when current_point.element.tagName
-                               (set_prop attributes_title
-                                  `innerText
-                                  current_point.element.tagName))
+                               (-> attributes_title
+                                  `replaceChildren
+                                  (path_to_root current_point.element)))
                             ;(console.log "key_up_event: current_point: " current_point)
                             (= last_event_context (process_rules_for_event event))
                             (when (or (and (== key.length 1)
@@ -14523,14 +14561,27 @@
                           (copytext (-> selrange `toString)))
                          (when (not (blank? copytext))
                             (-> navigator.clipboard `writeText copytext)
-                            (doc_exec `delete nil)))))
+                            (doc_exec `delete nil)
+                            (set_dirty)))))
+    (select_all (fn ()
+                   (let
+                      ()
+                      (focus_to root_elem)
+                      (doc_exec `selectAll))))
     (copy_selection (fn ()
-                       (let
-                          ((selection (get_selection))
-                           (selrange (-> selection `getRangeAt 0))
-                           (copytext (-> selrange `toString)))
-                          (when (not (blank? copytext))
-                             (-> navigator.clipboard `writeText copytext)))))
+                       (progc
+                          (notify "Copied")
+                          (cond
+                             (== (prop (active_element) `tagName) "INPUT")
+                             (progn
+                                (-> navigator.clipboard `writeText (prop (active_element) `value)))
+                             else
+                             (let
+                                ((selection (get_selection))
+                                 (selrange (-> selection `getRangeAt 0))
+                                 (copytext (-> selrange `toString)))
+                                (when (not (blank? copytext))
+                                   (-> navigator.clipboard `writeText copytext)))))))
     
     (paste_selection (fn (e)
                         (let
@@ -14555,11 +14606,13 @@
                                                 (progn
                                                    (= pasted true)
                                                    (doc_exec `insertHTML (-> navigator.clipboard `readText))
+                                                   (set_dirty)
                                                    (break))
                                                 (== item_type "text/plain")
                                                 (progn
                                                    (= pasted true)
                                                    (doc_exec `insertText (-> navigator.clipboard `readText))
+                                                   (set_dirty)
                                                    (break))
                                                 (starts_with? "image/" item_type)
                                                 (progn
@@ -14573,6 +14626,7 @@
                                                    (when new_image
                                                       (wrap_in_resizable
                                                          new_image))
+                                                   (set_dirty)
                                                    (break))))))))))))
                      
     (request_save (function ()
@@ -14708,6 +14762,10 @@
                                          new_image)))))
                           (load_files files)))))
     (error_state false)
+    (set_dirty (fn ()
+                  (when (not is_dirty?)
+                     (add_class "juno-needs-save" title_span))
+                  (= is_dirty? true)))
     (on_destroy (fn ()
                    (progn
                       (cond
@@ -14736,7 +14794,7 @@
                                       (-> attributes_page_view
                                                   `replaceChildren
                                                   (div { `style: "width: calc(100% -5px);" }
-                                                       (value_to_dom page_attribs
+                                                       [ (value_to_dom page_attribs
                                                                      {
                                                                        table_style: "width: 100%;table-layout: fixed;"
                                                                        key_style: "width: 150px"
@@ -14747,46 +14805,104 @@
                                                                                      (progn
                                                                                         (handle_attribute_change root_elem (first path) new_value)
                                                                                         new_value))
-                                                                       }))))))
+                                                                       })])))))
     (attributes_showing? (fn ()
                             (has_class? "juno-button-on" show_attributes_button)))
     (displayed_element_for_attributes nil)
+    (remove_element (fn (element)
+                       (progn
+                          (remove_class "juno-highlighted" element)
+                          (select_element element)
+                          (doc_exec `removeFormat)
+                          (doc_exec `delete)
+                          (sleep 0.01)
+                          (set_dirty)
+                          ;(move_point `backward `character)
+                          )))
+    (path_to_root (fn (element)
+                     (let
+                        ((acc [])
+                         (dist 0)
+                         (current_element nil))
+                        (div { style: "display: inline-block" }
+                             (if (is_element? element)
+                                 (progn
+                                    (= current_element element)
+                                    (while (and (is_element? current_element.parentElement)
+                                                (not (== current_element root_elem)))
+                                       (progn
+                                          (prepend acc
+                                             (div { `dist: dist class: "juno-type-element" } current_element.tagName))
+                                          (inc dist)
+                                          (= current_element current_element.parentElement)))
+                                    (prepend acc
+                                       (div { `dist: dist class: "juno-type-element"  } "DOCUMENT"))
+                                    acc)
+                                 "-")))))
+    (go_to_tree_pos (fn (distance)
+                       (let
+                          ((elem displayed_element_for_attributes))
+                          (when elem
+                             (for (c (range (int distance)))
+                                  (= elem elem.parentElement))
+                             (if (== elem root_elem)
+                                 (-> attributes_tabs `activate_tab 1)
+                                 (progn
+                                    (path_to_root elem)
+                                    (show_attributes elem)
+                                    (add_class "juno-highlighted" elem)
+                                    (setTimeout 
+                                       (fn () 
+                                          (progc
+                                             (remove_class "juno-highlighted" elem)
+                                             )) 500)))))))
+    
     (show_attributes (fn (element)
                         (if (and element
                                  (not (== element displayed_element_for_attributes)))
                            (let
                               ((attrib_list (prop element `attributes))
                                (attribs {
-                                   class: ""
-                                   style: ""
+                                   class: (get_attribute element `class)
+                                   style: (get_attribute element `style)
+                                   onclick: (prop element `onclick)
+                                   contentEditable: (prop element `contentEditable)
+                                   spellcheck: (prop element `spellcheck)
                                }))
                               (= displayed_element_for_attributes element)
-                              (for_each (attrib_num (range (length attrib_list)))
-                                 (progn
-                                    (set_prop attribs
-                                       (resolve_path [ `attributes attrib_num `name ] element)
-                                       (resolve_path [ `attributes attrib_num `value ] element))))
-                              (console.log "show_attributes: current_point: " current_point)
-                              (set_prop attributes_title
-                                `innerText
-                                (+  element.tagName ": " (join " | " (get_text_around_point current_point))))
-                              
-                              (-> attributes_content_view
-                                 `replaceChildren
-                                 (div { `style: "width: calc(100% -5px);" }
-                                      (value_to_dom attribs
-                                                    {
-                                                      table_style: "width: 100%;table-layout: fixed;"
-                                                      key_style: "width: 150px"
-                                                      input_class: " juno-full-width"
-                                                      editable: true
-                                                      disable_object_toggle: true
-                                                      on_change: (function (path new_value)
-                                                                     (progn
-                                                                        (handle_attribute_change element (first path) new_value)
-                                                                        new_value))
-                                                      })
-                                      ))))))
+                              (defglobal *dd* displayed_element_for_attributes)
+                              (if (== element root_elem)
+                                  (-> attributes_tabs `activate_tab 1)
+                                  (progn
+                                      (-> attributes_tabs `activate_tab 0)
+                                      (when false
+                                         (for_each (attrib_num (range (length attrib_list)))
+                                            (progn
+                                               (log "attrib: " attrib_num (resolve_path [ `attributes attrib_num `name ] element))
+                                               (set_prop attribs
+                                                  (resolve_path [ `attributes attrib_num `name ] element)
+                                                  (resolve_path [ `attributes attrib_num `value ] element)))))
+                                     (console.log "show_attributes: current_point: " current_point)
+                                     (-> attributes_title
+                                        `replaceChildren
+                                        (path_to_root element))
+                                     
+                                     (-> attributes_content_view
+                                        `replaceChildren
+                                        (div { `style: "width: calc(100% -5px);" }
+                                             (value_to_dom attribs
+                                                           {
+                                                             table_style: "width: 100%;table-layout: fixed;"
+                                                             key_style: "width: 150px"
+                                                             input_class: " juno-full-width"
+                                                             editable: true
+                                                             disable_object_toggle: true
+                                                             on_change: (function (path new_value)
+                                                                           (progn
+                                                                              (handle_attribute_change element (first path) new_value)
+                                                                              new_value))
+                                                             })
+                                             ))))))))
     
     (update_command (fn (element text)
                        (progn
@@ -14799,8 +14915,8 @@
     
     (handle_attribute_change (function (element key new_value)
                                 (progn
-                                   (when (not is_dirty?)
-                                      (add_class "juno-needs-save" title_span))
+                                   (set_dirty)
+                                   (notify (+ "Attribute change " key))
                                    (= is_dirty? true)
                                    (cond
                                       (== key "class")
@@ -14825,7 +14941,11 @@
                                       (== key "command_text")
                                       (progn
                                          (update_command element new_value)
-                                         new_value))
+                                         new_value)
+                                      else
+                                      (progn
+                                         (notify (+ "New Attribute: " key))
+                                         (-> element `setAttribute key new_value)))
                                    (when options.debug
                                       (-> debug_elem `replaceChildren
                                          (pre (pretty_print (element_to_lisp root_elem)))))
@@ -14938,28 +15058,34 @@
                                 (let
                                    ()
                                    (conj 
-                                      rules_menu 
+                                      (if rules_menu 
+                                         [[(+ (dtext "Actions") "...")
+                                           rules_menu]]
+                                         [])
+                                      (if rules_menu
+                                         [["--" nil]]
+                                         [])
                                       [
-                                    (if (is_clipboard_allowed?)
-                                        [{
-                                           text: "Cut"
-                                           path: [`global `cut ]
-                                           exec: cut_selection }]
-                                        [])
-                                    (if (is_clipboard_allowed?)
-                                        [{
-                                           text: "Copy"
-                                           path: [`global `copy ]
-                                           exec: copy_selection
-                                           }]
-                                        [])
-                                    (if (is_clipboard_allowed?)
-                                        [ {
-                                            text: "Paste"
-                                            path: [`global `paste ]
-                                            exec: paste_selection }]
-                                        [])
-                                    ]))))))
+                                       (if (is_clipboard_allowed?)
+                                           [{
+                                              text: "Cut"
+                                              path: [`global `cut ]
+                                              exec: cut_selection }]
+                                           [])
+                                       (if (is_clipboard_allowed?)
+                                           [{
+                                              text: "Copy"
+                                              path: [`global `copy ]
+                                              exec: copy_selection
+                                              }]
+                                           [])
+                                       (if (is_clipboard_allowed?)
+                                           [ {
+                                               text: "Paste"
+                                               path: [`global `paste ]
+                                               exec: paste_selection }]
+                                           [])
+                                       ]))))))
     (set_evaluator_control (fn (control)
                                       (if control.evaluate
                                          (progn
@@ -15094,6 +15220,7 @@
                                `keyup
                                (fn (e) (key_up_event e)))
                             
+                            
                             (attach_event_listener root_elem.parentElement
                                `keydown
                                (fn (e)
@@ -15106,11 +15233,17 @@
                                (fn (e)
                                   (let
                                      ((status (point_for e.srcElement)))
-                                     (= current_point status)
-                                     (when (attributes_showing?)
-                                        (show_attributes e.srcElement)))))
+                                     (when (eq nil current_point)
+                                        (if (is_element? status.element)
+                                            (= current_point status)
+                                            (= current_point (point_for root_elem))))
+                                     (show_attributes e.srcElement))))
                                      
-                                     
+                            (attach_event_listener attributes_title
+                               `click
+                               (fn (e)
+                                  (when (get_attribute e.srcElement `dist)
+                                     (go_to_tree_pos (get_attribute e.srcElement `dist)))))
                             
                             (attach_event_listener show_attributes_button
                                `click
@@ -15121,20 +15254,48 @@
                                `paste
                                (fn (e)
                                   (progc
-                                     (log "new paste event: " 
-                                        (object_methods e.clipboardData)
-                                        e.clipboardData.types)
                                      (setTimeout (fn ()
                                                     (check_for_unhandled_elements root_elem))
                                                  50))))
+                            
+                            
                             
                             (attach_event_listener attributes_view
                                `focusin
                                (fn (e)
                                   (progn
-                                     (handle_event e)
-                                     (log "attributes_view: focus in"))))
+                                     (handle_event e))))
                             
+                            (attach_event_listener add_attribute_button
+                               `click
+                               (fn (e)
+                                  (if displayed_element_for_attributes
+                                     (aif (request_user_input "Enter the name of the attribute to add:")
+                                          (progn
+                                             (defvar target_elem displayed_element_for_attributes)
+                                             (notify (+ "setting property: " it " " target_elem.tagName))
+                                             (set_prop target_elem it (or (prop target_elem it) ""))
+                                             (log (pre (pretty_print (element_to_lisp target_elem))))
+                                             (= displayed_element_for_attributes nil) ;; reset it so we will refresh
+                                             (show_attributes target_elem))
+                                          (progn
+                                             (notify "Cancelled")))
+                                     (notify "No current point!"))))
+                               
+                            (attach_event_listener delete_element_button
+                               `click
+                               (fn (e)
+                                  (let
+                                     ((removal displayed_element_for_attributes))
+                                  (when removal
+                                     (select_element removal)
+                                     (add_class "juno-highlighted" removal)
+                                     (aif (request_user_choice "Remove this element?" [(dtext "Yes - Remove it") ])
+                                          (progn
+                                             (remove_element removal))
+                                          (progn
+                                              (remove_class "juno-highlighted" removal)
+                                             ))))))
                             (attach_event_listener root_elem.parentElement
                                `scroll
                                (fn (e)
@@ -15150,13 +15311,13 @@
                             (progc
                                (set_attribute root_elem
                                   `tabindex 0))
-                            ;(set_style [["height" "100%"]] root_elem)
+                            
                             (set_style [["overflow" "hidden"] [ "height" "calc(100% - 2px);"]] view)
                             (if options.hide_control_bar
                                (-> self `show_control_bar false))
                             
                             (check_for_unhandled_elements root_elem)
-                            (log "DOM_Editor: options: " options)
+                            
                             
                             (setTimeout (fn ()
                                            (progn
@@ -15192,12 +15353,10 @@
                                                            options.filename)
                                                        (not is_fresh))
                                                   (progn
-                                                     (log "selecting root elem")
                                                      (select_element root_elem)
                                                      (collapse_to_start (get_selection)))
                                                   else
                                                   (progn
-                                                     (log "Selecting starter")
                                                      (select_element starter)))))
                                         100))))))
    {
@@ -15208,6 +15367,7 @@
                 [`copy_selection copy_selection]
                 [`cut_selection cut_selection]
                 [`paste_selection paste_selection]
+                [`select_all select_all]
                 [`on_hide on_hide ]
                 [`set_evaluator (fn (new_evaluator)
                                    (when (is_function? new_evaluator)
@@ -17655,7 +17815,6 @@
                               description: "Make a new named layout from the current frame"
                               exec: (fn ()
                                        (progn
-                                          (notify "Make Named Layout")
                                           (make_named_layout_interactive)))
                               })
        

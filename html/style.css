@@ -1662,14 +1662,19 @@ hr {
   background: var(--main-accent-color);
 }
 
-.juno-view-container thead {
-  text-align: left;
-  padding: 3px;  
-  background: var(--main-accent-color);
+
+.juno-view-container th {
+   font-weight: bold;
 }
 
-.juno-view-container td {
-   
+td.juno-dtable {
+    vertical-align:top; 
+    padding: 5px; 
+    border-bottom: 1px solid var(--main-accent-line);
+}
+
+tr.juno-dtable {
+    padding: 5px;
 }
 
 div.juno-notification {
@@ -1877,6 +1882,8 @@ div.juno-focused {
   color: var(--main-color);
   border-bottom: 1px solid var(--main-control-button-color);
 }
+
+
 
 span.juno-needs-save {
   color: var(--value-modified-color)
@@ -2102,6 +2109,18 @@ ol.juno-type-array:hover {
   border-color: #ffffff08;
 }
 
+div.juno-type-element {
+    font-weight: bold; 
+    cursor: pointer; 
+    display: inline-block; 
+    border-radius: 3px; 
+    padding: 3px; 
+    background: var(--main-bg-color);
+    color: var(--main-color);
+    margin-right: 5px; 
+    border: 1px solid var(--main-color);
+}
+
 .identification {
   background: var(--identification-bg-color) !important;
 }
@@ -2251,6 +2270,13 @@ input.juno-input-error {
     border-color: var(--main-accent-line-hover);
 }
 
+.juno-centered {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
 @keyframes slide-in {
     0% {
         margin-top:-6px;
@@ -2260,6 +2286,20 @@ input.juno-input-error {
         margin-top:-0px;
         opacity: 1
     }
+}
+
+.juno-quick-alert {
+    text-align: center; 
+    min-width: 300px; 
+    box-shadow: 1px 1px 6px 2px #00000040; 
+    z-index: 1000; 
+    padding: 20px; 
+    font-size: 1.5em;
+    font-weight: bold;
+    border-radius: 3px; 
+    border: 1px solid var(--main-accent-color); 
+    background: var(--control-bg-color); 
+    color: var(--control-color);
 }
 
 span.juno-hint {
