@@ -404,28 +404,34 @@
      tags: ["layout" "controls" "control" "layouts" "ui" "panel" "DOM" "switch"]
    })
          
+
    
 (defun new_buffer (options)
    (let
-      ((options (cond
-                   (is_array? options)
-                   { `path: options `mode: "juno"}
-                   (is_object? options)
-                   (+ (if options.filename
-                          {}
-                          { `mode: `juno })
-                      options)  ;; if options has mode specified and we don't have a filename, it will override the default juno mode
-                   (is_string? options)
-                   { `path: [ options ] `mode: "juno" }
-                   else
-                   { `mode: "juno" }))
+      ((options  (cond
+                    (is_array? options)
+                    { `path: options `mode: "juno"}
+                    (is_object? options)
+                    (+ (if options.filename
+                           {}
+                           { `mode: (or options.type `juno) })
+                       options)  ;; if options has mode specified and we don't have a filename, it will override the default juno mode
+                    (is_string? options)
+                    { `path: [ options ] `mode: "juno" }
+                    else
+                    { `mode: "juno" }))
        (starting_layout (get_current_layout_control))
        (target_layout (jump_to_unlocked_layout))
        (target_container nil)
        (new_control nil)
-       (symbol_data (if options.path
-                        { `path: options.path `namespace: (or options.namespace (current_namespace)) }
-                        (symbol_chooser "Select a symbol to edit" options.mode)))
+       (symbol_data (cond 
+                       options.path
+                       { `path: options.path `namespace: (or options.namespace (current_namespace)) }
+                       (and (is_string? options.content)
+                            (not options.filename))
+                       nil
+                       else
+                       (symbol_chooser "Select a symbol to edit" options.mode)))
        (extension (cond
                      options.filename
                      (last (split_by "." options.filename))
@@ -438,9 +444,9 @@
        (target_env nil))
       
       
-      (when (resolve_path [ `options `is_locked? ] current_layout)
-         (jump_to_frame_0)
-         (sleep 0.1))
+      ;(when (resolve_path [ `options `is_locked? ] current_layout)
+       ;  (jump_to_frame_0)
+        ; (sleep 0.1))
       
       (= target_container (or (and (== starting_layout target_layout) 
                                    options.control_to_replace  ;; first check easy thing
@@ -456,32 +462,32 @@
          (= target_env (-> Environment `get_namespace_handle symbol_data.namespace)))
       (when (and target_env (eq nil (resolve_path symbol_data.path target_env.global_ctx.scope)))
          (make_path symbol_data.path target_env.global_ctx.scope ""))
-     
-      (when symbol_data.path
-         (= new_control
-            (if (== extension `dom)
-                (DOM_editor (+ { rules: [ `*markdown_rules* ]
-                                       hide_control_bar: false
-                                       debug: false }
-                               options))
-                (text_editor (+ { name: (last symbol_data.path)
-                                       path_namespace: target_ns
-                                       namespace: target_ns
-                                       path: symbol_data.path
-                                       mode: options.mode }
-                                options ))))
-         (cond
-            (is_top_control? target_container)
-            (container_view_operation "split_right"
-                                      (first (-> target_container `controls))
-                                      new_control)
-            else
-            (progn
-               (log "new_buffer: swapping to control: "  new_control.name)
-               (swap_control target_container
-                             new_control)))
-         (sleep 0.1)
-         (set_focus_to new_control)))
+      (= new_control
+         (if (== extension `dom)
+             (DOM_editor (+ { rules: [ `*markdown_rules* ]
+                                    hide_control_bar: false
+                                    debug: false }
+                            options))
+             (text_editor (+ { name: (if symbol_data.path
+                                         (last symbol_data.path)
+                                         nil)
+                                    namespace: target_ns
+                                    path_namespace: target_ns
+                                    path: symbol_data.path
+                                    mode: options.mode }
+                             options ))
+             ))
+      (cond
+         (is_top_control? target_container)
+         (container_view_operation "split_right"
+                                   (first (-> target_container `controls))
+                                   new_control)
+         else
+         (progn
+            (swap_control target_container
+                          new_control)))
+      (sleep 0.1)
+      (set_focus_to new_control))
    {
      `description: (+ "Opens a new editor, if possible, in the currently focused control.  If necessary, it may "
                       "split the view to the right for the new editor.  If no options are provided, the user "
@@ -2094,7 +2100,7 @@
             (offset_depth 46)
             (editor_div (div { `class: "opacity-0" `style: (+ "height: calc(100% - " offset_depth  "px); width: 100%; overflow: hidden;font-family:var(--main-mono-space);") }))
             
-            (view (div { `control_id: options.id `style: "overflow: hidden; height: calc(100% - 10px); display: inline-block; width: inherit;" }
+            (view (div { `control_id: options.id `style: "overflow: hidden; height: calc(100% - 0px); display: inline-block; width: inherit;" }
                        control_bar
                        editor_div
                        context_bar))
@@ -2105,9 +2111,10 @@
                                (when view.parentElement
                                   (check_observer)
                                   (html/set_style [["width" "calc(100% - 2px)"];           (+ "" (- (prop view.parentElement `offsetWidth) 2) "px")]
-                                                   ["height" (+ "" (- (prop view.parentElement `offsetHeight) 2) "px")]]
+                                                   ["height" (+ "" (- (prop view.parentElement `offsetHeight) 0) "px")]]
                                                   view)
-                                  (set_style [["height" (+ "calc(100% - " (+ (Math.max 0 control_bar.offsetHeight) (Math.max 40 context_bar.offsetHeight))  "px)") ]] editor_div)
+                                  (set_style [["height" (+ "calc(100% - " (+ (Math.max 0 control_bar.offsetHeight) (Math.max 45 context_bar.offsetHeight) -10)  "px)") ]] editor_div)
+                                  ;(notify (+ "" context_bar.offsetHeight))
                                   (when editor
                                      (-> editor `resize)))))
             

@@ -38,7 +38,8 @@
                        `th `thead `tr
                        `button `datalist `fieldset `form `input `label `legend
                        `meter `optgroup `option `output `progress `select `textarea
-                       `details `dialog `summary
+                       `details `dialog `summary 
+                       `polygon `polyline `rect `circle `ellipse `line
                        `slot `template ])
 
 
@@ -372,6 +373,70 @@
    })
 
 
+(defun resolve_dom_path (path from_elem)
+   (if (and (is_array? path)
+              (is_element? from_elem))
+      (if (> path.length 1)
+          (resolve_dom_path (rest path) (prop from_elem.children (first path)))
+          (prop from_elem.children (first path))))
+   {
+     description: (+ "Given an array containing the indexes of the children to traverse in "
+                     "top down order, will return the child element found at the given path.  "
+                     "Otherwise, if the path doesn\'t exist in the DOM structure, the path isn\'t an "
+                     "array, or the provided element isn\'t a DOM element, then nil is returned.   ")
+     usage: ["path:array" "from_elem:Element"]
+     tags:  ["DOM" "path" "resolve" "element" "UI" "traverse"]
+   })
+
+(defun path_between (child_elem parent_elem _acc)
+   (if (== child_elem parent_elem)
+       (or _acc [])
+       (progn
+          (when (eq _acc nil)
+             (= _acc []))
+          (if child_elem.parentElement
+             (progn
+                (prepend _acc (-> (Array.from child_elem.parentNode.children)
+                               `indexOf child_elem))
+                (path_between child_elem.parentElement parent_elem _acc))
+             nil)))
+   {
+     description: (+ "Given a child DOM element and a parent DOM element, returns the path "
+                     "between them as an array, with the first index of the array being the first "
+                     "child of the parent and the last index being the index offset of the child in "
+                     "it\'s parent element.  If the child and the parent are the same, an empty array "
+                     "is returned.  If the child cannot be found in the parent structure at all, then "
+                     "nil is returned. ")
+     usage: ["child_element:Element" "parent_element:Element"] 
+     tags:  ["DOM" "path" "resolve" "element" "UI" "traverse"]
+     })
+
+(defun traverse_dom (elem operator_function _acc)
+   (let
+      ((acc (or _acc [])))
+      (if (and (is_element? elem)
+               (is_function? operator_function))
+          (map (fn (child_elem idx)
+                  (progn
+                     (operator_function child_elem (conj acc idx))
+                     (traverse_dom child_elem operator_function (conj acc idx))))
+               (Array.from elem.children))
+          (cond
+             (not (is_function? operator_function))
+             (throw TypeError "traverse_dom: invalid operator_function provided")
+             (not (is_element? elem))
+             (throw TypeError "traverse_dom: invalid element provided"))))
+   {
+     description: (+ "Given a starting element with the `root_element` argument and an "
+                     "`operator_function`, the `traverse_dom` function recursively moves through the "
+                     "children of the root_element and applies the operator function.  The operator "
+                     "function is called with the signature:```(element path)```<br><br>where element "
+                     "is a descendent of the root_element, and the path is the dom path to the "
+                     "child.  This function mirrors `traverse` in terms of function, but applies to "
+                     "the DOM.  See also `path_between` and `resolve_dom_path`. <br>")
+     usage: ["element:Element" "operator_function:function"]
+     tags:  ["DOM" "path" "resolve" "element" "UI" "traverse"]
+   })
 
 (defun set_disabled (`& args)
   (when (and args (> (length args) 0))
@@ -1557,34 +1622,172 @@
          handler)
       view))
 
+(defun filter_icon (size element)
+   (let
+      ((view (or element (div { style: (+ "display: inline-block; width: " size)})))
+       (size (or size 20))
+       (svg_text 
+          (prop (svg { xmlns:"http://www.w3.org/2000/svg"
+                        width: (- size 6)
+                        height: (- size 6)
+                        viewBox:(+ "0 0 " size " " size)
+                        fill:"none"
+                        stroke:"currentColor"
+                        stroke-width:2
+                        stroke-linecap:"round"
+                        stroke-linejoin:"round"
+                        class:"feather feather-filter" }
+        (polygon { points: "22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" })) `outerHTML)))
+      (-> view `insertAdjacentHTML `beforeend svg_text)
+      view))
+
 (defun dtable (row_data options)
-   (table { `style: "width: 100%" }
-          (if (is_array? options.columns)
-              (thead
-                 (for_each (colheader options.columns)
-                    (cond 
-                       (is_string? colheader)
-                       (th { `style: "padding: 5px;" }  colheader)
-                       (and (is_object? colheader)
-                            colheader.name)
-                       (th { `style: "padding: 5px;" }  colheader.name))))
-              [])
-         (tbody
-            (for_each (row (or row_data []))
-               (tr { `class: "juno-dtable" }
-                  (for_each (cell row)
-                     (td { `class: "juno-dtable" } 
-                         cell))))))
+   (let
+      ((search_input (input { `class: "juno-search" title: (or options.title (dtext "Search")) placeholder: (dtext "Search") type: `search } ))
+       (filter_button (filter_icon 22 (button {  `title: (dtext "Filter Matching Rows") `style: "width: 35px; padding: 3px;"})))
+       (search_results_elem (div { `style: "display: none;padding: 5px;" } "No Data Found"))
+       
+       (title (or options.title nil))
+       (view nil)
+       (search_results [])
+       (tview nil)
+       (set_filter_mode (fn (state)
+                           (if state
+                              (progn
+                                 (if (-> tview `querySelector "td.juno-selected") ;; do we have any selections currently?
+                                     (for_items (row (-> tview `querySelectorAll "tr"))
+                                        (if (-> row `querySelector ".juno-selected")
+                                           (remove_class "juno-display-none" row)
+                                           (add_class "juno-display-none" row)))
+                                     (for_items (row (-> tview `querySelectorAll "tr.juno-display-none"))
+                                               (remove_class "juno-display-none" row)))
+                                 (add_class "juno-button-on" filter_button))
+                              (progn
+                                 (remove_class "juno-button-on" filter_button)
+                                 (for_items (row (-> tview `querySelectorAll "tr.juno-display-none"))
+                                           (remove_class "juno-display-none" row))))))
+                                     
+       (reset_search (fn ()
+                        (progn
+                           (set_prop search_input `value "")
+                           (for_items (elem (-> tview `querySelectorAll "td.juno-selected"))
+                                (remove_class "juno-selected" elem))
+                           (for_items (elem (-> tview `querySelectorAll "tr.juno-display-none"))
+                                (remove_class "juno-display-none" elem)))))
+       (search_handler (fn (search_data)
+                          (let
+                             ((found false)
+                              (search_data (lowercase search_data))
+                              (hide_rows (has_class? "juno-button-on" filter_button))
+                              (nothing_found true))
+                             (set_style [["display" "none"]] search_results_elem)
+                             (if (blank? search_data)
+                                (reset_search)
+                                (progn
+                                   (for_items (elem (-> tview `querySelectorAll "td.juno-selected"))
+                                              (remove_class "juno-selected" elem))
+                                   (for_items (elem (-> tview `querySelectorAll "tr"))
+                                              (remove_class "juno-selected" elem))
+                                   (for_items (row (or (-> tview `querySelectorAll "tr") []))
+                                              (progc
+                                                 ;(log "searching row: " row.tagName row.innerText row.children)
+                                                 (= found false)
+                                                 (for_items (col row.children)
+                                                            (progc
+                                                               ;(log "..searching col: " col.innerText (contains? search_data col.innerText))
+                                                               (when (contains? search_data (lowercase col.innerText))
+                                                                  (add_class "juno-selected" col)
+                                                                  (= nothing_found false)
+                                                                  (= found true))))
+                                                 (if hide_rows
+                                                    (if found
+                                                       (remove_class "juno-display-none" row)
+                                                       (add_class "juno-display-none" row)))))
+                                   (when nothing_found
+                                      (reset_search)
+                                      (set_style [["display" "inline-block"]] search_results_elem))
+                                   ))))))
+                             
+      (= tview
+         (table { `style: (or options.table_style "width: 100%") }
+                (if (is_array? options.columns)
+                    (thead
+                       (for_each (colheader options.columns)
+                          (cond
+                             (is_string? colheader)
+                             (th { `style: "padding: 5px;" }  colheader)
+                             (and (is_object? colheader)
+                                  colheader.name)
+                             (th { `style: "padding: 5px;" }  colheader.name))))
+                    [])
+                (tbody
+                   (for_each (row (or row_data []))
+                      (tr { `class: "juno-dtable" }
+                          (for_each (cell row)
+                             (td { `class: "juno-dtable" }
+                                 cell)))))))
+      (= view 
+         (cond 
+            options.display_search
+            (div { }
+                 (div { `style: "padding: 4px; display: flex;" }
+                      (if (is_string? options.title)
+                          (label { `style: "font-weight: bold; margin-right: 20px;margin-top: 4px;font-size: 1.1em;" } options.title)
+                          [])
+                      search_input filter_button search_results_elem)
+                 tview)
+            options.title
+            (div { }
+                 (div { `style: "padding: 4px; display: flex;" }
+                      (if (is_string? options.title)
+                          (label { `style: "font-weight: bold; margin-right: 20px;display: inline-block;" } options.title)
+                          []))
+                 tview)
+            else
+            tview))
+      (attach_event_listener search_input
+         `keyup
+         (fn (e)
+            (when (blank? search_input.value)
+               (reset_search))))
+      (attach_event_listener search_input
+         `search
+         (fn (e)
+            (if (blank? search_input.value)
+                (reset_search)
+                (search_handler search_input.value))))
+      (attach_event_listener filter_button
+         `click
+         (fn (e)
+            (set_filter_mode (not (has_class? "juno-button-on" filter_button)))))
+      (if options.controls
+         {
+             view:view
+             search: search_handler
+             reset: reset_search
+             options: options
+             set_filter_mode: set_filter_mode
+         }
+         view))
    {
      description: (+ "Given two dimensional row data in the form of nested arrays, and an "
                      "optional options object, returns a DOM structure representing the data in an "
                      "HTMLTable.<br>The row_data should be in the following form:```[[\"Betty Sue\" "
                      "80]\n [\"John Smith\" 75]\n [\"Harvey Jones\" 70]]```<br><br>where the ordered "
-                     "structure is by row, then by column.<br><br>#### Options <br><br>columns:array "
-                     "- When provided, the columns array provides the table header information.  If "
+                     "structure is by row, then by column.<br><br>#### Options  <br><br>columns:array "
+                     "-When provided, the columns array provides the table header information.  If "
                      "the column object contains an array of strings, then the values in the array "
                      "are used for the column names.  If the columns array contains objects, then "
-                     "the `name` key will determine the displayed name for the column. <br> ")
+                     "the `name` key will determine the displayed name for the "
+                     "column. <br>controls:boolean  - When set to true, a control interface object is "
+                     "returned, instead of a DOM Element.  The control interface will have the "
+                     "following form:```{ view: DOM Element\n  search: fn(search_data)\n  reset: fn()\n "
+                     "options: object\n  set_filter_mode: fn(boolean) "
+                     "\n}\n```<br><br>display_search:boolean - When true, the table will present search "
+                     "controls on the top, where the user can search, highlight and filter the row "
+                     "data of the table.  Default is false.<br>title:string - If present the text "
+                     "given in the string will be presented to the upper left of the table itself, "
+                     "otherwise no title is displayed.<br><br> ")
      usage: ["row_data:array" "options:object"]
      tags: ["table" "data" "DOM" "ui" "element"]
    })

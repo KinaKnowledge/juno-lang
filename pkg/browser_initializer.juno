@@ -37,7 +37,7 @@
 ;; the global pointer to the control which has focus
 ;; nil if there are no focus points or values.
 
-(defparameter *last_focus* nil)
+(defparameter *last_focus* {})   ;; declare as an object type but will be set to nil on startup
 (defparameter *last_top_frame* nil)
 (defparameter *app_menu_control* nil)
 (defparameter *log_key_events* false)
@@ -155,26 +155,6 @@
    })
 
 
-
-(defun handle_clipboard_event (command)
-   (progn
-      (declare (object *last_focus*)
-               (global *last_focus*))
-      (if *last_focus*
-         (cond
-            (or (== (prop *last_focus* `type) "text_editor")
-                (== (prop *last_focus* `type) "visual_repl")
-                (== (prop *last_focus* `type) "DOM_editor"))
-            (cond
-               (== command "cut")
-               (-> *last_focus* `cut_selection)
-               (== command "copy")
-               (-> *last_focus* `copy_selection)
-               (== command "paste")
-               (-> *last_focus* `paste_selection))
-            else
-            (log "Handle Clipboard Event" command (prop *last_focus* `type))))))
-
 (defun_sync active_element ()
    document.activeElement
    {
@@ -182,6 +162,56 @@
        tags: [ `focus `document `ui `active `element ]
        usage: []
    })
+
+(defun handle_clipboard_event (command event)
+   (let
+      ((current_elem (active_element))
+       (control nil))
+      (declare (function control_for_dom_element)
+               (global control_for_dom_element))
+      (if (== "HTMLInputElement" (sub_type current_elem))
+          (cond
+             (== command "paste")
+             (progn
+                (set_prop current_elem `value (-> navigator.clipboard `readText)))
+             else
+             (doc_exec command))
+          (progn 
+             (= control (control_for_dom_element current_elem))
+             (if control
+                (cond
+                   (or (== (prop control `type) "text_editor")
+                       (== (prop control `type) "visual_repl")
+                       (== (prop control `type) "DOM_editor"))
+                   (cond
+                      (== command "cut")
+                      (-> control `cut_selection event)
+                      (== command "copy")
+                      (-> control `copy_selection event)
+                      (== command "paste")
+                      (-> control `paste_selection event))
+                   else
+                   (log "Handle Clipboard Event" command (prop control `type)))
+                (notify "Unable to find paste target")))))
+   {
+     description: (+ "The `handle_clipboard_event` is setup in the `*initializer*` of the "
+                     "application to process events pertaining to the system clipboard.   The "
+                     "function handles the mechanics of copy, cut and paste depending on the target "
+                     "type.  If the target is part of a control, it will route to the handler for the "
+                     "control.  Otherwise, if it is an input type element it will handle directly.    "
+                     "<br>The following outlines the interface methods that a control can implement.  "
+                     "For each function the event will be passed as an argument, with the definition "
+                     "for the receiver being: ```(fn (event))```<br><br>cut_selection:function - "
+                     "Called when the cut event is received "
+                     "by  `handle_clipboard_event`<br>copy_selection:function - Called when the copy "
+                     "event is received by `handle_clipboard_event`  <br>paste_selection:function - "
+                     "Called when the paste event is received by "
+                     "the `handle_clipboard_event`  function. ")
+     usage:["command:string" "event:object"]
+     tags: ["events" "ui" "event" "clipboard" "cut" "copy" "paste" "DOM"]
+   })
+
+
 
 (defmacro get_selection ()
       `(-> window `getSelection))
@@ -202,7 +232,12 @@
                               }
                        }
                   return position;
-                  } |))
+                  } |)
+  {
+    description:(+ "Returns the cursor offset from 0 in the provided element. ")
+    usage: ["element:Element"]
+    tags: [ `element `ui `DOM `position `location `cursor ]
+  })
 
 (defun_sync get_caret_coordinates ()
    (javascript | {
@@ -210,20 +245,25 @@
                    y = 0;
                    const isSupported = typeof window.getSelection !== "undefined";
                    if (isSupported) {
-                                      const selection = window.getSelection();
-                                      if (selection.rangeCount !== 0) {
-                                                                        const range = selection.getRangeAt(0).cloneRange();
-                                                                        range.collapse(true);
-                                                                        const rect = range.getClientRects()[0];
-                                                                        if (rect) {
-                                                                                    x = rect.left;
-                                                                                    y = rect.top;
-                                                                                    }
-                                                                        }
-                                      }
+                        const selection = window.getSelection();
+                        if (selection.rangeCount !== 0) {
+                             const range = selection.getRangeAt(0).cloneRange();
+                             range.collapse(true);
+                             const rect = range.getClientRects()[0];
+                             if (rect) {
+                                  x = rect.left;
+                                  y = rect.top;
+                                  }
+                             }
+                        }
                    return { x, y };
-                   } | ))
-
+                   } | )
+   {
+     description: (+ "Returns an object with the offsets x (for left) and y (for top) offset "
+                     "of the cursor in the currently active element. ")
+     tags: [ `element `ui `DOM `position `location `cursor ]
+     usage: []
+   })
 
 
 
@@ -242,8 +282,17 @@
 (defmacro collapse_to_end (selection)
    `(-> ,#selection `collapseToEnd))
 
+
+
 (defun_sync select_element (elem)
-      (-> (get_selection) `selectAllChildren elem))
+   (let
+      ((range (-> document `createRange))
+       (selection nil))
+      (-> range `selectNode elem)
+      (= selection (get_selection))
+      (remove_all_ranges selection)
+      (-> selection `addRange range)
+      selection))
 
 (defun_sync move_to_point (point_obj)
    (progc
@@ -1141,11 +1190,11 @@
 (defun select_all_for_control (e)
    (cond
       (and *last_focus*
-         *last_focus*.select_all)
+         (prop *last_focus* `select_all))
       (-> *last_focus* `select_all)
       (and *last_focus*
-         *last_focus*.editor)
-      (-> *last_focus*.editor `selectAll)
+         (prop *last_focus* `editor))
+      (-> (prop *last_focus* `editor) `selectAll)
       else
       (notify (dtext "Current control doesn't have a select_all method"))))
 
@@ -5939,32 +5988,27 @@
        
 (defun show_editor_keybindings (editor_control)
    (if (is_control? editor_control)
-       (let
-          ((binding_row (fn (keysequence binding)
-                           (tr
-                              (td (td_style) keysequence)
-                              (td (td_style) (or binding.description
-                                      (from_key binding.name))))))
-           (td_style (function () 
-                        { `style: "vertical-align:top; padding: 5px; border-bottom: 1px solid var(--main-accent-line);" } )))
-          (table { `style: "width: 100%" }
-                 (thead
-                    (tr
-                       (th "Key Sequence")
-                       (th "Description")))
-                 (tbody
-                    (for_each (bindpair (sort (pairs (editor_key_bindings editor_control.editor))
-                                              { `key: [`0] }))
-                       (destructuring_bind (keysequence binding)
-                          bindpair
-                          (cond
-                             (is_array? binding)
-                             (for_each (bindval binding)
-                                (binding_row keysequence bindval))
-                             (is_object? binding)
-                             (binding_row keysequence binding)
-                             else
-                             []))))))
+       (progn
+          (dtable
+             (reduce (bindpair (sort (pairs (editor_key_bindings editor_control.editor))
+                                     { `key: [`0] }))
+                (destructuring_bind (keysequence binding)
+                   bindpair
+                   (cond
+                      (is_array? binding)
+                      (for_each (binding binding)
+                         [keysequence (or binding.description
+                                          (from_key binding.name))])
+                      (is_object? binding)
+                      [keysequence (or binding.description
+                                       (from_key binding.name))]
+                      else
+                      nil)))
+             {
+                 table_style: "width: 100%;"
+                 columns: ["Key Sequence" "Description"]
+                 display_search: true 
+             }))
        (throw EvalError "show_editor_keybindings: requires a text_editor control as an argument")))
 
 (defun show_key_bindings ()
@@ -6005,20 +6049,11 @@
                            { `key: [`0] }
                             )))
       ;(log "Table values: " table_values)
-      (table { `style: "width: 100%" }
-         (thead
-            (tr { `style: "" }
-               (th { `style: "padding: 5px;" } "Key Binding")
-               (th { `style: "padding: 5px;" } "Command")
-               (th { `style: "padding: 5px;" } "Scope")
-               (th { `style: "padding: 5px;" } "Description")))
-         (tbody
-            (for_each (row table_values)
-               (tr { `style: "padding: 5px; " }
-                  (td (td_style) row.0)
-                  (td (td_style) row.1)
-                  (td (td_style) row.2)
-                  (td (td_style) row.3))))))
+      (dtable table_values
+         {
+           `columns: ["Key Binding" "Command" "Scope" "Description"]
+           `display_search: true
+           }))
    {
      `description: "Returns a table DOM element of the current key bindings."
      `usage: []
@@ -7459,7 +7494,7 @@
             (offset_depth 46)
             (editor_div (div { `class: "opacity-0" `style: (+ "height: calc(100% - " offset_depth  "px); width: 100%; overflow: hidden;font-family:var(--main-mono-space);") }))
             
-            (view (div { `control_id: options.id `style: "overflow: hidden; height: calc(100% - 10px); display: inline-block; width: inherit;" }
+            (view (div { `control_id: options.id `style: "overflow: hidden; height: calc(100% - 0px); display: inline-block; width: inherit;" }
                        control_bar
                        editor_div
                        context_bar))
@@ -7470,9 +7505,10 @@
                                (when view.parentElement
                                   (check_observer)
                                   (html/set_style [["width" "calc(100% - 2px)"];           (+ "" (- (prop view.parentElement `offsetWidth) 2) "px")]
-                                                   ["height" (+ "" (- (prop view.parentElement `offsetHeight) 2) "px")]]
+                                                   ["height" (+ "" (- (prop view.parentElement `offsetHeight) 0) "px")]]
                                                   view)
-                                  (set_style [["height" (+ "calc(100% - " (+ (Math.max 0 control_bar.offsetHeight) (Math.max 40 context_bar.offsetHeight))  "px)") ]] editor_div)
+                                  (set_style [["height" (+ "calc(100% - " (+ (Math.max 0 control_bar.offsetHeight) (Math.max 45 context_bar.offsetHeight) -10)  "px)") ]] editor_div)
+                                  ;(notify (+ "" context_bar.offsetHeight))
                                   (when editor
                                      (-> editor `resize)))))
             
@@ -9529,7 +9565,276 @@
 
       
 
+(defun highlight_search_text (search_text finding)
+   (let
+      ((selection (progn
+                    ; (focus_to finding.element)
+                     (select_element finding.element)))
+       (idx 0)
+       (target_pos finding.index))
+      (collapse_to_start selection)
+      ;(log "highlight_search_text: finding: " finding finding.element.outerHTML)
+      (while (< idx (- target_pos 0))
+         (progn
+            (-> selection `modify `move `right  "character")
+            (-> selection `modify `extend `right `character)
+            ;(log target_pos idx (-> (-> (get_selection) `toString) `charCodeAt) (-> (get_selection) `toString))
+            (when (== (-> (-> (get_selection) `toString) `charCodeAt) 92)
+               (= target_pos (Math.max 0 (- target_pos 2))))
+            (inc idx)))
+         
+         
+         (for_each (idx (range (Math.max 0 (- search_text.length 1))))
+            (-> selection `modify `extend `right `character)))
+   {
+     description: (+ "Given the search_text and a finding, selects with the browser the text "
+                     "in the element of the finding.<br><br> ")
+     usage: ["search_text:string" "finding"]
+     tags: ["search" "search_dom" "dom" "ui" "find"]
+     })
+      
+(defun search_dom (from_element search_text on_find)
+   (let
+      ((results [])
+       (next (fn ()
+                (progn
+                   (= result_idx (% (+ 1 result_idx) results.length))
+                   ;(log "finding: " (prop results result_idx))
+                   (highlight_search_text search_text (prop results result_idx))
+                   (-> (prop (prop results result_idx) `element) `scrollIntoView false))))
+       (previous (fn ()
+                    (progn
+                       (dec result_idx)
+                       (when (< result_idx 0)
+                          (= result_idx (- results.length 1)))
+                       (highlight_search_text search_text (prop results result_idx))
+                       (-> (prop (prop results result_idx) `element) `scrollIntoView false))))
+       (search_regex (if (is_regex? search_text)
+                         search_text
+                         (new RegExp search_text `g)))
+       (clear (fn ()
+                 (progn
+                    (collapse_to_end (get_selection))
+                    (= result_idx 0)
+                    (= results [])
+                    (= total_count 0))))
+       (total_count 0)
+       (result_idx -1)
+       (on_find (and (is_function? on_find)
+                     on_find)))
+      (traverse_dom from_element
+                    (fn (element dom_path)
+                       (let
+                          ((tnodes [])
+                           (text nil)
+                           (result nil))
+                          (declare (optimize (debug 1)))
+                          (when (== element.tagName `DETAILS)
+                             (set_prop element `open `true)
+                             (when (== element.children.1.innerText "Opening...")
+                                (quick_alert "OPENING")
+                                (sleep 0.1)))
+                          (for_items (node element.childNodes)
+                             (when (== node.nodeType Node.TEXT_NODE)
+                                (push tnodes
+                                   node.nodeValue )))
+                          (= text (join "" tnodes))
+                          ;(when (starts_with? "=:" text)
+                           ;  (= text (desym_ref text)))
+                          ;(try
+                           ;  (= text (eval text))
+                            ; (catch Error (e)
+                             ;   (progn
+                              ;     (log "cannot eval: " e.message text)
+                               ;    (= text text))))
+                          (= result (scan_str search_regex text))
+                          (when (> result.length 0)
+                             (for (finding result)
+                                  (push results
+                                     {
+                                       element: element
+                                       index: finding.index
+                                       groups: finding.groups
+                                       text: (join "" tnodes)
+                                       path: dom_path
+                                       result_position: total_count
+                                       })
+                                  (inc total_count)))
+                          true)))
+      (when (and (> results.length 0)
+                 on_find)
+         (for_each (result results)
+            (on_find result)))
+      {
+          found: results
+          next: next
+          index: (function ()
+                    result_idx)
+          total: results.length
+          text: search_text
+          previous: previous
+          clear: clear
+      }))
 
+
+(defun search_box (options)
+   (let
+      ((options (or options {}))
+       (search_input (input { class: "ace_search_field"
+                                placeholder: "Search for"
+                                spellcheck: "false" }))
+       (replace_input (input { class: "ace_search_field"
+                             placeholder: "Replace with"
+                             spellcheck: "false" }))
+       (replace_button (if options.allow_replace
+                           (span { action: "toggleReplace"
+                                   class: "ace_button"
+                                   title: "Toggle Replace mode"
+                                   style: "float: left; margin-top: -2px; padding: 0px 5px;" }
+                             "+")
+                           []))
+       (current_focus (active_element)) ;; capture the current focus
+       (search_count (span { class: "ace_search_counter" }
+                           "0 of 0"))
+       (replace_form (div { class: "ace_replace_form juno-display-none"
+                         style: "" }
+                    replace_input
+                    (span { action: "replaceAndFindNext"
+                            class: "ace_searchbtn" }
+                      "Replace")
+                    (span { action: "replaceAll"
+                            class: "ace_searchbtn" }
+                      "All")))
+       (view (div { class: "ace_search right" }
+                  (span { action: "hide"
+                          class: "ace_searchbtn_close" })
+                  (div { class: "ace_search_form" }
+                       search_input
+                       (span { action: "findPrev"
+                               class: "ace_searchbtn prev" }
+                         "​")
+                       (span { action: "findNext"
+                               class: "ace_searchbtn next" }
+                         "​")
+                       (span { action: "findAll"
+                               class: "ace_searchbtn"
+                               title: "Alt-Enter" }
+                         "All"))
+                  replace_form
+                  (div { class: "ace_search_options" }
+                       replace_button
+                       search_count
+                       (span { action: "toggleRegexpMode"
+                               class: "ace_button"
+                               title: "RegExp Search" }
+                         ".*")
+                       (span { action: "toggleCaseSensitive"
+                               class: "ace_button"
+                               title: "CaseSensitive Search" }
+                         "Aa")
+                       (span { action: "toggleWholeWords"
+                               class: "ace_button"
+                               title: "Whole Word Search" }
+                         "\b")
+                       (span { action: "searchInSelection"
+                               class: "ace_button"
+                               title: "Search In Selection" }
+                         "S"))
+                  " "))
+       (search_timer nil)
+       (search_results nil)
+       (update_search_count (fn ()
+                               (progn
+                                  (cond 
+                                     (and search_results
+                                        (> search_results.total 0))
+                                     (set_prop search_count
+                                        `innerText (+ ""  (+ 1 (-> search_results `index)) " of " search_results.total))
+                                     else
+                                     (set_prop search_count
+                                        `innerText "0 of 0")))))
+       (destroy (fn ()
+                   (progn
+                      (when (is_function? search_results.clear)
+                         (-> search_results `clear))
+                      (when options.on_destroy
+                         (options.on_destroy view))
+                      (= search_results nil)
+                      (-> view `remove)
+                      (when current_focus
+                         (focus_to current_focus)))))
+       (pend_search (fn (value)
+                       (progn
+                        (when search_timer
+                           (clearTimeout search_timer))
+                        (= search_timer (setTimeout (fn () 
+                                                       (progn
+                                                          ;(quick_alert "searching")
+                                                          (= search_timer nil)
+                                                          (search value)))
+                                                    (or options.delay 500))))))
+       (search (fn (value)
+                  (progn
+                     (declare (optimize (debug 1)))
+                  (cond 
+                     options.root_element
+                     (progc
+                        (= search_results
+                           (search_dom options.root_element value options.on_find))
+                        ;(log "Search Results: " search_results)
+                        (when (> search_results.total 0)
+                           (-> search_results `next)) ;; go to the first one
+                        (update_search_count))))))
+       (toggle_replace (fn ()
+                          (if (has_class? "juno-display-none" replace_form)
+                              (remove_class "juno-display-none" replace_form)
+                              (add_class "juno-display-none" replace_form))))
+       (move_search_index (fn (command)
+                             (setTimeout (fn ()  ;; we need to recover focus
+                                            (progn
+                                               (when (is_function? (prop search_results command))
+                                                  (-> search_results command))
+                                               (update_search_count)
+                                               ))
+                                         1)))
+       (handle_keyup_event 
+          (fn (e)
+             (let
+                ((source e.srcElement)
+                 (value source.value))
+                (cond
+                   (== e.key "Escape")
+                   (destroy)
+                   (== source search_input)
+                   (pend_search search_input.value)
+                   (== source replace_input)
+                   (log "Replace input: " value)))))
+                
+       (handle_click_event 
+          (fn (e)
+             (let
+                ((action (get_attribute e.srcElement `action)))
+                (cond
+                   (== action "hide")
+                   (destroy)
+                   (== action "findNext")
+                   (move_search_index `next)
+                   (== action "findPrev")
+                   (move_search_index `previous)
+                   (== action "toggleReplace")
+                   (toggle_replace)
+                   (== action nil)
+                   (focus_to e.srcElement))))))
+      (attach_event_listener view
+         `click
+         handle_click_event)
+      (attach_event_listener view
+         `keyup
+         handle_keyup_event)
+      
+      (setTimeout (fn ()
+                     (focus_to search_input)) 100)
+      view))
 
 (defcontrol log_view ()
    ((output_container (div { `class: "juno-log-output juno-scrollbar" `style: "scroll-behavior: smooth;" } ))
@@ -9656,6 +9961,19 @@
                                 [(dtext "Clear Output Log")
                                  (fn (e)
                                     (clear))]]))))
+    (on_search (fn () true))
+    (open_search (fn ()
+                    (aif (-> view `querySelector ".ace_search_field")
+                         (focus_to it)
+                         (progn
+                            (notify "Opening search")
+                            (-> output_container `append
+                               (search_box
+                                  {
+                                    root_element: output_container
+                                    on_destroy: (fn (e)
+                                                   (notify "Removed search"))
+                                    }))))))
     (on_initialize (fn ()
                       (try
                          (progn
@@ -9677,6 +9995,9 @@
                                 (set_show_timestamps false))
                             (if options.hide_command_button
                                (set_display_command_button (not options.hide_command_button)))
+                            
+                            
+                            
                             (attach_context_menu output_container
                                                  log_context_menu))
                          
@@ -9804,6 +10125,9 @@
                    [[(dtext "Clear Log")
                      (fn ()
                         (-> output_container `replaceChildren))]
+                    [(dtext "Search Log")
+                     (fn ()
+                        (open_search))]
                     [(dtext "Set Max Log Lines")
                      (fn ()
                         (aif (request_user_input (+ (dtext "Enter the number of log lines to keep") ":") 
@@ -9908,6 +10232,7 @@
               [`paste_selection (function ()
                                  (notify "Cannot paste directly to the log viewer"))]
               [`output_container output_container]
+              [`open_search open_search]
               [`control_bar control_status]
               [`set_max_log_lines set_max_log_lines]
               [`max_log_lines (fn ()
@@ -10510,6 +10835,7 @@
                       (inc *repl_counter*)
                       (+ "Visual REPL - " *repl_counter*)))))
        (resize_observer nil)
+       (search_input (input { `type: "search" `class: "juno-search" }))
        (id (or options.id (generate_id "repl")))
        (namespace_span  (span { `title: "REPL Namespace" `class: "juno-namespace" `style: "display:inline-block; padding-left: 30px; padding-right: 5px;" } (current_namespace)))
        (display_mode_span (span { `title: (dtext "Display Mode") `class: "juno-mode" style: "float: right;"} "INIT"))
@@ -11097,6 +11423,9 @@
                      [[(dtext "Clear Output Log")
                        (function ()
                                  (clear_output))]
+                      [(dtext "Search Output Log")
+                       (fn ()
+                          (-> output_control `open_search))]
                       [(dtext "Clear REPL History")
                        (function ()
                                  (clear_history))]
@@ -13754,13 +14083,13 @@
                       (last_word (trim (last (split_by (String.fromCharCode 160) (trim (last (split_by " " (+ "" pre_post.0))))))))
                       (selection nil)
                       (classes nil)
+                      (id (gen_id "ins"))
                       (text nil)
                       (initial_elem nil))
                      (if (and (starts_with? "`" last_word)
                               (ends_with? "`" last_word)
                               (> last_word.length 2))
                          (progn
-                            
                             (= selection (get_selection))
                             (= initial_elem point.element)
                             ;; move back the length of the symbol since it can contain characters that
@@ -13773,8 +14102,16 @@
                                 (progn
                                    (= classes (+ "juno-type-" (lowercase (sub_type (get_global text nil))))))
                                 (= classes ""))
-                            (doc_exec `insertHTML (+ "<code spellcheck='false' class='" classes "'>" text "</code><span>&nbsp;</span>"))
-                            (sleep 0.001))
+                            (doc_exec `insertHTML (+ "<code style='' id='" id "' spellcheck='false' class='" classes "'>" text "</code><span style='' id='" (+ id "_post") "'>&nbsp;</span>"))
+                            (sleep 0.001)
+                            (select_element (get_by_id id))
+                            (set_prop (get_by_id id) `style "")
+                            ;(doc_exec `removeFormat)
+                            (select_element (get_by_id (+ id "_post")))
+                            (doc_exec `removeFormat)
+                            (remove_attribute  (get_by_id (+ id "_post")) `id)
+                            (remove_attribute  (get_by_id id) `id)
+                            (collapse_to_end (get_selection)))
                          (progn
                             (doc_exec `insertText " ")))))
      }
@@ -15800,8 +16137,8 @@
           (log "Removing temporary environment: " (-> remote_connection `evaluate "(undefine `*export_env*)"))
           (-> remote_connection `close)
           (log "building starter environment")
-          (floating_div (iframe { width: 500 height: 300
-                                  `style: "width: 90%; min-width: 500px; overflow: scroll; border: 0px solid transparent;"
+          (floating_div (iframe { width: 500 height: 500
+                                  `style: "width: calc(100% - 5px); min-height: 500px; min-width: 500px; overflow: auto; height:calc(100% - 5px); border: 0px solid transparent;"
                                   src: (+ "/env/starter.html?theme=" (resolve_path [ `application `global_theme ] *env_config*))} ))))))
 
 (defun rebuild_remote_environment ()
@@ -16272,25 +16609,30 @@
 
 (defun new_buffer (options)
    (let
-      ((options (cond
-                   (is_array? options)
-                   { `path: options `mode: "juno"}
-                   (is_object? options)
-                   (+ (if options.filename
-                          {}
-                          { `mode: `juno })
-                      options)  ;; if options has mode specified and we don't have a filename, it will override the default juno mode
-                   (is_string? options)
-                   { `path: [ options ] `mode: "juno" }
-                   else
-                   { `mode: "juno" }))
+      ((options  (cond
+                    (is_array? options)
+                    { `path: options `mode: "juno"}
+                    (is_object? options)
+                    (+ (if options.filename
+                           {}
+                           { `mode: (or options.type `juno) })
+                       options)  ;; if options has mode specified and we don't have a filename, it will override the default juno mode
+                    (is_string? options)
+                    { `path: [ options ] `mode: "juno" }
+                    else
+                    { `mode: "juno" }))
        (starting_layout (get_current_layout_control))
        (target_layout (jump_to_unlocked_layout))
        (target_container nil)
        (new_control nil)
-       (symbol_data (if options.path
-                        { `path: options.path `namespace: (or options.namespace (current_namespace)) }
-                        (symbol_chooser "Select a symbol to edit" options.mode)))
+       (symbol_data (cond 
+                       options.path
+                       { `path: options.path `namespace: (or options.namespace (current_namespace)) }
+                       (and (is_string? options.content)
+                            (not options.filename))
+                       nil
+                       else
+                       (symbol_chooser "Select a symbol to edit" options.mode)))
        (extension (cond
                      options.filename
                      (last (split_by "." options.filename))
@@ -16303,9 +16645,9 @@
        (target_env nil))
       
       
-      (when (resolve_path [ `options `is_locked? ] current_layout)
-         (jump_to_frame_0)
-         (sleep 0.1))
+      ;(when (resolve_path [ `options `is_locked? ] current_layout)
+       ;  (jump_to_frame_0)
+        ; (sleep 0.1))
       
       (= target_container (or (and (== starting_layout target_layout) 
                                    options.control_to_replace  ;; first check easy thing
@@ -16321,32 +16663,32 @@
          (= target_env (-> Environment `get_namespace_handle symbol_data.namespace)))
       (when (and target_env (eq nil (resolve_path symbol_data.path target_env.global_ctx.scope)))
          (make_path symbol_data.path target_env.global_ctx.scope ""))
-     
-      (when symbol_data.path
-         (= new_control
-            (if (== extension `dom)
-                (DOM_editor (+ { rules: [ `*markdown_rules* ]
-                                       hide_control_bar: false
-                                       debug: false }
-                               options))
-                (text_editor (+ { name: (last symbol_data.path)
-                                       path_namespace: target_ns
-                                       namespace: target_ns
-                                       path: symbol_data.path
-                                       mode: options.mode }
-                                options ))))
-         (cond
-            (is_top_control? target_container)
-            (container_view_operation "split_right"
-                                      (first (-> target_container `controls))
-                                      new_control)
-            else
-            (progn
-               (log "new_buffer: swapping to control: "  new_control.name)
-               (swap_control target_container
-                             new_control)))
-         (sleep 0.1)
-         (set_focus_to new_control)))
+      (= new_control
+         (if (== extension `dom)
+             (DOM_editor (+ { rules: [ `*markdown_rules* ]
+                                    hide_control_bar: false
+                                    debug: false }
+                            options))
+             (text_editor (+ { name: (if symbol_data.path
+                                         (last symbol_data.path)
+                                         nil)
+                                    namespace: target_ns
+                                    path_namespace: target_ns
+                                    path: symbol_data.path
+                                    mode: options.mode }
+                             options ))
+             ))
+      (cond
+         (is_top_control? target_container)
+         (container_view_operation "split_right"
+                                   (first (-> target_container `controls))
+                                   new_control)
+         else
+         (progn
+            (swap_control target_container
+                          new_control)))
+      (sleep 0.1)
+      (set_focus_to new_control))
    {
      `description: (+ "Opens a new editor, if possible, in the currently focused control.  If necessary, it may "
                       "split the view to the right for the new editor.  If no options are provided, the user "
@@ -17163,9 +17505,15 @@
                   path: [ `global `open_new_buffer ]
                   }
                   (fn (e) (new_buffer { `content: "" `type: "juno" }))]
-               ["Javascript Editor" (fn (e) (new_buffer { `content: "" `type: "javascript" })) ]
-               ["CSS Editor" (fn (e) (new_buffer { `content: "" `type: "css" })) ]
-               ["Text Editor" (fn (e) (new_buffer { `content: "" `type: "text" })) ]
+               [{ text: "Javascript Editor" 
+                  path: [ `global `open_new_javascript_buffer ]
+                  exec: (fn (e) (new_buffer { `content: "" `type: "javascript" })) }]
+               [{ text: "CSS Editor" 
+                  path: [ `global `open_new_css_editor ]
+                  exec: (fn (e) (new_buffer { `content: "" `type: "css" })) } ]
+               [{ text: "Text Editor" 
+                  path: [ `global `open_new_text_buffer ]
+                  }]
                ["Markdown Editor" (fn (e) (new_buffer { `content: "" `type: "markdown" })) ]
                ["JSON Editor" (fn (e) (new_buffer { `content: "" `type: "json" }))]]]
     (if is_served?
@@ -17424,6 +17772,7 @@
                                                                
     (console.log "user/*initializer is running." )
     
+    (= *last_focus* nil)
     
     ;(defglobal main_menu_button (li  { `class: "juno-menu-header" }
      ;                                        (span { `class: "juno-menu-item" `style: "" } "File")))
@@ -17622,6 +17971,11 @@
                                      mac: "Command-Enter"
                                      description: "New Juno Buffer"
                                      exec: (fn () (new_buffer { content: "" type: "juno" }))
+                                    }
+                 "open_new_text_buffer" { win: "Command-Shift-Enter"
+                                     mac: "Command-Shift-Enter"
+                                     description: "New Juno Text Buffer"
+                                     exec: (fn () (new_buffer { content: "" type: "text" }))
                                     }
                  "juno_remote_repl" { win: "Alt-Shift-2"
                                      mac: "Command-Shift-2"

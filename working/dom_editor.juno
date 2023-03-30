@@ -19,6 +19,54 @@
        `usage: ["forms:*"]
    })
 
+(defun_sync get_cursor_position (element)
+  (javascript | {
+                  let position = 0;
+                  const isSupported = typeof window.getSelection !== "undefined";
+                  if (isSupported) {
+                       const selection = window.getSelection();
+                       if (selection.rangeCount !== 0) {
+                              const range = window.getSelection().getRangeAt(0);
+                              const preCaretRange = range.cloneRange();
+                              preCaretRange.selectNodeContents(element);
+                              preCaretRange.setEnd(range.endContainer, range.endOffset);
+                              position = preCaretRange.toString().length;
+                              }
+                       }
+                  return position;
+                  } |)
+  {
+    description:(+ "Returns the cursor offset from 0 in the provided element. ")
+    usage: ["element:Element"]
+    tags: [ `element `ui `dom `position `location `cursor ]
+  })
+
+(defun_sync get_caret_coordinates ()
+   (javascript | {
+                   let x = 0,
+                   y = 0;
+                   const isSupported = typeof window.getSelection !== "undefined";
+                   if (isSupported) {
+                                      const selection = window.getSelection();
+                                      if (selection.rangeCount !== 0) {
+                                                                        const range = selection.getRangeAt(0).cloneRange();
+                                                                        range.collapse(true);
+                                                                        const rect = range.getClientRects()[0];
+                                                                        if (rect) {
+                                                                                    x = rect.left;
+                                                                                    y = rect.top;
+                                                                                    }
+                                                                        }
+                                      }
+                   return { x, y };
+                   } | )
+   {
+     description: (+ "Returns an object with the offsets x (for left) and y (for top) offset "
+                     "of the cursor in the currently active element. ")
+     tags: [ `element `ui `dom `position `location `cursor ]
+     usage: []
+   })
+
 (defun_sync reverse_string (text)
    (join "" (-> (split_by "" text) `reverse))
    {
@@ -69,13 +117,19 @@
    `(-> ,#selection `collapseToEnd))
 
 (defun_sync select_element (elem)
-   (progn
-      (defvar sel (get_selection))
-      (if sel
-         (-> sel `selectAllChildren elem)
-         (progn
-            (log "unable to get_selection for " (element_to_lisp elem))
-            nil))))
+   (let
+      ((range (-> document `createRange))
+       (selection nil))
+      (-> range `selectNode elem)
+      (= selection (get_selection))
+      (remove_all_ranges selection)
+      (-> selection `addRange range)
+      selection))
+
+(defun_sync select_element_old (elem)
+   (-> (get_selection) `selectAllChildren elem))
+
+
 
 (defun_sync move_to_point (point_obj)
    (progc
@@ -613,7 +667,8 @@
                                 (= classes ""))
                             (doc_exec `insertHTML (+ "<code style='' id='" id "' spellcheck='false' class='" classes "'>" text "</code><span style='' id='" (+ id "_post") "'>&nbsp;</span>"))
                             (sleep 0.001)
-                            ;(select_element (get_by_id id))
+                            (select_element (get_by_id id))
+                            (set_prop (get_by_id id) `style "")
                             ;(doc_exec `removeFormat)
                             (select_element (get_by_id (+ id "_post")))
                             (doc_exec `removeFormat)
@@ -1211,8 +1266,6 @@
                           (let
                              ((status (point_for root_elem))
                               (key event.key))
-                             
-                             
                              (cond
                                
                                 (and options.close_on_escape 
@@ -1844,7 +1897,7 @@
                                                control.options.id)
                                             (register_event_handler options.evaluator_id "evaluator_change" ns_notifier_id get_current_symbols)
                                             (register_event_handler options.evaluator_id "control_name_change" name_change_id change_evaluator_name)
-                                            (if control.name
+                                                                                        (if control.name
                                                (set_prop evaluator_span
                                                   `innerText
                                                   (+ "⭢ " control.name)))
