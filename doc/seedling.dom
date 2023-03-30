@@ -438,7 +438,7 @@
        " function, the initializer will include a check to ensure that if the function has already been executed, it will not do so again. "
        (span { style: "" }
              " "))
-  (div {} (br {})) (div {} (b {} "Step 4: Serialization and Rehydration"))
+  (div {} (br {})) (div {} (b {} "Step 4: Serialization"))
   (div {} "Controls can be serialized to a JSON representation and stored for later use in a \'rehydration\' process.  The ability to save and restore state is beneficial because it allows for a configuration of an application to be \'canned\'.  Since controls are essentially recursive structures, they can be stored as a group, in conjunction with other global state in JSON form.  This can happen at a defined time - such as a release point, or at intervals.  Since the JSON state can be embedded in a stand-alone HTML document, this is useful for distributing your application and the data without relying on a specific delivery mechanism, such as a web server or availability of other resources such as a specialized application program.  A modern, standards-compliant web browser such as Firefox, Chrome, Safari or Edge are all that is required.  ")
   (div {} "A control should support serialization to properly work in this environment and not prevent startup issues or inconsistencies when the application image is restored.  Serialization is fundamentally fairly simple to support: The control simply supports the "
        (code { spellcheck: "false"
@@ -501,7 +501,7 @@
           class: "" }
     "toJSON")
   (span { class: "" }
-        " function is called.  The first thing that happens is a check to see if the control has been initialized.  It can occur that a control is instantiated but not yet mounted in the DOM and therefore will not be initialized.  In this scenario, a quoted form is returned via: ")
+        " function is called.  The first thing that happens is a check to see if the control has been initialized.  It can occur that a control is instantiated but not yet mounted in the DOM and therefore will not be initialized.  In this scenario, a quoted form is simply returned with the construction arguments via: ")
   (pre { style: "min-height: 2.4ch" }
        "`(text_editor ,#options)")
   (div {} "The options provided to the control are unquoted and so the final result back to the calling serialization process will be a form that represents what the "
@@ -539,14 +539,76 @@
        (span {} " ")
        (span { style: "" }
              "control above.  "))
-  (div {} (span { style: "" }
-          (br {})))
   (div { class: "" }
-       (span { style: ""
-               class: "" }
-         "  "))
-  (div {} (br {})) (div {} (span { class: "" }
-          " ")
-       (div {} (span {} " "))
+       "The result of this function is a JSON compliant structure being returned to the "
+       (code { spellcheck: "false"
+               class: "juno-type-function"
+               style: "" }
+         "JSON.stringify")
+       (span { style: "" }
+             " function.  When the JSON serialization process finishes, the control structure and the state of those controls will be encoded into a serialized JSON string. "))
+  (div { class: "" }
+       (span { style: "" }
+             (b {} (br {}))))
+  (div { class: "" }
+       (span { style: "" }
+             (b {} "Step 5: Rehydration")))
+  (div { class: "" }
+       "The final stage in the cycle is "
+       (i {} "rehydration")
+       ", where the serialized JSON structures are reinstantiated into usable controls.  This is done by an "
+       (code { spellcheck: "false"
+               class: "juno-type-asyncfunction"
+               style: "" }
+         "eval")
+       (span { style: "" }
+             " call which simply reinstantiates the provided JSON or Juno lisp notation."))
+  (div { class: "" }
+       "So, with the above in mind, let us review the full cycle, using the "
+       (code { spellcheck: "false"
+               class: "juno-type-string"
+               style: "" }
+         "*scratch*")
+       (span { style: "" }
+             " buffer control.  The following code snippet will do the following:"))
+  (div { class: "" }
+       (span { style: "" }
+             "1.  Get the ")
+       (code { spellcheck: "false"
+               class: "juno-type-string"
+               style: "" }
+         "*scratch*")
+       (span { style: "font-size: 1.1em; caret-color: red; color: var(--main-color); font-family: var(--main-app-font);" }
+             " control."))
+  (div { class: "" }
+       (span { style: "" }
+             "2. Call the ")
+       (code { spellcheck: "false"
+               class: ""
+               style: "" }
+         "toJSON")
+       (span { style: "" }
+             " method of the control."))
+  (div { class: "" }
+       (span { style: "" }
+             "3. Take the returned JSON structure and format it nicely via ")
+       (code { spellcheck: "false"
+               class: "juno-type-function"
+               style: "" }
+         "pretty_print")
+       (span { style: "font-size: 1.1em; caret-color: red; color: var(--main-color); font-family: var(--main-app-font);" }
+             " ."))
+  (div { class: "" }
+       (span { style: "" }
+             "4. Wrap it in a <pre> tag so it displays nicely in the REPL output."))
+  (pre { style: "min-height: 2.4ch"
+         spellcheck: "false" }
+    "(pre\n   (pretty_print \n      (-> (get_control_by_name `*scratch*) \n          `toJSON)))")
+  (div { class: "" }
+       "The serialized control will be as follows:")
+  (div {} (span { class: "" }
+          (pre { spellcheck: "false" }
+               "(text_editor { mode: \"juno\"\n               id: \"text_editor-1680188302536-6923140\"\n               name: \"*scratch*\"\n               namespace: \"user\"\n               path: [\"*scratch*\"]\n               data_type: \"String\"\n               group_name: \"*scratch*\"\n               font_size: 14\n               scroll_speed: 5 \n               evaluator_id: \"repl-1680188302531-1637811\"               \n               cursor_position: { row: 2 column: 0 }\n               content_compressed: \"NzAECoGcGMCcEMAu0AW5QCMCuAzHBTWAKCKA\" })")))
+  (div {} (div {} (span {} "This is now in a quoted Lisp form ready for evaluation.  Thus completes the life cycles for the controls."))
        (div {} (br {})) (p {} (p {} (div {} "Components and Architecture Editor, REPL, Controls, Exporting, Importing, Documentation")
                (div {} (br {}))))))

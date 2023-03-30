@@ -1,9 +1,9 @@
-
-
 :root {
     --main-bg-color: hsl(40deg 13% 90%);
     --main-color: #000000;
+    --header-color: black;
     --header-bg-color: hsl(43deg 14% 93%);;
+    --app-header-color: black;
     --highlight-bg-color: #404040;
     --highlight-color: white;
     --selected-bg-color: hsl(40deg 13% 100%);;
@@ -13,11 +13,11 @@
     --control-focused: hsl(45 11% 95% / 1);
     --control-text-input-color-bg: #FFFFFF50;
     --control-unfocused-color: darkgray;
+    --control-unfocused-bg-color: inherit;
     --control-disabled-bg-color: #eaeded;
     --control-disabled-color: #cad2d3;
     --control-readonly-color: #777;
     --button-hover-bg-color: #00000030;
-    --app-header-color: black;
     --namespace-color: #976464;
     --log-message-bg-color: inherit;
     --log-result-bg-color: inherit;

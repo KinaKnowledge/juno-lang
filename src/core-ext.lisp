@@ -1447,28 +1447,7 @@
     (jslambda (`x `y)
               " { let val = 0;  val +=y; val = val << 8; val +=x; return val; }"))
 
-(defun truncate (len value trailer)
-    (let
-      ((trailer  (or trailer "")))
-     (cond
-       (is_string? value)
-       (if (> value.length len)
-           (+ (-> value `substr 0 len) trailer)
-           value)
-       (is_array? value)
-       (-> value `slice 0 len)
-       else
-       value))
-    {
-     `description: (+ "Given a length and a string or an array, return the value "
-                      "with a length no more than then the provided value. If "
-                      "the value is a string an optional trailer string can be "
-                      "provided that will be appeneded to the truncated string.")
-     `usage: ["len:number" "value:array|string" "trailer:string?"]
-     `tags: ["array" "string" "length" "max" "min"]})
 
-
-  
  
 (defun parse_csv (csv_data options)
     (let 

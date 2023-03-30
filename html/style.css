@@ -1525,12 +1525,16 @@ button.juno-secondary {
 
 button.juno-button-on {
   background: orange;
-  color: white;
+  color: black;
 }
+
+
 
 button.juno-command-button {
   
 }
+
+
 
 juno-dialog { 
   min-width: 300px;
@@ -1540,6 +1544,12 @@ button:hover {
   background: var(--button-hover-bg-color);  
   border: 1px inset #ffffff;
 }
+
+button.juno-button-on:hover {
+  background: darkorange;
+  color: black;
+}
+
 
 select,input {
   border: 1px solid var(--main-accent-line);
@@ -1948,6 +1958,8 @@ li.juno-menu-selected {
   font-weight: bold;	      
 }
 
+
+
 .juno-header {  
   padding-top: 5px;
   padding-bottom: 4px;
@@ -2246,6 +2258,11 @@ span.juno-requires:hover {
   opacity: 0;
 }
 
+td.juno-selected {
+    background: var(--editor-selected-word-bg-color);
+    color: var(--editor-selected-word-color);
+}
+
 .juno-selected-menu-item {
     margin-left: -5px; 
     padding-left: 5px; 
@@ -2352,6 +2369,14 @@ span.juno-hint {
     display: flex;
     justify-content: stretch;
     flex-direction: column;
+}
+
+input.juno-search {
+    padding: 5px;
+}
+
+input.juno-search:focus {
+    
 }
 
 ul.juno-tabs {

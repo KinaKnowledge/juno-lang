@@ -21,6 +21,7 @@
 (defglobal core/style_css ((quote quote) (read_text_file "html/style.css")))
 (defglobal core/*global_themes* { juno_light: (read_text_file "html/juno_light.css")
                                   earth_tones: (read_text_file "html/earth_tones.css")
+                                  ice: (read_text_file "html/ice.css")
                                   cobalt: (read_text_file "html/cobalt.css")
                                   idle_fingers: (read_text_file "html/idle_fingers.css")})
 (defglobal core/browser_initializer ((quote quote) (LZString.compressToBase64 (read_text_file "pkg/browser_initializer.juno"))))
@@ -84,13 +85,15 @@
   ;; the list below establishes the baseline features, modes, and themes
   ;; included with the editor 
   
-  (defglobal included_editor_assets_old ["ext-searchbox.js" "ext-split.js" "ext-language_tools.js" 
-                            "mode-juno.js" "mode-json.js" "mode-javascript.js" 
-                            "mode-css.js" "mode-sh.js" "mode-plain_text.js"
-                            "theme-juno_light.js" "theme-earth_tones.js" "theme-chrome.js"
-                            "theme-crimson_editor.js" "theme-cobalt.js" "theme-idle_fingers.js"
-                            "theme-gruvbox.js" "theme-dracula.js" "theme-katzenmilch.js" 
-                            "theme-solarized_dark.js" "theme-solarized_light.js"])
+  (defglobal included_editor_assets_old 
+     ["ext-searchbox.js" "ext-split.js" "ext-language_tools.js" 
+      "mode-juno.js" "mode-json.js" "mode-javascript.js"
+      "mode-css.js" "mode-sh.js" "mode-plain_text.js"
+      "theme-juno_light.js" "theme-earth_tones.js" "theme-chrome.js"
+      "theme-crimson_editor.js" "theme-cobalt.js" "theme-idle_fingers.js"
+      "theme-gruvbox.js" "theme-dracula.js" "theme-katzenmilch.js"
+      "theme-solarized_dark.js" "theme-solarized_light.js" 
+      "theme-ice.js"])
   
   (defglobal included_editor_assets (sort (each (sys/list_files "./js_lib/editor-assets") `name)))
   (set_prop Environment.definitions.included_editor_assets

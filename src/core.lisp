@@ -1376,35 +1376,31 @@
    }) 
     
 (defun_sync scan_str (regex search_string)
-     (let
-        ((`result      nil)
-         (`last_result nil)
-         (`totals  [])
-         (`strs    (+ "" search_string)))
-         (if (is_regex? regex)
-            (do 
+   (let
+      ((`result      nil)
+       (`last_result {})
+       (`totals  [])
+       (`strs    (+ "" search_string)))
+      (if (is_regex? regex)
+          (progc
              (set_prop regex
-		       `lastIndex 0)
-                (while (and (do 
-                               (= result (-> regex `exec strs ))
-                                true)
-                             result
-                            (if last_result
-                                (not (== result.0 last_result.0))
-                                true))
-               (do 
+                `lastIndex 0)
+             (while (do (= result (-> regex `exec strs ))
+                        (and (not (== result.index last_result.index)) 
+                             result))
+                (progn
                    (= last_result result)
                    (push totals (to_object
-                                (for_each (v (keys result)) 
-                                     [v (prop result v)]))))))
-            (throw (new ReferenceError (+ "scan_str: invalid RegExp provided: " regex))))
-         totals)
-        {`description: (+ "Using a provided regex and a search string, performs a regex " 
-                          "exec using the provided regex argument on the string argument. " 
-                          "Returns an array of results or an empty array, with matched " 
-                          "text, index, and any capture groups.")
-         `usage:["regex:RegExp" "text:string"]
-         `tags:["regex" "string" "match" "exec" "array"] })
+                                           (for_each (v (keys result))
+                                              [v (prop result v)]))))))
+          (throw (new ReferenceError (+ "scan_str: invalid RegExp provided: " regex))))
+      totals)
+   {`description: (+ "Using a provided regex and a search string, performs a regex "
+                     "exec using the provided regex argument on the string argument. "
+                     "Returns an array of results or an empty array, with matched "
+                     "text, index, and any capture groups.")
+                  `usage:["regex:RegExp" "text:string"]
+                  `tags:["regex" "string" "match" "exec" "array"] })
      
 (defun remove_prop (obj key)
       (when (not (== undefined (prop obj key)))
@@ -3847,6 +3843,28 @@
      tags: [`iteration `loop `for `array `destructuring ]
    })
 
+(defmacro for_items ((iteration_symbol collection) `& body_forms)
+   `(let
+      ((__collection ,#collection))
+      (for_each (__idx (range __collection.length))
+       (progn
+          (defvar ,#iteration_symbol (-> __collection `item __idx))
+          ,@body_forms)))
+   {
+     description: (+ "The `for_items` macro takes a collection, checks the length property "
+                     "and then iterates through the collection assigning each value in the collection "
+                     "to the provided iterator symbol.  The behavior is similar to `for_each` where "
+                     "the final result of the body forms is accumulated and returned as an "
+                     "array.  <br>The `for_items` macro provides a `progn` wrapper around the body "
+                     "forms so it is not required to provide a block specifier in the body forms "
+                     "provided.<br> ")
+
+     usage: ["allocation_and_collection:array" "body:array"]
+     tags: ["iteration" "for" "loop" "iterator" "collection" ]
+   })
+
+
+
 (defun_sync word_wrap (text ncols)
    (let
       ((line_length 0)
@@ -4267,6 +4285,26 @@
      usage: ["structure:object" "operator_function:function"]
      tags: ["recursion" "recurse" "structure" "object" "array" "search" "find"]
    })
+
+(defun truncate (len value trailer)
+    (let
+      ((trailer  (or trailer "")))
+     (cond
+       (is_string? value)
+       (if (> value.length len)
+           (+ (-> value `substr 0 len) trailer)
+           value)
+       (is_array? value)
+       (-> value `slice 0 len)
+       else
+       value))
+    {
+     `description: (+ "Given a length and a string or an array, return the value "
+                      "with a length no more than then the provided value. If "
+                      "the value is a string an optional trailer string can be "
+                      "provided that will be appeneded to the truncated string.")
+     `usage: ["len:number" "value:array|string" "trailer:string?"]
+     `tags: ["array" "string" "length" "max" "min"]})
 
 (defun_sync all_global_functions ()
    (let

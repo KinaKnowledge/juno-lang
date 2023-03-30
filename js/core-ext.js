@@ -1,7 +1,7 @@
 // Source: core-ext.lisp  
-// Build Time: 2023-03-26 20:07:40
-// Version: 2023.03.26.20.07
-export const DLISP_ENV_VERSION='2023.03.26.20.07';
+// Build Time: 2023-03-29 08:58:29
+// Version: 2023.03.29.08.58
+export const DLISP_ENV_VERSION='2023.03.29.08.58';
 
 
 
@@ -1823,23 +1823,6 @@ await Environment.set_global("make_sort_buckets",async function() {
 });
  Environment.set_global("int_16_from_bytes",new Function("x","y"," { let val = 0;  val +=y; val = val << 8; val +=x; return val; }"),{
     requires:[],externals:["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],source_name:"core-ext.lisp"
-});
-await Environment.set_global("truncate",async function(len,value,trailer) {
-    trailer=(trailer|| "");
-    return await async function(){
-        if (check_true ((value instanceof String || typeof value==='string'))) {
-            if (check_true (((value && value.length)>len))){
-                return await (await Environment.get_global("add"))(await value["substr"].call(value,0,len),trailer)
-            } else {
-                return value
-            }
-        } else if (check_true ((value instanceof Array))) {
-            return await value["slice"].call(value,0,len)
-        } else {
-            return value
-        }
-    } ()
-},{ "name":"truncate","fn_args":"(len value trailer)","description":["=:+","Given a length and a string or an array, return the value ","with a length no more than then the provided value. If ","the value is a string an optional trailer string can be ","provided that will be appeneded to the truncated string."],"usage":["len:number","value:array|string","trailer:string?"],"tags":["array","string","length","max","min"],"requires":["is_string?","add","is_array?"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("parse_csv",async function(csv_data,options) {
     let lbuffer;
