@@ -1601,6 +1601,7 @@
                                                                        disable_object_toggle: true
                                                                        on_change: (function (path new_value)
                                                                                      (progn
+                                                                                        (notify "Document Attrib change")
                                                                                         (handle_attribute_change root_elem (first path) new_value)
                                                                                         new_value))
                                                                        })])))))
@@ -1730,7 +1731,7 @@
                                                   (remove_class c element)))
                                             (for_each (c new_classes)
                                                (unless (has_class? c element)
-                                                  (add_class c element)))
+                                              (add_class c element)))
                                             element.classList))
                                       (== key "style")
                                       (progn
@@ -2159,6 +2160,7 @@
                                         100))))))
    {
        control_bar: true
+       allow_search: true
        expose: [[`active_rules active_rules]
                 [`reload_rules load_rules]
                 [`save request_save]
@@ -2382,3 +2384,11 @@
 *markdown_rules*
 
 
+
+
+
+(defun from_markdown (text)
+   (unpack_description (read_lisp (+ "| " (or text "") " |")) { `line_splitter: "\n" `edit_mode: true }))
+
+
+(from_markdown (-> (get_control_by_name "building_images.md") `get) " |"))

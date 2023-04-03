@@ -1640,6 +1640,7 @@ dialog:modal {
   color: var(--main-color);
   width: inherit;
   height: inherit;
+  position: relative;
   overflow: hidden;  /* Views need to manage how they present their content */
 }
 

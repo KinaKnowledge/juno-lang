@@ -1,7 +1,7 @@
 (div { contenteditable: "true"
        tabindex: "0"
        class: "juno-dom-editor-root"
-       style: "background: #FFFFFF30; max-width: 800px;margin:auto; font-size: 1.1em; line-height: 1.8em;" }
+       style: "background: #FFFFFF30; max-width: 800px;margin:auto; font-size: 1.0em; line-height: 1.8em;" }
   (h2 { class: "" }
       "Seedling, an Introduction")
   (div {} "Seedling is an integrated development environment (IDE) written in Juno, a Lisp dialect that is compiled to JavaScript.  It runs in the browser and is a full Lisp environment.  This allows for writing programs and working in Lisp, with the resources that are available to JavaScript. It provides the ability to produce stand alone applications that can be served from any web server, with these files being able to fully encapsulate the resources and assets that they require.  Or, they can be referenced as remote resources like a traditional web page.  From within the Seedling Environment, you can manage the look and feel, and iteratively build your application, compiling new functions and CSS directives as needed in an interactive way.  An emitted HTML application built with Seedling can be used by itself (with no server), with others via a server, sent to others easily, and requires no external dependencies except an installed browser, making it useful in situations where you might want a power tool, but you have nothing available on hand except a browser environment.  ")
@@ -32,7 +32,7 @@
   (hr {}) (div {} (br {})) (div {} (h3 {} "Overview "))
   (div {} "Developing with Seedling differs from the traditional bifurcated approach of coding a program distinct from the running of the program.   Instead, the development process is integrated within the running environment.   Starting at the \"top level\", or global environment, the programmer can create and manipulate various scopes and closures locally and remotely.  This is done within buffers, which can represent files, or memory locations accessed as symbols or paths into structures.  It can be done via the REPL, or with programmatic means.  The environment is live - and the programmer chisels and shapes it, all the while using it.  In this regard, Seedling is similar to other Lisp machine like environments such as Emacs, where program state and function can be manipulated via Emacs Lisp.  It is also similar to a spreadsheet, where the data and the formulas to manipulate that data intermingle.  Just like the spreadsheet saves its state, so does Seedling, as a single HTML file.  Presently the total Seedling IDE is a roughly 5MB HTML file in size at the initial build, uncompressed. ")
   (div {} "Seedling itself is developed in this way.   As a given feature, such as a function or control, is developed, evaluated, tested and used, eventually it is added to an initial image files, which constitutes the source code to this IDE. When the IDE is rebuilt from the sources, the new feature becomes part of the initial starting image.  If all works, then the rebuilt environment is committed to source control along with the source files used to construct it.")
-  (div {} "The idea here is that there is less of a decoupling between the programmer and their program state.  The programmer is inside the program: building, inspecting and using.   From time to time, or as a direct objective, they can \"peel off\" a subset of the environment, as a stand alone program.  The \"peel-off\" may not contain any editors, or other non-requirements, and just be a stand alone application containing just HTML, Javascript, CSS, and data structures, not the full IDE.  Or somewhere in between.  ")
+  (div {} "The idea here is that there is less of a decoupling between the programmer and their program state.  The programmer is inside the program: building, inspecting and using.   From time to time, or as a direct objective, they can \"peel off\" a subset of the environment, as a stand alone program.  The \"peel-off\" may not contain any editors, or other non-requirements, and just be a stand alone application containing just HTML, JavaScript, CSS, and data structures, not the full IDE.  Or somewhere in between.  ")
   (div { class: "" }
        (h3 { class: "" }
            "Components and Architecture"))
@@ -281,25 +281,27 @@
                        (tr {} (td { class: "juno-obj-to-dom-key" }
                               "on_destroy")
                            (td { class: "juno-obj-to-dom-value" }
-                               (details {} (summary { tabindex: "0"
-                                             lpath: "on_destroy"
-                                             class: "juno-value juno-type-asyncfunction" }
+                               (details { open: "" }
+                                        (summary { tabindex: "0"
+                                                   lpath: "on_destroy"
+                                                   class: "juno-value juno-type-asyncfunction" }
                                           (span { lpath: "on_destroy"
                                                   class: "juno-value juno-type-asyncfunction"
                                                   style: "margin-left: 5px; font-style: italic;" }
                                             "(fn ())"))
-                                 (i {} "Function Contents Not Shown"))))
+                                        (i {} "Function Contents Not Shown"))))
                        (tr {} (td { class: "juno-obj-to-dom-key" }
                               "on_focus")
                            (td { class: "juno-obj-to-dom-value" }
-                               (details {} (summary { tabindex: "0"
-                                             lpath: "on_focus"
-                                             class: "juno-value juno-type-asyncfunction" }
+                               (details { open: "" }
+                                        (summary { tabindex: "0"
+                                                   lpath: "on_focus"
+                                                   class: "juno-value juno-type-asyncfunction" }
                                           (span { lpath: "on_focus"
                                                   class: "juno-value juno-type-asyncfunction"
                                                   style: "margin-left: 5px; font-style: italic;" }
                                             "(fn ())"))
-                                 (i {} "Function Contents Not Shown"))))
+                                        (i {} "Function Contents Not Shown"))))
                        (tr {} (td { class: "juno-obj-to-dom-key" }
                               "options")
                            (td { class: "juno-obj-to-dom-value" }
@@ -329,38 +331,41 @@
                        (tr {} (td { class: "juno-obj-to-dom-key" }
                               "resize")
                            (td { class: "juno-obj-to-dom-value" }
-                               (details {} (summary { tabindex: "0"
-                                             lpath: "resize"
-                                             class: "juno-value juno-type-asyncfunction" }
+                               (details { open: "" }
+                                        (summary { tabindex: "0"
+                                                   lpath: "resize"
+                                                   class: "juno-value juno-type-asyncfunction" }
                                           (span { lpath: "resize"
                                                   class: "juno-value juno-type-asyncfunction"
                                                   style: "margin-left: 5px; font-style: italic;" }
                                             "(fn ())"))
-                                 (i {} "Function Contents Not Shown"))))
+                                        (i {} "Function Contents Not Shown"))))
                        (tr {} (td { class: "juno-obj-to-dom-key" }
                               "show_control_bar")
                            (td { class: "juno-obj-to-dom-value" }
-                               (details {} (summary { tabindex: "0"
-                                             lpath: "show_control_bar"
-                                             class: "juno-value juno-type-asyncfunction" }
+                               (details { open: "" }
+                                        (summary { tabindex: "0"
+                                                   lpath: "show_control_bar"
+                                                   class: "juno-value juno-type-asyncfunction" }
                                           (span { lpath: "show_control_bar"
                                                   class: "juno-value juno-type-asyncfunction"
                                                   style: "margin-left: 5px; font-style: italic;"
                                                   spellcheck: "false" }
                                             "(fn (state))"))
-                                 (span { class: "juno-in-expansion" }
-                                       (i {} "Function Contents Not Shown")))))
+                                        (span { class: "juno-in-expansion" }
+                                              (i {} "Function Contents Not Shown")))))
                        (tr {} (td { class: "juno-obj-to-dom-key" }
                               "toJSON")
                            (td { class: "juno-obj-to-dom-value" }
-                               (details {} (summary { tabindex: "0"
-                                             lpath: "toJSON"
-                                             class: "juno-value juno-type-function" }
+                               (details { open: "" }
+                                        (summary { tabindex: "0"
+                                                   lpath: "toJSON"
+                                                   class: "juno-value juno-type-function" }
                                           (span { lpath: "toJSON"
                                                   class: "juno-value juno-type-function"
                                                   style: "margin-left: 5px; font-style: italic;" }
                                             "(function ())"))
-                                 (i {} "Function Contents Not Shown"))))
+                                        (i {} "Function Contents Not Shown"))))
                        (tr {} (td { class: "juno-obj-to-dom-key" }
                               "type")
                            (td { class: "juno-obj-to-dom-value" }
@@ -610,5 +615,12 @@
           (pre { spellcheck: "false" }
                "(text_editor { mode: \"juno\"\n               id: \"text_editor-1680188302536-6923140\"\n               name: \"*scratch*\"\n               namespace: \"user\"\n               path: [\"*scratch*\"]\n               data_type: \"String\"\n               group_name: \"*scratch*\"\n               font_size: 14\n               scroll_speed: 5 \n               evaluator_id: \"repl-1680188302531-1637811\"               \n               cursor_position: { row: 2 column: 0 }\n               content_compressed: \"NzAECoGcGMCcEMAu0AW5QCMCuAzHBTWAKCKA\" })")))
   (div {} (div {} (span {} "This is now in a quoted Lisp form ready for evaluation.  Thus completes the life cycles for the controls."))
-       (div {} (br {})) (p {} (p {} (div {} "Components and Architecture Editor, REPL, Controls, Exporting, Importing, Documentation")
+       (div {} "For more information on serialization and building images see "
+            (code { spellcheck: "false"
+                    class: ""
+                    style: "" }
+              "building_images.md")
+            (span { style: "" }
+                  " .  "))
+       (div {} (br {})) (div {} (br {})) (p {} (p {} (div {} "Components and Architecture, Editor, REPL, Controls, Exporting, Importing, Documentation")
                (div {} (br {}))))))

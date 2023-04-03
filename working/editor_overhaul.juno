@@ -236,6 +236,7 @@
        (idx -1)
        (header_section nil)
        (header_tag nil)
+       (line_splitter (or options.line_splitter "<br>"))
        (header_size_lookup [nil h1 h2 h3 h4 h5 h6]) ;; pos 0 will never be found, hence nil
        (current_seg 0)
        (total_segs (length segments)))
@@ -249,18 +250,17 @@
                     (inc idx)
                     (if (== 1 (% idx 2))
                         (pre segment)
-                        (for_each (section (split_by "<br>" segment))
+                        (for_each (section (split_by line_splitter segment))
                            (progn
                               ;(log (hr))
                               ;(log "unpack_description: section: " section)
                               (div (process_regex section))))))))
          desc))
    {
-     ;usage: ["text:string" "options:object"]
-     description: (+ "<br><br>Provided a text string as a primary argument, the function will convert "
+     description: (+ "Provided a text string as a primary argument, the function will convert "
                      "the text content to a DOM element structure based on a set of default rules, or "
                      "user provided rules.  A DOM element will be returned which can be placed in the "
-                     "DOM.<br><br>#### Options   <br><br>This function takes the following "
+                     "DOM.<br><br>#### Options     <br><br>This function takes the following "
                      "options:<br>edit_mode:boolean -If true, the returned DOM element will be "
                      "editable; a `contenteditable` attribute will be placed in element "
                      "returned.<br>regex_list:array -If provided, each segment of text that is not "
@@ -269,7 +269,11 @@
                      "the form `(fn (value full_regex_result))` where the `value` is the matched text "
                      "value, and the `full_regex_result` is the full returned regex structure from "
                      "the `scan_str` function.  The return value of the function, typically an "
-                     "Element type will replace the matched text.    ")
+                     "Element type will replace the matched text.    <br>line_splitter:string -If "
+                     "provided the line delimiter is presumed to be the provided string.  The default "
+                     "is: ```<br>```<br><br>. ")
+     usage: ["text:string" "options:object"]
+     tags: [ `conversion `dom `ui `markdown `conversion ]
      })
   
  
@@ -2298,7 +2302,7 @@
                                                             (-> it `remove)))))
                                      
                                      (declare (function resolver))
-                                     (log "renaming editor" bbox)
+                                     ;(log "renaming editor" bbox)
                                      (cmenu_remove)
                                      (sleep 0.01)
                                      (-> (get_by_id "body")
@@ -3707,6 +3711,8 @@
                                      (delete_prop options
                                         `clone_with_editor_id)
                                      options))
+                `open_search: (fn ()
+                                 (-> editor `execCommand `find))
                 `cached_symbols: (function ()
                                     cached_symbols)
                 `keyword_mapper: internal_keyword_mapper

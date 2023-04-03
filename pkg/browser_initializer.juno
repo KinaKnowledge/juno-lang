@@ -1457,7 +1457,7 @@
    (let
       ((header_size_lookup [nil h1 h2 h3 h4 h5 h6])
        (regex_list [{ name: "code"
-                       regex: (new RegExp "(`[a-zA-z0-9*?_%!\\-@\\$\\(\\)]+`)" `g)
+                       regex: (new RegExp "(`[a-z A-z0-9*?_%!\\-@\\$\\(\\)]+`)" `g)
                        exec: (fn (value full_regex_result)
                                 (progc
                                    (defvar rval (code {} (-> value `substr 1 (- (length value) 2))))
@@ -1593,6 +1593,7 @@
        (idx -1)
        (header_section nil)
        (header_tag nil)
+       (line_splitter (or options.line_splitter "<br>"))
        (header_size_lookup [nil h1 h2 h3 h4 h5 h6]) ;; pos 0 will never be found, hence nil
        (current_seg 0)
        (total_segs (length segments)))
@@ -1606,18 +1607,17 @@
                     (inc idx)
                     (if (== 1 (% idx 2))
                         (pre segment)
-                        (for_each (section (split_by "<br>" segment))
+                        (for_each (section (split_by line_splitter segment))
                            (progn
                               ;(log (hr))
                               ;(log "unpack_description: section: " section)
                               (div (process_regex section))))))))
          desc))
    {
-     ;usage: ["text:string" "options:object"]
-     description: (+ "<br><br>Provided a text string as a primary argument, the function will convert "
+     description: (+ "Provided a text string as a primary argument, the function will convert "
                      "the text content to a DOM element structure based on a set of default rules, or "
                      "user provided rules.  A DOM element will be returned which can be placed in the "
-                     "DOM.<br><br>#### Options   <br><br>This function takes the following "
+                     "DOM.<br><br>#### Options     <br><br>This function takes the following "
                      "options:<br>edit_mode:boolean -If true, the returned DOM element will be "
                      "editable; a `contenteditable` attribute will be placed in element "
                      "returned.<br>regex_list:array -If provided, each segment of text that is not "
@@ -1626,7 +1626,11 @@
                      "the form `(fn (value full_regex_result))` where the `value` is the matched text "
                      "value, and the `full_regex_result` is the full returned regex structure from "
                      "the `scan_str` function.  The return value of the function, typically an "
-                     "Element type will replace the matched text.    ")
+                     "Element type will replace the matched text.    <br>line_splitter:string -If "
+                     "provided the line delimiter is presumed to be the provided string.  The default "
+                     "is: ```<br>```<br><br>. ")
+     usage: ["text:string" "options:object"]
+     tags: [ `conversion `dom `ui `markdown `conversion ]
      })
 
 (defun format_help (meta_obj options)
@@ -4029,6 +4033,10 @@
                                        `keyup
                                        (fn (e)
                                           (cond
+                                             (== e.key "Escape")
+                                             (progn
+                                                (handle_event e)
+                                                (clean_up nil))
                                              (== e.key "Enter")
                                              (progn
                                                 (handle_event e)
@@ -6492,6 +6500,23 @@
                                      `(on_resize self)
                                      [])
                                true))))
+              (_sbox_handle nil)
+              (open_search ,#(if control_options.allow_search
+                                 `(fn ()
+                                    (aif (-> view `querySelector ".ace_search_field")
+                                         (focus_to it)
+                                         (progn
+                                            (= _sbox_handle 
+                                                  (search_box
+                                                     { 
+                                                       controls: true
+                                                       root_element: content_view
+                                                       on_destroy: (fn ()
+                                                                      (= _sbox_handle nil))
+                                                       }))
+                                            (-> view `append
+                                              _sbox_handle.view))))
+                                 nil))
               ,@user_allocations
               (control_status (if ,#control_bar?
                                   (div { `class: "juno-buffer-bar" }
@@ -6542,7 +6567,6 @@
                               ,#(if (contains? (quote on_destroy) declared_allocations)
                                   `(on_destroy self)
                                   `true))))
-              
               (_to_json (function ()
                            (progn
                               ,#(if (contains? (quote to_json) declared_allocations)
@@ -6554,7 +6578,7 @@
                                            (not initialized))
                                    (= initialized true)
                                    (= _parent_view view.parentElement)
-                                   (-> resize_observer `observe view.parentElement)                                   
+                                   (-> resize_observer `observe view.parentElement)
                                    ,#(if (contains? (quote on_initialize) declared_allocations)
                                          `(on_initialize self)
                                          true)
@@ -6584,6 +6608,15 @@
                                (add_class "juno-display-none" control_status))
                             (resize))))
                   `[])
+             ,@(if control_options.allow_search
+                  `[ (set_prop self `open_search open_search)
+                     (set_prop self `next_search_result
+                        (fn () (when _sbox_handle (-> _sbox_handle `next))))
+                     (set_prop self `prior_search_result 
+                        (fn () (when _sbox_handle (-> _sbox_handle `previous))))
+                     (set_prop self `close_search 
+                        (fn () (when _sbox_handle (-> _sbox_handle `destroy))))
+                     ])
              ;; finally set the required self options
              (set_prop self
                 `options options
@@ -6595,6 +6628,7 @@
                 `toJSON _to_json
                 `on_destroy _on_destroy
                 `on_focus _on_focus)
+             
              ;; and return the self
              self)
           ,#meta))
@@ -7692,7 +7726,7 @@
                                                             (-> it `remove)))))
                                      
                                      (declare (function resolver))
-                                     (log "renaming editor" bbox)
+                                     ;(log "renaming editor" bbox)
                                      (cmenu_remove)
                                      (sleep 0.01)
                                      (-> (get_by_id "body")
@@ -9101,6 +9135,8 @@
                                      (delete_prop options
                                         `clone_with_editor_id)
                                      options))
+                `open_search: (fn ()
+                                 (-> editor `execCommand `find))
                 `cached_symbols: (function ()
                                     cached_symbols)
                 `keyword_mapper: internal_keyword_mapper
@@ -9565,53 +9601,35 @@
 
       
 
-(defun highlight_search_text (search_text finding)
+(defun highlight_search_text (finding)
    (let
-      ((selection (progn
-                    ; (focus_to finding.element)
-                     (select_element finding.element)))
-       (idx 0)
-       (target_pos finding.index))
+      ((selection (select_element finding.start_element)))
       (collapse_to_start selection)
-      ;(log "highlight_search_text: finding: " finding finding.element.outerHTML)
-      (while (< idx (- target_pos 0))
-         (progn
-            (-> selection `modify `move `right  "character")
-            (-> selection `modify `extend `right `character)
-            ;(log target_pos idx (-> (-> (get_selection) `toString) `charCodeAt) (-> (get_selection) `toString))
-            (when (== (-> (-> (get_selection) `toString) `charCodeAt) 92)
-               (= target_pos (Math.max 0 (- target_pos 2))))
-            (inc idx)))
-         
-         
-         (for_each (idx (range (Math.max 0 (- search_text.length 1))))
-            (-> selection `modify `extend `right `character)))
+      (-> selection `setBaseAndExtent finding.start_node finding.start_idx finding.end_node (+ 1 finding.end_idx)))
    {
-     description: (+ "Given the search_text and a finding, selects with the browser the text "
-                     "in the element of the finding.<br><br> ")
-     usage: ["search_text:string" "finding"]
+     description: (+ "Given a result object from search_dom, this function will highlight it "
+                     "and scroll to the position (if possible) on the screen.  Returns the selection "
+                     "for the finding. ")
+     usage: ["finding:object"]
      tags: ["search" "search_dom" "dom" "ui" "find"]
-     })
+   })
       
-(defun search_dom (from_element search_text on_find)
+(defun search_dom (from_element search_text options)
    (let
       ((results [])
        (next (fn ()
                 (progn
                    (= result_idx (% (+ 1 result_idx) results.length))
-                   ;(log "finding: " (prop results result_idx))
-                   (highlight_search_text search_text (prop results result_idx))
-                   (-> (prop (prop results result_idx) `element) `scrollIntoView false))))
+                   (highlight_search_text (prop results result_idx))
+                   (-> (prop (prop results result_idx) `start_element) `scrollIntoView false))))
        (previous (fn ()
                     (progn
                        (dec result_idx)
                        (when (< result_idx 0)
                           (= result_idx (- results.length 1)))
-                       (highlight_search_text search_text (prop results result_idx))
-                       (-> (prop (prop results result_idx) `element) `scrollIntoView false))))
-       (search_regex (if (is_regex? search_text)
-                         search_text
-                         (new RegExp search_text `g)))
+                       (highlight_search_text (prop results result_idx))
+                       (-> (prop (prop results result_idx) `start_element) `scrollIntoView false)
+                       )))
        (clear (fn ()
                  (progn
                     (collapse_to_end (get_selection))
@@ -9620,47 +9638,93 @@
                     (= total_count 0))))
        (total_count 0)
        (result_idx -1)
-       (on_find (and (is_function? on_find)
-                     on_find)))
+       (idx -1)
+       (word_idx -1)
+       (start_idx nil)
+       (starting_node nil)
+       (findings_for_element [])
+       (ctext [])
+       (case_sensitive (or options.case_sensitive false))
+       (search_text (if case_sensitive
+                        search_text
+                        (lowercase search_text)))
+       (first_c (first search_text))
+       (serialize (fn (elem)
+                (for_items (node elem.childNodes)
+                    (cond
+                       (== node.nodeType Node.TEXT_NODE)
+                       (push ctext
+                          { text: node.nodeValue 
+                            node: node
+                            index: (inc idx)
+                            element: elem })
+                       (== node.nodeType Node.ELEMENT_NODE)
+                       (serialize node)))))
+                       
+       (on_find (and (is_function? options.on_find)
+                     options.on_find)))
       (traverse_dom from_element
-                    (fn (element dom_path)
-                       (let
-                          ((tnodes [])
-                           (text nil)
-                           (result nil))
-                          (declare (optimize (debug 1)))
-                          (when (== element.tagName `DETAILS)
-                             (set_prop element `open `true)
-                             (when (== element.children.1.innerText "Opening...")
-                                (quick_alert "OPENING")
-                                (sleep 0.1)))
-                          (for_items (node element.childNodes)
-                             (when (== node.nodeType Node.TEXT_NODE)
-                                (push tnodes
-                                   node.nodeValue )))
-                          (= text (join "" tnodes))
-                          ;(when (starts_with? "=:" text)
-                           ;  (= text (desym_ref text)))
-                          ;(try
-                           ;  (= text (eval text))
-                            ; (catch Error (e)
-                             ;   (progn
-                              ;     (log "cannot eval: " e.message text)
-                               ;    (= text text))))
-                          (= result (scan_str search_regex text))
-                          (when (> result.length 0)
-                             (for (finding result)
-                                  (push results
-                                     {
-                                       element: element
-                                       index: finding.index
-                                       groups: finding.groups
-                                       text: (join "" tnodes)
-                                       path: dom_path
-                                       result_position: total_count
-                                       })
-                                  (inc total_count)))
-                          true)))
+         (fn (element dom_path)
+            (progn
+               (when (== element.tagName `DETAILS)
+                  (set_prop element `open `true)
+                  (when (== element.children.1.innerText "Opening...")
+                     (quick_alert "OPENING")
+                     (sleep 0.01))))))
+      
+      ;; first flatten into a structure with containing text...
+      ;; and references back to nodes and elements
+      
+      (serialize from_element)
+      ;; and find the embedded string, which could span elements
+      ;; approach:
+      ;; idx: current offset from start of tnode.text 
+      ;; start_idx: current start of potential match 
+      ;; word_idx: increase  while == to search_text+idx
+      ;; when (== word_idx search_text.length) then a match begins at start_idx
+      (= idx 0)
+      (= word_idx 0)
+      (= starting_node nil)
+      (log "search_dom: search_text: " search_text case_sensitive)
+      (for (tnode ctext)
+           ;; next_tnode - reset idx
+           (= idx 0)
+           (for (c (split_by "" tnode.text))
+                (unless case_sensitive
+                   (= c (lowercase c)))
+                (cond
+                   ;; do we have a continuing match?
+                   (and (not (eq nil start_idx))
+                      (== (prop search_text word_idx) c))
+                   (progn 
+                      
+                      (inc word_idx) ;; .. yes
+                      ;; are we at the end?
+                      (when (== word_idx search_text.length)
+                         (push results
+                            { start_element: starting_node.element
+                              start_node: starting_node.node
+                              start_idx: start_idx
+                              start_ctext_idx: starting_node.index
+                              end_element: tnode.element
+                              end_node: tnode.node
+                              end_idx: idx
+                              end_ctext_idx: tnode.index })
+                         (= starting_node nil)
+                         (= start_idx nil)
+                         (= word_idx 0)))
+                   start_idx  ;; .. not a match
+                   (progn
+                      (= start_idx nil)
+                      (= starting_node nil)
+                      (= word_idx 0)))
+                (when (and (not start_idx)
+                           (== c first_c))
+                   (= start_idx idx)  ;; we have a match
+                   (inc word_idx)     ;; start it
+                   (= starting_node tnode))
+                (inc idx)))
+                   
       (when (and (> results.length 0)
                  on_find)
          (for_each (result results)
@@ -9674,14 +9738,52 @@
           text: search_text
           previous: previous
           clear: clear
-      }))
+      })
+      
+   {
+     description: (+ "The `search_dom` function takes an element from which to recursively "
+                     "search, the text to search for, and an options object.  The function then "
+                     "facilitates the search returning an interface of control methods from which to "
+                     "manage the search results.  When the search is performed, the DOM tree is "
+                     "scanned for the text of the search, and any `details` elements that are found "
+                     "are opened and then checked.  This is because in certain cases, the contents of "
+                     "details are lazily rendered, and only actually populate with content once the "
+                     "details element is opened.  <br>For every successful match, a result object is "
+                     "created and will have the following keys.```{ start_element, start_node, "
+                     "start_idx, end_element, end_node, end_idx }```<br><br>In the "
+                     "above `start_element` is the DOM element in which the search text "
+                     "starts, `start_node`  is the starting text node in the element containing the "
+                     "starting point of the search text, `start_idx` is the starting offset in the "
+                     "specific text node, `end_element` is the ending component of the element, "
+                     "end_node is the text node in which the match ends, and end_idx is the ending "
+                     "offset in the end node for the match.  <br>The returned interface "
+                     "contains:<br>found:array -The array of individual result objects as described "
+                     "above.<br>next:function -A function that takes no arguments, when called, the "
+                     "next search result is highlighted, and if possible, moved into "
+                     "view.  <br>previous:function -A function that takes no arguments that "
+                     "highlights the prior result and moves the screen to that position, if "
+                     "possible.<br>index:number -The current position index of the search results.  "
+                     "Upon reaching either end (0 or total) it will circle back to the first or last "
+                     "element.<br>clear:function -Clears out the search results.  Only call when done "
+                     "with the search<br>total:number -The total count of search "
+                     "results. <br><br>#### Options  <br><br>on_find:function -Once all the results "
+                     "are found, the on_find function is called sequentially on each of them prior to "
+                     "returning the control interface. The on_find function will be called with the "
+                     "signature (result) where the result argument is the individual result objects "
+                     "as described above.\n<br>case_sensitive:boolean - If true, the search will only "
+                     "match exact text matches which will enforce that the individual character case "
+                     "matches, where by when false, the default, individual character case is not "
+                     "considered. ")
+     usage: ["from_element:Element" "search_text:text|RegExp" "options:object"]
+     tags: ["search" "DOM" "ui" "element" "find"]
+   })
 
 
 (defun search_box (options)
    (let
       ((options (or options {}))
        (search_input (input { class: "ace_search_field"
-                                placeholder: "Search for"
+                                placeholder: (dtext "Search for")
                                 spellcheck: "false" }))
        (replace_input (input { class: "ace_search_field"
                              placeholder: "Replace with"
@@ -9693,6 +9795,10 @@
                                    style: "float: left; margin-top: -2px; padding: 0px 5px;" }
                              "+")
                            []))
+       (case_sensitive_button (span { action: "toggleCaseSensitive"
+                                      class: "ace_button"
+                                      title: "CaseSensitive Search" }
+                                "Aa"))
        (current_focus (active_element)) ;; capture the current focus
        (search_count (span { class: "ace_search_counter" }
                            "0 of 0"))
@@ -9715,32 +9821,25 @@
                          "​")
                        (span { action: "findNext"
                                class: "ace_searchbtn next" }
-                         "​")
-                       (span { action: "findAll"
-                               class: "ace_searchbtn"
-                               title: "Alt-Enter" }
-                         "All"))
+                         "​"))
                   replace_form
                   (div { class: "ace_search_options" }
                        replace_button
                        search_count
-                       (span { action: "toggleRegexpMode"
+                       (if false 
+                          (span { action: "toggleRegexpMode"
                                class: "ace_button"
                                title: "RegExp Search" }
                          ".*")
-                       (span { action: "toggleCaseSensitive"
-                               class: "ace_button"
-                               title: "CaseSensitive Search" }
-                         "Aa")
-                       (span { action: "toggleWholeWords"
-                               class: "ace_button"
-                               title: "Whole Word Search" }
-                         "\b")
-                       (span { action: "searchInSelection"
-                               class: "ace_button"
-                               title: "Search In Selection" }
-                         "S"))
+                          [])
+                       case_sensitive_button
+                       )
                   " "))
+       (intf nil)
+       (set_case_sensitive (fn (state)
+                              (if state
+                                 (add_class "checked" case_sensitive_button)
+                                 (remove_class "checked" case_sensitive_button))))
        (search_timer nil)
        (search_results nil)
        (update_search_count (fn ()
@@ -9758,7 +9857,9 @@
                       (when (is_function? search_results.clear)
                          (-> search_results `clear))
                       (when options.on_destroy
-                         (options.on_destroy view))
+                         (if options.controls
+                            (options.on_detroy intf)
+                            (options.on_destroy view)))
                       (= search_results nil)
                       (-> view `remove)
                       (when current_focus
@@ -9780,11 +9881,17 @@
                      options.root_element
                      (progc
                         (= search_results
-                           (search_dom options.root_element value options.on_find))
-                        ;(log "Search Results: " search_results)
+                           (search_dom options.root_element value {
+                                                                    on_find: options.on_find
+                                                                    case_sensitive: (has_class? "checked" case_sensitive_button)
+                                                                    }))
                         (when (> search_results.total 0)
                            (-> search_results `next)) ;; go to the first one
                         (update_search_count))))))
+       (reset_search (fn ()
+                        (progn
+                           (= search_results nil)
+                           (update_search_count))))
        (toggle_replace (fn ()
                           (if (has_class? "juno-display-none" replace_form)
                               (remove_class "juno-display-none" replace_form)
@@ -9803,10 +9910,16 @@
                 ((source e.srcElement)
                  (value source.value))
                 (cond
+                   (and (== e.key "Backspace")
+                        (blank? source.value))
+                   (reset_search)
                    (== e.key "Escape")
                    (destroy)
-                   (== source search_input)
+                   (and options.search_on_key_press
+                      (== source search_input))
                    (pend_search search_input.value)
+                   (== e.key "Enter")
+                   (search search_input.value)
                    (== source replace_input)
                    (log "Replace input: " value)))))
                 
@@ -9823,6 +9936,10 @@
                    (move_search_index `previous)
                    (== action "toggleReplace")
                    (toggle_replace)
+                   (== action "toggleCaseSensitive")
+                   (progn
+                      (set_case_sensitive (not (has_class? "checked" case_sensitive_button)))
+                      (focus_to search_input))
                    (== action nil)
                    (focus_to e.srcElement))))))
       (attach_event_listener view
@@ -9834,7 +9951,53 @@
       
       (setTimeout (fn ()
                      (focus_to search_input)) 100)
-      view))
+      (if options.controls
+         (= intf {
+                   view: view
+                   search: (fn (val)
+                              (if (blank? val)
+                                  (reset_search)
+                                  (progn
+                                     (reset_search)
+                                     (set_prop search_input
+                                        `value val)
+                                     (search val))))
+                   next: (fn ()
+                            (move_search_index `next))
+                   previous: (fn ()
+                                (move_search_index `previous))
+                   reset: (fn ()
+                             (reset_search))
+                   search_text: (fn ()
+                                   search_input.value)
+                   destroy: (fn ()
+                               (destroy))
+                   })
+         view))
+   {
+     description: (+ "The `search_box` function enables a pluggable search function for DOM "
+                     "based information.  Provided with the top element in the DOM tree in "
+                     "the `root_element` from which to search, a view or interface is returned from "
+                     "which the user can enter the text they are interested in searching for.  Once "
+                     "the search initiates, the result count will be presented and the user able to "
+                     "cycle forward and backward through the search results. <br><br>#### Options "
+                     "<br><br>root_element:Element - The root element in which to start the search.  "
+                     "The contents of this element will recursively searched.<br>controls:boolean -If "
+                     "true, instead of the view being returned, an interface is returned allowing for "
+                     "control of the search from external code.   The interface provides: ```{ next, "
+                     "previous, reset, search, search_text, destroy, view }```<br><br>The only "
+                     "function that takes an argument is search, which is the value to search the DOM "
+                     "for.  All other functions do not take "
+                     "arguments. <br>search_on_key_press:boolean -If true, the search of the DOM "
+                     "contents will proceed automatically after a default delay of 500 milliseconds.  "
+                     " The delay timing can be set with the `delay` option.<br>delay:number -The "
+                     "number of milliseconds to delay prior to initiating a search "
+                     "when `search_on_key_press` is set to true.  <br>on_destroy:function -When the "
+                     "search_box is destroyed, this function is called with either the interface "
+                     "object if `controls` is true, or the `view` Element if controls is false. ")
+     usage: ["options:object"]
+     tags: ["search" "DOM" "ui" "element" "find"]
+     })
 
 (defcontrol log_view ()
    ((output_container (div { `class: "juno-log-output juno-scrollbar" `style: "scroll-behavior: smooth;" } ))
@@ -9962,18 +10125,6 @@
                                  (fn (e)
                                     (clear))]]))))
     (on_search (fn () true))
-    (open_search (fn ()
-                    (aif (-> view `querySelector ".ace_search_field")
-                         (focus_to it)
-                         (progn
-                            (notify "Opening search")
-                            (-> output_container `append
-                               (search_box
-                                  {
-                                    root_element: output_container
-                                    on_destroy: (fn (e)
-                                                   (notify "Removed search"))
-                                    }))))))
     (on_initialize (fn ()
                       (try
                          (progn
@@ -10246,6 +10397,7 @@
               [`log_error log_problem ]]
      frame_style: "overflow: hidden;"
      control_bar: true
+     allow_search: true 
      usage: ["options:object"]
      
      })
@@ -11636,6 +11788,14 @@
              `available_symbols: available_symbols
              `current_namespace: (function ()
                                     namespace_span.innerText)
+             ;; when the editor has focus it will open it's own search box otherwise open the visual repl search
+             `open_search: (fn () (-> output_control `open_search))
+             `next_search_result: (fn () 
+                                     (progc
+                                        (-> output_control `next_search_result)))
+             `prior_search_result: (fn () 
+                                      (progc
+                                         (-> output_control `prior_search_result)))
              `rename: rename
              `destroy: destroy
              `on_hide: (fn ()
@@ -11962,10 +12122,20 @@
                            (-> (get_by_id "body")
                                `append view)))))
             
-            
+            (open_search (fn ()
+                            (aif (-> view `querySelector ".ace_search_field")
+                                 (focus_to it)
+                                 (progn
+                                    (-> control_view `append
+                                       (search_box
+                                          {
+                                            root_element: control_view
+                                            }))))))
             (view (div { `tabindex: 0 `control_id: id `style: "display: none;  overflow: hidden; margin: 0px; padding: 0px; height: 100%; width: 100%;" }
                        control_status
                        control_view)))
+           
+           
            
            (attach_event_listener view
               `click
@@ -13043,7 +13213,8 @@
                      "Bindings\" (show_key_bindings)))```<br><br>This will create a panel with the "
                      "control name \"Key Bindings\" on the right hand side of the screen.<br> ")
      usage: ["title:string" "element:Element"]
-       control_bar: true
+     control_bar: true
+     allow_search: true 
    })
 
 (defun build_documentation_datalist ()
@@ -13506,13 +13677,14 @@
     
     )
    {
-     `control_bar: true
-     `expose: [[ `set_pinned set_pinned]
+      control_bar: true
+      allow_search: true 
+      expose: [[ `set_pinned set_pinned]
                [ `search_by_tag search_by_tag ]
                [ `is_displayed? is_displayed? ]
                [ `take_focus take_focus ]
                [ `get_history (function () (clone history)) ]]
-     `usage: []
+      usage: []
      })
 
 ;; hide the documentation control behind a singleton function
@@ -14803,8 +14975,6 @@
                           (let
                              ((status (point_for root_elem))
                               (key event.key))
-                             
-                             
                              (cond
                                
                                 (and options.close_on_escape 
@@ -15436,7 +15606,7 @@
                                                control.options.id)
                                             (register_event_handler options.evaluator_id "evaluator_change" ns_notifier_id get_current_symbols)
                                             (register_event_handler options.evaluator_id "control_name_change" name_change_id change_evaluator_name)
-                                            (if control.name
+                                                                                        (if control.name
                                                (set_prop evaluator_span
                                                   `innerText
                                                   (+ "⭢ " control.name)))
@@ -15698,6 +15868,7 @@
                                         100))))))
    {
        control_bar: true
+       allow_search: true
        expose: [[`active_rules active_rules]
                 [`reload_rules load_rules]
                 [`save request_save]
@@ -16764,10 +16935,11 @@
                         ;; get the current layout if the user cancels the open
                         ;; then we can switch back to where they were..
                         (current_layout (get_current_layout_control))
+                        (current_control  *last_focus*)
                         (locked_state (layout_locked? current_layout))
                         (f0 (frame_0))
                         (target_layout  f0)
-                        (target_control (or (get_control_by_id target_layout.options.last_focus_id) (default_focus)))
+                        (target_control (or (get_control_by_id target_layout.options.last_focus_id) *last_focus* (default_focus)))
                         (control (file_tree_browser { 
                                                       create_mode: create_mode                          
                                                       on_select: (fn (stack)
@@ -16781,7 +16953,7 @@
                                                                     (progn
                                                                        (console.log "wait_for_file_selection: selection is: " selection)
                                                                        (when (and (not (== current_layout f0))
-                                                                                (blank? selection))
+                                                                                  (blank? selection))
                                                                           (switch_to_new_layout (resolve_path [ `options `name ] current_layout)))
                                                                        (if (not (blank? selection))
                                                                            (setTimeout (fn ()
@@ -16790,12 +16962,16 @@
                                                                                              (console.log "wait_for_file_selection: " target_layout.name ": target_control:" target_control)
                                                                                              (set_focus_to target_control)
                                                                                              (resolve selection))
-                                                                                          20)))
+                                                                                          20))
+                                                                           (setTimeout (fn ()
+                                                                                          (progn
+                                                                                             (set_focus_to current_control)))
+                                                                                       100))
                                                                        true)) })))
                        ;; if the layout is locked, remove the lock temporarily so we can pop open a selector
                      (console.log "wait_for_file_selection: locked_state: " locked_state "target_layout: " target_layout target_control)  
                      
-                     (switch_to_new_layout (resolve_path [ `options `name ] (frame_0)))
+                     (switch_to_new_layout (resolve_path [ `options `name ] f0))
                      (place_control `below control)
                      (set_focus_to control))))
    {
@@ -17081,6 +17257,47 @@
                      "layout is included, otherwise only the contents are included.<br> ")
 
    })
+
+(defun global_search_dispatch (event keycode)
+   (let
+      ((control (or (control_for_dom_element event.srcElement)
+                    *last_focus*)))
+      (cond 
+         (and control
+            control.open_search)
+         (-> control `open_search))))
+
+(defun global_search_next_dispatch (event keycode)
+   (let
+      ((control (or (control_for_dom_element event.srcElement)
+                    *last_focus*)))
+      ;(quick_alert (+ "-> " (control_name control)))
+      (cond 
+         (and control
+            control.next_search_result)
+         (-> control `next_search_result))))
+
+(defun global_search_prior_dispatch (event keycode)
+   (let
+      ((control (or (control_for_dom_element event.srcElement)
+                    *last_focus*)))
+      ;(quick_alert (+ "<-" (control_name control)))
+      (cond 
+         (and control
+            control.prior_search_result)
+         (-> control `prior_search_result))))
+
+(defun close_periphery (event keycode)
+   (let
+      ((control (or (control_for_dom_element event.srcElement)
+                    *last_focus*)))
+      (aif (get_by_id "cmenu")
+           (-> it `remove))
+      (set_focus_to *last_focus*)
+      (cond 
+         (and control
+              control.close_search)
+         (-> control `close_search))))
 
 (defun setup_drop_file (dom_elem onload options)
    (let
@@ -17598,7 +17815,10 @@
        path: [ `global `paste ] }]
     ["--" nil ]
     [{ text: (dtext "Select All")
-      path: [ `global `select_all ] }]])
+      path: [ `global `select_all ] }]
+    ["--" nil]
+    [{ text: (dtext "Find")
+       path: [ `global `find ] }]])
 
 (defun gen_layout_menu ()
    (let
@@ -18157,6 +18377,34 @@
                       description: "Allows the user to quickly select the control or layout to move to"
                       exec: jump_to_control
                   }
+                  "find" {
+                           win: "Control-F"
+                           mac: "Command-F"
+                           description: "Search the current focused control or area."
+                           exec: (fn (e k)
+                                     (global_search_dispatch e k))
+                     }
+                  "find_next" {
+                                `win: "Control-G"
+                                `mac: "Command-G"
+                                `description: "If active, move to the next search result"
+                                `exec: (fn (e k)
+                                          (global_search_next_dispatch e k))
+                                }
+                  "find_prior" {
+                                 `win: "Control-Shift-G"
+                                 `mac: "Command-Shift-G"
+                                 `description: "If active, move to the prior search result"
+                                 `exec: (fn (e k)
+                                           (global_search_prior_dispatch e k))
+                                 }
+                  "close_peripheral" {
+                                 `win: "Escape"
+                                 `mac: "Escape"
+                                 `description: "Closes any periphery element such as a menu or search box"
+                                 `exec: (fn (e k)
+                                           (close_periphery e k))
+                                 }
                   "frame_0" {
                               win: "Alt-1"
                               mac: "Command-1"
@@ -18292,7 +18540,7 @@
                                    (progn
                                     (handle_event e)
                                     (try 
-                                       (it)
+                                       (it e kcode)
                                        (catch Error (e)
                                           (progn
                                              (log_error (+ "Base Catch: " e.message))
