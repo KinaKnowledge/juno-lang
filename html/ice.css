@@ -69,7 +69,7 @@
     --editor-selected-bg-color: rgb(255 60 0 / 35%);
     --editor-selected-word-bg-color: #FFFFFF;
     --editor-step-bg-color: rgb(255, 255, 0);
-    --editor-active-line-bg: hsl(44deg 38% 84%);
+    --editor-active-line-bg: hsl(42 15% 90% / 1);
     --editor-active-line-gutter-bg-color: rgb(166 166 166 / 46%);
     --editor-invisible-color: rgba(147, 161, 161, 0.50);
     --editor-keyword-color: #bc5414;
