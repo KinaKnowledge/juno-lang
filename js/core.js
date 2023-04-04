@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2023-03-29 08:58:29
-// Version: 2023.03.29.08.58
-export const DLISP_ENV_VERSION='2023.03.29.08.58';
+// Build Time: 2023-04-04 12:05:36
+// Version: 2023.04.04.12.05
+export const DLISP_ENV_VERSION='2023.04.04.12.05';
 
 
 
@@ -4261,16 +4261,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__289=async function(req) {
                                             {
-                                                let _expr_64462;
+                                                let _expr_30447;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_64462=await (async function(){
+                                                _expr_30447=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_64462 && _expr_64462["0"]);
-                                                req_ns=(_expr_64462 && _expr_64462["1"]);
-                                                explicit=(_expr_64462 && _expr_64462["2"]);
+                                                req_sym=(_expr_30447 && _expr_30447["0"]);
+                                                req_ns=(_expr_30447 && _expr_30447["1"]);
+                                                explicit=(_expr_30447 && _expr_30447["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -4373,13 +4373,13 @@ await Environment.set_global("sort_dependencies",async function() {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_3515;
+                    let _expr_3322;
                     let nspace;
-                    _expr_3515=await (async function(){
+                    _expr_3322=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_3515 && _expr_3515["0"]);
-                    nspace=(_expr_3515 && _expr_3515["1"]);
+                    sym=(_expr_3322 && _expr_3322["0"]);
+                    nspace=(_expr_3322 && _expr_3322["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);
@@ -5233,12 +5233,18 @@ await (async function(){
 })();
 await (async function(){
     return  Environment.set_global("last_n",function(n,arr) {
-        if (check_true ((arr instanceof Array))){
+        if (check_true (((n>0)&& (arr instanceof Array)))){
             return  arr["slice"].call(arr,(-1* n))
         } else {
             return null
         }
-    },{ "name":"last_n","fn_args":"(n arr)","description":"For a given array, returns the last n elements as an array.","usage":["n:number","arr:array"],"tags":["array","list","text","last","amount","end","tail"],"requires":["is_array?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+    },{ "name":"last_n","fn_args":"(n arr)","description":"For a given array, returns the last n elements as an array.","usage":["n:number","arr:array"],"tags":["array","list","last","amount","end","tail"],"requires":["is_array?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+})
+})();
+await (async function(){
+    return  Environment.set_global("from_last",function(amount,arr) {
+        return arr[((arr && arr.length)- (1+ amount))]
+    },{ "name":"from_last","fn_args":"(amount arr)","description":["=:+","Given an offset amount and an array, `from_last` returns the value at ","the offset amount from the end of the array. "],"usage":["amount:number","arr:array"],"tags":["array","list","last","amount","end","tail"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
 })
 })();
 await (async function(){

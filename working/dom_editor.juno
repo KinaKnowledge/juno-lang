@@ -1601,7 +1601,6 @@
                                                                        disable_object_toggle: true
                                                                        on_change: (function (path new_value)
                                                                                      (progn
-                                                                                        (notify "Document Attrib change")
                                                                                         (handle_attribute_change root_elem (first path) new_value)
                                                                                         new_value))
                                                                        })])))))

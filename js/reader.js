@@ -1,7 +1,7 @@
 // Source: reader.lisp  
-// Build Time: 2023-03-29 08:58:29
-// Version: 2023.03.29.08.58
-export const DLISP_ENV_VERSION='2023.03.29.08.58';
+// Build Time: 2023-04-04 12:05:36
+// Version: 2023.04.04.12.05
+export const DLISP_ENV_VERSION='2023.04.04.12.05';
 
 
 
