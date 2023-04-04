@@ -3934,15 +3934,26 @@
    })
 
 (defun_sync last_n (n arr)
-   (if (is_array? arr)
+   (if (and (> n 0)
+            (is_array? arr))
        (-> arr `slice (* -1 n))
        nil)
    {
        description: "For a given array, returns the last n elements as an array."
        usage: ["n:number" "arr:array"]
-       tags: ["array" "list" "text" "last" "amount" "end" "tail"]
+       tags: ["array" "list" "last" "amount" "end" "tail"]
    })
  
+(defun_sync from_last (amount arr)
+   (prop arr (- arr.length (+ 1 amount)))
+   {
+     description: (+ "Given an offset amount and an array, `from_last` returns the value at "
+                      "the offset amount from the end of the array. ")
+     usage: ["amount:number" "arr:array"]
+     tags: ["array" "list" "last" "amount" "end" "tail"]
+   })
+
+
 
 (defun_sync analyze_text_line (line)
   (let
