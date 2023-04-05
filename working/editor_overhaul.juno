@@ -437,10 +437,12 @@
                        else
                        (symbol_chooser "Select a symbol to edit" options.mode)))
        (extension (cond
+                     options.mode
+                     options.mode
                      options.filename
                      (last (split_by "." options.filename))
-                     (== options.mode "dom")
-                     "dom"
+                     ;(== options.mode "dom")
+                     ;"dom"
                      else
                      "juno"))
        (target_ns symbol_data.namespace)

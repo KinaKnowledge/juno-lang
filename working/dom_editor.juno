@@ -648,13 +648,13 @@
                       (classes nil)
                       (id (gen_id "ins"))
                       (text nil)
-                      (initial_elem nil))
+                      (elem nil))
                      (if (and (starts_with? "`" last_word)
                               (ends_with? "`" last_word)
                               (> last_word.length 2))
                          (progn
                             (= selection (get_selection))
-                            (= initial_elem point.element)
+                           
                             ;; move back the length of the symbol since it can contain characters that
                             ;; aren't considered
                             (for (idx (range last_word.length))
@@ -663,12 +663,18 @@
                             (= text (-> last_word `substr 1 (- last_word.length 2)))
                             (if (is_symbol? text)
                                 (progn
-                                   (= classes (+ "juno-type-" (lowercase (sub_type (get_global text nil))))))
+                                   (= classes (+ "juno-pointer juno-type-" (lowercase (sub_type (get_global text nil))))))
                                 (= classes ""))
-                            (doc_exec `insertHTML (+ "<code style='' id='" id "' spellcheck='false' class='" classes "'>" text "</code><span style='' id='" (+ id "_post") "'>&nbsp;</span>"))
-                            (sleep 0.001)
-                            (select_element (get_by_id id))
-                            (set_prop (get_by_id id) `style "")
+                            
+                            (defvar new_html  (+ "<code style='' id='" id "' spellcheck='false' class='" classes "'>" text "</code><span style='' id='" (+ id "_post") "'>&nbsp;</span>"))
+                            (doc_exec `insertHTML new_html)
+                            (sleep 0.01)
+                            (= elem (get_by_id id))
+                            (select_element elem)
+                            (set_prop elem `style "")
+                            (set_prop elem `onclick
+                                      (eval `(fn (e)
+                                                (display_documentation  ,#text))))
                             ;(doc_exec `removeFormat)
                             (select_element (get_by_id (+ id "_post")))
                             (doc_exec `removeFormat)
@@ -1664,6 +1670,9 @@
                                    class: (get_attribute element `class)
                                    style: (get_attribute element `style)
                                    onclick: (prop element `onclick)
+                                   command_text: (if (prop element `onclick)
+                                                     (+ "(javascript | " (-> (prop element `onclick) `toString) " | )")
+                                                     "")
                                    contentEditable: (prop element `contentEditable)
                                    spellcheck: (prop element `spellcheck)
                                }))
@@ -1703,13 +1712,17 @@
                                              ))))))))
     
     (update_command (fn (element text)
-                       (progn
+                       (alert_on_error "Cannot update command"
+                          (log "updating command: " text element.innerText)
                           (set_attribute element
                              `command_text
                              text)
                           (set_prop  element 
                              `onclick
-                              (eval_struct (read_lisp text))))))
+                              (eval_struct (read_lisp text)))
+                          (= displayed_element_for_attributes nil)
+                          (show_attributes element)
+                          )))
     
     (handle_attribute_change (function (element key new_value)
                                 (progn
@@ -1962,6 +1975,8 @@
                                         (progn
                                            (log "DOM_editor: cannot set remote content: " remote_content)
                                            (alert_box (+ "Unable to open: " options.filename " - " e.message))
+                                           (if (== (dtext "Yes") (request_user_choice (dtext "Open content in a text_editor?") [(dtext "Yes") (dtext "No")]))
+                                               (setTimeout (fn () (edit_file { `mode: "juno" `filename: options.filename } )) 500))
                                            (= error_state true)))))
                                (is_array? options.path)
                                (progn
