@@ -2296,27 +2296,25 @@
 (defparameter *focus_suppress_timer* nil)
 
 (defun set_focus_to (target_control _controls)
-   (unless (or *focus_suppress_timer*
-               (== *last_focus* target_control))
-      (= *focus_suppress_timer* (setTimeout (fn ()
-                                               (= *focus_suppress_timer* nil))
-                                            50))
-      (console.log "set_focus_to: " target_control.name target_control *last_focus*)
+      ;(log "set_focus_to: " target_control.name (if (is_function? target_control.initialized?) (-> target_control `initialized?)))
       (let
          ((focused_list (query_all ".juno-focused"))
+          (prior_focus *last_focus*)
           (current_layout (get_current_layout_control))
           (controls (or _controls
                         (reduce (c (current_controls))
                            (when c.on_focus
                               c)))))
          ;(debug)
+         (console.log "set_focus_to: " target_control.name)
+         (when (is_control? target_control)
+            (= *last_focus* target_control))
          (for_each (control controls)
             (when (and (or (eq nil target_control)
                            (not (== target_control control)))
                        (is_function? control.on_blur))
                (-> control `on_blur)))
          
-         (console.log "set_focus_to: called with: " target_control.options.name )
          ;; remove any focus class markers
          (when (> focused_list.length 0)
             (= focused_list (map (fn (v) v) focused_list))
@@ -2326,11 +2324,11 @@
                            (not (== target_control control)))
                        (is_function? control.on_blur))
                (-> control `on_blur)))
-         (when (not (== *last_focus* target_control))
-            (when (and *last_focus*
+         (when (not (== prior_focus target_control))
+            (when (and prior_focus
                        *app_menu_control*
-                       (prop *last_focus* `menu_items))
-               (-> *app_menu_control* `remove_menu (or (prop *last_focus* `name)
+                       (prop prior_focus `menu_items))
+               (-> *app_menu_control* `remove_menu (or (prop prior_focus `name)
                                                        "Control"))))
          
          (if target_control
@@ -2338,7 +2336,7 @@
                (if target_control.on_focus
                   (-> target_control `on_focus)
                   (focus_to target_control.view))
-               (setq *last_focus* target_control)
+               ;(setq *last_focus* target_control)
                (set_prop current_layout.options
                   `last_focus_id target_control.options.id)
                (setq core/$current_control *last_focus*)
@@ -2350,7 +2348,7 @@
                                                     target_control.menu_items
                                                     "control_menu"])))
             (progn
-               true)))))
+               true))))
 
 (defun controls_needing_save ()
    (reduce (c (current_controls))
@@ -2972,8 +2970,6 @@
       
       (assert target_control "Unable to find the target control")
       (assert holding_tank "Unable to find the holding tank")
-      (progc
-         (set_prop (first (get_by_tag "HTML")) `scrollTop 0))
       (= position_details (control_position target_control))
       (when (> __VERBOSITY__ 0)
          (log (+ "container_view_operation: do: " command ": target:") target_layout.name target_control.name " new:" 
@@ -3126,6 +3122,7 @@
                 (-> holding_tank `remove_control new_control)
                 (-> position_details.parent `set_content position_details.child_position new_container)
                 (cascade_resize)
+                (set_focus_to new_control)
                 true)
              (== command "split_right")
              (progn
@@ -3138,8 +3135,8 @@
                 (= new_container (split_view_vertical position_details.child new_control  (or options { `ratio: 0.7 } )))
                 (-> holding_tank `remove_control new_control)
                 (-> position_details.parent `set_content position_details.child_position new_container)
-                
                 (cascade_resize)
+                (set_focus_to new_control)
                 true)
              (== command "split_above")
              (progn
@@ -3153,6 +3150,7 @@
                 (-> holding_tank `remove_control new_control)
                 (-> position_details.parent `set_content position_details.child_position new_container)
                 (cascade_resize)
+                (set_focus_to new_control)
                 true)
              (== command "split_below")
              (progn
@@ -3166,6 +3164,7 @@
                 (-> holding_tank `remove_control new_control)
                 (-> position_details.parent `set_content position_details.child_position new_container)
                 (cascade_resize)
+                (set_focus_to new_control)
                 true)
              (resolve_path [ `options `locked ] target_control)
              (progn
@@ -6560,7 +6559,8 @@
                                 `(add_class "juno-focused" control_status)
                                 `[])
                             ,#(if (contains? (quote on_focus) declared_allocations)
-                                `(on_focus self)))))
+                                `(on_focus self)
+                                `(focus_to view)))))
                                   ,
               (_on_destroy (fn ()                                     
                              (progn
@@ -6625,6 +6625,8 @@
                 `view view
                 `resize resize                
                 `initialize initialize
+                `initialized? (fn ()
+                                 initialized)
                 `toJSON _to_json
                 `on_destroy _on_destroy
                 `on_focus _on_focus)
@@ -13003,7 +13005,8 @@
                            (render_title prefix)
                            (catch Error (e)
                               (log "Error on render_title: " e.message))))))
-    
+    (on_focus (fn ()
+                 (focus_to title_span)))
     (on_render (fn (self broaden)
                        (let
                           ((next_elem nil))
@@ -13237,9 +13240,12 @@
           `append dlist)))
 
 (defglobal *building_document_index* false)
+(defparameter *document_tag_index_time* nil)
 
 (defun build_tag_index ()
-   (unless *building_document_index*
+   (unless (or *building_document_index*
+               (and *document_tag_index_time*
+                  (> (- (time_in_millis) *document_tag_index_time*) 50000)))
       (setq *building_document_index* true)
       (let
          ((new_db {})
@@ -13279,6 +13285,7 @@
          (build_documentation_datalist)
          (if (> __VERBOSITY__ 2)
              (log (+ "build_tag_index: time to index: " (- (time_in_millis) stime) "ms  " (if is_reindex? " (throttled)" ""))))
+         (= *document_tag_index_time* (time_in_millis))
          (setq *building_document_index* false)))
       
    {
@@ -13296,6 +13303,7 @@
           (target nil)
           (ns nil)
           (sym nil)
+          (disp_count 0)
           (not_found (fn () true))
           (comps []))
          ;(log "searching for " search_text)
@@ -13349,7 +13357,7 @@
                                          (destructuring_bind (k meta_obj)
                                             pset
                                             (when k
-                                               
+                                               (inc disp_count)
                                                (defvar desc "")
                                                (defvar stype (try 
                                                                 (or (first (reduce (m (meta_for_symbol k true))
@@ -13370,21 +13378,29 @@
                                                          `style: "line-height: 1.5em; min-width: 200px; cursor: pointer; border-bottom: 1px solid var(--main-accent-line); padding-bottom: 10px; margin-bottom: 10px; padding-right: 5px; font-weight: bold; text-align: right; vertical-align:top;" } 
                                                        k)
                                                    (td { `style: "line-height: 1.5em; border-bottom: 1px solid var(--main-accent-line); margin-bottom: 10px;vertical-align:top;  padding-bottom: 10px; width: calc(100% - 150px);" }
-                                                       (or (and meta_obj.description
-                                                                (try 
-                                                                   (progn
-                                                                      (= desc (prop (unpack_description meta_obj.description) `innerText))
-                                                                      (if (> desc.length 150)
-                                                                          (= desc (+ (-> desc `substr 0 150) "...")))
-                                                                      (div { `style: "" }
-                                                                           desc))
-                                                                          
-                                                                   (catch Error (e)
-                                                                      (+ "error: " e.message " - can't unpack description"))))
-                                                           "(No Description)")))))))))])))
+                                                       (if (and meta_obj.require_ns
+                                                                (is_array? meta_obj.requires)
+                                                                (== 1 meta_obj.requires.length))
+                                                           [ (dtext "Bound to") " " 
+                                                             (span { style: "font-weight: bold" } (first meta_obj.requires)) ]
+                                                           (or (and meta_obj.description
+                                                                    (try
+                                                                       (progn
+                                                                          (= desc (prop (unpack_description meta_obj.description) `innerText))
+                                                                          (if (> desc.length 150)
+                                                                              (= desc (+ (-> desc `substr 0 150) "...")))
+                                                                          (div { `style: "" }
+                                                                               desc))
+                                                                       
+                                                                       (catch Error (e)
+                                                                          (+ "error: " e.message " - can't unpack description"))))
+                                                               "(No Description)"))))))))))])))
          (catch Error (e)
             (log "ERROR: " e.message e)))
-      (-> target_element `replaceChildren target)
+      (if (== disp_count 0)
+          (-> target_element `replaceChildren
+             (div { `class: "juno-no-data-found" } (dtext "No Results")))
+          (-> target_element `replaceChildren target))
       (setTimeout (fn ()
                      (focus_to target.children.0.children.0))
                   50))
@@ -13429,7 +13445,6 @@
     (current_symbol nil)
     (handle_click (fn (e)
                      (progn
-                        (log "requires: " e.srcElement.innerText)
                         (cond
                            (has_class? "juno-requires"  e.srcElement)
                            (progn
@@ -13444,7 +13459,8 @@
                             (let
                                ((results (describe command true)))
                                (for_each (meta_obj (or results ()))
-                                  (format_help meta_obj { `on_click: handle_click } )))))
+                                  (progn
+                                     (format_help meta_obj { `on_click: handle_click } ))))))
     
     (render_help (fn (command)
                     (div { `class: "" `style: "overflow-x: hidden;" }
@@ -13469,7 +13485,7 @@
                                   (if (< idx 0)
                                       (notify "cannot find history item, even though contains? said it was there.")
                                       (-> history `splice idx 1))))))
-    
+    (message_cache []) ;; stored requests while initializing
     (message_receiver (fn (event_obj force)
                          (let
                             ((first_arg (let
@@ -13478,36 +13494,41 @@
                                                (first comps))))
                              (num_found_in_history_view 0)
                              (dup_remover {})
+                             (count 0)
                              (new_view nil))
-                            
-                            ;; deal with recording the history 
-                            (when first_arg
-                               ;; if there is anything in the history view that matches it, remove it so we can put it back on top
-                               (remove_all_priors first_arg)
-                               (= num_found_in_history_view (length (to_array (-> history_content_view `querySelectorAll (+ "[command='" first_arg "']")))))
-                               (push history
-                                  first_arg)
-                               (if (pinned?)
-                                   (-> history_content_view `prepend (render_help first_arg))
-                                   (if (> (length history) 1)
-                                       (-> history_content_view `prepend (render_help (prop history (- (length history) 2)))))))
-                            
-                            ;; if the history is too long, prune it
-                            (when (> (length history) history_max_length)
-                               (take history)
-                               (aif (last history_content_view.children)
-                                    (-> it `remove)))
-                            
-                            (if (> history.length 1)
-                               (set_enabled back_button)
-                               (set_disabled back_button))
-                            ;(log "message_receiver: history: " history "first_arg: " first_arg)
-                            (when (or (and force first_arg)
-                                      (and first_arg
-                                         (not (pinned?))))
-                               (= current_symbol first_arg)
-                               (-> definition_view `replaceChildren
-                                  (render_help current_symbol))))))
+                            (if (not initialized)
+                                (push message_cache
+                                   [event_obj force])
+                                (progn
+                                   ;; deal with recording the history
+                                   (when first_arg
+                                      ;; if there is anything in the history view that matches it, remove it so we can put it back on top
+                                      (remove_all_priors first_arg)
+                                      (= num_found_in_history_view (length (to_array (-> history_content_view `querySelectorAll (+ "[command='" first_arg "']")))))
+                                      (push history
+                                         first_arg)
+                                      (if (pinned?)
+                                          (-> history_content_view `prepend (render_help first_arg))
+                                          (if (> (length history) 1)
+                                              (-> history_content_view `prepend (render_help (prop history (- (length history) 2)))))))
+                                   
+                                   ;; if the history is too long, prune it
+                                   (when (> (length history) history_max_length)
+                                      (take history)
+                                      (aif (last history_content_view.children)
+                                           (-> it `remove)))
+                                   
+                                   (if (> history.length 1)
+                                       (set_enabled back_button)
+                                       (set_disabled back_button))
+                                   ;(log "message_receiver: history: " history "first_arg: " first_arg)
+                                   (when (or (and force first_arg)
+                                             (and first_arg
+                                                (not (pinned?))))
+                                      (= current_symbol first_arg)
+                                      
+                                      (-> definition_view `replaceChildren
+                                         (render_help current_symbol))))))))
     (go_back (fn ()
                 (when (> history.length 1)
                    (pop history)
@@ -13580,9 +13601,8 @@
                          (progn
                             (add_class "juno-display-none" search_view))))
                            
-    (on_initialize (fn (anything_here)
+    (on_initialize (fn (self)
                       (progn
-                         
                          (register_event_handler nil "display_usage" handler_function_id message_receiver)
                          (attach_event_listener pin_button
                             `click
@@ -13654,8 +13674,15 @@
                          (build_tag_index)
                          (= reindex_timer
                             (setInterval build_tag_index 60000))
-                         anything_here)))
-    (on_destroy (fn (anything_here)
+                         (when (> message_cache.length 0)
+                            (setTimeout (fn ()
+                                           (progn
+                                              (while (> message_cache.length 0)
+                                                 (progn
+                                                    (message_receiver (take message_cache))))))
+                                        10))
+                         self)))
+    (on_destroy (fn ()
                    (progn
                       (remove_event_handler nil "display_usage" handler_function_id)
                       (if reindex_timer
@@ -13681,6 +13708,7 @@
       allow_search: true 
       expose: [[ `set_pinned set_pinned]
                [ `search_by_tag search_by_tag ]
+               [ `show_documentation show_documentation ]
                [ `is_displayed? is_displayed? ]
                [ `take_focus take_focus ]
                [ `get_history (function () (clone history)) ]]
@@ -13787,6 +13815,7 @@
 (defun display_tag (text)
    (progn
       (show_help_panel)
+      (sleep 0.1)
       (-> (juno_documentation)`search_by_tag text))
    {
      description: (+ "Given a text string, opens the documentation panel with the associated "
@@ -13797,12 +13826,34 @@
 
 
 (defun dtag (tag_text)
-  (eval `(span { class: "juno-tag" onclick: (fn () (display_tag ,#tag_text)) } ,#tag_text))
+  (eval `(span { spellcheck: false class: "juno-tag" onclick: (fn () (display_tag ,#tag_text)) } ,#tag_text))
    {
      description: (+ "Constructs a clickable span element for the provided tag text.  When "
                      "clicked on, opens the documentation panel with the associated items for the tag "
                      "displayed. ")
      usage: ["tag_text:string"]
+     tags: ["tags" "help" "search" "?" "describe" "meta" ]
+   })
+
+(defun display_documentation (text)
+   (progn
+      (show_help_panel)
+      (sleep 0.1)
+      (-> (juno_documentation)`show_documentation text))
+   {
+     description: (+ "Given a text string, opens the documentation panel " 
+                     "to the requested symbol. ")
+     tags: ["tags" "help" "search" "?" "describe" "meta" ]
+     usage: ["text:string"]
+   })
+
+(defun doclink (symbol_name)
+  (eval `(span { spellcheck: false class: "juno-tag" onclick: (fn () (display_documentation ,#symbol_name)) } ,#symbol_name))
+   {
+     description: (+ "Constructs a clickable span element for the provided "
+                     "symbol name.  When clicked on, opens the documentation "
+                     "panel and displays the symbol documentation.")
+     usage: ["symbol_name:string"]
      tags: ["tags" "help" "search" "?" "describe" "meta" ]
    })
 
@@ -14257,13 +14308,13 @@
                       (classes nil)
                       (id (gen_id "ins"))
                       (text nil)
-                      (initial_elem nil))
+                      (elem nil))
                      (if (and (starts_with? "`" last_word)
                               (ends_with? "`" last_word)
                               (> last_word.length 2))
                          (progn
                             (= selection (get_selection))
-                            (= initial_elem point.element)
+                           
                             ;; move back the length of the symbol since it can contain characters that
                             ;; aren't considered
                             (for (idx (range last_word.length))
@@ -14272,12 +14323,18 @@
                             (= text (-> last_word `substr 1 (- last_word.length 2)))
                             (if (is_symbol? text)
                                 (progn
-                                   (= classes (+ "juno-type-" (lowercase (sub_type (get_global text nil))))))
+                                   (= classes (+ "juno-pointer juno-type-" (lowercase (sub_type (get_global text nil))))))
                                 (= classes ""))
-                            (doc_exec `insertHTML (+ "<code style='' id='" id "' spellcheck='false' class='" classes "'>" text "</code><span style='' id='" (+ id "_post") "'>&nbsp;</span>"))
-                            (sleep 0.001)
-                            (select_element (get_by_id id))
-                            (set_prop (get_by_id id) `style "")
+                            
+                            (defvar new_html  (+ "<code style='' id='" id "' spellcheck='false' class='" classes "'>" text "</code><span style='' id='" (+ id "_post") "'>&nbsp;</span>"))
+                            (doc_exec `insertHTML new_html)
+                            (sleep 0.01)
+                            (= elem (get_by_id id))
+                            (select_element elem)
+                            (set_prop elem `style "")
+                            (set_prop elem `onclick
+                                      (eval `(fn (e)
+                                                (display_documentation  ,#text))))
                             ;(doc_exec `removeFormat)
                             (select_element (get_by_id (+ id "_post")))
                             (doc_exec `removeFormat)
@@ -16805,10 +16862,12 @@
                        else
                        (symbol_chooser "Select a symbol to edit" options.mode)))
        (extension (cond
+                     options.mode
+                     options.mode
                      options.filename
                      (last (split_by "." options.filename))
-                     (== options.mode "dom")
-                     "dom"
+                     ;(== options.mode "dom")
+                     ;"dom"
                      else
                      "juno"))
        (target_ns symbol_data.namespace)
