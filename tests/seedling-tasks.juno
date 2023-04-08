@@ -1,0 +1,194 @@
+;; Validations and Tests for the IDE
+
+(create_namespace "seedling-tests")
+(use_ns seedling-tests)
+
+(use_symbols "user" 
+   [ `place_control `panel `eval_in_iframe])
+
+
+;; setup 
+(place_control `right
+   (panel "tframe"
+          (defglobal tframe (html/iframe { src: "/env/a1.html" `style: "width: 100%; height: 100%;"} ))))
+
+;; primitives...
+
+(defmacro log (`& args)
+   `(user/log ,@args))
+
+(defmacro ev (quoted_lisp)
+   `(eval_in_iframe tframe ,#quoted_lisp))
+
+(defun layout ()
+   (ev `(control_name (get_current_layout_control))))
+
+(defun focused_control ()
+   (ev `(resolve_path [ `options `last_focus_id ] (get_current_layout_control))))
+
+(defun last_focus ()
+   (ev `(control_id *last_focus*)))
+
+(defun switch_to (cname)
+   (ev `(show_control (get_control_by_name ,#cname))))
+
+(defun name_of (id)
+   (ev `(aif (get_control_by_id ,#id)
+             (control_name it))))
+
+(defun id_of (name)
+   (ev `(aif (get_control_by_name ,#name)
+             (control_id it))))
+
+(defun options_for_id (id)
+   (ev `(aif (get_control_by_id ,#id)
+             (prop it `options))))
+
+(defun options_for_name (name)
+   (ev `(aif (get_control_by_name ,#name)
+             (prop it `options))))
+
+
+(defun hide_others ()
+   (ev `(hide_others_in_layout *last_focus*)))
+
+(defun new_layout_named (name)
+   (when name
+      (ev `(make_named_layout name (empty_selection_control)))))
+
+(defun split_vertically ()
+   (ev `(split_control `vertical)))
+
+(defun split_horizontally ()
+   (ev `(split_control `horizontal))
+
+(defun holding_tank_control_names ()
+   (ev `(each (holding_tank_controls) control_name)))
+
+(defun holding_tank_control_ids ()
+   (ev `(each (holding_tank_controls) control_id)))
+   
+(defun control_value (cid)
+   (when cid
+      (ev `(aif (get_control_by_id ,#cid)
+                (-> it `get)
+                nil))))
+
+(defun controls_visible ()
+   (ev `(each (user/controls_in_layout (user/get_current_layout_control)) control_name)))
+
+
+(defun send_keydown (sequence)
+   (when (is_string? sequence)
+      (let
+         ((comps (split_by "-" sequence))
+          (ctrl? (contains? "Control" comps))
+          (meta? (contains? "Command" comps))
+          (alt? (contains? "Alt" comps))
+          (shift? (contains? "Shift" comps))
+          (key (last comps)))
+         (log "Key: " key)
+         (ev `(try
+                 (progn
+                    (defvar event (new KeyboardEvent `keydown
+                                       (to_object
+                                          [[`bubbles true]
+                                           [`shiftKey ,#shift?]
+                                           [`key ,#key]
+                                           [`code ,#(-> key `charCodeAt)]
+                                           [`metaKey ,#meta?]
+                                           [`ctrlKey ,#ctrl?]
+                                           [`altKey ,#alt?]])))
+                    (-> (prop *last_focus* `view) `dispatchEvent event))
+                 (catch Error (e)
+                    e.message))))))
+                   
+
+
+;; composites...
+;; resets to the "home_state"
+
+(defun home_state ()
+   (progn
+      (switch_to "*scratch*")
+      (hide_others)
+      (and (== (name_of (focused_control)) "*scratch*")
+           (== (last_focus) (focused_control)))))
+     
+
+(defun test_split_editor_vertically () 
+   (progn
+      (home_state)
+      (ev `(-> (get_control_by_name `*scratch*) `set ""))
+      (split_vertically)
+      (ev `(-> (get_control_by_name `*scratch*) `set ";;This is the sample text.\n;; Another comment"))
+      (defvar s1opts (options_for_name "*scratch*"))
+      (defvar s2opts (options_for_name "*scratch* - 2"))
+      { `focused: (== (name_of (focused_control)) "*scratch* - 2")
+        `clone_tag: (== s2opts.clone_with_editor_id s1opts.id)
+        `repl_match: (== s2opts.evaluator_id s1opts.evaluator_id)
+        `repl_exists: (ev `(is_function? (prop (get_control_by_id ,#s2opts.evaluator_id) `evaluate)))
+        `path_match: (== (as_lisp s1opts.path) (as_lisp s2opts.path))
+        `value_match: (== (control_value s2opts.id) (control_value s1opts.id))
+        `group_match: (== s1opts.group_name s2opts.group_name) }))
+
+(defun test_split_editor_horizontally () 
+   (progn
+      (home_state)
+      (ev `(-> (get_control_by_name `*scratch*) `set ""))
+      (split_horizontally)
+      (ev `(-> (get_control_by_name `*scratch*) `set ";;This is the sample text.\n;; Another comment"))
+      (defvar s1opts (options_for_name "*scratch*"))
+      (defvar s2opts (options_for_name "*scratch* - 2"))
+      { `focused: (== (name_of (focused_control)) "*scratch* - 2")
+        `clone_tag: (== s2opts.clone_with_editor_id s1opts.id)
+        `repl_match: (== s2opts.evaluator_id s1opts.evaluator_id)
+        `repl_exists: (ev `(is_function? (prop (get_control_by_id ,#s2opts.evaluator_id) `evaluate)))
+        `path_match: (== (as_lisp s1opts.path) (as_lisp s2opts.path))
+        `value_match: (== (control_value s2opts.id) (control_value s1opts.id))
+        `group_match: (== s1opts.group_name s2opts.group_name) }))
+
+           
+(defun test_swap_control ()
+   (progn
+      (home_state)
+      (ev `(swap_control (get_control_by_name "*scratch*") *system_repl*))
+      {
+          `focused: (== (last_focus) (ev `(control_id *system_repl*)))
+      }))
+      
+(defun test_open_documentation_frame_0 ()
+   (progn
+      (home_state)
+      (ev `(show_help_panel))
+      {
+          `focused: (== (last_focus) (ev `(control_id (juno_documentation))))
+      }))
+
+(defun test_jump_to_symbol_definition (sname)
+   (progn
+      (home_state)
+      (ev `(open_symbol_definition ,#sname))
+      (assert (== (last_focus) (focused_control)))
+      (defvar cname (ev `(control_name (get_control_by_id ,#(focused_control)))))
+      (defvar editr (ev `(object_methods (prop (get_control_by_id ,#(focused_control)) `editor))))
+      (log "Cursor pos: " (ev `(-> (prop (get_control_by_id ,#(focused_control)) `editor) `getCursorPosition)))
+      ;(log "Got editor")
+      (ev `(-> (prop (get_control_by_id ,#(focused_control)) `editor) `navigateRight))
+      ;(log "Navigated right?")
+      (defvar lisp (read_lisp (ev `(progn
+                                      (select_to_root_form (prop (get_control_by_id ,#(focused_control)) `editor))
+                                      (-> (get_control_by_id ,#(focused_control)) `get_selected_text)))))
+      {
+          `symbol: (== (desym_ref (second lisp)) sname)
+      }))
+      
+
+
+(test_split_editor_vertically)               
+(test_split_editor_horizontally) 
+(test_swap_control)
+(test_open_documentation)
+(test_jump_to_symbol_definition `eval_in_iframe)
+
+   
