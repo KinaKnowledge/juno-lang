@@ -42,7 +42,7 @@
 (defparameter *app_menu_control* nil)
 (defparameter *log_key_events* false)
 (defparameter *document_focused* true)
-
+(defparameter *ipc_promise_ids* {})
 (defparameter *whitespace_regexp* (new RegExp "\\\\s" `g))
 
 (defparameter TokenIterator (function () true)) ;; filled in by the first editor
@@ -161,6 +161,14 @@
        description: "Returns the element with active focus in the document."
        tags: [ `focus `document `ui `active `element ]
        usage: []
+   })
+
+(defun_sync in_iframe? ()
+   (not (== window.location window.parent.location ))
+   {
+       description: "Returns true if evaluation context is in an iframe, otherwise false."
+       usage: []
+       tags: [ `iframe `ui `document `window `location ]
    })
 
 (defun handle_clipboard_event (command event)
@@ -1170,9 +1178,13 @@
   })
 
 (defun_sync is_layout? (control)
-   (and (contains? control $root_controls)
-        (or (resolve_path [ `options `root_bundle ] control) false)
-        true)
+   (progn
+      (declare (function frame_0)
+               (global frame_0))
+      (and (contains? control $root_controls)
+           (or (== (frame_0) control)
+               (resolve_path [ `options `root_bundle ] control) false)
+           true))
    {
      description: (+ "For the given control, will return true if the given control if it is "
                      "determined to be a root_bundle and part of the `$root_controls` array. "
@@ -1975,7 +1987,58 @@
       tags: [ "ui" "controls" "name" "find" ]
   })
 
+(defun wait_for_placement (control timeout_secs)
+   (let
+      ((count 0)
+       (timeout (* (or timeout_secs 10) 10)))
+      (while (and (not (get_control_by_id (control_id control)))
+                  (< count timeout))
+         (progn
+            (inc count)
+            (sleep 0.1)))
+      (when (== count timeout)
+         (throw EvalError (+ "wait_for_placement: timeout waiting for: " (control_id control)))))
+   {
+     description: (+ "Given a control and an optional timeout value in seconds, waits for the "
+                     "control to be available to the system as determined by `get_control_by_id` .  "
+                     "Once the control is found, the function will return.  If the control is not "
+                     "found by the timeout seconds, an `EvalError` will be thrown with a timeout "
+                     "message indicating what control id couldn\'t be placed. ")
+     usage: ["control:object" "timeout_secs:?number"]
+     tags: ["controls" "control" "ui" "focus" "DOM" ]
+   })
 
+(defun wait_for_display (control timeout_secs)
+   (if (is_control? control)
+       (let
+          ((count 0)
+           (timeout (* (or timeout_secs 10) 10))
+           (target_layout (get_layout_for_control control)))
+          (declare (function get_layout_for_control)
+                   (global get_layout_for_control))
+          ;; ensure we have the control in a container..
+          (wait_for_placement control timeout_secs)
+          (while (and (not (is_array? (path_between control.view juno_container)))
+                      (< count timeout))
+             (progn
+                (inc count)
+                (sleep 0.1)))
+          (when (== count timeout)
+             (throw EvalError (+ "wait_for_placement: timeout waiting for: " (control_id control))))
+          true)
+       (throw TypeError "wait_for_display: invalid control argument given: not a control"))
+   {
+     description: (+ "Given a control and an optional timeout value in seconds, waits for the "
+                     "control to be displayed in the browser window.  This is determined by "
+                     "the `path_between` function, which is used to calculate the path between the "
+                     "control\'s view and the page container element, which is at the root of all the "
+                     "controls .  If the control is not displayed by the timeout seconds, "
+                     "an `EvalError` will be thrown with a timeout message indicating what control id "
+                     "couldn\'t be placed. <br>If a non-control value is provided as the control "
+                     "argument a `TypeError` will be thrown. ")
+     usage: ["control:object" "timeout_secs:?number"]
+     tags: ["controls" "control" "ui" "focus" "DOM" ]
+     })
 
 (defun select_controls (predicate_func)
   (let
@@ -2296,7 +2359,24 @@
 (defparameter *focus_suppress_timer* nil)
 
 (defun set_focus_to (target_control _controls)
-      ;(log "set_focus_to: " target_control.name (if (is_function? target_control.initialized?) (-> target_control `initialized?)))
+   (cond 
+      (and target_control
+           (== *last_focus* target_control))
+      (progc
+         false)
+      (not (is_control? target_control))
+      (progn
+         (notify "set_focus_to: non-control as argument - error")
+         (log "set_focus_to: non-control as argument - error" (sub_type target_control))
+         (debug)
+         false)
+      (and (is_control? target_control )
+         (not (== (get_current_layout_control) (get_layout_for_control target_control))))
+      (progn
+         (log (+ "set_focus_to: " (control_name target_control) " not in layout"))
+         (notify (+ "set_focus_to: " (control_name target_control) " not in layout"))
+         false)
+      else
       (let
          ((focused_list (query_all ".juno-focused"))
           (prior_focus *last_focus*)
@@ -2305,10 +2385,11 @@
                         (reduce (c (current_controls))
                            (when c.on_focus
                               c)))))
-         ;(debug)
-         (console.log "set_focus_to: " target_control.name)
-         (when (is_control? target_control)
-            (= *last_focus* target_control))
+         (declare (function dispatch_event)
+                  (global dispatch_event))
+         (if (is_control? target_control)
+            (= *last_focus* target_control)
+            (notify  "set_focus_to: given a non-control!" `error))
          (for_each (control controls)
             (when (and (or (eq nil target_control)
                            (not (== target_control control)))
@@ -2330,13 +2411,14 @@
                        (prop prior_focus `menu_items))
                (-> *app_menu_control* `remove_menu (or (prop prior_focus `name)
                                                        "Control"))))
-         
          (if target_control
             (progn
+                (wait_for_display target_control 4)
+               ;(log "set_focus_to: target_control: on_focus: " target_control.on_focus)
                (if target_control.on_focus
-                  (-> target_control `on_focus)
+                  (progn
+                     (-> target_control `on_focus))
                   (focus_to target_control.view))
-               ;(setq *last_focus* target_control)
                (set_prop current_layout.options
                   `last_focus_id target_control.options.id)
                (setq core/$current_control *last_focus*)
@@ -2346,9 +2428,10 @@
                   (-> *app_menu_control* `add_menu [ (or target_control.name
                                                          "Control")
                                                     target_control.menu_items
-                                                    "control_menu"])))
+                                                    "control_menu"]))
+               (dispatch_event { command: "focus" source: target_control.options.id args: [] }))
             (progn
-               true))))
+               true)))))
 
 (defun controls_needing_save ()
    (reduce (c (current_controls))
@@ -2408,6 +2491,8 @@
            (page_container (get_by_id `juno_container))
            (layout_holding_cell nil)
            (found false))
+          (declare (function get_layout_for_control get_current_layout_control get_layout_holding_cell dispatch_event)
+                   (global get_layout_for_control get_current_layout_control get_layout_holding_cell dispatch_event))
           (console.log "switch_to_new_layout: layout_name: " layout_name)
           (= layout_holding_cell (get_layout_holding_cell))
           (set_prop (first (get_by_tag "html")) `scrollTop 0)
@@ -2454,7 +2539,7 @@
                        (= found true)
                        (sleep 0.01)
                        (cascade_resize)
-                       (console.log "switch_to_new_layout: target control for focus: " ctl.options.last_focus_id)
+                       ;(log "switch_to_new_layout: target control for focus: " ctl.options.last_focus_id)
                        (when ctl.options.last_focus_id 
                           (= control_to_focus_to (get_control_by_id ctl.options.last_focus_id)))
                        (if control_to_focus_to
@@ -2462,10 +2547,11 @@
                                (= control_to_focus_to (default_focus)))
                            (= control_to_focus_to (default_focus)))
                        (quick_alert layout_name 750)
-                       (setTimeout (fn ()
-                                      (progn
-                                         (set_focus_to control_to_focus_to))) 40)
-                       ;(= *last_focus* control_to_focus_to)
+                       (wait_for_display control_to_focus_to 5)
+                       (dispatch_event { command: "switch_layout" 
+                                         source: layout_name 
+                                         args: []})
+                       (set_focus_to control_to_focus_to)
                        
                        (break))))
              else
@@ -2475,8 +2561,10 @@
        (throw TypeError "switch_to_new_layout: invalid layout_name provided"))
    {
      description: (+ "Given a new layout name, replaces the current layout with the provided "
-                     "named layout, if it exists.  If the operation is successful, the function will "
-                     "return true, otherwise it will return false. ")
+                     "named layout, if it exists.  The focus will be set to the "
+                     "control that was last focused in that layout. If the operation is " 
+                     "successful, the function will return true, otherwise " 
+                     "it will return false. ")
      usage:["layout_name:string"]
      tags: ["layout" "DOM" "controls" "ui" "root" "layout" "control"]
      })  
@@ -2569,6 +2657,16 @@
        tags: ["DOM" "controls" "ui" "root" "layout" "control" "names"]
    })
 
+(defun available_layouts ()
+   (reduce (ctl $root_controls)
+                 (when (and (not (== ctl.type "app_header"))
+                            (not (== ctl.type "holding_tank")))
+                    ctl))
+   {
+     description: (+ "Returns an array containing the currently active layout controls. ")
+     usage: []
+     tags: ["layouts" "control" "controls" "layout" "ui" "container"]
+   })
 
 (defun make_named_layout (name root_control options)
    (let
@@ -2668,7 +2766,7 @@
                       "option is useful for quickly creating a new named layout with a single control "
                       "as opposed to a previously mounted control.  <br> ")
 
-     `usage: ["name:string" "root_control:object" ]
+     `usage: ["name:string" "root_control:object" "options:object"]
      `tags:["DOM" "controls" "ui" "root" "layout" "control" "names" "bundle"]
      })
 
@@ -2783,7 +2881,7 @@
         (progn
            (notify (+ (dtext "Cannot swap out the target control - control is only for: ") new_control.options.only_for))
            (= noop true)))
-    
+    (set_prop (first (get_by_tag "html")) `scrollTop 0)
     (if (== current_control_layout holding_tank)
         (= current_control_layout nil))
     (if (== new_control_layout holding_tank)
@@ -3181,7 +3279,7 @@
              false))))
   
  
-(defmacro place_control(placement `& control_def)
+(defun place_control (placement control)
    (let
       ((where_map {
                    `top: "split_above"
@@ -3191,14 +3289,16 @@
                    `replace: "replace"  })
        (where (aif (prop where_map placement)
                    it
-                   "split_right")))
-       
-  `(let
-      ((target_container  (control_position (top_frame (default_focus)))))
+                   "split_right"))
+       (rval nil)
+       (target_container  (control_position (top_frame (default_focus)))))
      (when target_container.child 
        (= target_container (first (-> target_container.child `controls)))
-       (container_view_operation ,#where target_container
-                                   ,@control_def)))))
+       (= rval (container_view_operation where target_container
+                                         control))
+       (wait_for_display control)
+       (set_focus_to control)
+       rval)))
               
 (defun show_control (control_to_show)
   (let
@@ -3279,14 +3379,12 @@
           (notify (dtext "The requested control to display wasn't found."))
           false)))
   {
-    `description: (+ "Provided a control name, id or the control object itself, "
-                     "will display the control, adjusting the layout as needed. "
-                     "By default the control referenced by *last_focus* is swapped with the new one, "
-                     "but if that isn't possible, the view is split and the new control is placed to "
-                     "the right.<br>"
-                     "Returns true if successful, otherwise a notification is "
-                     "delivered that the control is not found, and false is "
-                     "returned.")
+    `description: (+ "Provided a control name, id or the control object itself, will display "
+                     "the control, adjusting the layout as needed. By default the control referenced "
+                     "by *last_focus* is swapped with the new one, but if that isn\'t possible, the "
+                     "view is split and the new control is placed to the right.<br>Returns true if "
+                     "successful, otherwise a notification is delivered that the control is not "
+                     "found, and false is returned. ")
     `tags: ["controls" "control" "display" "hiding" "holding_tank" "ui"]
     `usage: ["target:string|object"]
     })
@@ -3342,7 +3440,7 @@
                         "returned.  If destroy? is true, the control is removed from "
                         "the tree and destroyed.")
        `tags: ["controls" "control" "display" "hiding" "holding_tank" "ui"]
-       `usage: ["target:string|object" "destroy?:?boolean"]
+       `usage: ["target:string|object" "destroy?:?boolean" "mo_mod_layout:boolean"]
    })
 
 (defun destroy_control (target)
@@ -3519,7 +3617,8 @@
                      (break))
                   (= elem elem.parentElement)))
             (console.log "process_focus_chain: setting focus to: " target_control.options.name)
-            (set_focus_to target_control controls)))))
+            (if target_control
+               (set_focus_to target_control controls))))))
 
 
 (defun menu_tree (items options _path)
@@ -4192,6 +4291,54 @@
          tags:["DOM" "controls" "ui" "root" "layout" "control" "names" "bundle"]
          })
 
+(defun move_control_to_new_layout (control layout_name)
+   (if (is_control? control)
+      (let
+         ((name (if (and (not (blank? layout_name))
+                         (is_string? layout_name))
+                    (compute_name_for_control (+ "" layout_name "-" "Layout"))
+                    (compute_name_for_control (+ "" (control_name control) "-" "Layout"))))
+          (initial_control_layout (get_layout_for_control control))
+          (holding_tank (control_holding_tank)))
+         (declare (function control_holding_tank compute_name_for_control switch_to_new_layout wait_for_display get_layout_for_control)
+                  (global control_holding_tank compute_name_for_control switch_to_new_layout wait_for_display get_layout_for_control))
+         (if (layout_locked? initial_control_layout)
+             (progn
+                (notify "Control's current layout is locked.")
+                (throw EvalError "The control to be moved is part of a locked layout")))
+         (unless (== (get_current_layout_control) initial_control_layout)
+            (switch_to_new_layout (control_name (get_layout_for_control control))))
+         ;; first hide the control to the holding tank
+         ;; then move it to the new layout
+         (if (hide_control control)
+             (progn
+                (if (-> holding_tank `has_control? control)
+                    (progn
+                       (-> holding_tank `remove_control (control_id control))
+                       (make_named_layout name control { `unmounted_source: true }  )
+                       (wait_for_display control)
+                       (get_layout_for_control control))
+                    (progn
+                       (notify "move_control_to_new_layout: Cannot find the control after moving to holding tank")
+                       (log "move_control_to_new_layout: Cannot find the control after moving to holding tank")
+                       (throw EvalError "move_control_to_new_layout: cannot find the control in the holding tank"))))
+             (progn
+                (notify "Unable to move control")
+                nil))))
+   {
+     description: (+ "Given a control object, `move_control_to_new_layout` will remove the "
+                     "control from its current layout (if unlocked) and attempt to create a named "
+                     "layout with the control.  If no layot name is provided, the name will be "
+                     "automatically generated based on the controls name.  Once the layout is "
+                     "created, it will be switched to and focus to the control will be set.<br>If a "
+                     "layout name is provided, it will be checked for name collisions, and if there "
+                     "is one a unique suffix will be appended to the name of the control.<br>If a "
+                     "non-control is given as an argument a `TypeError` will be thrown.<br>If the "
+                     "current layout of the control is locked, an `EvalError` will be thrown. ")
+     usage: ["control:object" "layout_name:?string"]
+     tags: ["controls" "layout" "layouts" "move" "ui"]
+   })
+
 (defun select_control_by_name (prompt options)
    (let
       ((no_sub_controls (not options.include_sub_controls))
@@ -4443,7 +4590,16 @@
                        (log (+ "Error on event handler for route: " handler_key ": removing: " e.message))
                        (try (remove_event_handler event_obj.source event_obj.command handler.fid)
                           (catch Error (e)
-                             (log (+ "Error Cannot remove problematic event_handler: " handler_key ": " handler.fid ": " e.message)))))))))
+                             (log (+ "Error Cannot remove problematic event_handler: " handler_key ": " handler.fid ": " e.message))))))))
+           ;; no handlers - send it up the chain if we can
+           ;; if we are in an iframe and the message hasn't been passed to us 
+           ;; between frame boundaries already
+           (if (and (in_iframe?)
+                    (eq nil event_obj.child_frame))
+               (try
+                  (-> window.top `postMessage (JSON.stringify event_obj) "*")
+                  (catch Error (e)
+                     (log "Unable to post message upward")))))
       (when event_obj.error
          (progn
             (log "dispatch_event: error: " event_obj)
@@ -6380,17 +6536,15 @@
             (eval_selected_text_in_place ctl options))
          ))
    {
-       `description: (+ "Using the control in `*last_focus*`, calls the eval_selected_text_in_place function "
-                        "with the provided options.  The result of the evaluation will be placed into "
-                        "the focused editor, either as replaceement text or appended text.<br>"
-                        "The link is http://kinaknowledge.com."
-                        "<br>### Options<br>"
-                        "discard_nil_values:boolean - If true any nil values will not be placed into "
-                        "the editor.  If false, the user will be prompted to place nil values into "
-                        "the text.  The default is true.<br>"
-                        "append:boolean - If true, the result of the evaluation will be appended into "
-                        "the editor at the point of the cursor, or if text is selected in the editor, "
-                        "after the selection.<br>")
+     `description: (+ "Using the control in `*last_focus*`, calls the "
+                      "eval_selected_text_in_place function with the provided options.  The result of "
+                      "the evaluation will be placed into the focused editor, either as replacement "
+                      "text or appended text.<br>The link is http://kinaknowledge.com.<br><br>### "
+                      "Options <br><br>discard_nil_values:boolean -If true any nil values will not be "
+                      "placed into the editor.  If false, the user will be prompted to place nil "
+                      "values into the text.  The default is true.<br>append:boolean -If true, the "
+                      "result of the evaluation will be appended into the editor at the point of the "
+                      "cursor, or if text is selected in the editor, after the selection. ")
        `usage: ["options:object"]
        `tags: ["editor" "control" "text" "evaluation" "replacement" "eval" "buffer"]
    })
@@ -8079,15 +8233,27 @@
                                (if options.path
                                   (> (length (get_editors_for_path options.path)) 1)
                                   false)))
+            (search_focus false)
+            (focus_event (fn (e)
+                            (progn
+                               (add_class "juno-focused" control_bar)
+                               (handle_event e)
+                               (if (and e
+                                     (or (has_class? "ace_search_field" e.relatedTarget) 
+                                         (has_class? "ace_search" e.relatedTarget)))
+                                (progn
+                                   (= search_focus true))
+                                (progn
+                                   (= search_focus false)
+                                   )))))
             (on_focus (fn ()
                          (progn
-                            (when (not (== *last_focus* intf))
-                               (setTimeout (fn ()
-                                              (focus_to intf.editor))
-                                           10))
-                            (setq *last_focus* intf)
-                            (add_class "juno-focused" control_bar))))
-            
+                            (add_class "juno-focused" control_bar)
+                            (if (or search_focus
+                                    (search_focused?))
+                               true
+                               (progn
+                                  (focus_to intf.editor))))))
             (orig_bindings nil)
             (build_key_bindings (fn (editor)
                                    (progn
@@ -8868,6 +9034,10 @@
                                         (if options.read_only
                                            (set_read_only options.read_only))
                                       
+                                        (attach_event_listener view
+                                           `focusin
+                                           focus_event)
+                                        
                                         ;; signal our mode change
                                         
                                         (dispatch_event { command: "editor_change"
@@ -9341,7 +9511,7 @@
                         "Otherwise, the function will return a unique non-used "
                         "name by appending a digit, starting with 2 on the control "
                         "name.  The new name will then be returned.")
-       `tags: ["control" "name" "ui" "identifier"]
+       `tags: ["control" "name" "ui" "identifier" "controls"]
        `usage: ["name:string"]
    })
 
@@ -11523,11 +11693,27 @@
        (view sview.view)
        (non_whitespace_regex (new RegExp "\\\\s"))
        (hidden false)
+       (blurred true)
+       (last_focus_elem nil)
+      
+       ;; focus_event is fired whwn the focusin event hits the view
+       (focus_event (fn (e)
+                       (when e
+                          (= last_focus_elem e.srcElement)
+                          (add_class "juno-focused" output_control.control_bar)
+                          )))
+       
        (on_focus (fn (suppress_output_focus_call)
                    (progn
-                      (console.log "visual_repl: on_focus: " suppress_output_focus_call)
-                      (unless suppress_output_focus_call
+                      (if suppress_output_focus_call
+                         (progn
+                           (cond 
+                              (or hidden blurred)
+                              (focus_to input_container.editor)))
+                              
                          (-> output_control `on_focus))
+                      (when blurred
+                         (= blurred false))
                       (when hidden
                          (= hidden false))
                     ;(-> input_container.editor `focus) ;; bring focus to the repl
@@ -11537,7 +11723,8 @@
                        (resolve_path [ `editor_container `editor ] intf)))))
        (on_blur (fn ()
                   (progn
-                   true)))
+                     (= blurred true)
+                     true)))
        (on_hide (fn ()
                    (progn
                       (when output_control
@@ -11693,6 +11880,11 @@
                          (attach_event_listener title_span
                             `click
                             prompt_rename)
+                         
+                         (attach_event_listener view
+                            `focusin
+                            focus_event)
+                         
                          ;; set the computed name
                          (set_prop options
                             `name
@@ -11716,7 +11908,7 @@
                                             (-> input_container `display_context_message "REPL Mode: Press Shift-Enter to evaluate editor contents")
                                             250)))
                          true))))))
-
+      
        (attach_event_listener output_control.output_container
                            `focusin
                            (function (e)
@@ -12371,11 +12563,7 @@
          (> candidates.length 0)
          (progn
             (= new_ctl (cmd candidates))
-            (swap_control *last_focus* new_ctl)
-            ;; control will get the on_focus event, but we want to default
-            ;; focus into the editor for this operation
-            (when new_ctl.editor
-               (focus_to new_ctl.editor)))
+            (swap_control *last_focus* new_ctl))
          else
          (notify (dtext "No controls are in the holding tank."))))
    {
@@ -12410,11 +12598,9 @@
               candidates)
          (when next_index
             (= new_ctl (prop candidates next_index))
-            (set_focus_to new_ctl)
+            (set_focus_to new_ctl)))
             ;; control will get the on_focus event, but we want to default
             ;; focus into the editor for this operation if the control has an editor
-            (if new_ctl.editor
-               (focus_to new_ctl.editor))))
       (notify (dtext "No controls are in the holding tank."))))
    {
      
@@ -13497,8 +13683,9 @@
                              (count 0)
                              (new_view nil))
                             (if (not initialized)
-                                (push message_cache
-                                   [event_obj force])
+                                (progn 
+                                   (push message_cache
+                                      [event_obj force]))
                                 (progn
                                    ;; deal with recording the history
                                    (when first_arg
@@ -13549,6 +13736,9 @@
                               (message_receiver { `args: [ text ] }))))
     (take_focus (fn ()
                    (focus_to search_input)))
+    (on_focus (fn ()
+                 (progn
+                    (focus_to search_input))))
     (split_view nil)
     (show_history (fn (show?)
                        (let
@@ -13670,7 +13860,6 @@
                             (fn (e)
                                (when (has_class? "juno-requires" e.srcElement)
                                   (show_documentation e.srcElement.innerText))))
-                         
                          (build_tag_index)
                          (= reindex_timer
                             (setInterval build_tag_index 60000))
@@ -13738,11 +13927,12 @@
    (let
       ((ctl_holding (control_holding_tank))
        (focused *last_focus*))
+      
       (try
          (cond
-            (-> ctl_holding `has_control? (juno_documentation))
+            (-> ctl_holding `has_control? (juno_documentation { no_create: true }))
             (progn
-               (place_control `right (juno_documentation))
+               (place_control `right (juno_documentation { no_create: true }))
                (cascade_resize)
                (when (not focus_to_help?)
                   (setTimeout (fn ()
@@ -13755,12 +13945,13 @@
             (progn
                (defvar ctl (juno_documentation))
                ((fn () (place_control `right ctl)))
+               (wait_for_placement ctl)
                (when (not focus_to_help?)
                   (setTimeout (fn ()
                                  (progn
                                     (sleep 0.05)
                                     (focus_to_editor focused))) 5))))
-               
+         
          (catch Error (e)
             (notify (+ "Unable to open help panel: " e.message)))))
    {
@@ -13815,7 +14006,6 @@
 (defun display_tag (text)
    (progn
       (show_help_panel)
-      (sleep 0.1)
       (-> (juno_documentation)`search_by_tag text))
    {
      description: (+ "Given a text string, opens the documentation panel with the associated "
@@ -13838,7 +14028,6 @@
 (defun display_documentation (text)
    (progn
       (show_help_panel)
-      (sleep 0.1)
       (-> (juno_documentation)`show_documentation text))
    {
      description: (+ "Given a text string, opens the documentation panel " 
@@ -14909,10 +15098,9 @@
                       true))))
     (on_focus (fn (self)
                 (progc
+                   (wait_for_display self)
                    (if saved_point
                       (progn
-                      
-                         (sleep 0.1)
                          (if hide_state
                             (progn
                                ;(collapse_to_start saved_point.selection )
@@ -14928,8 +15116,12 @@
                          (show_attributes saved_point.element)
                          true)
                       (progn
-                         (sleep 0.1)
-                         (focus_to root_elem))))))
+                         (if (> root_elem.children.length 0)
+                             (progn
+                                (focus_to root_elem.children.0)
+                                (collapse_to_start (select_element root_elem.children.0)))
+                             (focus_to root_elem))
+                        )))))
     (process_rules_for_event (fn (event)
                                 (let
                                    ((text (get_text_around_point current_point))
@@ -15430,6 +15622,9 @@
                                    class: (get_attribute element `class)
                                    style: (get_attribute element `style)
                                    onclick: (prop element `onclick)
+                                   command_text: (if (prop element `onclick)
+                                                     (+ "(javascript | " (-> (prop element `onclick) `toString) " | )")
+                                                     "")
                                    contentEditable: (prop element `contentEditable)
                                    spellcheck: (prop element `spellcheck)
                                }))
@@ -15469,13 +15664,17 @@
                                              ))))))))
     
     (update_command (fn (element text)
-                       (progn
+                       (alert_on_error "Cannot update command"
+                          (log "updating command: " text element.innerText)
                           (set_attribute element
                              `command_text
                              text)
                           (set_prop  element 
                              `onclick
-                              (eval_struct (read_lisp text))))))
+                              (eval_struct (read_lisp text)))
+                          (= displayed_element_for_attributes nil)
+                          (show_attributes element)
+                          )))
     
     (handle_attribute_change (function (element key new_value)
                                 (progn
@@ -15496,7 +15695,7 @@
                                                   (remove_class c element)))
                                             (for_each (c new_classes)
                                                (unless (has_class? c element)
-                                                  (add_class c element)))
+                                              (add_class c element)))
                                             element.classList))
                                       (== key "style")
                                       (progn
@@ -15722,12 +15921,15 @@
                                         ;(log "remote_content: " remote_content)
                                         (when (and remote_content (not is_fresh))
                                            (= remote_content (eval (read_lisp remote_content)))
+                                           
                                            (-> root_elem `replaceWith remote_content)
-                                           (= root_elem document_view.children.0)))
+                                           (= root_elem remote_content))) ;document_view.children.0)))
                                      (catch Error (e)
                                         (progn
                                            (log "DOM_editor: cannot set remote content: " remote_content)
                                            (alert_box (+ "Unable to open: " options.filename " - " e.message))
+                                           (if (== (dtext "Yes") (request_user_choice (dtext "Open content in a text_editor?") [(dtext "Yes") (dtext "No")]))
+                                               (setTimeout (fn () (edit_file { `mode: "juno" `filename: options.filename } )) 500))
                                            (= error_state true)))))
                                (is_array? options.path)
                                (progn
@@ -15885,6 +16087,7 @@
                             
                             (setTimeout (fn ()
                                            (progn
+                                              (wait_for_display self)
                                               (declare (function setup_drop_file)
                                                        (global setup_drop_file))
                                                (setup_drop_file view
@@ -15910,18 +16113,24 @@
                                                 (if options.show_attributes
                                                   (set_show_attributes true)
                                                   (set_show_attributes false))
-                                               (cond
-                                                  error_state  ;; unable to initialize - so remove ourselves
-                                                  (destroy_control self)
-                                                  (and (or options.content
-                                                           options.filename)
-                                                       (not is_fresh))
-                                                  (progn
-                                                     (select_element root_elem)
-                                                     (collapse_to_start (get_selection)))
-                                                  else
-                                                  (progn
-                                                     (select_element starter)))))
+                                                (cond
+                                                   error_state  ;; unable to initialize - so remove ourselves
+                                                   (destroy_control self)
+                                                   (and (or options.content
+                                                            options.filename)
+                                                        (not is_fresh))
+                                                   (progn
+                                                      (if (> root_elem.children.length 0)
+                                                          (progn
+                                                             (focus_to root_elem.children.0)
+                                                             (collapse_to_start (select_element root_elem.children.0)))
+                                                          (progn
+                                                             (focus_to root_elem)
+                                                             (collapse_to_start (select_element root_elem)))))
+                                                   else
+                                                   (progn
+                                                      (log "dom_editor: initialize: fall_through")
+                                                      (select_element starter)))))
                                         100))))))
    {
        control_bar: true
@@ -16106,6 +16315,63 @@
       `tags: ["editor" "description" "metadata" "meta" ] })
 
 
+(defun controls_in_layout (layout non_containers_only?)
+   (let
+      ((layout (if (is_layout? layout)
+                  layout
+                  (throw TypeError "controls_in_layout: invalid layout passed")))
+       (acc []))
+      (if non_containers_only?
+         (reduce (control (current_controls true layout))
+            (unless (contains? control.type [ "control_container" "split_view_horizontal" "split_view_vertical" ])
+               control)) 
+         (current_controls true layout)))
+   {
+     description: (+ "For the given layout, returns the controls that are contained within "
+                     "it.  If the `non_containers_only?` argument is set to `true`, then splits and "
+                     "control containers will not be included in the results. ")
+       usage: ["layout:object" "non_containers_only?:?boolean"]
+       tags: ["layouts" "layout" "controls" "ui" "control" ]
+       })
+      
+                                    
+
+(defun hide_others_in_layout (control)
+   (if (is_control? control)
+       (let
+          ((layout (get_layout_for_control control)))
+          (cond 
+             (== control (control_holding_tank))
+             (progn 
+                (notify "Hide operation cannot be performed for this control")
+                (throw EvalError "Hide operation cannot be performed for this control"))
+             (== layout (control_holding_tank))
+             (progn
+                (notify (dtext "The specified control is in the holding tank"))
+                (throw EvalError "hide_others_in_layout: specified control is in the holding tank"))
+             (eq nil layout)
+             (throw TypeError "hide_others_in_layout: nil layout for provided control")
+             (layout_locked? layout)
+             (progn 
+                (notify (dtext "The layout is currently locked for the control"))
+                (throw EvalError "hide_others_in_layout: locked layout"))
+             (is_layout? layout)
+             (progn
+                (unless (== (get_current_layout_control) layout)
+                   (switch_to_new_layout (control_name layout)))
+                (wait_for_display control)
+                (reduce (layout_control (controls_in_layout layout true))
+                   (unless (== control layout_control)
+                      (hide_control layout_control))))))
+       (throw TypeError "hide_others_in_layout: invalid control provided"))
+   {
+     description: (+ "Given a control to keep, the function removes all other controls from "
+                      "the layout if it is unlocked.  If the layout is locked, or the control is in "
+                      "the holding_tank an `EvalError` is thrown.<br>If a non control is provided, "
+                      "a `TypeError` is thrown.  <br>There is no meaningful return value. ")
+     usage: ["control:object"]
+     tags: [`layout `controls `layouts `control `ui `hide ]
+   })
 
 (defun handle_app_click_event (e)
   (let
@@ -16126,10 +16392,11 @@
            control)
       ;; a command button was clicked show the menu for the control
       (let
-          ((control_menu (conj (if (is_function? control.menu_items)
+          ((locked? (current_layout_locked?))
+           (control_menu (conj (if (is_function? control.menu_items)
                                  (-> control `menu_items)
                                  [[]])
-                               [(if (current_layout_locked?)
+                               [(if locked?
                                     []
                                     [(dtext "Swap") 
                                      (reduce (other_control (current_controls true))
@@ -16139,12 +16406,44 @@
                                                  (not (eq nil other_control.name))
                                                  (not (contains? other_control.name parents)))
                                             [other_control.name (fn () (swap_control control other_control)) ]))])
-                                [(dtext "Hide") (fn ()
-                                                  (hide_control control))]
-                                ["--" nil]
-                                [(dtext "Close Control")
-                                 (fn ()
-                                    (destroy_control control))]])))
+                                (if locked?
+                                   []
+                                   [(dtext "Hide Others")
+                                    (fn ()
+                                       (hide_others_in_layout control))])
+                                (if locked?
+                                   [(dtext "Layout Locked") 
+                                    (fn ()
+                                           (alert_box (dtext "Layout Locked")
+                                                      (div { `style: "line-height: 1.3em;" }
+                                                           (dtext "The layout is locked and cannot be modified.")
+                                                           " "
+                                                           (dtext "To unlock see the Menu")
+                                                           ":"
+                                                           (pre (dtext "Layout") "->" (dtext "Unlock positions for")
+                                                                " "
+                                                                (b
+                                                                   (control_name (get_current_layout_control)))))))]
+                                   [(dtext "Close Panel") 
+                                    (fn ()
+                                       (hide_control control))])
+                                (cond 
+                                   locked?
+                                   []
+                                   (or (and (is_function? control.can_hide?)
+                                            (-> control `can_hide?))
+                                       (not (has_the_keys? [ `can_hide? ] control)))
+                                   [(dtext "Move Control To New Layout")
+                                    (fn ()
+                                       (move_control_to_new_layout control))])
+                                (if locked?
+                                   []
+                                   ["--" nil])
+                                (if locked?
+                                   []
+                                   [(dtext "Close Control")
+                                    (fn ()
+                                       (destroy_control control))])]))) 
         (make_menu elem control_menu)))))
 
       
@@ -16819,6 +17118,7 @@
                                source: "document"
                                args: [ ] }))))))
 
+
 (defun_sync to_indent (str)
     (join "" (for_each (c (range str.length))
                        " ")))
@@ -17434,6 +17734,54 @@
      tags: ["import" "local" "files" "resources" "browser" "ui"]
    })
 
+
+(defun setup_bootstrap_handler ()
+   (let
+      ((in_build false)
+       (errors_encountered false))
+   (remove_event_handler "evaluator" "build_application")
+   (remove_event_handler "bootstrap" "build_application")
+   
+   (register_event_handler "evaluator" "build_application" "build_application_evaluator" 
+                           (fn (event)
+                              (cond
+                                 (resolve_path [`args 0 `value 0 `error] event)
+                                 (progn
+                                    (= errors_encountered true)
+                                    (log_error "Bootstrap Error: " event.args.0.value.0))
+                                 (resolve_path [`args 0 `error_state] event)
+                                 (progn
+                                    (= errors_encountered true)
+                                    (log_error "Bootstrap Error: " event.args.0.value))
+                                 (and (resolve_path [`args 0 `value `results] event)
+                                      (not errors_encountered))
+                                 (log "Bootstrap: wrote output: " (resolve_path [`args 0 `value `results] event))
+                                 (resolve_path [`args 0 `value] event)
+                                 (if errors_encountered
+                                    (log_error "Bootstrap: " event.args.0.value)
+                                    (log "Bootstrap: " event.args.0.value))
+                                 else
+                                 (log "Bootstrap: Received Unknown: " event))))
+                                                                                                
+       
+       (register_event_handler "bootstrap" "build_application" "build_application_bootstrap" 
+                               (fn (event)
+                                  (progn
+                                     ;(log "build_app: : event: " event (resolve_path [`args 0] event))
+                                     (cond 
+                                        (== "start" (resolve_path [`args 0] event))
+                                        (progn
+                                           (= in_build true)
+                                           (log "Bootstrap: Build started"))
+                                        (== "complete" (resolve_path [`args 0] event))
+                                        (progn
+                                           (if errors_encountered
+                                              (log_error "Bootstrap Failed" "See log")
+                                              (log "Bootstrap Completed Successfully"))
+                                            (= errors_encountered false)
+                                            (= in_build false))))))
+       true))
+
 (defun export_system (layout_name options)
    (let
       ((cancel_button (button { `style: "float: right" }  (dtext "Close")))
@@ -17768,6 +18116,39 @@
  (defun_sync core/keyword_mapper (token)
    (user/keyword_mapper token)))
 
+(defun eval_in_iframe (iframe_element quoted_lisp timeout)
+   (new Promise 
+      (fn (resolve reject)
+         (let
+            ((pid (gen_id "pid"))
+             (timeout (if (is_number? timeout)
+                          timeout
+                          10000)))
+            (set_prop *ipc_promise_ids*
+               pid
+               (list resolve
+                  (setTimeout (fn ()
+                                 (when (prop *ipc_promise_ids* pid)
+                                    (clearTimeout (second (prop *ipc_promise_ids* pid)))
+                                    (delete_prop *ipc_promise_ids* pid)
+                                    (reject undefined)))
+                              10000)))
+            (-> iframe_element.contentWindow `postMessage 
+               (JSON.stringify { source: nil command: "exec" args: [pid quoted_lisp] })))))
+   {
+     description: (+ "Given an iframe element that is listening for dispatched events on the "
+                     "\"exec\" command, and quoted lisp code for evaluation, the code will be sent to "
+                     "the iframe, compiled within it, evaluated, and the answer returned.  The "
+                     "function will not return until either the response from the iframe is received, "
+                     "or a timeout occurs at which point the promise being waited on will be rejected "
+                     "with an undefined value.   <br>An optional timeout value in milliseconds can be "
+                     "provided as the 3rd argument, otherwise a default of 10 seconds (10000) is "
+                     "used. ")
+     usage: ["iframe_element:Element" "quoted_lisp:array" "timeout:?number"]
+     tags: [`iframe `eval `evaluation `ipc ]
+     })
+
+
 (defun gen_file_menu ()
    [["New..." [(if is_served?
                    ["Server File" new_file]
@@ -17884,10 +18265,7 @@
       ((current_layout (get_current_layout_control))
        (idx 0)
        (f0 (frame_0))
-       (roots (reduce (ctl $root_controls)
-                 (when (and (not (== ctl.type "app_header"))
-                            (not (== ctl.type "holding_tank")))
-                    ctl)))
+       (roots (available_layouts))
        (layout_locked? (prop current_layout.options `is_locked?)))
       (conj 
          (for_each (ctl roots)
@@ -18355,6 +18733,12 @@
                                        description: "Split the current control downward"
                                        exec: (fn () (split_control `horizontal))
                                       }
+                 "move_control_to_new_layout" {
+                                                win: "Alt-4"
+                                                mac: "Alt-4"
+                                                description: "Move the currently focused control to new layout"
+                                                exec: (fn () (move_control_to_new_layout *last_focus*))
+                                                }
                   "close_panel" {
                                        win: "Alt-0"
                                        mac: "Alt-0"
@@ -18367,6 +18751,12 @@
                                        description: "Close (Destroy) the control in the currently focused panel."
                                        exec: (fn () (hide_control *last_focus* true true))
                                       }
+                  "hide_others" {
+                                  win: "Alt-1"
+                                  mac: "Alt-1"
+                                  description: "Hide all controls in the current layout except for the currently focused control."
+                                  exec: (fn () (hide_others_in_layout *last_focus*))
+                  }
                   "evaluate_and_replace_at_point" {
                                                     mac: "Command-R"
                                                     win: "Alt-R"
@@ -18465,7 +18855,7 @@
                                            (close_periphery e k))
                                  }
                   "frame_0" {
-                              win: "Alt-1"
+                              win: "Control-1"
                               mac: "Command-1"
                               description: "Jump to frame 0"
                               exec: (fn (e) (jump_to_frame_0))
@@ -18560,16 +18950,56 @@
          (set_prop *env_config*.export
                    `save_prefix
                    "seedling"))
-       (register_event_handler nil "open_definition" "open_symbol_definition" (fn (event)
-                                                                                    (apply open_symbol_definition event.args)))
+       (register_event_handler nil "open_definition" "open_symbol_definition" 
+                               (fn (event)
+                                  (apply open_symbol_definition event.args)))
+       
+       ;; setup the iframe communications 
+       (if (in_iframe?)
+           (register_event_handler nil "exec" "executor"
+                                   (fn (event)
+                                      (if (in_iframe?)
+                                          (-> window.top `postMessage (JSON.stringify { source: "executor" command: "result" args: (list (first event.args)
+                                                                                                                                         (eval (second event.args))) })))))
+           (register_event_handler "executor" "result" "executor_result"
+                           (fn (event)
+                              (let
+                                 ((resolver nil)
+                                  (pid nil))
+                                 (declare (function resolver))
+                                 ;(log "event.args: " event)
+                                 (when event.args
+                                    (= pid (first event.args))
+                                    (when (prop *ipc_promise_ids* pid)
+                                       (clearTimeout (second (prop *ipc_promise_ids* pid)))
+                                       (= resolver (first (prop *ipc_promise_ids* pid)))
+                                       (delete_prop *ipc_promise_ids* pid)
+                                       (resolver (second event.args))))))))
+       
+       (setup_bootstrap_handler)
+       
+       
        (-> juno_container
            `append page_frame.view)
        (-> (control_holding_tank) `add_control (juno_documentation))
        (-> page_frame `initialize))
-      (progn     
-         (console.log "serialized controls: " *serialized_controls*)
-         (rehydrate_controls juno_container *serialized_controls*)))
-    
+      (try     
+         (progn
+            (console.log "serialized controls: " *serialized_controls*)
+            (rehydrate_controls juno_container *serialized_controls*))
+         (catch Error (e)
+            (progn
+               (console.error "Unable to initialize: " e)
+               (dispatch_event { `command: "initialization_error" source: "rehydrate_controls" args: [(current_namespace) e.message *serialized_controls*] })
+               (-> juno_container 
+                   `append (div { `class: "juno-error" } 
+                                (div "Unable to initialize from serialized controls: " 
+                                   e.message)
+                                (div "See console for error stack trace")
+                                (div "Serialized Controls: ")
+                                (pre
+                                   (pretty_print *serialized_controls*))))))))
+               
     (sleep 0.1)
     (default_focus)
     ;; setup key bindings
@@ -18625,6 +19055,25 @@
     
     
     
+    (set_prop window `onmessage
+       (fn (e)
+          (progc
+             (let
+                ((data (JSON.parse e.data)))
+                (if (and (is_object? data)
+                         data.command)
+                    (progn
+                       (if (not (in_iframe?))
+                           (set_prop data
+                              `child_frame true)
+                           (set_prop data
+                              `child_frame false))
+                       (dispatch_event data))
+                    (progn
+                       (log "window.onmessage: received invalid message: " e)))))))
+                       
+                       
+    (dispatch_event { command: "complete" source: "initializer" args: [ (current_namespace) ] })
     (notify (+ "Hello " *namespace* ))
     true))
 
