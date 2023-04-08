@@ -1149,10 +1149,9 @@
                       true))))
     (on_focus (fn (self)
                 (progc
+                   (wait_for_display self)
                    (if saved_point
                       (progn
-                      
-                         (sleep 0.1)
                          (if hide_state
                             (progn
                                ;(collapse_to_start saved_point.selection )
@@ -1168,8 +1167,12 @@
                          (show_attributes saved_point.element)
                          true)
                       (progn
-                         (sleep 0.1)
-                         (focus_to root_elem))))))
+                         (if (> root_elem.children.length 0)
+                             (progn
+                                (focus_to root_elem.children.0)
+                                (collapse_to_start (select_element root_elem.children.0)))
+                             (focus_to root_elem))
+                        )))))
     (process_rules_for_event (fn (event)
                                 (let
                                    ((text (get_text_around_point current_point))
@@ -1969,8 +1972,9 @@
                                         ;(log "remote_content: " remote_content)
                                         (when (and remote_content (not is_fresh))
                                            (= remote_content (eval (read_lisp remote_content)))
+                                           
                                            (-> root_elem `replaceWith remote_content)
-                                           (= root_elem document_view.children.0)))
+                                           (= root_elem remote_content))) ;document_view.children.0)))
                                      (catch Error (e)
                                         (progn
                                            (log "DOM_editor: cannot set remote content: " remote_content)
@@ -2134,6 +2138,7 @@
                             
                             (setTimeout (fn ()
                                            (progn
+                                              (wait_for_display self)
                                               (declare (function setup_drop_file)
                                                        (global setup_drop_file))
                                                (setup_drop_file view
@@ -2159,18 +2164,24 @@
                                                 (if options.show_attributes
                                                   (set_show_attributes true)
                                                   (set_show_attributes false))
-                                               (cond
-                                                  error_state  ;; unable to initialize - so remove ourselves
-                                                  (destroy_control self)
-                                                  (and (or options.content
-                                                           options.filename)
-                                                       (not is_fresh))
-                                                  (progn
-                                                     (select_element root_elem)
-                                                     (collapse_to_start (get_selection)))
-                                                  else
-                                                  (progn
-                                                     (select_element starter)))))
+                                                (cond
+                                                   error_state  ;; unable to initialize - so remove ourselves
+                                                   (destroy_control self)
+                                                   (and (or options.content
+                                                            options.filename)
+                                                        (not is_fresh))
+                                                   (progn
+                                                      (if (> root_elem.children.length 0)
+                                                          (progn
+                                                             (focus_to root_elem.children.0)
+                                                             (collapse_to_start (select_element root_elem.children.0)))
+                                                          (progn
+                                                             (focus_to root_elem)
+                                                             (collapse_to_start (select_element root_elem)))))
+                                                   else
+                                                   (progn
+                                                      (log "dom_editor: initialize: fall_through")
+                                                      (select_element starter)))))
                                         100))))))
    {
        control_bar: true
@@ -2197,6 +2208,7 @@
                     }]
                 [`get (fn ()
                          (pretty_print (element_to_lisp root_elem))) ]
+                
                 [`root_elem (fn ()
                                root_elem) ]
                 [`set_read_only  set_read_only]
@@ -2365,19 +2377,20 @@
               elem_as_lisp))
        [ "UNKNOWN:" element ])
    {
-     `description: (+ "Given a DOM element, returns the lisp represenation of the DOM element.<br>"
-                      "If provided with an options object, the following keys are applicable:<br>"
-                      "tagname_for_element:(fn element) - For every new element encountered in the "
-                      "provided tree, will be called with the new element.  The function should "
-                      "return a string value to be used for the tagname as opposed to the original "
-                      "element tagName value.<br>"
-                      "use_ns:string - Qualify the emitted tag symbols with the provided namespace.<br> "
-                      "on_text:(function text nodes) - Will be called on a text node with the text and "
-                      "and the sibling nodes.<br>"
-                      "on_element_complete:(function array) - Will be called with the quoted lisp form "
-                      "that was constructed.  The function can then manipulate the completed form "
-                      "prior to it being placed in the returned lisp form.  Note that this function "
-                      "is called for every completed element, not just the final return value.")
+     `description: (+ "<br><br>Given a DOM element, returns the lisp represenation of the DOM "
+                      "element.<br><br>### Options <br><br>If provided with an options object, the "
+                      "following keys are applicable:<br>tagname_for_element:(fn element) -For every "
+                      "new element encountered in the provided tree, will be called with the new "
+                      "element.  The function should return a string value to be used for the tagname "
+                      "as opposed to the original element tagName value.<br>use_ns:string -Qualify the "
+                      "emitted tag symbols with the provided namespace.<br> on_text:(function text "
+                      "nodes) - Will be called on a text node with the text and and the sibling "
+                      "nodes.<br>on_element_complete:(function array) -Will be called with the quoted "
+                      "lisp form that was constructed.  The function can then manipulate the completed "
+                      "form prior to it being placed in the returned lisp form.  Note that this "
+                      "function is called for every completed element, not just the final return "
+                      "value. ")
+
      `usage: ["element:element" "options:object"]
      `tags: ["DOM" "ui" "serialize" "serialization" "view" "element" ]
    })

@@ -2452,6 +2452,12 @@ div.juno-tab-active {
 
 .juno-pointer {
     cursor: pointer;
+    transition: all .1s ease-in-out;
+}
+
+.juno-pointer:hover {
+    transition: all .1s ease-in-out;
+    box-shadow: 2px 3px 8px 0px #00000040;
 }
 
 /* Overrides - may be dealt with in a better way but for now

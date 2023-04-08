@@ -7,6 +7,9 @@
 (declare (namespace core))
 (console.log "browser_workspace: running")
 
+(-> window.top `postMessage (JSON.stringify { `command: "build_application" `source: "bootstrap" args: ["start"] }) "*")
+(defglobal errors_encountered false)
+
 (defparameter core/is_served? (and (not (blank? (resolve_path [ `location `hostname ] window)))
                                    (== (prop (fetch "/files") `status) 200)))
 (console.log "browser_workspace: online? is_served: " is_served?)
@@ -60,6 +63,7 @@
                         (catch Error (ex)
                           (do
                             (= error_state true)
+                            (= errors_encountered true)
                             (console.error ex)
                             (= result ex))))
                       (console.log "<-" result)
@@ -69,6 +73,24 @@
                             (html/div { style:"border-top: 1px solid #C0C0C0; padding: 5px; margin-top: 1px; width: calc(100% - 10px); display: inline-block; " }
                                       (html/code { `style: "font-style: italic;" }
                                                  lisp_text))))
+                      (try 
+                         (-> window.top `postMessage 
+                            (JSON.stringify { `command: "build_application" 
+                                              `source: "evaluator"
+                                              args: [{
+                                                  error_state: errors_encountered
+                                                  value: (cond
+                                                            (is_element? result)
+                                                            result.innerText
+                                                            (instanceof result Error)
+                                                            result.message
+                                                            (is_function? result)
+                                                            "function"
+                                                            else
+                                                            result)
+                                              }] }) "*")
+                         (catch Error (e)
+                            (console.error "Unable to postMessage: " e.message result)))
                       (-> output_container
                           `append
                           (html/div { `style: "padding: 5px; margin-top: 0px; width: calc(100% - 10px); display: inline-block; " }
@@ -106,6 +128,8 @@
                       (set_prop output_container
                                 `scrollTop
                                 output_container.offsetHeight)
+                      (when error_state
+                         (throw result))
                       result)))
        
        (input_container (html/div {  `style: "height: calc(20% - 15px); overflow: hidden; " }
@@ -147,6 +171,7 @@
 
 (defun core/page_header ()
   (first (html/query_all "head")))
+
 
 
 
@@ -300,27 +325,35 @@
   ($set_global_theme $current_theme))
 
 (setTimeout (fn ()
-              (rlog (if (prop globalThis `in_starter)
-                      (progn
-                       (-> repl `initialize)
-                       (html/div "In starter mode..building new image.."))
-                      (html/div "Ready"))))
+               (rlog (if (prop globalThis `in_starter)
+                         (progn
+                            (-> repl `initialize)
+                            (html/div "In starter mode..building new image.."))
+                         (html/div "Ready"))))
             10)
       
 
 
 
 (setTimeout (fn ()
-              (progn
-               (when (prop globalThis `in_starter)
-                 (rlog (html/div "Bootstrapping new image.."))                 
-                 (-> repl `evaluate |
-                     (use_unique_symbols "html")
-                     (evaluate (LZString.decompressFromBase64 browser_initializer) nil { `source_name: "pkg/browser_initializer.juno" })
-                     | { `source_name: "pkg/browser_initializer.juno" })
-                 (undefine `browser_initializer) ;; no longer needed in text form, remove to save space
-                 (-> repl `evaluate | (save_image) | )
-                 (rlog (html/div "Complete..Open the newly created html file to use.")))))
+               (try
+                  (when (prop globalThis `in_starter)
+                     (rlog (html/div "Bootstrapping new image.."))
+                     (-> repl `evaluate |
+                        (use_unique_symbols "html")
+                        (try 
+                           (evaluate (LZString.decompressFromBase64 browser_initializer) nil { `source_name: "pkg/browser_initializer.juno" })
+                           (catch Error (e)
+                              (progn
+                                 (= errors_encountered true))))
+                        | { `source_name: "pkg/browser_initializer.juno" })
+                     (undefine `browser_initializer) ;; no longer needed in text form, remove to save space
+                     (-> repl `evaluate | (save_image) | )
+                     (-> window.top `postMessage (JSON.stringify { `command: "build_application" `source: "bootstrap" args: ["complete"] }) "*"))
+                  (catch Error (e)
+                     (progn
+                        (console.error "ERROR on build: " e)
+                        (-> window.top `postMessage (JSON.stringify { `command: "build_application" `source: "bootstrap" args: [e.message ] }) "*")))))
             100)
             
 

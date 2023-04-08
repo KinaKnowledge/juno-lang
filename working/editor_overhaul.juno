@@ -23,20 +23,19 @@
             (eval_selected_text_in_place ctl options))
          ))
    {
-       `description: (+ "Using the control in `*last_focus*`, calls the eval_selected_text_in_place function "
-                        "with the provided options.  The result of the evaluation will be placed into "
-                        "the focused editor, either as replaceement text or appended text.<br>"
-                        "The link is http://kinaknowledge.com."
-                        "<br>### Options<br>"
-                        "discard_nil_values:boolean - If true any nil values will not be placed into "
-                        "the editor.  If false, the user will be prompted to place nil values into "
-                        "the text.  The default is true.<br>"
-                        "append:boolean - If true, the result of the evaluation will be appended into "
-                        "the editor at the point of the cursor, or if text is selected in the editor, "
-                        "after the selection.<br>")
+     `description: (+ "Using the control in `*last_focus*`, calls the "
+                      "eval_selected_text_in_place function with the provided options.  The result of "
+                      "the evaluation will be placed into the focused editor, either as replacement "
+                      "text or appended text.<br>The link is http://kinaknowledge.com.<br><br>### "
+                      "Options <br><br>discard_nil_values:boolean -If true any nil values will not be "
+                      "placed into the editor.  If false, the user will be prompted to place nil "
+                      "values into the text.  The default is true.<br>append:boolean -If true, the "
+                      "result of the evaluation will be appended into the editor at the point of the "
+                      "cursor, or if text is selected in the editor, after the selection. ")
        `usage: ["options:object"]
        `tags: ["editor" "control" "text" "evaluation" "replacement" "eval" "buffer"]
    })
+
 { name: "inline-link"  ;;\\\\((\\\\b(https?|ftp|file):\\\\/\\\\/[-A-Z0-9+&@#\\\\/%?=~_|!:,.;]*[-A-Z0-9+&@#\\\\/%=~_|])[ ]?[\"]?([a-z 0-9\\\\w]+)?\"]?\\)
                        regex: (new RegExp "\\\\[([ 'a-z 0-9 \\\\-]+)\\\\][ ]?" `gi)
                        exec: (fn (value full_regex_match)
@@ -582,17 +581,16 @@
       (alert_on_error "File Open Error"
                       (new_buffer options)))
    {
-       `description: (+ "If provided an options object with a filename key and file path value, "
-                        "the function will attempt to fetch and present that file for editing. "
-                        "If an error is encountered, the error will be presented to the user "
-                        "in a popup window and nil returned.  If called with no options, the "
-                        "function will prompt the user to select a file via a file_tree_browser "
-                        "control.  If create_mode is true in the options, then a new file "
-                        "creation will be attempted and an editor returned for that.  If a "
-                        "new file cannot be created, the user will be warned and nil will "
-                        "be returned.")
-       `usage: ["options:object"]
-       `tags: ["DOM" "ui" "file" "edit" "open"]
+     `description: (+ "If provided an options object with a filename key and file path value, "
+                      "the function will attempt to fetch and present that file for editing. If an "
+                      "error is encountered, the error will be presented to the user in a popup window "
+                      "and nil returned.  If called with no options, the function will prompt the user "
+                      "to select a file via a file_tree_browser control.  If create_mode is true in "
+                      "the options, then a new file creation will be attempted and an editor returned "
+                      "for that.  If a new file cannot be created, the user will be warned and nil "
+                      "will be returned. ")
+     `usage: ["options:object"]
+     `tags: ["DOM" "ui" "file" "edit" "open"]
    })
 
 
@@ -604,19 +602,21 @@
                   (dtext "There can be only one description editor open at a time."))
        (new Promise
           (fn (resolve reject)
-             (let
-                ((result nil)
-                 (name "Description Editor")
-                 (deditor (DOM_editor { rules: [ `*markdown_rules* ] `content: content `name: name })))
-                (defglobal $ed_rval nil)
-                (place_control `right deditor)
-                (while (and (get_control_by_id deditor.options.id)
-                            (is_nil? $ed_rval))
-                   (progn
-                      (sleep 1)))
-                (if (get_control_by_id deditor.options.id)
-                    (destroy_control deditor))
-                (resolve `(+ ,@$ed_rval)))))))
+             (progc
+                (let
+                   ((result nil)
+                    (name "Description Editor")
+                    (deditor (DOM_editor { rules: [ `*markdown_rules* ] `content: content `name: name })))
+                   (defglobal $ed_rval nil)
+                   (place_control `right deditor)
+                   (wait_for_placement deditor)
+                   (while (and (get_control_by_id deditor.options.id)
+                               (is_nil? $ed_rval))
+                      (progn
+                         (sleep 1)))
+                   (if (get_control_by_id deditor.options.id)
+                       (destroy_control deditor))
+                   (resolve `(+ ,@$ed_rval))))))))
 
 
 (defun_sync find_last_paren (editor pos options)
@@ -2655,15 +2655,27 @@
                                (if options.path
                                   (> (length (get_editors_for_path options.path)) 1)
                                   false)))
+            (search_focus false)
+            (focus_event (fn (e)
+                            (progn
+                               (add_class "juno-focused" control_bar)
+                               (handle_event e)
+                               (if (and e
+                                     (or (has_class? "ace_search_field" e.relatedTarget) 
+                                         (has_class? "ace_search" e.relatedTarget)))
+                                (progn
+                                   (= search_focus true))
+                                (progn
+                                   (= search_focus false)
+                                   )))))
             (on_focus (fn ()
                          (progn
-                            (when (not (== *last_focus* intf))
-                               (setTimeout (fn ()
-                                              (focus_to intf.editor))
-                                           10))
-                            (setq *last_focus* intf)
-                            (add_class "juno-focused" control_bar))))
-            
+                            (add_class "juno-focused" control_bar)
+                            (if (or search_focus
+                                    (search_focused?))
+                               true
+                               (progn
+                                  (focus_to intf.editor))))))
             (orig_bindings nil)
             (build_key_bindings (fn (editor)
                                    (progn
@@ -3444,6 +3456,10 @@
                                         (if options.read_only
                                            (set_read_only options.read_only))
                                       
+                                        (attach_event_listener view
+                                           `focusin
+                                           focus_event)
+                                        
                                         ;; signal our mode change
                                         
                                         (dispatch_event { command: "editor_change"
