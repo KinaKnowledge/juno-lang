@@ -2,15 +2,41 @@
 
 (create_namespace "seedling-tests")
 (use_ns seedling-tests)
-
+(declare (namespace seedling-tests))
 (use_symbols "user" 
-   [ `place_control `panel `eval_in_iframe])
+   [ `place_control `panel `eval_in_iframe register_event_handler notify remove_event_handler quick_alert alert_box alert_on_error set_focus_to *last_focus*])
 
+(defparameter seedling_booted false)
+
+;; check for boot
+(remove_event_handler "initializer" "complete" "child_initializer_complete")
 
 ;; setup 
-(place_control `right
-   (panel "tframe"
-          (defglobal tframe (html/iframe { src: "/env/a1.html" `style: "width: 100%; height: 100%;"} ))))
+
+(new Promise (fn (resolve)
+                (alert_on_error "Cannot start the iframe"
+                   (= seedling_booted false)
+                   (remove_event_handler "initializer" "complete" "child_initializer_complete")
+                   (register_event_handler "initializer" "complete" "child_initializer_complete"
+                      (fn (event)
+                         (progc
+                         (when (event.child_frame)
+                            (set_focus_to user/*last_focus*)
+                            (= seedling_booted true)
+                            (quick_alert "Booted Seedling")
+                            (resolve true)))))
+                   (place_control `right
+                      (panel "tframe"
+                         (defglobal tframe (html/iframe { src: "/env/a1.html" `style: "width: 100%; height: 100%;"} )))))))
+
+
+
+(defun validate_result (result)
+   (progn
+      (aif (apply and* (values result))
+           true
+           result)))
+
 
 ;; primitives...
 
@@ -22,6 +48,9 @@
 
 (defun layout ()
    (ev `(control_name (get_current_layout_control))))
+
+(defun layouts ()
+   (ev `(each (available_layouts) control_name)))
 
 (defun focused_control ()
    (ev `(resolve_path [ `options `last_focus_id ] (get_current_layout_control))))
@@ -52,15 +81,38 @@
 (defun hide_others ()
    (ev `(hide_others_in_layout *last_focus*)))
 
-(defun new_layout_named (name)
+(defun new_layout_named (name ctlname)
    (when name
-      (ev `(make_named_layout name (empty_selection_control)))))
+      (if ctlname
+         (ev `(progn
+                 (move_control_to_new_layout (get_control_by_name ,#ctlname) ,#name)))
+         (ev `(make_named_layout ,#name (empty_selection_control))))
+      true))
+
+(defun remove_layout (name)
+   (when name
+      (log "remove_layout: showing control f0: " (ev `(show_control (frame_0))))
+      (log "layout is now: " (layout))
+      (defvar result
+         (ev `(try 
+                 (progn
+                    (remove_named_layout ,#name))
+                 (catch Error (e)
+                    e.message))))
+      (log "removing_layout: " name result)
+      {
+          `layout_removed: (and (not (contains? name (ev `(named_layouts))))
+                                (or (== result true)
+                                    result.message))
+                                
+      }))
+
 
 (defun split_vertically ()
    (ev `(split_control `vertical)))
 
 (defun split_horizontally ()
-   (ev `(split_control `horizontal))
+   (ev `(split_control `horizontal)))
 
 (defun holding_tank_control_names ()
    (ev `(each (holding_tank_controls) control_name)))
@@ -75,69 +127,151 @@
                 nil))))
 
 (defun controls_visible ()
-   (ev `(each (user/controls_in_layout (user/get_current_layout_control)) control_name)))
+   (ev `(each (user/controls_in_layout (user/get_current_layout_control) true) control_name)))
 
+(defun current_controls ()
+   (ev `(each (current_controls) control_name)))
 
-(defun send_keydown (sequence)
-   (when (is_string? sequence)
-      (let
-         ((comps (split_by "-" sequence))
-          (ctrl? (contains? "Control" comps))
-          (meta? (contains? "Command" comps))
-          (alt? (contains? "Alt" comps))
-          (shift? (contains? "Shift" comps))
-          (key (last comps)))
-         (log "Key: " key)
-         (ev `(try
-                 (progn
-                    (defvar event (new KeyboardEvent `keydown
-                                       (to_object
-                                          [[`bubbles true]
-                                           [`shiftKey ,#shift?]
-                                           [`key ,#key]
-                                           [`code ,#(-> key `charCodeAt)]
-                                           [`metaKey ,#meta?]
-                                           [`ctrlKey ,#ctrl?]
-                                           [`altKey ,#alt?]])))
-                    (-> (prop *last_focus* `view) `dispatchEvent event))
-                 (catch Error (e)
-                    e.message))))))
-                   
+(defun define_keysend ()
+   (ev (quote (defun send_keydown (sequence target)
+                 (when (is_string? sequence)
+                    (let
+                       ((comps (split_by "-" sequence))
+                        (ctrl? (contains? "Control" comps))
+                        (meta? (contains? "Command" comps))
+                        (alt? (contains? "Alt" comps))
+                        (shift? (contains? "Shift" comps))
+                        (key (last comps))
+                        (key_code key)
+                        (target_elem (cond
+                                        (and (is_control? target)
+                                             target.editor.textInput)
+                                        (-> target.editor.textInput `getElement)
+                                        (is_control? target)
+                                        target.view
+                                        (is_element? target)
+                                        target
+                                        (is_array? target) ;; path from body
+                                        (aif (resolve_dom_path target (first (get_by_tag "body")))
+                                             it
+                                             nil)
+                                        (and *last_focus*
+                                           *last_focus*.editor.textInput)
+                                        (-> *last_focus*.editor.textInput `getElement)
+                                        (is_control? *last_focus*)
+                                        (prop *last_focus* `view)
+                                        else
+                                        nil)))
+                       
+                       (cond 
+                          (contains? key [ "0" "1" "2" "3" "4" "5" "6" "7" "8" "9" ])
+                          (= key_code (+ "Digit" key))
+                          else
+                          (= key_code key))
+                       (try
+                          (progn
+                             (defvar event (new KeyboardEvent `keydown
+                                                (to_object
+                                                   [[`bubbles true]
+                                                    [`srcElement: target_elem]
+                                                    [`shiftKey shift?]
+                                                    [`key key]
+                                                    [`code key_code]
+                                                    [`srcElement target_elem]
+                                                    [`keyCode (if (== key "Enter")
+                                                                  10
+                                                                  (-> key `charCodeAt))]
+                                                    [`metaKey meta?]
+                                                    [`ctrlKey ctrl?]
+                                                    [`altKey alt?]])))
+                             (handle_app_key_down_event event))
+                          (catch Error (e)
+                             e.message))))))))
+(define_keysend)
+(remove_event_handler "initializer" "complete" "child_initializer_complete")
+(register_event_handler "initializer" "complete" "child_initializer_complete"
+                             (fn (event)
+                                (when (event.child_frame)
+                                   (define_keysend))))
+
 
 
 ;; composites...
 ;; resets to the "home_state"
 
+
 (defun home_state ()
    (progn
+      (unless (== (layout) "Frame 0")
+         (switch_to "Frame 0")
+         (reduce (layout_name (layouts))
+            (unless (== layout_name "Frame 0")
+               (remove_layout layout_name))))
+         
       (switch_to "*scratch*")
       (hide_others)
-      (and (== (name_of (focused_control)) "*scratch*")
-           (== (last_focus) (focused_control)))))
-     
+      { scratch_buffer_only: (and (== (name_of (focused_control)) "*scratch*")
+                                  (== (last_focus) (focused_control)))
+        controls_visible: (progn
+                             (defvar ctls (controls_visible))
+                             (and (== ctls.0 "*scratch*")
+                                  (== "Frame 0" (layout)))) 
+          
+      }))
+
+(defun reset_state ()
+   (let
+      ((scratch_editors 0))
+      (ev
+         `(progn
+             (unless (get_control_by_name "*scratch*")
+                (= *scratch* ";; reset scratch buffer")
+                (new_buffer {  `path: [ "*scratch*" ] } ))
+             (defvar id (control_id (get_control_by_name "*scratch*")))
+             (if id
+                (close_editors_for_path [ "*scratch*" ] id))))
+      (= scratch_editors
+         (ev `(if (get_control_by_name "*scratch*")
+                  (each (get_editors_for_path [ "*scratch*"]) `options)
+                  [])))
+      (log "reset_state: scratch_editors: " scratch_editors)
+      {
+          single_scratch: (and (ev `(get_control_by_name "*scratch*"))
+                                    (== 1 (length scratch_editors)))
+          is_primary: (not (prop (first scratch_editors) `clone_with_editor_id))
+      }))
+
+(defun reset_and_home_state ()
+   (progn
+      (ev `(close_editors_for_path [ "*scratch*"]))
+      (reset_state)
+      (home_state)))
+
 
 (defun test_split_editor_vertically () 
    (progn
-      (home_state)
+      (reset_and_home_state)
       (ev `(-> (get_control_by_name `*scratch*) `set ""))
       (split_vertically)
-      (ev `(-> (get_control_by_name `*scratch*) `set ";;This is the sample text.\n;; Another comment"))
+      (ev `(-> (get_control_by_name `*scratch*) `set ";;This is a comment.\n\n(defun tester (a b)\n  ( + a b))\n\n(tester a b)\n"))
+      (ev `(send_keydown "Command-S"))
       (defvar s1opts (options_for_name "*scratch*"))
       (defvar s2opts (options_for_name "*scratch* - 2"))
       { `focused: (== (name_of (focused_control)) "*scratch* - 2")
         `clone_tag: (== s2opts.clone_with_editor_id s1opts.id)
-        `repl_match: (== s2opts.evaluator_id s1opts.evaluator_id)
-        `repl_exists: (ev `(is_function? (prop (get_control_by_id ,#s2opts.evaluator_id) `evaluate)))
+        `evaluator_match: (== s2opts.evaluator_id s1opts.evaluator_id)
+        `evaluator_exists: (ev `(is_function? (prop (get_control_by_id ,#s2opts.evaluator_id) `evaluate)))
         `path_match: (== (as_lisp s1opts.path) (as_lisp s2opts.path))
         `value_match: (== (control_value s2opts.id) (control_value s1opts.id))
         `group_match: (== s1opts.group_name s2opts.group_name) }))
 
 (defun test_split_editor_horizontally () 
    (progn
-      (home_state)
+      (reset_and_home_state)
       (ev `(-> (get_control_by_name `*scratch*) `set ""))
       (split_horizontally)
-      (ev `(-> (get_control_by_name `*scratch*) `set ";;This is the sample text.\n;; Another comment"))
+      (ev `(-> (get_control_by_name `*scratch*) `set ";;This is a comment.\n\n(defun tester (a b)\n  ( + a b))\n\n(tester a b)\n"))
+      (ev `(send_keydown "Command-S"))
       (defvar s1opts (options_for_name "*scratch*"))
       (defvar s2opts (options_for_name "*scratch* - 2"))
       { `focused: (== (name_of (focused_control)) "*scratch* - 2")
@@ -146,6 +280,7 @@
         `repl_exists: (ev `(is_function? (prop (get_control_by_id ,#s2opts.evaluator_id) `evaluate)))
         `path_match: (== (as_lisp s1opts.path) (as_lisp s2opts.path))
         `value_match: (== (control_value s2opts.id) (control_value s1opts.id))
+        `correct_controls: (== "[\"*scratch*\" \"*scratch* - 2\"]" (as_lisp (controls_visible)))
         `group_match: (== s1opts.group_name s2opts.group_name) }))
 
            
@@ -154,7 +289,7 @@
       (home_state)
       (ev `(swap_control (get_control_by_name "*scratch*") *system_repl*))
       {
-          `focused: (== (last_focus) (ev `(control_id *system_repl*)))
+          `focused_correctly: (== (last_focus) (ev `(control_id *system_repl*)))
       }))
       
 (defun test_open_documentation_frame_0 ()
@@ -163,6 +298,8 @@
       (ev `(show_help_panel))
       {
           `focused: (== (last_focus) (ev `(control_id (juno_documentation))))
+          `correct_controls: (== "[\"*scratch*\" \"Juno Documentation - Frame 0\"]"
+                                 (as_lisp (controls_visible)))
       }))
 
 (defun test_jump_to_symbol_definition (sname)
@@ -179,16 +316,221 @@
       (defvar lisp (read_lisp (ev `(progn
                                       (select_to_root_form (prop (get_control_by_id ,#(focused_control)) `editor))
                                       (-> (get_control_by_id ,#(focused_control)) `get_selected_text)))))
+      
+      ;; now close the buffer
+      (when lisp
+         (ev `(send_keydown "Alt-D")))
+      
       {
           `symbol: (== (desym_ref (second lisp)) sname)
+          `closed_correctly: (ev `(not (contains? "browser_initializer.juno" (current_controls))))
       }))
+
+(defun test_key_split_horizontal ()
+   (progn
+      (home_state)
+      (ev `(send_keydown "Alt-2"))))
+
+
+(defun test_key_split_vertical ()
+   (progn
+      (home_state)
+      (ev `(send_keydown "Alt-3"))))
+    
+(defun test_key_split_sequence ()
+   (progn
+      (defvar acc {})
+      (reset_and_home_state)
+      (ev `(log "starting split sequence from home state"))
+      (ev `(send_keydown "Alt-3"))
+      (ev `(send_keydown "Alt-2"))
+      (set_prop acc
+         `max_visible  (== (as_lisp ["*scratch*"
+                                     "*scratch* - 2"
+                                     "*scratch* - 3"])
+                           (as_lisp (controls_visible))))
+      ;; collapse back to 1 control
+      
+      (log "test_key_split_sequence: focus:" (name_of (last_focus)) (name_of (focused_control)) "visible controls: " (controls_visible))
+      (sleep 2)
+      
+      (ev `(send_keydown "Alt-1"))
+      (log "test_key_split_sequence: only 1 control should be visible: " (controls_visible))
+      ;; name should be scratch
+      (set_prop acc
+         `final_layout_correct
+         (and (== 1 (length (controls_visible)))
+              (starts_with? "*scratch*" (join "" (controls_visible)))))
+      acc))
+
+(defun test_make_named_layout ()
+   (progn
+      (defvar result {})
+      (home_state)
+      (new_layout_named "test" "*scratch*")
+      (log "test_make_named_layout: " (last_focus) (focused_control))
+      (= result 
+         {
+          `layout_correct: (== (layout) "test")
+          `control_correct: (== (first (controls_visible)) "*scratch*")
+          `focus_correct: (== (last_focus) (focused_control))
+          })
+      
+      (set_prop result
+         `new_layout_removed: (or (prop (remove_layout "test") `layout_removed) false ))
+      result))
+      
+      
+(defun test_locked_panel ()
+   (progn
+      (defvar result {})
+      (home_state)
+      (new_layout_named "lock-test" "*scratch*")
+      (= result 
+         {
+          `layout_correct: (== (layout) "test")
+          `control_correct: (== (first (controls_visible)) "*scratch*")
+          `focus_correct: (== (last_focus) (focused_control))
+          })
+      (if (validate_result result)
+          (progn
+             `(ev (send_key "Alt-2"))))
+      
+      (set_prop result
+         `new_layout_removed: (or (prop (remove_layout "test") `layout_removed) false ))
+      result))
       
 
 
+
+(defun test_save_of_symbol ()
+   (progn
+      (home_state)
+      (ev `(-> (get_control_by_name `*scratch*) `set "(+ 2 2)"))
+      (defvar acc
+         { `needs_save_correct: (ev `(-> (get_control_by_name "*scratch*") `needs_save?))
+           `content_correct: (ev `(== "(+ 2 2)" (-> (get_control_by_name "*scratch*") `get))) })
+      (ev `(send_keydown "Command-S"))
+      (set_prop acc
+         `saved_ok: (ev `(and (not (-> (get_control_by_name "*scratch*") `needs_save?))
+                              (== *scratch* "(+ 2 2)"))))
+      acc))
+                         
+(defun test_save_of_symbol_for_multiple_buffers_1 ()
+   (progn
+      (reset_and_home_state)
+      (ev `(-> (get_control_by_name `*scratch*) `set "(* 4 4)"))
+      (ev `(send_keydown "Alt-2"))
+      (ev `(send_keydown "Alt-3"))
+      (log "save state: " 
+         (ev `(-> (get_control_by_name "*scratch*") `needs_save?))
+         (ev `(-> (get_control_by_name "*scratch* - 2") `needs_save?))
+         (ev `(-> (get_control_by_name "*scratch* - 3") `needs_save?)))
+      (defvar acc
+         { `needs_save_correct: (and (ev `(-> (get_control_by_name "*scratch*") `needs_save?))
+                                     (ev `(-> (get_control_by_name "*scratch* - 2") `needs_save?))
+                                     (ev `(-> (get_control_by_name "*scratch* - 3") `needs_save?)))
+           `content_correct: (and (ev `(== "(* 4 4)" (-> (get_control_by_name "*scratch*") `get)))
+                                  (ev `(== "(* 4 4)" (-> (get_control_by_name "*scratch* - 2") `get)))
+                                  (ev `(== "(* 4 4)" (-> (get_control_by_name "*scratch* - 3") `get)))) })
+      
+      (ev `(send_keydown "Command-S"))
+      (set_prop acc
+         `saved_ok: (ev `(and (not (-> (get_control_by_name "*scratch*") `needs_save?))
+                              (not (-> (get_control_by_name "*scratch* - 2") `needs_save?))
+                              (not (-> (get_control_by_name "*scratch* - 3") `needs_save?))
+                              (== *scratch* "(* 4 4)"))))
+      acc))                  
+           
+(defun test_save_of_symbol_for_multiple_buffers_2 ()
+   (progn
+      (reset_and_home_state)
+      (ev `(send_keydown "Alt-2"))
+      (ev `(-> (get_control_by_name `*scratch*) `set "(* 4 4)"))
+      (ev `(send_keydown "Alt-3"))
+      (log "save state: " 
+         (ev `(-> (get_control_by_name "*scratch*") `needs_save?))
+         (ev `(-> (get_control_by_name "*scratch* - 2") `needs_save?))
+         (ev `(-> (get_control_by_name "*scratch* - 3") `needs_save?)))
+      (defvar acc
+         { `needs_save_correct: (and (ev `(-> (get_control_by_name "*scratch*") `needs_save?))
+                                     (ev `(-> (get_control_by_name "*scratch* - 2") `needs_save?))
+                                     (ev `(-> (get_control_by_name "*scratch* - 3") `needs_save?)))
+           `content_correct: (and (ev `(== "(* 4 4)" (-> (get_control_by_name "*scratch*") `get)))
+                                  (ev `(== "(* 4 4)" (-> (get_control_by_name "*scratch* - 2") `get)))
+                                  (ev `(== "(* 4 4)" (-> (get_control_by_name "*scratch* - 3") `get)))) })
+      (ev `(send_keydown "Command-S"))
+      (set_prop acc
+         `saved_ok: (ev `(and (not (-> (get_control_by_name "*scratch*") `needs_save?))
+                              (not (-> (get_control_by_name "*scratch* - 2") `needs_save?))
+                              (not (-> (get_control_by_name "*scratch* - 3") `needs_save?))
+                              (== *scratch* "(* 4 4)"))))
+      acc))    
+
+(defun run_test_set (test_function_array)
+   (let
+      ((test nil)
+       (number_of_validations 0)
+       (passes [])
+       (fails [])
+       (idx 0)
+       (validate (fn (test_name result)
+                    (progn
+                       (= number_of_validations (+ number_of_validations (length (values result))))
+                       (if (apply and* (values result))
+                           (progn
+                              (push passes test_name))
+                           (progn
+                              (push fails [ test_name result ]) 
+                              false))))))
+      (ev `(log "Starting test set ------"))
+      (for ((test_name arg) test_function_array)
+              (progn
+                 (= test (get_global test_name))
+                 (if arg
+                     (validate test_name (test arg))
+                     (validate test_name (test)))))
+      (ev `(log "Ending test set ------"))
+      (log "number_of_validations: " number_of_validations)
+      {
+          passes: passes
+          fails: fails
+          total_validations: number_of_validations
+          total_test_sequences: (+ passes.length fails.length)
+      }))
+                        
+
+;; layout and paneling 
+(reset_and_home_state)
+(home_state)
 (test_split_editor_vertically)               
 (test_split_editor_horizontally) 
 (test_swap_control)
-(test_open_documentation)
+(test_open_documentation_frame_0)
 (test_jump_to_symbol_definition `eval_in_iframe)
+(test_key_split_vertical)
+(test_key_split_horizontal)
+(test_key_split_sequence)
+(test_make_named_layout)
+(test_save_of_symbol)
+(test_save_of_symbol_for_multiple_buffers)
 
-   
+(defglobal `layout_and_panel_tests
+   [[`home_state ]
+    [`reset_state ]
+    [`test_split_editor_vertically] 
+    [`test_split_editor_horizontally]
+    [`test_swap_control]
+    [`test_open_documentation_frame_0]
+    [`test_jump_to_symbol_definition `eval_in_iframe]
+    [`home_state]
+    [`test_key_split_vertical]
+    [`test_key_split_horizontal]
+    [`test_key_split_sequence]
+    [`test_make_named_layout]
+    [`reset_and_home_state]
+    [`test_save_of_symbol]
+    [`test_save_of_symbol_for_multiple_buffers_1]
+    [`test_save_of_symbol_for_multiple_buffers_2]])
+
+(run_test_set layout_and_panel_tests)
