@@ -1,35 +1,143 @@
 ;; Validations and Tests for the IDE
 
+(if (contains? "seedling-tests" (namespaces))
+    (progn
+       (use_ns user)
+       (delete_namespace "seedling-tests")))
 (create_namespace "seedling-tests")
 (use_ns seedling-tests)
 (declare (namespace seedling-tests))
 (use_symbols "user" 
-   [ `place_control `panel `eval_in_iframe register_event_handler notify remove_event_handler quick_alert alert_box alert_on_error set_focus_to *last_focus*])
+   [ `place_control `panel `eval_in_iframe register_event_handler notify remove_event_handler quick_alert alert_box alert_on_error set_focus_to *last_focus*
+     `table `tr `td `div `span `h4 `th `tbody `thead `dtable `
+     `defcontrol `generate_id `commands_button `set_style 
+     `control_frame `focus_to `compute_name_for_control get_control_by_name rblock 
+     `add_class `remove_class `make_named_layout `split_view_vertical get_remote_sys_evaluator])
 
 (defparameter seedling_booted false)
+
+(defglobal tframe (div {} "Placeholder"))
 
 ;; check for boot
 (remove_event_handler "initializer" "complete" "child_initializer_complete")
 
+(html/create_css_entry ".juno-test-pass"
+                       [["background" "#00FF3010"]
+                        ["font-weight" "bold"]
+                        ["text-align" "center"]])
+
+(html/create_css_entry ".juno-test-fail"
+                       [["background" "#FF003010"]
+                        ["font-weight" "bold"]
+                        ["text-align" "center"]])
+
+
 ;; setup 
 
-(new Promise (fn (resolve)
-                (alert_on_error "Cannot start the iframe"
-                   (= seedling_booted false)
-                   (remove_event_handler "initializer" "complete" "child_initializer_complete")
-                   (register_event_handler "initializer" "complete" "child_initializer_complete"
-                      (fn (event)
-                         (progc
-                         (when (event.child_frame)
-                            (set_focus_to user/*last_focus*)
-                            (= seedling_booted true)
-                            (quick_alert "Booted Seedling")
-                            (resolve true)))))
-                   (place_control `right
-                      (panel "tframe"
-                         (defglobal tframe (html/iframe { src: "/env/a1.html" `style: "width: 100%; height: 100%;"} )))))))
+(defmacro ev (quoted_lisp)
+   `(eval_in_iframe tframe ,#quoted_lisp))
+
+(defun define_keysend ()
+   (progn
+      (ev (quote (defun send_keydown (sequence target)
+                 (when (is_string? sequence)
+                    (let
+                       ((comps (split_by "-" sequence))
+                        (ctrl? (contains? "Ctrl" comps))
+                        (meta? (contains? "Command" comps))
+                        (alt? (contains? "Alt" comps))
+                        (shift? (contains? "Shift" comps))
+                        (key (last comps))
+                        (key_code key)
+                        (target_elem (cond
+                                        (and (is_control? target)
+                                             target.editor.textInput)
+                                        (-> target.editor.textInput `getElement)
+                                        (is_control? target)
+                                        target.view
+                                        (is_element? target)
+                                        target
+                                        (is_array? target) ;; path from body
+                                        (aif (resolve_dom_path target (first (get_by_tag "body")))
+                                             it
+                                             nil)
+                                        (and *last_focus*
+                                           *last_focus*.editor.textInput)
+                                        (-> *last_focus*.editor.textInput `getElement)
+                                        (is_control? *last_focus*)
+                                        (prop *last_focus* `view)
+                                        else
+                                        nil)))
+                       
+                       (cond 
+                          (contains? key [ "0" "1" "2" "3" "4" "5" "6" "7" "8" "9" ])
+                          (= key_code (+ "Digit" key))
+                          else
+                          (= key_code key))
+                       (try
+                          (progn
+                             (defvar event (new KeyboardEvent `keydown
+                                                (to_object
+                                                   [[`bubbles true]
+                                                    [`srcElement: target_elem]
+                                                    [`shiftKey shift?]
+                                                    [`key key]
+                                                    [`code key_code]
+                                                    [`srcElement target_elem]
+                                                    [`keyCode (cond 
+                                                                 (== key "Enter")
+                                                                 10
+                                                                 (== key "Backslash")
+                                                                 92
+                                                                 else
+                                                                 (-> key `charCodeAt))]
+                                                    [`metaKey meta?]
+                                                    [`ctrlKey ctrl?]
+                                                    [`altKey alt?]])))
+                             (handle_app_key_down_event event))
+                          (catch Error (e)
+                             e.message)))))))))
+
+(defun open_test_frame (url element_to_replace)
+   (let
+      ((frame (div { } "Opening..")))
+      (log "Starting test_frame for: " url)
+      (new Promise
+         (fn (resolve)
+            (alert_on_error "Cannot start the iframe"
+               (= seedling_booted false)
+               (log "setting event managers")
+               (remove_event_handler "initializer" "complete" "child_initializer_complete")
+               (register_event_handler "initializer" "complete" "child_initializer_complete"
+                  (fn (event)
+                     (progc
+                        (log "event for test frame: " event)
+                        (when (event.child_frame)
+                           (set_focus_to user/*last_focus*)
+                           (= seedling_booted true)
+                           (quick_alert "Booted Seedling")
+                           (when tframe
+                              (define_keysend)
+                              (remove_event_handler "initializer" "complete" "child_initializer_complete")
+                              (register_event_handler "initializer" "complete" "child_initializer_complete"
+                                 (fn (event)
+                                    (when (event.child_frame)
+                                       (define_keysend)))))
+                           (resolve true)))))
+               (log "Opening: " url)
+               (= tframe (html/iframe { src: url `style: "width: 100%; height: 100%;"} ))
+               (-> element_to_replace `replaceWith tframe)
+               )))))
 
 
+
+(defun make_test_frame ()
+   (progn
+      (defvar v (div { } "Opening"))
+      (place_control `right (panel "Test Frame" v))
+      (open_test_frame "/env/a1.html?tickle" v)))
+         
+;(make_test_frame)
 
 (defun validate_result (result)
    (progn
@@ -37,14 +145,36 @@
            true
            result)))
 
-
-;; primitives...
-
 (defmacro log (`& args)
    `(user/log ,@args))
 
-(defmacro ev (quoted_lisp)
-   `(eval_in_iframe tframe ,#quoted_lisp))
+
+;; placeholder - will be filled in by the control
+(defparameter kcom {})
+
+
+(defun kcode (op)
+   (aif (prop kcom op)
+        (ev `(send_keydown ,#it))
+        (throw Error (+ "Invalid key code for: " op))))
+
+(defun notifications ()
+   (ev `(for_items (item (-> (get_by_id "lower_right_corner") `querySelectorAll ".juno-notification"))
+            item.innerText)))
+
+(defun with_notification (idx action)
+   (when action
+      (ev `(let
+              ((elem (prop (-> (get_by_id "lower_right_corner") `querySelectorAll ".juno-notification") ,#idx)))
+              (when elem
+                 (,#action elem))))))
+      
+
+(defun click_notification (idx)
+   (with_notification idx `(fn (elem) (-> elem `click))))
+
+
+;; primitives...
 
 (defun layout ()
    (ev `(control_name (get_current_layout_control))))
@@ -108,6 +238,8 @@
       }))
 
 
+
+
 (defun split_vertically ()
    (ev `(split_control `vertical)))
 
@@ -131,68 +263,6 @@
 
 (defun current_controls ()
    (ev `(each (current_controls) control_name)))
-
-(defun define_keysend ()
-   (ev (quote (defun send_keydown (sequence target)
-                 (when (is_string? sequence)
-                    (let
-                       ((comps (split_by "-" sequence))
-                        (ctrl? (contains? "Control" comps))
-                        (meta? (contains? "Command" comps))
-                        (alt? (contains? "Alt" comps))
-                        (shift? (contains? "Shift" comps))
-                        (key (last comps))
-                        (key_code key)
-                        (target_elem (cond
-                                        (and (is_control? target)
-                                             target.editor.textInput)
-                                        (-> target.editor.textInput `getElement)
-                                        (is_control? target)
-                                        target.view
-                                        (is_element? target)
-                                        target
-                                        (is_array? target) ;; path from body
-                                        (aif (resolve_dom_path target (first (get_by_tag "body")))
-                                             it
-                                             nil)
-                                        (and *last_focus*
-                                           *last_focus*.editor.textInput)
-                                        (-> *last_focus*.editor.textInput `getElement)
-                                        (is_control? *last_focus*)
-                                        (prop *last_focus* `view)
-                                        else
-                                        nil)))
-                       
-                       (cond 
-                          (contains? key [ "0" "1" "2" "3" "4" "5" "6" "7" "8" "9" ])
-                          (= key_code (+ "Digit" key))
-                          else
-                          (= key_code key))
-                       (try
-                          (progn
-                             (defvar event (new KeyboardEvent `keydown
-                                                (to_object
-                                                   [[`bubbles true]
-                                                    [`srcElement: target_elem]
-                                                    [`shiftKey shift?]
-                                                    [`key key]
-                                                    [`code key_code]
-                                                    [`srcElement target_elem]
-                                                    [`keyCode (if (== key "Enter")
-                                                                  10
-                                                                  (-> key `charCodeAt))]
-                                                    [`metaKey meta?]
-                                                    [`ctrlKey ctrl?]
-                                                    [`altKey alt?]])))
-                             (handle_app_key_down_event event))
-                          (catch Error (e)
-                             e.message))))))))
-(define_keysend)
-(remove_event_handler "initializer" "complete" "child_initializer_complete")
-(register_event_handler "initializer" "complete" "child_initializer_complete"
-                             (fn (event)
-                                (when (event.child_frame)
-                                   (define_keysend))))
 
 
 
@@ -248,13 +318,13 @@
       (home_state)))
 
 
-(defun test_split_editor_vertically () 
+(defun split_editor_vertically () 
    (progn
       (reset_and_home_state)
       (ev `(-> (get_control_by_name `*scratch*) `set ""))
       (split_vertically)
       (ev `(-> (get_control_by_name `*scratch*) `set ";;This is a comment.\n\n(defun tester (a b)\n  ( + a b))\n\n(tester a b)\n"))
-      (ev `(send_keydown "Command-S"))
+      (kcode `save_file)
       (defvar s1opts (options_for_name "*scratch*"))
       (defvar s2opts (options_for_name "*scratch* - 2"))
       { `focused: (== (name_of (focused_control)) "*scratch* - 2")
@@ -265,7 +335,7 @@
         `value_match: (== (control_value s2opts.id) (control_value s1opts.id))
         `group_match: (== s1opts.group_name s2opts.group_name) }))
 
-(defun test_split_editor_horizontally () 
+(defun split_editor_horizontally () 
    (progn
       (reset_and_home_state)
       (ev `(-> (get_control_by_name `*scratch*) `set ""))
@@ -284,7 +354,7 @@
         `group_match: (== s1opts.group_name s2opts.group_name) }))
 
            
-(defun test_swap_control ()
+(defun swap_control ()
    (progn
       (home_state)
       (ev `(swap_control (get_control_by_name "*scratch*") *system_repl*))
@@ -292,7 +362,7 @@
           `focused_correctly: (== (last_focus) (ev `(control_id *system_repl*)))
       }))
       
-(defun test_open_documentation_frame_0 ()
+(defun open_documentation_frame_0 ()
    (progn
       (home_state)
       (ev `(show_help_panel))
@@ -302,7 +372,47 @@
                                  (as_lisp (controls_visible)))
       }))
 
-(defun test_jump_to_symbol_definition (sname)
+(defun cycle_panel_focus ()
+   (progn
+      (reset_and_home_state)
+      (split_horizontally)
+      (defvar acc
+         {
+           `focus_ok_on_initial_split: (== (name_of (focused_control)) "*scratch* - 2")
+           `num_windows_after_initial_split_is_2: (== 2 (length (controls_visible)))
+           `primary_is_visible: (contains? "*scratch*" (controls_visible))
+           })
+      (kcode `next_displayed_control)
+      (set_prop acc
+         `focus_ok_after_focus_change (== (name_of (focused_control)) "*scratch*")
+         `num_windows_after_focus_change_is_2: (== 2 (length (controls_visible))))
+      acc))
+
+(defun hidden_control_cycle ()
+   (progn
+      (reset_and_home_state)
+      (split_vertically)
+      (defvar acc
+         {
+           `focus_ok_on_initial_split: (== (name_of (focused_control)) "*scratch* - 2")
+           `num_windows_after_initial_split_is_2: (== 2 (length (controls_visible)))
+           `primary_is_visible: (contains? "*scratch*" (controls_visible))
+           })
+      (kcode `next_hidden_control)
+      (set_prop acc
+         `focus_ok_after_focus_change_1 (or (== (name_of (focused_control)) "Visual REPL - 1")
+                                          (== (name_of (focused_control)) "Juno Documentation - Frame 0"))
+         `num_windows_after_focus_change_1_is_2: (== 2 (length (controls_visible))))
+      (kcode `next_hidden_control)
+      (set_prop acc
+         `focus_ok_after_focus_change_2 (or (== (name_of (focused_control)) "Visual REPL - 1")
+                                          (== (name_of (focused_control)) "Juno Documentation - Frame 0"))
+         `num_windows_after_focus_change_2_is_2: (== 2 (length (controls_visible)))
+         `last_focus_matches_layout_focus (== (focused_control) (last_focus)))
+      acc))
+
+
+(defun jump_to_definition (sname)
    (progn
       (home_state)
       (ev `(open_symbol_definition ,#sname))
@@ -319,31 +429,31 @@
       
       ;; now close the buffer
       (when lisp
-         (ev `(send_keydown "Alt-D")))
+         (kcode "close_control"))
       
       {
           `symbol: (== (desym_ref (second lisp)) sname)
           `closed_correctly: (ev `(not (contains? "browser_initializer.juno" (current_controls))))
       }))
 
-(defun test_key_split_horizontal ()
+(defun key_split_horizontal ()
    (progn
       (home_state)
-      (ev `(send_keydown "Alt-2"))))
+      (kcode "split_horizontally")))
 
 
-(defun test_key_split_vertical ()
+(defun key_split_vertical ()
    (progn
       (home_state)
-      (ev `(send_keydown "Alt-3"))))
+      (kcode "split_vertically")))
     
-(defun test_key_split_sequence ()
+(defun key_split_sequence ()
    (progn
       (defvar acc {})
       (reset_and_home_state)
       (ev `(log "starting split sequence from home state"))
-      (ev `(send_keydown "Alt-3"))
-      (ev `(send_keydown "Alt-2"))
+      (kcode "split_vertically")
+      (kcode "split_horizontally")
       (set_prop acc
          `max_visible  (== (as_lisp ["*scratch*"
                                      "*scratch* - 2"
@@ -351,11 +461,11 @@
                            (as_lisp (controls_visible))))
       ;; collapse back to 1 control
       
-      (log "test_key_split_sequence: focus:" (name_of (last_focus)) (name_of (focused_control)) "visible controls: " (controls_visible))
+      (log "key_split_sequence: focus:" (name_of (last_focus)) (name_of (focused_control)) "visible controls: " (controls_visible))
       (sleep 2)
       
-      (ev `(send_keydown "Alt-1"))
-      (log "test_key_split_sequence: only 1 control should be visible: " (controls_visible))
+      (kcode "hide_others")
+      (log "key_split_sequence: only 1 control should be visible: " (controls_visible))
       ;; name should be scratch
       (set_prop acc
          `final_layout_correct
@@ -363,25 +473,35 @@
               (starts_with? "*scratch*" (join "" (controls_visible)))))
       acc))
 
-(defun test_make_named_layout ()
+(defun named_layout_creation ()
    (progn
       (defvar result {})
       (home_state)
       (new_layout_named "test" "*scratch*")
-      (log "test_make_named_layout: " (last_focus) (focused_control))
+      (log "named_layout_creation: " (last_focus) (focused_control))
       (= result 
          {
           `layout_correct: (== (layout) "test")
           `control_correct: (== (first (controls_visible)) "*scratch*")
           `focus_correct: (== (last_focus) (focused_control))
           })
-      
+      (switch_to "Frame 0")
       (set_prop result
-         `new_layout_removed: (or (prop (remove_layout "test") `layout_removed) false ))
+           `focus_correct_on_switch (== (last_focus) (focused_control))
+           `layout_correct_on_switch (== (layout) "Frame 0")
+           )
+      (switch_to "test")
+      (set_prop result
+           `focus_correct_on_switch_back (== (last_focus) (focused_control))
+           `control_correct_on_switch_back  (== (first (controls_visible)) "*scratch*")
+           `layout_correct_on_switch_back (== (layout) "test")
+           )
+      (set_prop result
+         `new_layout_removed (or (prop (remove_layout "test") `layout_removed) false ))
       result))
       
       
-(defun test_locked_panel ()
+(defun locked_panel ()
    (progn
       (defvar result {})
       (home_state)
@@ -394,7 +514,7 @@
           })
       (if (validate_result result)
           (progn
-             `(ev (send_key "Alt-2"))))
+             (kcode "split_horizontally")))
       
       (set_prop result
          `new_layout_removed: (or (prop (remove_layout "test") `layout_removed) false ))
@@ -403,25 +523,25 @@
 
 
 
-(defun test_save_of_symbol ()
+(defun save_of_symbol ()
    (progn
       (home_state)
       (ev `(-> (get_control_by_name `*scratch*) `set "(+ 2 2)"))
       (defvar acc
          { `needs_save_correct: (ev `(-> (get_control_by_name "*scratch*") `needs_save?))
            `content_correct: (ev `(== "(+ 2 2)" (-> (get_control_by_name "*scratch*") `get))) })
-      (ev `(send_keydown "Command-S"))
+      (kcode `save_file)
       (set_prop acc
-         `saved_ok: (ev `(and (not (-> (get_control_by_name "*scratch*") `needs_save?))
+         `saved_ok (ev `(and (not (-> (get_control_by_name "*scratch*") `needs_save?))
                               (== *scratch* "(+ 2 2)"))))
       acc))
                          
-(defun test_save_of_symbol_for_multiple_buffers_1 ()
+(defun save_of_symbol_for_multiple_buffers_1 ()
    (progn
       (reset_and_home_state)
       (ev `(-> (get_control_by_name `*scratch*) `set "(* 4 4)"))
-      (ev `(send_keydown "Alt-2"))
-      (ev `(send_keydown "Alt-3"))
+      (kcode "split_horizontally")
+      (kcode "split_vertically")
       (log "save state: " 
          (ev `(-> (get_control_by_name "*scratch*") `needs_save?))
          (ev `(-> (get_control_by_name "*scratch* - 2") `needs_save?))
@@ -434,20 +554,20 @@
                                   (ev `(== "(* 4 4)" (-> (get_control_by_name "*scratch* - 2") `get)))
                                   (ev `(== "(* 4 4)" (-> (get_control_by_name "*scratch* - 3") `get)))) })
       
-      (ev `(send_keydown "Command-S"))
+      (kcode "save_file")
       (set_prop acc
-         `saved_ok: (ev `(and (not (-> (get_control_by_name "*scratch*") `needs_save?))
+         `saved_ok (ev `(and (not (-> (get_control_by_name "*scratch*") `needs_save?))
                               (not (-> (get_control_by_name "*scratch* - 2") `needs_save?))
                               (not (-> (get_control_by_name "*scratch* - 3") `needs_save?))
                               (== *scratch* "(* 4 4)"))))
       acc))                  
            
-(defun test_save_of_symbol_for_multiple_buffers_2 ()
+(defun save_of_symbol_for_multiple_buffers_2 ()
    (progn
       (reset_and_home_state)
-      (ev `(send_keydown "Alt-2"))
+      (kcode `split_horizontally)
       (ev `(-> (get_control_by_name `*scratch*) `set "(* 4 4)"))
-      (ev `(send_keydown "Alt-3"))
+      (kcode `split_vertically)
       (log "save state: " 
          (ev `(-> (get_control_by_name "*scratch*") `needs_save?))
          (ev `(-> (get_control_by_name "*scratch* - 2") `needs_save?))
@@ -459,7 +579,7 @@
            `content_correct: (and (ev `(== "(* 4 4)" (-> (get_control_by_name "*scratch*") `get)))
                                   (ev `(== "(* 4 4)" (-> (get_control_by_name "*scratch* - 2") `get)))
                                   (ev `(== "(* 4 4)" (-> (get_control_by_name "*scratch* - 3") `get)))) })
-      (ev `(send_keydown "Command-S"))
+      (kcode "save_file")
       (set_prop acc
          `saved_ok: (ev `(and (not (-> (get_control_by_name "*scratch*") `needs_save?))
                               (not (-> (get_control_by_name "*scratch* - 2") `needs_save?))
@@ -467,16 +587,88 @@
                               (== *scratch* "(* 4 4)"))))
       acc))    
 
-(defun run_test_set (test_function_array)
+(defun remote_file_access_reading ()
+   (progn
+      (reset_and_home_state)
+      (ev `(edit_file { `filename: "/src/core.lisp" }))
+      (defvar acc
+         {
+           name_correct: (== (name_of (last_focus)) "core.lisp")
+           focus_correct: (and (== (name_of (last_focus)) "core.lisp")
+                               (== (name_of (focused_control)) "core.lisp"))
+           content_correct: (progn
+                               (ev `(open_symbol_definition "scan_str"))
+                               (== (name_of (last_focus)) "core.lisp"))
+           mode_correct: (ev `(== "juno" (-> (get_control_by_name "core.lisp") `get_mode)))
+           
+           })
+      (defvar lisp (read_lisp (ev `(progn
+                                      (select_to_root_form (prop (get_control_by_id ,#(focused_control)) `editor))
+                                      (-> (get_control_by_id ,#(focused_control)) `get_selected_text)))))
+      (set_prop acc
+         `correct_symbol_highlighted (== "scan_str" (desym_ref (second lisp))))
+      
+      (ev `(-> (get_control_by_name "core.lisp") `set_read_only true))
+      (set_prop acc
+         `read_only_correct (ev `(and (-> (get_control_by_name "core.lisp") `read_only?)
+                                      (== (resolve_path [ `options `read_only ] (get_control_by_name "core.lisp")) true)
+                                      )))
+      (kcode `close_control)
+      (set_prop acc
+         `control_closed_ok (not (contains? "core.lisp" (controls_visible))))
+      acc))
+
+(defun remote_file_access_writing ()
+   (progn
+      (reset_and_home_state)
+      (rblock
+         (if (sys/is_file? "./working/test-validation-file.juno")
+             (sys/delete_file "./working/test-validation-file.juno")))
+      (ev `(new_file "working/test-validation-file.juno"))
+      (defvar acc {
+          `new_buffer_visible: (and (== "test-validation-file.juno" (first (controls_visible)))
+                                    (== (name_of (focused_control)) "test-validation-file.juno"))
+          })
+      (ev `(-> (get_control_by_name "test-validation-file.juno") `set "(* 10 5)"))
+      (kcode "save_file")
+      (defvar contents
+         (rblock (read_text_file  "./working/test-validation-file.juno")))
+      (set_prop acc
+         `file_saved (rblock
+                       (sys/is_file? "./working/test-validation-file.juno"))
+         `contents_correct (== "(* 10 5)" 
+                              contents)
+         `save_indicated (ev `(== false (-> (get_control_by_name "test-validation-file.juno") `needs_save?))))
+      (kcode `close_control)
+      (set_prop acc
+         `control_closed_ok (not (contains? "test-validation-file.juno" (controls_visible))))
+      (rblock
+         (if (sys/is_file? "./working/test-validation-file.juno")
+             (sys/delete_file "./working/test-validation-file.juno")))
+      
+      ;(set_prop acc
+       ;  `intentional_failure "This is the failure")
+      acc))
+
+
+(defun run_test_set (test_function_array on_result)
    (let
       ((test nil)
        (number_of_validations 0)
        (passes [])
+       (results [])
        (fails [])
        (idx 0)
        (validate (fn (test_name result)
                     (progn
-                       (= number_of_validations (+ number_of_validations (length (values result))))
+                       (inc number_of_validations (+ (length (values result))))
+                       (push results
+                          [test_name result])
+                       (try 
+                          (when (is_function? on_result)
+                             (on_result test_name result))
+                          (catch Error (e)
+                             (log "run_test_set: on_result function error: " e)))
                        (if (apply and* (values result))
                            (progn
                               (push passes test_name))
@@ -492,45 +684,148 @@
                      (validate test_name (test)))))
       (ev `(log "Ending test set ------"))
       (log "number_of_validations: " number_of_validations)
+      
       {
           passes: passes
           fails: fails
           total_validations: number_of_validations
           total_test_sequences: (+ passes.length fails.length)
+          report: results
       }))
-                        
-
-;; layout and paneling 
-(reset_and_home_state)
-(home_state)
-(test_split_editor_vertically)               
-(test_split_editor_horizontally) 
-(test_swap_control)
-(test_open_documentation_frame_0)
-(test_jump_to_symbol_definition `eval_in_iframe)
-(test_key_split_vertical)
-(test_key_split_horizontal)
-(test_key_split_sequence)
-(test_make_named_layout)
-(test_save_of_symbol)
-(test_save_of_symbol_for_multiple_buffers)
 
 (defglobal `layout_and_panel_tests
    [[`home_state ]
     [`reset_state ]
-    [`test_split_editor_vertically] 
-    [`test_split_editor_horizontally]
-    [`test_swap_control]
-    [`test_open_documentation_frame_0]
-    [`test_jump_to_symbol_definition `eval_in_iframe]
+    [`split_editor_vertically] 
+    [`split_editor_horizontally]
+    [`swap_control]
+    [`open_documentation_frame_0]
+    [`cycle_panel_focus]
+    [`hidden_control_cycle]
+    [`jump_to_definition `eval_in_iframe]
     [`home_state]
-    [`test_key_split_vertical]
-    [`test_key_split_horizontal]
-    [`test_key_split_sequence]
-    [`test_make_named_layout]
+    [`key_split_vertical]
+    [`key_split_horizontal]
+    [`key_split_sequence]
+    [`named_layout_creation]
     [`reset_and_home_state]
-    [`test_save_of_symbol]
-    [`test_save_of_symbol_for_multiple_buffers_1]
-    [`test_save_of_symbol_for_multiple_buffers_2]])
+    [`save_of_symbol]
+    [`save_of_symbol_for_multiple_buffers_1]
+    [`save_of_symbol_for_multiple_buffers_2]
+    [`remote_file_access_reading]
+    [`remote_file_access_writing]])
+               
 
-(run_test_set layout_and_panel_tests)
+         
+(defcontrol system_validations ()
+   ((table_body
+       (tbody { `style: "overflow: scroll; height: inherit;" } ))
+    (table_root (table { `class: "juno-dtable" `style: "width: 100%;" }
+                   (thead
+                      (tr { `class: "juno-dtable" }
+                         (th "#")
+                         (th "Sequence")
+                         (th "Validation")
+                         (th "Pass/Fail")
+                         (th "Problem")))
+                   table_body))
+    (rnum 0)
+    (seq_num 0)
+    (fail_state false)
+    (close_button (html/button { } (dtext "Close")))
+    (header_elem (div { `style: "display: inline-block; padding: 5px; font-weight: bold;" } "Initializing"))
+    (test_frame_elem (div { } "Uninitialized"))
+    (sview (split_view_vertical 
+                  (div { `style: "height: 100%; width: 100%; overflow: hidden" } 
+                       (div { } 
+                            close_button
+                            header_elem)
+                       (div { `style: "height: calc(100% - 50px); overflow: scroll;" } 
+                            table_root))
+                  test_frame_elem))
+    (render (fn ()
+               sview.view))
+    (on_result (fn (test_name result)
+                  (progn
+                     (if (is_object? result)
+                         (progn
+                            (inc seq_num)
+                            (for ((vname vresult) (pairs result))
+                                  (inc rnum)
+                                  (-> table_body `append
+                                     (tr { `class: "juno-dtable" }
+                                         [(td { class: "juno-dtable" } rnum)
+                                          (td { `class: "juno-dtable" style: (+ "border-left: 5px solid " (color_for_number (* 5 seq_num) 1 0.8) ";") } 
+                                              (+ (from_key test_name)))
+                                          (td { `class: "juno-dtable" } (from_key vname))
+                                          (if (== true vresult)
+                                              (td { `class: "juno-dtable juno-test-pass" } "PASS")
+                                              (progn
+                                                 (= fail_state true)
+                                                 (td { `class: "juno-dtable juno-test-fail" } "FAIL")))
+                                          (if (== true vresult)
+                                              (td { class: "juno-dtable" } "")
+                                              (td { class: "juno-dtable" } (user/value_to_dom vresult)))]))))))))
+    (on_initialize (fn ()
+                      (progc
+                         (html/attach_event_listener close_button
+                                                     `click
+                                                     (fn ()
+                                                        (progn
+                                                           (user/switch_to_new_layout "Frame 0")
+                                                           (user/remove_named_layout "Validations")
+                                                           (user/destroy_control (user/get_control_by_name "System Validations")))))
+                         (set_prop header_elem
+                            `innerHTML "Starting")
+                         (sleep 0.1)
+                         (open_test_frame "/env/a1.html" test_frame_elem)
+                         (set_prop header_elem
+                            `innerHTML "Testing")
+                         (= kcom
+                            (to_object
+                               (ev `(for (key (keys (prop *key_bindings* `global)))
+                                         [key (first (split_by "|" (resolve_path [ `global key (user/get_operating_platform) ] *key_bindings*)))]))))
+
+                         (run_test_set layout_and_panel_tests on_result)
+                         (set_prop header_elem
+                            `innerHTML (if fail_state
+                                         "Complete - Failed"
+                                         "Complete - Passed"))
+                         (if fail_state
+                            (add_class "juno-test-fail" header_elem)
+                            (add_class "juno-test-pass" header_elem))
+                         ))))
+   {
+       `expose: [[`on_result on_result]]
+       `control_bar: true
+   })
+
+
+                  
+      
+      
+                           
+                     
+
+
+;; layout and paneling 
+;(reset_and_home_state)
+;(home_state)
+;(split_editor_vertically)               
+;(split_editor_horizontally) 
+;(swap_control)
+;(open_documentation_frame_0)
+;(jump_to_definition `eval_in_iframe)
+;(key_split_vertical)
+;(key_split_horizontal)
+;(key_split_sequence)
+;(named_layout_creation)
+;(save_of_symbol)
+;(save_of_symbol_for_multiple_buffers)
+
+(make_named_layout "Validations"
+   (system_validations)
+   {
+     `unmounted_source: true
+     })
+
