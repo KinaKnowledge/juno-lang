@@ -1765,7 +1765,7 @@
          (v (prop color_key pos)))
        (declare (number v h)
                 (object rgb))
-       (= h (map_range (% 360 (* 28 h)) [0 360] [0.0 1.0]))
+       (= h (map_range (% (* 20 h) 360) [0 360] [0.0 1.0]))
        (= v (map_range (v [0 7] [0.92 1])))
        (= rgb (HSV_to_RGB h saturation brightness))
        (+ "#" (-> (-> rgb.r `toString 16) `padStart 2 "0")
