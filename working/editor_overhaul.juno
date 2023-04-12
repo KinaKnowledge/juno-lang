@@ -1418,7 +1418,53 @@
                     control.options.filename
                     (== control.options.filename filename))
             control))))
-   
+
+(defun get_editors_for_path (path)
+   (let
+      ((spath (cond
+                 (is_array? path)
+                 (join "~" path)
+                 (is_string? path)
+                 path
+                 else
+                 (throw TypeError "path must be an array or string"))))
+      (sort (reduce (ctl (current_controls))
+               (when (and ctl.editor
+                          ctl.options.path
+                          (== (join "~" ctl.options.path) spath))
+                  ctl))
+            {
+              key: ["options" "primary_rank"]
+              }))
+   {
+       `description: "Returns an array of all controls that are editors and that have the supplied path value."
+       `usage: ["path:array|string"]
+       `tags: ["controls" "editor" "path"]
+   })
+
+
+
+
+(defun close_editors_for_path (path except_for_id)
+   (let
+      ((editors (get_editors_for_path path))
+       (destroyed []))
+      (for (editor editors)
+           (unless (and except_for_id
+                        (== (control_id editor) except_for_id))
+              (if (destroy_control editor)
+                  (push destroyed (control_id editor))
+                  )))
+      destroyed)
+   {
+     description: (+ "Given a path to a `text_editor` control, and an optional control id to "
+                     "preserve, will remove all editor controls for that path.  If the "
+                     "argument `except_for_id` is provided, the editor associated with that id will not "
+                     "be destroyed.  Returns a list of all text_editor control ids that have been "
+                     "destroyed. ")
+     usage: ["path:array" "except_for_id:string"]
+     tags: ["editor" "path" "control" "text_editor" "close" "destroy"]
+   })
 
 
 (defun rename_editor_group (path)
@@ -1426,31 +1472,39 @@
       (let
          ((editors (get_editors_for_path path))
           (primary_id nil)
-          (primary (reduce (editor (or editors []))
-                      (when (not (-> editor `get_linked))
-                         editor))))
-         (assert (not (> primary.length 1)) "rename_editor_group: multiple primary editors. This is a bug.")
-         (= primary (first primary))  ;; take the primary editor or nil 
+          (primary nil))
+         (= primary (first editors))  ;; take the primary editor or nil 
+         (log "rename_editor_group:  primary is: " (if primary (control_name primary) nil) "number of editors: " editors.length (each editors control_name) "path: " path)
+         (when (> editors.length 0)
+            (assert (eq nil (resolve_path [ `options `clone_editor_with_id ] primary) "rename_editor_group: BUG: editors for path > 0 and no primary editor")))
          (cond 
             (== editors.length 0)
             true ;; nothing for us to do
             (== editors.length 1)
             (progn
-               (-> (first editors) `set_unlinked)
-               (-> (first editors) `set_name (-> (first editors) `group_name) true))
+               (-> primary `set_unlinked)
+               (-> primary `set_name (-> primary `group_name) true))
             else
             (progn
                (unless primary                ;; unless we already have a primary...
                   (= primary (take editors))) ;; take the first editor and make it the primary
                (= primary_id primary.options.id)
+               (log "rename_editor_group: primary_id set to: " primary_id  "which is: " (control_name primary))
                (-> primary `set_name (-> primary `group_name) true)
                (-> primary `set_unlinked)
+               (assert (eq nil primary.options.clone_with_editor_id) "Primary has clone_with_editor_id set" )
                (for_each (editor editors)
                   (when (not (== editor primary))
                      (-> editor `set_linked primary.options.id)
-                     (-> editor `set_name (-> primary `group_name)))))))
+                     (-> editor `set_name (-> primary `group_name))))
+               (log "rename_editor_group: primary editor is " primary_id  "primary editor: " (control_name primary))
+               (log "rename_editor_group: editors_for_path: " (control_name (get_editors_for_path path))))))
       (catch Error (e)
          (log "rename_editor_group: error: " e.message))))
+
+
+
+
 
 (defun clone_text_editor_control (editor_control)
    (let
@@ -1468,8 +1522,9 @@
              (alert_on_error "Unable to clone the editor"
                              (text_editor (+ {} ;; start options
                                              editor_control.options ;; take existing options..
-                                             { `id: (gen_id "text_editor")
-                                                   `clone_with_editor_id: id })))))))
+                                             { id: (gen_id "text_editor")
+                                               clone_with_editor_id: id
+                                             })))))))
 
 (defun symbol_map_for_buffer (source_name source debug?)
    (let
@@ -2262,6 +2317,7 @@
                                (set_prop intf
                                   `name
                                   options.name)
+                               (log "text_editor: set_name: "  options.id  " given " new_name  " set as: " options.name)
                                (dispatch_event { command: "editor_change"
                                                  source: options.id
                                                  args: [ { `option: "name" `value: options.name } ] }))
@@ -3250,6 +3306,8 @@
                                         (setq editor
                                            (ace.edit editor_div))
                                         
+                                        (unless (is_number? options.primary_rank)
+                                           (set_prop options `primary_rank start_time))
                                         
                                         ;(log "initialize_editor: " options.mode " options: " (clone options))
                                         
@@ -3296,7 +3354,10 @@
                                                  (= new_session (clone_edit_session control_to_clone.editor.session))
                                                  (= linked_editor control_to_clone.options.id)
                                                  (= linked_editor_name control_to_clone.options.name)
-                                                 (-> editor `setSession new_session))))
+                                                 (-> editor `setSession new_session)
+                                                 (when (-> control_to_clone `needs_save?)
+                                                    (= is_dirty? true)
+                                                    (add_class "juno-needs-save" title_span)))))
                                         
                                         ;; behavior setup for the actual editor component
                                         (when options.on_focus
@@ -3599,7 +3660,7 @@
                                   ;(log "editor: can_hide? " (get_editors_for_path options.path) "<= 1 can hide" options.path)
                                   (if (or (is_array? options.path)
                                           (is_string? options.path))
-                                      (< (length (get_editors_for_path options.path)) 2)
+                                      true ;(< (length (get_editors_for_path options.path)) 2)
                                       true)))
                 `on_hide: (fn ()
                              (when (> __VERBOSITY__ 0)
@@ -3607,11 +3668,13 @@
                 `set_display_control_bar: set_display_control_bar
                 `on_destroy: (fn ()
                                 (progn
+                                   (log "text_editor: " (control_name intf) "on_destroy_called: am I linked? " (-> intf `get_linked))
                                    (cond
                                       (and options.path
-                                         (> (length (get_editors_for_path options.path)) 1)
-                                         (-> intf `get_linked))
-                                      true  ;; in this case we are a linked editor so we are only really removing a view, not the primary editor control
+                                         (> (length (get_editors_for_path options.path)) 1))
+                                      (progn
+                                         (log "text_editor: " (control_name intf) "on_destroy_called and I am in an editor group: " options.group_name)
+                                         true)  ;; in this case we are a linked editor so we are only really removing a view, not the primary editor control
                                       (not is_dirty?)
                                       true
                                       is_dirty?
@@ -3629,12 +3692,13 @@
                                 (defvar others_and_me (if options.path
                                                           (get_editors_for_path options.path)
                                                           []))
+                                (defvar my_orig_name (control_name intf))
                                 (defvar my_path (clone options.path))
                                 (when options.evaluator_id
                                    (remove_event_handler options.evaluator_id "evaluator_change" ns_notifier_id)
                                    (remove_event_handler options.evaluator_id "control_name_change" name_change_id))
-                                ;(log "editor: " options.name ": got destroy..dispatching event: others and me: " others_and_me.length (< others_and_me.length 2))
-                                ;(log "editor: remaining editors for path: " (each (get_editors_for_path options.path) `options))
+                                 (log "text_editor:" options.id ": (" my_orig_name ") destroy: dispatching event: others and me: " others_and_me.length (< others_and_me.length 2))
+                                 (log "text_editor:" options.id ": (" my_orig_name ") destroy: remaining editors for path: " (each (get_editors_for_path options.path) `options))
                                 (dispatch_event { `command: "destroy_control" `source: options.id `args: [  ]  })
                                 (-> editor `destroy)
                                 (= editor nil)
@@ -3646,9 +3710,13 @@
                                    nil
                                    `filename
                                    nil)
+                                (set_prop intf
+                                   `editor nil)
                                 (= intf nil)
+                                (log "text_editor:" options.id ": (" my_orig_name ") destroy: path, group, filename is nil, editor should be nil: " editor )
                                 (when my_path
-                                   (rename_editor_group my_path))))
+                                   (rename_editor_group my_path))
+                                (log "text_editor:" options.id ": (" my_orig_name ") destroy: complete: nothing more should be heard from me.")))
                 `set_evaluator: (fn (new_evaluator)
                                    (when (is_function? new_evaluator)
                                       (set_evaluator new_evaluator)))
@@ -3692,6 +3760,7 @@
                 `get_active_lisp_operator: (fn ()
                                               (find_active_lisp_operator))
                 `set_read_only: set_read_only
+                `read_only?: (function () (-> editor `getReadOnly))
                 `get_current_pos: (fn ()
                                      (current_position))
                 `set_editor_option: (fn (editor_option_name value)

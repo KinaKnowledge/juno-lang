@@ -1688,6 +1688,11 @@ tr.juno-dtable {
     padding: 5px;
 }
 
+.juno-dtable th {
+    padding: 5px;
+}
+
+
 div.juno-notification {
    z-index: 5; 
    box-shadow: 1px 2px 11px 2px #00000050; 
