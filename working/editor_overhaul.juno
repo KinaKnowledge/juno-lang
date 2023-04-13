@@ -3668,7 +3668,6 @@
                 `set_display_control_bar: set_display_control_bar
                 `on_destroy: (fn ()
                                 (progn
-                                   (log "text_editor: " (control_name intf) "on_destroy_called: am I linked? " (-> intf `get_linked))
                                    (cond
                                       (and options.path
                                          (> (length (get_editors_for_path options.path)) 1))

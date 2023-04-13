@@ -1,15 +1,15 @@
 // Source: undefined  
 import * as readline_mod_module from 'https://deno.land/x/readline/mod.ts'
 export const readline_mod=readline_mod_module;
-import * as streams_module from 'https://deno.land/std/streams/conversion.ts'
+import * as streams_module from 'https://deno.land/std@0.170.0/streams/conversion.ts'
 export const streams=streams_module;
 import * as path_module from 'https://deno.land/std@0.110.0/path/mod.ts'
 export const path=path_module;
 
 
-// Build Time: 2023-04-13 12:48:03
-// Version: 2023.04.13.12.48
-export const DLISP_ENV_VERSION='2023.04.13.12.48';
+// Build Time: 2023-04-13 14:08:57
+// Version: 2023.04.13.14.08
+export const DLISP_ENV_VERSION='2023.04.13.14.08';
 
 
 
@@ -3589,7 +3589,7 @@ export async function init_dlisp(Environment)  {
 },"compiler":{ "requires":["take","is_array?","is_string?","is_function?","get_object_path","is_object?","blank?","delete_prop","scan_str","keys","is_element?","chop","as_lisp","resolve_path","push","split_by","safe_access","expand_dot_accessor","pairs","pop","assert","rest","setf_ctx","prepend","ends_with?","range","join","path_to_js_syntax","get_outside_global","to_array","bind_function","each","read_lisp","warn","make_set","truncate"],"externals":["clone","LispSyntaxError","console","Object","Set","Function","AsyncFunction","Array","Boolean","SyntaxError","TypeError","RegExp","Error","JSON","ReferenceError","EvalError","subtype","String","parseInt","isNaN","globalThis","Math","check_true"],"source_name":"compiler.lisp"
 },"read_text_file":{ "description":"Given an accessible filename including path with read permissions returns the file contents as a string.","usage":["filename:string","options:object"],"tags":["file","read","text","input","io"],"initializer":["=:bind","=:Deno.readTextFile","=:Deno"],"requires":["Deno","EvalError","JSON","Uint8Array"],"source_name":"pkg/base-io.lisp"
 },"readline_mod":{ "is_import":true,"initializer":["=:import",["=:readline_mod"],"https://deno.land/x/readline/mod.ts"],"source_name":"./src/repl.lisp"
-},"streams":{ "is_import":true,"initializer":["=:import",["=:streams"],"https://deno.land/std/streams/conversion.ts"],"source_name":"./src/repl.lisp"
+},"streams":{ "is_import":true,"initializer":["=:import",["=:streams"],"https://deno.land/std@0.170.0/streams/conversion.ts"],"source_name":"./src/repl.lisp"
 },"repl":{ "name":"repl","fn_args":"(instream outstream opts)","description":["=:+","Implements a Read-Eval-Print for Juno.  This function takes ","an input stream, an output stream, and an optional options object ","and starts up a continuously running loop that waits for input ","and, once a fully closed expression is received, evaluates it ","and returns the result on the output stream.  The options object ","will affect the behavior of the REPL: <br><br>","raw:boolean:false:If raw mode is true, no prompt will be emitted ","into the output stream.<br>","prompt:function|string:the prompt to display when the REPL is ready ","for input.  If no values are given the default prompt is displayed ","which contains the current namespace and an arrow to indicate ","ready for input.<br>","subprompt:function|string::When a form isn't complete, and the user ","has pressed return, the subprompt is displayed until the form is closed.<br>","sigint_message:string:If the SIGINT signal is received, the prompt for the ","REPL to display.<br>","output_processor:function::The function to call when the REPL has received output ","from the evaluation process.  This function can be used to encode or otherwise ","package the return value for consumption by the output stream.<br>","use_console:boolean:false:If true, the output is sent to the console, as opposed ","to the direct output stream. <br>"],"usage":["input:stream","output:stream","options:object"],"tags":["repl","eval","read","output"],"requires":["either","resolve_path","*env_config*","readline_mod","is_function?","is_string?","current_namespace","join","map","range","length","range_inc","streams","warn","reader","add","push","prepend","first","pop","*namespace*","$","$$","second","$$$"],"externals":["Deno","TextDecoder","TextEncoder","prompt","JSON","console","Error","LispSyntaxError"],"source_name":"./src/repl.lisp"
 },"set_repl":{ "name":"set_repl","fn_args":"(key value)","description":"Given a configuration key and a value, sets the provided REPL config key to the value.","usage":["key:string","value:*"],"tags":["repl","config"],"requires":["set_path","*env_config*"],"externals":["Deno","TextDecoder","TextEncoder","prompt","JSON","console","Error","LispSyntaxError"],"source_name":"./src/repl.lisp"
 },"repl_config":{ "name":"repl_config","fn_args":"[]","description":["=:+","Returns the environment configuration options that are ","available for the repl and their current settings."],"tags":["repl","config"],"usage":[],"requires":["add","resolve_path","*env_config*"],"externals":["Deno","TextDecoder","TextEncoder","prompt","JSON","console","Error","LispSyntaxError"],"source_name":"./src/repl.lisp"
@@ -3728,13 +3728,13 @@ export async function init_dlisp(Environment)  {
 },config:{
     export:{
         save_path:"js/juno.js",default_namespace:"user",include_source:false,save_executable:"bin/juno"
-    },features:["compiler","repl","io","Deno","build-tools","core-ext","http_server","http_client","system","*env_skeleton*"],build:"2023.04.13.12.47",imports:await ( async function(){
+    },features:["compiler","repl","io","Deno","build-tools","core-ext","http_server","http_client","system","*env_skeleton*"],build:"2023.04.13.14.08",imports:await ( async function(){
         let __obj__286=new Object();
         __obj__286["core/readline_mod"]={
             symbol:"readline_mod",namespace:"core",location:"https://deno.land/x/readline/mod.ts"
         };
         __obj__286["core/streams"]={
-            symbol:"streams",namespace:"core",location:"https://deno.land/std/streams/conversion.ts"
+            symbol:"streams",namespace:"core",location:"https://deno.land/std@0.170.0/streams/conversion.ts"
         };
         __obj__286["user/path"]={
             symbol:"path",namespace:"user",location:"https://deno.land/std@0.110.0/path/mod.ts"
@@ -5488,7 +5488,7 @@ export async function init_dlisp(Environment)  {
                             } else {
                                 return await clone(val,0,Environment)
                             }
-                        };__obj__1["*env_config*"]={export:{save_path:"js/juno.js",default_namespace:"user",include_source:false,save_executable:"bin/juno"},features:["compiler","repl","io","Deno","build-tools","core-ext","http_server","http_client","system","*env_skeleton*"],build:"2023.04.13.12.47",imports:await ( async function(){let __obj__2=new Object();__obj__2["core/readline_mod"]={symbol:"readline_mod",namespace:"core",location:"https://deno.land/x/readline/mod.ts"};__obj__2["core/streams"]={symbol:"streams",namespace:"core",location:"https://deno.land/std/streams/conversion.ts"};__obj__2["user/path"]={symbol:"path",namespace:"user",location:"https://deno.land/std@0.110.0/path/mod.ts"};return __obj__2;})(),repl:new Object(),http_services:{listen_on_start:false,port:56432,base_directory:"./"}};__obj__1["create_namespace"]=async function(name,options,defer_initialization) {
+                        };__obj__1["*env_config*"]={export:{save_path:"js/juno.js",default_namespace:"user",include_source:false,save_executable:"bin/juno"},features:["compiler","repl","io","Deno","build-tools","core-ext","http_server","http_client","system","*env_skeleton*"],build:"2023.04.13.14.08",imports:await ( async function(){let __obj__2=new Object();__obj__2["core/readline_mod"]={symbol:"readline_mod",namespace:"core",location:"https://deno.land/x/readline/mod.ts"};__obj__2["core/streams"]={symbol:"streams",namespace:"core",location:"https://deno.land/std@0.170.0/streams/conversion.ts"};__obj__2["user/path"]={symbol:"path",namespace:"user",location:"https://deno.land/std@0.110.0/path/mod.ts"};return __obj__2;})(),repl:new Object(),http_services:{listen_on_start:false,port:56432,base_directory:"./"}};__obj__1["create_namespace"]=async function(name,options,defer_initialization) {
                                 return await async function(){
                                     if (check_true (await not((name instanceof String || typeof name==='string')))) {
                                         throw new TypeError("namespace name must be a string");
@@ -11474,16 +11474,16 @@ return await (async function() {
                                     return await (async function() {
                                         let __for_body__289=async function(req) {
                                             {
-                                                let _expr_26880;
+                                                let _expr_64907;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_26880=await (async function(){
+                                                _expr_64907=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_26880 && _expr_26880["0"]);
-                                                req_ns=(_expr_26880 && _expr_26880["1"]);
-                                                explicit=(_expr_26880 && _expr_26880["2"]);
+                                                req_sym=(_expr_64907 && _expr_64907["0"]);
+                                                req_ns=(_expr_64907 && _expr_64907["1"]);
+                                                explicit=(_expr_64907 && _expr_64907["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -11586,13 +11586,13 @@ return await (async function() {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_64319;
+                    let _expr_43738;
                     let nspace;
-                    _expr_64319=await (async function(){
+                    _expr_43738=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_64319 && _expr_64319["0"]);
-                    nspace=(_expr_64319 && _expr_64319["1"]);
+                    sym=(_expr_43738 && _expr_43738["0"]);
+                    nspace=(_expr_43738 && _expr_43738["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);

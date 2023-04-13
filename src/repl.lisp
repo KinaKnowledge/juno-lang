@@ -3,7 +3,7 @@
 ;; (requires Deno readline and streams)
 
 (import (readline_mod) "https://deno.land/x/readline/mod.ts")
-(import (streams) "https://deno.land/std/streams/conversion.ts")
+(import (streams) "https://deno.land/std@0.170.0/streams/conversion.ts")
 
 (defun repl (instream outstream opts)
    (let
