@@ -1,18 +1,44 @@
-;; Validations and Tests for the IDE
+;; Validations and Tests for the IDE - to be run after the build
+;; Seedling IDE 
+
+; Copyright (c) 2022-2023, Kina, LLC
+; Permission is hereby granted, free of charge, to any person obtaining a copy
+; of this software and associated documentation files (the "Software"), to deal
+; in the Software without restriction, including without limitation the rights
+; to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+; copies of the Software, and to permit persons to whom the Software is
+; furnished to do so, subject to the following conditions:
+
+; The above copyright notice and this permission notice shall be included in all
+; copies or substantial portions of the Software.
+
+; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+; IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+; FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+; AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+; LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+; SOFTWARE.
+
+
+;; When (load)ed, this file will auto start the validations in another
+;; panel
 
 (if (contains? "seedling-tests" (namespaces))
     (progn
        (use_ns user)
        (delete_namespace "seedling-tests")))
+
 (create_namespace "seedling-tests")
 (use_ns seedling-tests)
 (declare (namespace seedling-tests))
+
 (use_symbols "user" 
-   [ `place_control `panel `eval_in_iframe register_event_handler notify remove_event_handler quick_alert alert_box alert_on_error set_focus_to *last_focus*
-     `table `tr `td `div `span `h4 `th `tbody `thead `dtable `
-     `defcontrol `generate_id `commands_button `set_style 
-     `control_frame `focus_to `compute_name_for_control get_control_by_name rblock 
-     `add_class `remove_class `make_named_layout `split_view_vertical get_remote_sys_evaluator])
+   [ place_control panel eval_in_iframe register_event_handler notify remove_event_handler quick_alert alert_box alert_on_error set_focus_to *last_focus*
+     table tr td div span h4 th tbody thead dtable `
+     defcontrol generate_id commands_button set_style 
+     control_frame focus_to compute_name_for_control get_control_by_name rblock 
+     add_class remove_class make_named_layout split_view_vertical get_remote_sys_evaluator])
 
 (defparameter seedling_booted false)
 
@@ -500,24 +526,32 @@
          `new_layout_removed (or (prop (remove_layout "test") `layout_removed) false ))
       result))
       
-      
-(defun locked_panel ()
+(defun locked_layout_changes ()
    (progn
       (defvar result {})
       (home_state)
       (new_layout_named "lock-test" "*scratch*")
       (= result 
          {
-          `layout_correct: (== (layout) "test")
+          `layout_correct: (== (layout) "lock-test")
           `control_correct: (== (first (controls_visible)) "*scratch*")
           `focus_correct: (== (last_focus) (focused_control))
           })
       (if (validate_result result)
           (progn
-             (kcode "split_horizontally")))
+             (kcode "split_horizontally")
+             (set_prop result
+                `layout_change_prevented (and (== 1 (length (controls_visible)))
+                                              (== (first (controls_visible)) "*scratch*")
+                                              (== (last_focus) (focused_control))
+                                              (== (name_of (focused_control)) "*scratch*"))))
+          (set_prop result
+             `layout_change_prevented
+             "not performed due to invalid layout state"))
+          
       
       (set_prop result
-         `new_layout_removed: (or (prop (remove_layout "test") `layout_removed) false ))
+         `new_layout_removed: (or (== (prop (remove_layout "lock-test") `layout_removed) true) false ))
       result))
       
 
@@ -650,6 +684,56 @@
        ;  `intentional_failure "This is the failure")
       acc))
 
+(defun css_mode ()
+   (progn
+      (reset_and_home_state)
+      (rblock
+         (if (sys/is_file? "./working/test-validation-file.css")
+             (sys/delete_file "./working/test-validation-file.css")))
+      
+      (ev `(edit_file { `filename: "./working/test-validation-file.css" `create_mode: true }))
+      (defvar acc {
+                    `mode_correct: (ev `(== "css" (-> (get_control_by_name "test-validation-file.css") `get_mode)))
+                    `name_correct: (and (== (name_of (last_focus)) "test-validation-file.css")
+                                        (== (last_focus) (focused_control)))
+               })
+      (ev `(-> (get_control_by_name "test-validation-file.css") `set "/* Test Content */\n\n.juno-validation-test-class {\n  background: #000000;\n  color: white;\n}\n\n")) 
+      (set_prop acc
+         `evaluation_worked
+         (ev `(progn
+                 (remove_css_entry ".juno-validation-test-class")
+                 (defvar ctl (get_control_by_name "test-validation-file.css"))
+                 (-> ctl `move_to_position 3 1)
+                 (evaluate_css_rule ctl.editor)
+                 (if (get_by_id "juno-css-.juno-validation-test-class")
+                     true
+                     "css entry not found")))
+         `created_rule_removed
+         (ev `(progn
+                  (remove_css_entry ".juno-validation-test-class")
+                  (if (get_by_id "juno-css-.juno-validation-test-class")
+                     false
+                     true)))
+         `selection_valid
+         (progn
+            (defvar text (ev `(-> (get_control_by_id ,#(focused_control)) `get_selected_text)))
+            (log "selected text: " text)
+            (and (starts_with? ".juno-validation-test-class {" text)
+                 (ends_with? "}" text))))
+      (setTimeout (fn () 
+                     (ev `(-> (resolve_dom_path [ 4 1 ] (first (get_by_tag "DIALOG"))) `click)))
+                  1000)
+      (kcode `close_control)
+      (set_prop acc
+         `control_closed_properly
+         (not (contains? "test-validation-file.css" (current_controls))))
+      acc))
+      
+
+(defun test_error ()
+   (progn
+      (ev `(throw Error "Intentionally Thrown"))))
+      
 
 (defun run_test_set (test_function_array on_result)
    (let
@@ -677,11 +761,14 @@
                               false))))))
       (ev `(log "Starting test set ------"))
       (for ((test_name arg) test_function_array)
-              (progn
-                 (= test (get_global test_name))
-                 (if arg
-                     (validate test_name (test arg))
-                     (validate test_name (test)))))
+              (try
+                 (progn
+                    (= test (get_global test_name))
+                    (if arg
+                       (validate test_name (test arg))
+                       (validate test_name (test))))
+                 (catch Error (e)
+                    (validate test_name { `sequence_ok: (+ "Sequence Thew Error: " e.message ) }))))
       (ev `(log "Ending test set ------"))
       (log "number_of_validations: " number_of_validations)
       
@@ -692,6 +779,8 @@
           total_test_sequences: (+ passes.length fails.length)
           report: results
       }))
+
+
 
 (defglobal `layout_and_panel_tests
    [[`home_state ]
@@ -708,12 +797,14 @@
     [`key_split_horizontal]
     [`key_split_sequence]
     [`named_layout_creation]
+    [`locked_layout_changes ]
     [`reset_and_home_state]
     [`save_of_symbol]
     [`save_of_symbol_for_multiple_buffers_1]
     [`save_of_symbol_for_multiple_buffers_2]
     [`remote_file_access_reading]
-    [`remote_file_access_writing]])
+    [`remote_file_access_writing]
+    [`css_mode]])
                
 
          
@@ -778,7 +869,7 @@
                          (set_prop header_elem
                             `innerHTML "Starting")
                          (sleep 0.1)
-                         (open_test_frame "/env/a1.html" test_frame_elem)
+                         (open_test_frame "/env/seedling_build.html" test_frame_elem)
                          (set_prop header_elem
                             `innerHTML "Testing")
                          (= kcom
@@ -793,7 +884,16 @@
                                          "Complete - Passed"))
                          (if fail_state
                             (add_class "juno-test-fail" header_elem)
-                            (add_class "juno-test-pass" header_elem))
+                            (progn
+                               (add_class "juno-test-pass" header_elem)
+                               (try
+                                  (rblock
+                                     (sys/rename "./environments/seedling_build.html" "./environments/seedling.html"))
+                                  (catch Error (e)
+                                     (progn
+                                        (log "ERROR on rename: " e)
+                                        (set_prop header_elem
+                                           `innerHTML (+ "Unable to rename build_file seedling_build.html to seedling.html: " e.message)))))))
                          ))))
    {
        `expose: [[`on_result on_result]]
@@ -801,11 +901,7 @@
    })
 
 
-                  
-      
-      
-                           
-                     
+                
 
 
 ;; layout and paneling 

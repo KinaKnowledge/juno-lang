@@ -1,6 +1,27 @@
-;; TODO: SPLIT UP INTO SEPARATE FILES - TOO LARGE 
-;; main browser initialization file - initializes the user browser environment
-;; after the browser_workspace has setup the underlying environment
+; Seedling IDE Consolidated Source File
+; Copyright (c) 2022-2023, Kina, LLC
+
+
+; Permission is hereby granted, free of charge, to any person obtaining a copy
+; of this software and associated documentation files (the "Software"), to deal
+; in the Software without restriction, including without limitation the rights
+; to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+; copies of the Software, and to permit persons to whom the Software is
+; furnished to do so, subject to the following conditions:
+
+; The above copyright notice and this permission notice shall be included in all
+; copies or substantial portions of the Software.
+
+; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+; IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+; FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+; AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+; LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+; SOFTWARE.
+
+
+; TODO: SPLIT UP INTO SEPARATE FILES - TOO LARGE 
 
 (defglobal main_menu_button nil) ;; placeholders 
 (defglobal resource_loader_button nil)
@@ -7222,7 +7243,7 @@
           (primary_id nil)
           (primary nil))
          (= primary (first editors))  ;; take the primary editor or nil 
-         (log "rename_editor_group:  primary is: " (if primary (control_name primary) nil) "number of editors: " editors.length (each editors control_name) "path: " path)
+         ;log "rename_editor_group:  primary is: " (if primary (control_name primary) nil) "number of editors: " editors.length (each editors control_name) "path: " path)
          (when (> editors.length 0)
             (assert (eq nil (resolve_path [ `options `clone_editor_with_id ] primary) "rename_editor_group: BUG: editors for path > 0 and no primary editor")))
          (cond 
@@ -7237,16 +7258,16 @@
                (unless primary                ;; unless we already have a primary...
                   (= primary (take editors))) ;; take the first editor and make it the primary
                (= primary_id primary.options.id)
-               (log "rename_editor_group: primary_id set to: " primary_id  "which is: " (control_name primary))
+               ;(log "rename_editor_group: primary_id set to: " primary_id  "which is: " (control_name primary))
                (-> primary `set_name (-> primary `group_name) true)
                (-> primary `set_unlinked)
                (assert (eq nil primary.options.clone_with_editor_id) "Primary has clone_with_editor_id set" )
                (for_each (editor editors)
                   (when (not (== editor primary))
                      (-> editor `set_linked primary.options.id)
-                     (-> editor `set_name (-> primary `group_name))))
-               (log "rename_editor_group: primary editor is " primary_id  "primary editor: " (control_name primary))
-               (log "rename_editor_group: editors_for_path: " (control_name (get_editors_for_path path))))))
+                     (-> editor `set_name (-> primary `group_name)))))))
+               ;(log "rename_editor_group: primary editor is " primary_id  "primary editor: " (control_name primary))
+               ;(log "rename_editor_group: editors_for_path: " (control_name (get_editors_for_path path))))))
       (catch Error (e)
          (log "rename_editor_group: error: " e.message))))
 
@@ -7874,7 +7895,7 @@
                                (set_prop intf
                                   `name
                                   options.name)
-                               (log "text_editor: set_name: "  options.id  " given " new_name  " set as: " options.name)
+                               ;(log "text_editor: set_name: "  options.id  " given " new_name  " set as: " options.name)
                                (dispatch_event { command: "editor_change"
                                                  source: options.id
                                                  args: [ { `option: "name" `value: options.name } ] }))
@@ -9254,8 +9275,8 @@
                                 (when options.evaluator_id
                                    (remove_event_handler options.evaluator_id "evaluator_change" ns_notifier_id)
                                    (remove_event_handler options.evaluator_id "control_name_change" name_change_id))
-                                 (log "text_editor:" options.id ": (" my_orig_name ") destroy: dispatching event: others and me: " others_and_me.length (< others_and_me.length 2))
-                                 (log "text_editor:" options.id ": (" my_orig_name ") destroy: remaining editors for path: " (each (get_editors_for_path options.path) `options))
+                                 ;(log "text_editor:" options.id ": (" my_orig_name ") destroy: dispatching event: others and me: " others_and_me.length (< others_and_me.length 2))
+                                 ;(log "text_editor:" options.id ": (" my_orig_name ") destroy: remaining editors for path: " (each (get_editors_for_path options.path) `options))
                                 (dispatch_event { `command: "destroy_control" `source: options.id `args: [  ]  })
                                 (-> editor `destroy)
                                 (= editor nil)
@@ -9270,10 +9291,9 @@
                                 (set_prop intf
                                    `editor nil)
                                 (= intf nil)
-                                (log "text_editor:" options.id ": (" my_orig_name ") destroy: path, group, filename is nil, editor should be nil: " editor )
+                                ;(log "text_editor:" options.id ": (" my_orig_name ") destroy: path, group, filename is nil, editor should be nil: " editor )
                                 (when my_path
-                                   (rename_editor_group my_path))
-                                (log "text_editor:" options.id ": (" my_orig_name ") destroy: complete: nothing more should be heard from me.")))
+                                   (rename_editor_group my_path))))
                 `set_evaluator: (fn (new_evaluator)
                                    (when (is_function? new_evaluator)
                                       (set_evaluator new_evaluator)))
@@ -10844,7 +10864,7 @@
                                                     (timer nil))
                                                    (= timer (setTimeout (fn ()
                                                                            (progn
-                                                                              (log "timeout occurred")
+                                                                              (log name "timeout occurred: " my_request_id)
                                                                               (reject { `rval: "FAIL" `message: (+ "Timeout on request id: " my_request_id) })))
                                                                         remote_command_timeout))
                                                    ;; set the request id in request object, and then wait to resolve the promise until results are returned, or a timeout occurs
@@ -10904,11 +10924,13 @@
                                                       (= data event.data))))
                                              (if options.debug
                                                 (log (+ name ": <-")  data))
-                                             (if (and (is_object? data)
-                                                      data.ws_id)
-                                                 (set_prop intf
-                                                    `ws_id
-                                                    data.ws_id))
+                                             (when (and (is_object? data)
+                                                        data.ws_id)
+                                                (set_prop intf
+                                                   `ws_id
+                                                   data.ws_id))
+                                                
+                                                 
                                              (cond
                                                 (and (is_object? data)
                                                      data.req_id)
@@ -10973,7 +10995,7 @@
                                      (progn
                                         (if options.on_error
                                            (options.on_error event intf)
-                                           (log (+ name ": error on WS:" event)))))
+                                           (log (+ name ": error on WS:") event))))
                        })))
            (intf {}))
         (= repl_ws (setup_connection))
@@ -19031,8 +19053,21 @@
            (register_event_handler nil "exec" "executor"
                                    (fn (event)
                                       (if (in_iframe?)
-                                          (-> window.top `postMessage (JSON.stringify { source: "executor" command: "result" args: (list (first event.args)
-                                                                                                                                         (eval (second event.args))) })))))
+                                          (-> window.top `postMessage (JSON.stringify { source: "executor" command: "result" 
+                                                                                        args: (progn
+                                                                                                 (defvar result
+                                                                                                    (try
+                                                                                                       (eval (second event.args))
+                                                                                                       (catch Error (e)
+                                                                                                          e)))
+                                                                                                 (list (first event.args)
+                                                                                                       result
+                                                                                                       (if (is_error? result)
+                                                                                                           {
+                                                                                                               type: (sub_type result)
+                                                                                                               message: result.message
+                                                                                                           })))
+                                                                                                          })))))
            (register_event_handler "executor" "result" "executor_result"
                            (fn (event)
                               (let

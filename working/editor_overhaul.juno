@@ -2317,7 +2317,7 @@
                                (set_prop intf
                                   `name
                                   options.name)
-                               (log "text_editor: set_name: "  options.id  " given " new_name  " set as: " options.name)
+                               ;(log "text_editor: set_name: "  options.id  " given " new_name  " set as: " options.name)
                                (dispatch_event { command: "editor_change"
                                                  source: options.id
                                                  args: [ { `option: "name" `value: options.name } ] }))
@@ -3697,8 +3697,8 @@
                                 (when options.evaluator_id
                                    (remove_event_handler options.evaluator_id "evaluator_change" ns_notifier_id)
                                    (remove_event_handler options.evaluator_id "control_name_change" name_change_id))
-                                 (log "text_editor:" options.id ": (" my_orig_name ") destroy: dispatching event: others and me: " others_and_me.length (< others_and_me.length 2))
-                                 (log "text_editor:" options.id ": (" my_orig_name ") destroy: remaining editors for path: " (each (get_editors_for_path options.path) `options))
+                                 ;(log "text_editor:" options.id ": (" my_orig_name ") destroy: dispatching event: others and me: " others_and_me.length (< others_and_me.length 2))
+                                 ;(log "text_editor:" options.id ": (" my_orig_name ") destroy: remaining editors for path: " (each (get_editors_for_path options.path) `options))
                                 (dispatch_event { `command: "destroy_control" `source: options.id `args: [  ]  })
                                 (-> editor `destroy)
                                 (= editor nil)
@@ -3713,10 +3713,9 @@
                                 (set_prop intf
                                    `editor nil)
                                 (= intf nil)
-                                (log "text_editor:" options.id ": (" my_orig_name ") destroy: path, group, filename is nil, editor should be nil: " editor )
+                                ;(log "text_editor:" options.id ": (" my_orig_name ") destroy: path, group, filename is nil, editor should be nil: " editor )
                                 (when my_path
-                                   (rename_editor_group my_path))
-                                (log "text_editor:" options.id ": (" my_orig_name ") destroy: complete: nothing more should be heard from me.")))
+                                   (rename_editor_group my_path))))
                 `set_evaluator: (fn (new_evaluator)
                                    (when (is_function? new_evaluator)
                                       (set_evaluator new_evaluator)))

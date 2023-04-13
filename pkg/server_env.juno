@@ -913,11 +913,12 @@
                                                  ws.ws_id
                                                  ws)
                                               (vlog "ws_repl_handler: new open request: default namespace: " (or options.namespace "user"))
-                                              ;(= evaluator (get_evaluator_for_ns ws.namespace))
+                                              
+                                              (vlog "ws_repl_handler: sending namespace information packet")
                                               (send_to_ws ws
-                                                       { ws_id: ws.ws_id
-                                                         namespace: ws.namespace
-                                                         }))
+                                                 { ws_id: ws.ws_id
+                                                   namespace: ws.namespace }))
+                                                                    
                                            (catch Error (e)
                                               (progn
                                                  (console.error "ws_repl_handler: cannot open: " e.message)))))
@@ -1091,7 +1092,7 @@
                           "/usr/bin/google-chrome"
                           else
                           (throw EvalError "Please provide the path_to_browser option.")))))
-         (Deno.run { `cmd: [browser "--new-window" (+ "--app=http://localhost:" (or options.port 56432) "/env/" (or options.instance "a1.html")) ] }))))
+         (Deno.run { `cmd: [browser "--new-window" (+ "--app=http://localhost:" (or options.port 56432) "/env/" (or options.instance "seedling.html")) ] }))))
                        
 
 (defun enable_ui ()
@@ -1102,7 +1103,7 @@
                (global LZString))
       (unless (is_symbol? `*user_interface*)
          (defglobal `*user_interface*
-            (-> LZString `compressToBase64 (read_text_file "./environments/a1.html"))))
+            (-> LZString `compressToBase64 (read_text_file "./environments/seedling.html"))))
    (add_http_route "GET" "/ui" (content_spooler_with_type (fn ()
                                                              (-> LZString `decompressFromBase64 *user_interface*))
                                                           "text/html"))))
