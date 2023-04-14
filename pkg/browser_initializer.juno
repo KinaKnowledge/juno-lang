@@ -11469,7 +11469,7 @@
                                                           (clog "Unable to parse json data: " e.message)
                                                           (= data event.data))))
                                                  (if (or options.debug 
-                                                         (> __VERBOSITY__ 1))
+                                                         (> __VERBOSITY__ 0))
                                                     (clog "remote: <-" data))
                                                  (if (and (is_object? data)
                                                           data.ws_id)

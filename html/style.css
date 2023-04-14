@@ -1594,7 +1594,12 @@ dialog:modal {
   box-shadow: 1px 2px 11px 2px #00000033;
 }
 
-
+#juno-loading-message {
+    font-family: var(--main-app-font);
+    padding: 5px;
+    text-align: center;
+    font-size: 1.5em;
+}
 
 .filtered-hidden {
   display: none;

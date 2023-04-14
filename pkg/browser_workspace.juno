@@ -258,6 +258,7 @@
                                      (if options.no_header
                                         (html/header {  `id: "page-header" })
                                         (html/header {  `id: "page-header" class: "juno-page-header" } ))
+                                     (html/div { `id: "juno-loading-message" } "Loading Application - this may take a few moments...")
                                      (html/div { `id: "lower_right_corner" style: "position: absolute; right: 50px; bottom: 5px; width: 255px;" } )
                                      )
                           `outerHTML)))
@@ -302,6 +303,8 @@
     (console.log "system initializer: initializing packaged html_package")
     (-> Environment `evaluate pkg nil { `source_name: "pkg/html.juno" })
 
+    (aif (-> document `querySelector "#juno-loading-message")
+         (-> it `remove))
     ;(eval (reader (clone browser_repl_package)))
     (undefine `browser_repl_package)
     (undefine `rlog)

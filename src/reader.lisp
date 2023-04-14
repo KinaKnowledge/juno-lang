@@ -317,6 +317,7 @@
              (next_c nil)
              (depth 0)
              (stop false)
+             (processing_time_marker (time_in_millis))
              (read_block (fn (_depth _ctx)
                              (let
                                 ((acc [])
@@ -329,9 +330,10 @@
                                  (_ctx _ctx)
                                  (block_return nil))
                                 (= depth _depth)
-                                (if (and pause_time 
-                                         (< _depth 3))
-                                   (sleep pause_time))
+                                (if pause_time 
+                                    (when (or (> (- (time_in_millis) processing_time_marker) 100))
+                                       (sleep pause_time)
+                                       (= processing_time_marker (time_in_millis))))
                                 (while (and (not stop)
                                             (< idx len))
                                    (do
