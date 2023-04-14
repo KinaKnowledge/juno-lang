@@ -69,7 +69,7 @@
 (defparameter TokenIterator (function () true)) ;; filled in by the first editor
 (defparameter core/*evaluators* {})  ;; remote evaluators
 
-
+(defparameter *build_window* nil) ;; handle to the build window
 
 
 (defvalue *ace_option_description*
@@ -11469,7 +11469,7 @@
                                                           (clog "Unable to parse json data: " e.message)
                                                           (= data event.data))))
                                                  (if (or options.debug 
-                                                         (> __VERBOSITY__ 0))
+                                                         (> __VERBOSITY__ 1))
                                                     (clog "remote: <-" data))
                                                  (if (and (is_object? data)
                                                           data.ws_id)
@@ -16728,6 +16728,8 @@
     intf))
 
 
+
+
 (defun build_starter_environment (opts)
   (if is_served?
     (let
@@ -16765,9 +16767,11 @@
           (log "Removing temporary environment: " (-> remote_connection `evaluate "(undefine `*export_env*)"))
           (-> remote_connection `close)
           (log "building starter environment")
-          (floating_div (iframe { width: 500 height: 500
-                                  `style: "width: calc(100% - 5px); min-height: 500px; min-width: 500px; overflow: auto; height:calc(100% - 5px); border: 0px solid transparent;"
-                                  src: (+ "/env/starter.html?theme=" (resolve_path [ `application `global_theme ] *env_config*))} ))))))
+          (= *build_window* 
+             (floating_div (iframe { width: 500 height: 500
+                                     `style: "width: calc(100% - 5px); min-height: 500px; min-width: 500px; overflow: auto; height:calc(100% - 5px); border: 0px solid transparent;"
+                                     src: (+ "/env/starter.html?theme=" (resolve_path [ `application `global_theme ] *env_config*))} )
+                           { controls: true } ))))))
 
 (defun rebuild_remote_environment ()
   (if is_served?
@@ -17880,6 +17884,9 @@
                                               (log_error "Bootstrap Failed" "See log")
                                               (progn
                                                  (log "Bootstrap Completed Successfully")
+                                                 (when (is_object? *build_window*)
+                                                    (-> *build_window* `close)
+                                                    (= *build_window* nil))
                                                  (try
                                                     (load "tests/seedling-tasks.juno")
                                                     (catch Error (e)
