@@ -214,13 +214,7 @@
      `tags: ["pluck" "filter" "select" "object" "each" "list" "objects" "keys" ]
      }) 
      
-    (defun sleep (seconds)
-       (new Promise 
-            (fn (resolve)
-                (setTimeout (lambda() (resolve true)) (* seconds 1000))))
-        {"usage":["seconds:number"]
-         "tags":["time" "timing" "pause" "control"]
-         "description":"Pauses execution for the number of seconds provided to the function." }) 
+    
      
     (if_compile_time_defined `Library
         (do

@@ -7,9 +7,9 @@ import * as path_module from 'https://deno.land/std@0.110.0/path/mod.ts'
 export const path=path_module;
 
 
-// Build Time: 2023-04-14 09:16:03
-// Version: 2023.04.14.09.16
-export const DLISP_ENV_VERSION='2023.04.14.09.16';
+// Build Time: 2023-04-14 11:06:07
+// Version: 2023.04.14.11.06
+export const DLISP_ENV_VERSION='2023.04.14.11.06';
 
 
 
@@ -3302,9 +3302,9 @@ export async function init_dlisp(Environment)  {
 },"is_set?":{ "core_lang":true,"description":"for the given value x, returns true if x is a set.","usage":["arg:value"],"tags":["type","condition","subtype","value","what"]
 },"is_element?":{ "core_lang":true,"description":"for the given value x, returns true if x is an Element object","usage":["arg:value"],"tags":["type","condition","subtype","value","what"]
 },"is_string?":{ "core_lang":true,"description":"for the given value x, returns true if x is a String object","usage":["arg:value"],"tags":["type","condition","subtype","value","what"]
-},"is_nil?":{ "name":"is_nil?","fn_args":"[\"value\"]","description":"for the given value x, returns true if x is exactly equal to nil.","usage":["arg:value"],"tags":["type","condition","subtype","value","what"],"requires":[],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"is_regex?":{ "name":"is_regex?","fn_args":"(x)","description":"for the given value x, returns true if x is a Javascript regex object","usage":["arg:value"],"tags":["type","condition","subtype","value","what"],"requires":["sub_type"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"is_date?":{ "name":"is_date?","fn_args":"(x)","description":"for the given value x, returns true if x is a Date object.","usage":["arg:value"],"tags":["type","condition","subtype","value","what"],"requires":["sub_type"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"is_nil?":{ "name":"is_nil?","fn_args":"[\"value\"]","description":"for the given value x, returns true if x is exactly equal to nil.","usage":["arg:value"],"tags":["type","condition","subtype","value","what"],"requires":[],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"is_regex?":{ "name":"is_regex?","fn_args":"(x)","description":"for the given value x, returns true if x is a Javascript regex object","usage":["arg:value"],"tags":["type","condition","subtype","value","what"],"requires":["sub_type"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"is_date?":{ "name":"is_date?","fn_args":"(x)","description":"for the given value x, returns true if x is a Date object.","usage":["arg:value"],"tags":["type","condition","subtype","value","what"],"requires":["sub_type"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
 },"ends_with?":{ "core_lang":true,"description":"for a given string or array, checks to see if it ends with the given start_value.  Non string args return false.","usage":["end_value:value","collection:array|string"],"tags":["string","text","list","array","filter","reduce"]
 },"starts_with?":{ "core_lang":true,"description":"for a given string or array, checks to see if it starts with the given start_value.  Non string args return false.","usage":["start_value:value","collection:array|string"],"tags":["string","text","list","array","filter","reduce","begin"]
 },"delete_prop":{ "core_lang":true,"description":"Removes the key or keys of the provided object, and returns the modified object.<br>Example:<br>(defglobal foo { abc: 123 def: 456 ghi: 789 })<br>(delete_prop foo `abc `def) => { ghi: 789 }<br>","usage":["obj:objects","key0:string","keyN?:string"],"tags":["delete","keys","object","remove","remove_prop","mutate"]
@@ -3321,8 +3321,8 @@ export async function init_dlisp(Environment)  {
 },"merge_objects":{ "core_lang":true,"description":"Merge objects takes an array of objects and returns an object whose keys and values are the sum of the provided objects (same behavior as add with objects).  If objects have the same keys, the last element in the array with the duplicate key will be used to provide the value for that key.","usage":["objects:array"],"tags":["add","merge","keys","values","objects","value"]
 },"index_of":{ "core_lang":true,"description":"Given a value and an array container, returns the index of the value in the array, or -1 if not found.","usage":["value:number|string|boolean","container:array"],"tags":["find","position","index","array","contains"]
 },"resolve_path":{ "core_lang":true,"description":"Given a path and a tree structure, which can be either an array or an object, traverse the tree structure and return the value at the path if it exists, otherwise undefined is returned.<br>(resolve_path [ 2 1 ] [ 1 2 [ 3 4 5 ] 6 7]) => 4)","usage":["path:array","tree_structure:array|object"],"tags":["find","position","index","path","array","tree","contains","set_path"]
-},"min_value":{ "name":"min_value","fn_args":"(v)","usage":["values:list"],"description":"Given an array of numbers, returns the smallest value found.  Any non-numbers in the array are ignored.  If there are no numbers in the list, 0 is returned.","requires":["MAX_SAFE_INTEGER","not","sub_type"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"max_value":{ "name":"max_value","fn_args":"(v)","usage":["values:list"],"description":"Given an array of numbers, returns the largest value found.  Any non-numbers in the array are ignored.  If there are no numbers in the list, 0 is returned.","requires":["not","sub_type"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"min_value":{ "name":"min_value","fn_args":"(v)","usage":["values:list"],"description":"Given an array of numbers, returns the smallest value found.  Any non-numbers in the array are ignored.  If there are no numbers in the list, 0 is returned.","requires":["MAX_SAFE_INTEGER","not","sub_type"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"max_value":{ "name":"max_value","fn_args":"(v)","usage":["values:list"],"description":"Given an array of numbers, returns the largest value found.  Any non-numbers in the array are ignored.  If there are no numbers in the list, 0 is returned.","requires":["not","sub_type"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
 },"interlace":{ "core_lang":true,"usage":["list0:array","list1:array","listn?:array"],"description":"Returns a list containing a consecutive values from each list, in argument order.  I.e. list0.0 list1.0 listn.0 list0.1 list1.1 listn.1 ...","tags":["list","array","join","merge"]
 },"trim":{ "core_lang":true,"description":"Removes leading and trailing spaces from the provided string value.","usage":["value:string"],"tags":["string","spaces","clean","squeeze","leading","trailing","space"]
 },"assert":{ "core_lang":true,"description":"If the evaluated assertion form is true, the result is returned, otherwise an EvalError is thrown with the optionally provided failure message.","usage":["form:*","failure_message:string?"],"tags":["true","error","check","debug","valid","assertion"]
@@ -3394,198 +3394,199 @@ export async function init_dlisp(Environment)  {
 },"for_with":{ "description":"The for_with operator provides a simple loop variable that allocates a symbol which is assigned the next value from the iterator function in the init form in the allocation. It then evaluates the body expression with the symbol in scope.  It will continue to loop, with the allocated symbol being defined successive values until the end of the array is reached, or a (break) operator is encountered in the body expression. Unlike for_each, the for_with operator is not a collector, and there is no return value and attempting to assign the return value will not work.<br>Example:```(for_with (next_val (generator instream))\n     (log (-> text_decoder `decode next_val)))\n```<br>","usage":["allocation_form","body_expression:array"],"tags":["iteration","generator","loop","flow","control"],"type":"Special"
 },"Environment":{ "description":"The Environment object facilitates the runtime capabilities of the Juno system.","usage":[],"tags":[],"type":"Special","license":"Copyright (c) 2022-2023, Kina, LLC\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE."
 },"defmacro":{ "description":"Defines the provided name as a compile time macro function in the current namespace environment. The parameters in the lambda list are destructured and bound to the provided names which are then available in the macro function.  The forms are used as the basis for the function with the final form expected to return a quoted form which is then as the expansion of the macro by the compiler. The body of forms are explicitly placed in a progn block.  Like with functions and defglobal, if the final argument to defmacro is an object, this will be used for the metadata associated with with the bound symbol provided as name.<br><br>#### Example <br>```(defmacro unless (condition `& forms)\n  `(if (not ,#condition)\n       (progn \n         ,@forms))) ```<br><br><br>In the above example the macro unless is defined.  Passed arguments must be explicitly unquoted or an error may be thrown because the arguments condition and forms *may* not be defined in the final compilation environment.  Note that if the symbols used by the macro are defined in the final compilation scope, that this may cause unexpected behavior due to the form being placed into the compilation tree and then acting on those symbols. <br>Be aware that if a macro being defined returns an object (not an array) you should explicitly add the final metadata form to explictly ensure appropriate interpretation of the argument positions.<br>Since a macro is a function that is defined to operate at compile time vs. run time, the rules of declare apply.  Declaration operate normally and should be the first form in the block, or if using let, the first form after the allocation block of the let. ","usage":["name:symbol","lambda_list:array","forms:array","meta?:object"],"eval_when":{ "compile_time":true
-},"tags":["macro","define","compile","function"],"requires":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"read_lisp":{ "requires":["reader"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"tags":["macro","define","compile","function"],"requires":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"read_lisp":{ "requires":["reader"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"desym":{ "eval_when":{ "compile_time":true
-},"name":"desym","macro":true,"fn_args":"(val)","description":"Given a value or arrays of values, return the provided symbol in it's literal, quoted form, e.g. (desym myval) => \"myval\"","usage":["val:string|array"],"tags":["symbol","reference","literal","desymbolize","dereference","deref","desym_ref"],"requires":["as_lisp","is_string?","is_array?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"desym","macro":true,"fn_args":"(val)","description":"Given a value or arrays of values, return the provided symbol in it's literal, quoted form, e.g. (desym myval) => \"myval\"","usage":["val:string|array"],"tags":["symbol","reference","literal","desymbolize","dereference","deref","desym_ref"],"requires":["as_lisp","is_string?","is_array?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"desym_ref":{ "eval_when":{ "compile_time":true
-},"name":"desym_ref","macro":true,"fn_args":"(val)","description":["=:+","Given a value will return the a string containing the desymbolized value or values. ","Example: <br>","(defglobal myvar \"foo\")<br>","(defglobal myarr [ (quote myvar) ])<br>","(desym_ref myarr) <- (myvar)<br>","(desym_ref myarr.0) <- myvar<br>","(subtype (desym_ref myarr.0)) <- \"String\""],"usage":["val:*"],"tags":["symbol","reference","syntax","dereference","desym","desym_ref"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"desym_ref","macro":true,"fn_args":"(val)","description":["=:+","Given a value will return the a string containing the desymbolized value or values. ","Example: <br>","(defglobal myvar \"foo\")<br>","(defglobal myarr [ (quote myvar) ])<br>","(desym_ref myarr) <- (myvar)<br>","(desym_ref myarr.0) <- myvar<br>","(subtype (desym_ref myarr.0)) <- \"String\""],"usage":["val:*"],"tags":["symbol","reference","syntax","dereference","desym","desym_ref"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"deref":{ "eval_when":{ "compile_time":true
-},"name":"deref","macro":true,"fn_args":"(val)","description":["=:+","If the value that the symbol references is a binding value, aka starting with '=:', then return the symbol value ","instead of the value that is referenced by the symbol. This is useful in macros where a value in a form is ","to be used for it's symbolic name vs. it's referenced value, which may be undefined if the symbol being ","de-referenced is not bound to any value. <br>","Example:<br>","Dereference the symbolic value being held in array element 0:<br>","(defglobal myvar \"foo\")<br>","(defglobal myarr [ (quote myvar) ])<br>","(deref my_array.0) => \"my_var\"<br>","(deref my_array) => [ \"=:my_var\" ]<br>","<br>In the last example, the input to deref isn't a string and so it returns the value as is.  See also desym_ref."],"tags":["symbol","reference","syntax","dereference","desym","desym_ref"],"usage":["symbol:string"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"deref","macro":true,"fn_args":"(val)","description":["=:+","If the value that the symbol references is a binding value, aka starting with '=:', then return the symbol value ","instead of the value that is referenced by the symbol. This is useful in macros where a value in a form is ","to be used for it's symbolic name vs. it's referenced value, which may be undefined if the symbol being ","de-referenced is not bound to any value. <br>","Example:<br>","Dereference the symbolic value being held in array element 0:<br>","(defglobal myvar \"foo\")<br>","(defglobal myarr [ (quote myvar) ])<br>","(deref my_array.0) => \"my_var\"<br>","(deref my_array) => [ \"=:my_var\" ]<br>","<br>In the last example, the input to deref isn't a string and so it returns the value as is.  See also desym_ref."],"tags":["symbol","reference","syntax","dereference","desym","desym_ref"],"usage":["symbol:string"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"when":{ "eval_when":{ "compile_time":true
-},"name":"when","macro":true,"fn_args":"(condition \"&\" mbody)","description":["=:+","Similar to if, but the body forms are evaluated in an implicit progn, if the condition form or expression is true. ","The function when will return the last form value.  There is no evaluation of the body if the conditional expression ","is false."],"usage":["condition:*","body:*"],"tags":["if","condition","logic","true","progn","conditional"],"requires":["slice"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"when","macro":true,"fn_args":"(condition \"&\" mbody)","description":["=:+","Similar to if, but the body forms are evaluated in an implicit progn, if the condition form or expression is true. ","The function when will return the last form value.  There is no evaluation of the body if the conditional expression ","is false."],"usage":["condition:*","body:*"],"tags":["if","condition","logic","true","progn","conditional"],"requires":["slice"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"if_compile_time_defined":{ "eval_when":{ "compile_time":true
-},"name":"if_compile_time_defined","macro":true,"fn_args":"(quoted_symbol exists_form not_exists_form)","description":"If the provided quoted symbol is a defined symbol at compilation time, the exists_form will be compiled, otherwise the not_exists_form will be compiled.","tags":["compile","defined","global","symbol","reference"],"usage":["quoted_symbol:string","exists_form:*","not_exists_form:*"],"requires":["describe"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"if_compile_time_defined","macro":true,"fn_args":"(quoted_symbol exists_form not_exists_form)","description":"If the provided quoted symbol is a defined symbol at compilation time, the exists_form will be compiled, otherwise the not_exists_form will be compiled.","tags":["compile","defined","global","symbol","reference"],"usage":["quoted_symbol:string","exists_form:*","not_exists_form:*"],"requires":["describe"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"defexternal":{ "eval_when":{ "compile_time":true
-},"name":"defexternal","macro":true,"fn_args":"(name value)","description":"Given a name and a value, defexternal will add a globalThis property with the symbol name thereby creating a global variable in the javascript environment.","tags":["global","javascript","globalThis","value"],"usage":["name:string","value:*"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"defexternal","macro":true,"fn_args":"(name value)","description":"Given a name and a value, defexternal will add a globalThis property with the symbol name thereby creating a global variable in the javascript environment.","tags":["global","javascript","globalThis","value"],"usage":["name:string","value:*"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"defun":{ "eval_when":{ "compile_time":true
-},"name":"defun","macro":true,"fn_args":"(name lambda_list body meta)","description":["=:+","Defines a top level function in the current environment.  Given a name, lambda_list,","body, and a meta data description, builds, compiles and installs the function in the","environment under the provided name.  The body isn't an explicit progn, and must be","within a block structure, such as progn, let or do."],"usage":["name:string:required","lambda_list:array:required","body:array:required","meta:object"],"tags":["function","lambda","define","environment"],"requires":["or_args","length","flatten","destructure_list","decomp_symbol","unquotify","add","as_lisp"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"decomp_symbol":{ "name":"decomp_symbol","fn_args":"(quoted_sym)","requires":["split_by","first","each","describe"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"defun","macro":true,"fn_args":"(name lambda_list body meta)","description":["=:+","Defines a top level function in the current environment.  Given a name, lambda_list,","body, and a meta data description, builds, compiles and installs the function in the","environment under the provided name.  The body isn't an explicit progn, and must be","within a block structure, such as progn, let or do."],"usage":["name:string:required","lambda_list:array:required","body:array:required","meta:object"],"tags":["function","lambda","define","environment"],"requires":["or_args","length","flatten","destructure_list","decomp_symbol","unquotify","add","as_lisp"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"decomp_symbol":{ "name":"decomp_symbol","fn_args":"(quoted_sym)","requires":["split_by","first","each","describe"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"defun_sync":{ "eval_when":{ "compile_time":true
-},"name":"defun_sync","macro":true,"fn_args":"(name args body meta)","description":["=:+","Creates a top level synchronous function as opposed to the default via defun, which creates an asynchronous top level function.","Doesn't support destructuring bind in the lambda list (args). ","Given a name, an argument list, a body and symbol metadata, will establish a top level synchronous function.  If the name is ","fully qualified, the function will be compiled in the current namespace (and it's lexical environment) and placed in the ","specified namespace."],"usage":["name:string","args:array","body:*","meta:object"],"tags":["define","function","synchronous","toplevel"],"requires":["add","unquotify","as_lisp"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"macroexpand":{ "name":"macroexpand","fn_args":"(quoted_form)","description":"Given a quoted form, will perform the macro expansion and return the expanded form.","usage":["quoted_form:*"],"tags":["macro","expansion","debug","compile","compilation"],"requires":["current_namespace","first","meta_for_symbol","is_function?","resolve_path"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"macroexpand_all":{ "name":"macroexpand_all","fn_args":"(quoted_form)","description":["=:+","Given a quoted form, will recursively expand all macros in the quoted form ","and return the expanded form structure"],"usage":["quoted_form:*"],"tags":["macro","expansion","debug","compile","compilation"],"requires":["detokenize","tokenize_lisp"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"defun_sync","macro":true,"fn_args":"(name args body meta)","description":["=:+","Creates a top level synchronous function as opposed to the default via defun, which creates an asynchronous top level function.","Doesn't support destructuring bind in the lambda list (args). ","Given a name, an argument list, a body and symbol metadata, will establish a top level synchronous function.  If the name is ","fully qualified, the function will be compiled in the current namespace (and it's lexical environment) and placed in the ","specified namespace."],"usage":["name:string","args:array","body:*","meta:object"],"tags":["define","function","synchronous","toplevel"],"requires":["add","unquotify","as_lisp"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"macroexpand":{ "name":"macroexpand","fn_args":"(quoted_form)","description":"Given a quoted form, will perform the macro expansion and return the expanded form.","usage":["quoted_form:*"],"tags":["macro","expansion","debug","compile","compilation"],"requires":["current_namespace","first","meta_for_symbol","is_function?","resolve_path"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"macroexpand_all":{ "name":"macroexpand_all","fn_args":"(quoted_form)","description":["=:+","Given a quoted form, will recursively expand all macros in the quoted form ","and return the expanded form structure"],"usage":["quoted_form:*"],"tags":["macro","expansion","debug","compile","compilation"],"requires":["detokenize","tokenize_lisp"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"check_type":{ "eval_when":{ "compile_time":true
-},"name":"check_type","macro":true,"fn_args":"(thing type_name error_string)","description":"If the type of thing (ascertained by sub_type) are not of the type type_name, will throw a TypeError with the optional error_string as the error message.","usage":["thing:*","type_name:string","error_string:string"],"tags":["types","validation","type","assert"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"get_object_path":{ "name":"get_object_path","fn_args":"(refname)","description":"get_object_path is used by the compiler to take a string based notation in the form of p[a][b] or p.a.b and returns an array of the components.","tags":["compiler"],"usage":["refname:string"],"requires":["split_by","push","join"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"do_deferred_splice":{ "name":"do_deferred_splice","fn_args":"(tree)","description":"Internally used by the compiler to facilitate splice operations on arrays.","usage":["tree:*"],"tags":["compiler","build"],"requires":["join","is_array?","push","is_object?","pairs"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"check_type","macro":true,"fn_args":"(thing type_name error_string)","description":"If the type of thing (ascertained by sub_type) are not of the type type_name, will throw a TypeError with the optional error_string as the error message.","usage":["thing:*","type_name:string","error_string:string"],"tags":["types","validation","type","assert"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"get_object_path":{ "name":"get_object_path","fn_args":"(refname)","description":"get_object_path is used by the compiler to take a string based notation in the form of p[a][b] or p.a.b and returns an array of the components.","tags":["compiler"],"usage":["refname:string"],"requires":["split_by","push","join"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"do_deferred_splice":{ "name":"do_deferred_splice","fn_args":"(tree)","description":"Internally used by the compiler to facilitate splice operations on arrays.","usage":["tree:*"],"tags":["compiler","build"],"requires":["join","is_array?","push","is_object?","pairs"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"define":{ "eval_when":{ "compile_time":true
-},"name":"define","macro":true,"fn_args":"[\"&\" defs]","usage":["declaration:array","declaration:array*"],"description":["=:+","Given 1 or more declarations in the form of (symbol value ?metadata), ","creates a symbol in global scope referencing the provided value.  If a ","metadata object is provided, this is stored as a the symbol's metadata."],"tags":["symbol","reference","definition","metadata","environment"],"requires":["slice","push","as_lisp","is_object?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"define","macro":true,"fn_args":"[\"&\" defs]","usage":["declaration:array","declaration:array*"],"description":["=:+","Given 1 or more declarations in the form of (symbol value ?metadata), ","creates a symbol in global scope referencing the provided value.  If a ","metadata object is provided, this is stored as a the symbol's metadata."],"tags":["symbol","reference","definition","metadata","environment"],"requires":["slice","push","as_lisp","is_object?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"defbinding":{ "eval_when":{ "compile_time":true
-},"name":"defbinding","macro":true,"fn_args":"[\"&\" args]","description":["=:+","Defines a global binding to a potentially native function.  This macro ","facilitates the housekeeping by keeping track of the source form ","used (and stored in the environment) so that the save environment ","facility can capture the source bindings and recreate it in the initializer ","function on rehydration.<br>","The macro can take an arbitrary amount of binding arguments, with the form: ","(symbol_name (fn_to_bind_to this))"],"usage":["binding_set0:array","binding_setN:array"],"tags":["toplevel","global","bind","environment","initialize"],"requires":["slice","is_array?","push","*namespace*","is_string?","starts_with?","is_object?","add"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"defbinding","macro":true,"fn_args":"[\"&\" args]","description":["=:+","Defines a global binding to a potentially native function.  This macro ","facilitates the housekeeping by keeping track of the source form ","used (and stored in the environment) so that the save environment ","facility can capture the source bindings and recreate it in the initializer ","function on rehydration.<br>","The macro can take an arbitrary amount of binding arguments, with the form: ","(symbol_name (fn_to_bind_to this))"],"usage":["binding_set0:array","binding_setN:array"],"tags":["toplevel","global","bind","environment","initialize"],"requires":["slice","is_array?","push","*namespace*","is_string?","starts_with?","is_object?","add"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"define_env":{ "eval_when":{ "compile_time":true
-},"name":"define_env","macro":true,"fn_args":"[\"&\" defs]","description":["=:+","define_env is a macro used to provide a dual definition on the top level: it creates a symbol via defvar in the ","constructed scope as well as placing a reference to the defined symbol in the scope object."],"usage":["definitions:array"],"tags":["environment","core","build"],"requires":["slice","push","as_lisp","is_object?","add"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"type":{ "name":"type","fn_args":"(x)","usage":["value:*"],"description":"returns the type of value that has been passed.  Deprecated, and the sub_type function should be used.","tags":["types","value","what"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"destructure_list":{ "name":"destructure_list","fn_args":"(elems)","description":"Destructure list takes a nested array and returns the paths of each element in the provided array.","usage":["elems:array"],"tags":["destructuring","path","array","nested","tree"],"requires":["push","is_array?","map","add","is_object?","pairs","is_string?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"define_env","macro":true,"fn_args":"[\"&\" defs]","description":["=:+","define_env is a macro used to provide a dual definition on the top level: it creates a symbol via defvar in the ","constructed scope as well as placing a reference to the defined symbol in the scope object."],"usage":["definitions:array"],"tags":["environment","core","build"],"requires":["slice","push","as_lisp","is_object?","add"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"type":{ "name":"type","fn_args":"(x)","usage":["value:*"],"description":"returns the type of value that has been passed.  Deprecated, and the sub_type function should be used.","tags":["types","value","what"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"destructure_list":{ "name":"destructure_list","fn_args":"(elems)","description":"Destructure list takes a nested array and returns the paths of each element in the provided array.","usage":["elems:array"],"tags":["destructuring","path","array","nested","tree"],"requires":["push","is_array?","map","add","is_object?","pairs","is_string?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"destructuring_bind":{ "eval_when":{ "compile_time":true
-},"name":"destructuring_bind","macro":true,"fn_args":"(bind_vars expression \"&\" forms)","description":["=:+","The macro destructuring_bind binds the variable symbols specified in bind_vars to the corresponding ","values in the tree structure resulting from the evaluation of the provided expression.  The bound ","variables are then available within the provided forms, which are then evaluated.  Note that ","destructuring_bind only supports destructuring arrays. Destructuring objects is not supported."],"usage":["bind_vars:array","expression:array","forms:*"],"tags":["destructure","array","list","bind","variables","allocation","symbols"],"requires":["slice","random_int","destructure_list","is_array?","starts_with?","push","assert","is_value?","first","resolve_path","add","is_object?","second","join","conj","range","length"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"split_by_recurse":{ "name":"split_by_recurse","fn_args":"(token container)","usage":["token:string","container:string|array"],"description":["=:+","Like split_by, splits the provided container at ","each token, returning an array of the split ","items.  If the container is an array, the function ","will recursively split the strings in the array ","and return an array containing the split values ","of that array.  The final returned array may contain ","strings and arrays."],"tags":["split","nested","recursion","array","string"],"requires":["is_string?","split_by","is_array?","map","split_by_recurse"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"destructuring_bind","macro":true,"fn_args":"(bind_vars expression \"&\" forms)","description":["=:+","The macro destructuring_bind binds the variable symbols specified in bind_vars to the corresponding ","values in the tree structure resulting from the evaluation of the provided expression.  The bound ","variables are then available within the provided forms, which are then evaluated.  Note that ","destructuring_bind only supports destructuring arrays. Destructuring objects is not supported."],"usage":["bind_vars:array","expression:array","forms:*"],"tags":["destructure","array","list","bind","variables","allocation","symbols"],"requires":["slice","random_int","destructure_list","is_array?","starts_with?","push","assert","is_value?","first","resolve_path","add","is_object?","second","join","conj","range","length"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"split_by_recurse":{ "name":"split_by_recurse","fn_args":"(token container)","usage":["token:string","container:string|array"],"description":["=:+","Like split_by, splits the provided container at ","each token, returning an array of the split ","items.  If the container is an array, the function ","will recursively split the strings in the array ","and return an array containing the split values ","of that array.  The final returned array may contain ","strings and arrays."],"tags":["split","nested","recursion","array","string"],"requires":["is_string?","split_by","is_array?","map","split_by_recurse"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"defun_sync_ds":{ "eval_when":{ "compile_time":true
-},"name":"defun_sync_ds","macro":true,"fn_args":"(name lambda_list body meta)","description":["=:+","Defines a top level function in the current environment.  Given a name, lambda_list,","body, and a meta data description, builds, compiles and installs the function in the","environment under the provided name.  The body isn't an explicit progn, and must be","within a block structure, such as progn, let or do."],"usage":["name:string:required","lambda_list:array:required","body:array:required","meta:object"],"tags":["function","lambda","define","environment"],"requires":["or_args","length","flatten","destructure_list","decomp_symbol","unquotify","add","as_lisp"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"defun_sync_ds","macro":true,"fn_args":"(name lambda_list body meta)","description":["=:+","Defines a top level function in the current environment.  Given a name, lambda_list,","body, and a meta data description, builds, compiles and installs the function in the","environment under the provided name.  The body isn't an explicit progn, and must be","within a block structure, such as progn, let or do."],"usage":["name:string:required","lambda_list:array:required","body:array:required","meta:object"],"tags":["function","lambda","define","environment"],"requires":["or_args","length","flatten","destructure_list","decomp_symbol","unquotify","add","as_lisp"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"no_await":{ "eval_when":{ "compile_time":true
-},"name":"no_await","macro":true,"fn_args":"(form)","description":["=:+","For the provided form in an asynchronous context, forces the compiler flag ","to treat the form as synchronous, thus avoiding an await call.  The return ","value may be impacted and result in a promise being returned ","as opposed to a resolved promise value."],"usage":["no_await:array"],"tags":["compiler","synchronous","await","promise"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"no_await","macro":true,"fn_args":"(form)","description":["=:+","For the provided form in an asynchronous context, forces the compiler flag ","to treat the form as synchronous, thus avoiding an await call.  The return ","value may be impacted and result in a promise being returned ","as opposed to a resolved promise value."],"usage":["no_await:array"],"tags":["compiler","synchronous","await","promise"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"reduce":{ "eval_when":{ "compile_time":true
-},"name":"reduce","macro":true,"fn_args":"[(elem item_list) form]","description":["=:+","Provided a first argument as a list which contains a binding variable name and a list, ","returns a list of all non-null return values that result from the evaluation of the second list."],"usage":["allocator:array","forms:*"],"tags":["filter","remove","select","list","array"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"reduce","macro":true,"fn_args":"[(elem item_list) form]","description":["=:+","Provided a first argument as a list which contains a binding variable name and a list, ","returns a list of all non-null return values that result from the evaluation of the second list."],"usage":["allocator:array","forms:*"],"tags":["filter","remove","select","list","array"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"reduce_sync":{ "eval_when":{ "compile_time":true
-},"name":"reduce_sync","macro":true,"fn_args":"[(elem item_list) form]","description":"Provided a first argument as a list which contains a binding variable name and a list, returns a list of all non-null return values that result from the evaluation of the second list.","usage":["allocator:array","forms:*"],"tags":["filter","remove","select","list","array"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"bind_function":{ "description":"Reference bind and so has the exact same behavior.  Used for Kina legacy code. See bind description.","requires":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"is_error?":{ "name":"is_error?","fn_args":"(val)","description":"Returns true if the passed value is a instance of an Error type, otherwise returns false.","usage":["val:*"],"tags":["Error","types","predicate","type","instanceof"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"reduce_sync","macro":true,"fn_args":"[(elem item_list) form]","description":"Provided a first argument as a list which contains a binding variable name and a list, returns a list of all non-null return values that result from the evaluation of the second list.","usage":["allocator:array","forms:*"],"tags":["filter","remove","select","list","array"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"bind_function":{ "description":"Reference bind and so has the exact same behavior.  Used for Kina legacy code. See bind description.","requires":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"is_error?":{ "name":"is_error?","fn_args":"(val)","description":"Returns true if the passed value is a instance of an Error type, otherwise returns false.","usage":["val:*"],"tags":["Error","types","predicate","type","instanceof"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"is_reference?":{ "eval_when":{ "compile_time":true
-},"name":"is_reference?","macro":true,"fn_args":"(val)","description":["=:+","Returns true if the quoted value is a binding string; in JSON notation this would be a string starting with \"=:\". ","Note that this function doesn't check if the provided value is a defined symbol, but only if it has been ","described in the JSON structure as a bounding string."],"usage":["val:string"],"tags":["reference","JSON","binding","symbol","predicate"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"scan_str":{ "name":"scan_str","fn_args":"(regex search_string)","description":["=:+","Using a provided regex and a search string, performs a regex ","exec using the provided regex argument on the string argument. ","Returns an array of results or an empty array, with matched ","text, index, and any capture groups."],"usage":["regex:RegExp","text:string"],"tags":["regex","string","match","exec","array"],"requires":["is_regex?","not","push","to_object","keys","log"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"remove_prop":{ "name":"remove_prop","fn_args":"(obj key)","usage":["obj:object","key:*"],"description":["=:+","If the provided key exists, removes the key from the provided object, ","and returns the removed value if the key exists, otherwise returned undefined."],"tags":["object","key","value","mutate","delete_prop","remove"],"requires":["not","delete_prop"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"object_methods":{ "name":"object_methods","fn_args":"(obj)","description":"Given a instantiated object, get all methods (functions) that the object and it's prototype chain contains.","usage":["obj:object"],"tags":["object","methods","functions","introspection","keys"],"requires":["map","is_function?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"expand_dot_accessor":{ "name":"expand_dot_accessor","fn_args":"(val ctx)","description":"Used for compilation. Expands dotted notation of a.b.0.1 to a[\"b\"][0][1]","usage":["val:string","ctx:object"],"tags":["compiler","system"],"requires":["split_by","take","is_object?","contains?","object_methods","not","join","conj","flatten","is_number?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"from_mixed_case":{ "name":"from_mixed_case","fn_args":"(mixed_case_key)","description":["=:+","<br><br>Given a mixed case string, will return the standardized key format ","representation of the string.  For example,  the string `myVariable` will be ","returned as `my_variable` with this function.  A TypeError will be thrown if a ","non-string argument is provided. "],"usage":["mixed_case_key:string"],"tags":["key","convert","snake","mixed","case","format"],"requires":["is_string?","split_by","push","lowercase","join"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"to_mixed_case":{ "name":"to_mixed_case","fn_args":"(snake_case_key)","description":["=:+","<br><br>Given a snake case string, will return a mixed case key format ","representation of the string.  For example,  the string `my_variable` will be ","returned as `myVariable` with this function.  A TypeError will be thrown if a ","non-string argument is provided. "],"usage":["snake_case_key:string"],"tags":["key","convert","snake","mixed","case","format"],"requires":["is_string?","split_by","push","uppercase","join"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"new_ctx":{ "name":"new_ctx","fn_args":"(ctx)","description":"Used for compilation. Given a context structure, provides a utility function for retrieving a context value based on a provided identifier.","usage":["ctx:?object"],"tags":["compiler","system","context","ctx","setf_ctx"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"getf_ctx":{ "name":"getf_ctx","fn_args":"(ctx name _value)","description":"Used for compilation. Given a context structure, provides a utility function for retrieving a context value based on a provided identifier.","usage":["ctx:object","name:string"],"tags":["compiler","system","context","ctx","new_ctx","setf_ctx"],"requires":["is_string?","not","getf_ctx"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"setf_ctx":{ "name":"setf_ctx","fn_args":"(ctx name value)","description":"Used for compilation. Given a context structure, provides a utility function for setting a context place with value.","usage":["ctx:object","name:string","value:*"],"tags":["compiler","system","context","ctx","new_ctx","getf_ctx"],"requires":["getf_ctx"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"set_path":{ "name":"set_path","fn_args":"(path obj value)","description":["=:+","Given a path value as an array, a tree structure, and a value, ","sets the value within the tree at the path value, potentially overriding any existing value at that path.<br><br>","(defglobal foo [ 0 2 [ { `foo: [ 1 4 3 ] `bar: [ 0 1 2 ] } ] 3 ])<br>","(set_path [ 2 0 `bar 1 ] foo 10) => [ 0 10 2 ]<br>","foo => [ 0 2 [ { foo: [ 1 4 3 ] bar: [ 0 10 2 ] } ] 3 ]"],"tags":["resolve_path","make_path","path","set","tree","mutate"],"usage":["path:array","tree:array|object","value:*"],"requires":["pop","resolve_path"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"make_path":{ "name":"make_path","fn_args":"(target_path root_obj value _pos)","description":["=:+","Given a target_path array, a target object and a value to set, ","constructs the path to the object, constructing where ","required.  If the path cannot be made due to a ","non-nil, non-object value encountered at one of ","the path segments, the function will throw a TypeError, ","otherwise it will return the provided value if successful."],"usage":["path:array","root_obj:object","value:*"],"tags":["set_path","path","set","object","resolve_path","mutate"],"requires":["take","push","set_path","resolve_path","is_object?","first","make_path","as_lisp","add"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"minmax":{ "name":"minmax","fn_args":"(container)","usage":["container:array"],"description":"Given an array of numbers returns an array containing the smallest and the largest values found in the provided array. ","tags":["list","number","range","value"],"requires":["MAX_SAFE_INTEGER","is_array?","length","is_number?"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"name":"is_reference?","macro":true,"fn_args":"(val)","description":["=:+","Returns true if the quoted value is a binding string; in JSON notation this would be a string starting with \"=:\". ","Note that this function doesn't check if the provided value is a defined symbol, but only if it has been ","described in the JSON structure as a bounding string."],"usage":["val:string"],"tags":["reference","JSON","binding","symbol","predicate"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"scan_str":{ "name":"scan_str","fn_args":"(regex search_string)","description":["=:+","Using a provided regex and a search string, performs a regex ","exec using the provided regex argument on the string argument. ","Returns an array of results or an empty array, with matched ","text, index, and any capture groups."],"usage":["regex:RegExp","text:string"],"tags":["regex","string","match","exec","array"],"requires":["is_regex?","not","push","to_object","keys","log"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"remove_prop":{ "name":"remove_prop","fn_args":"(obj key)","usage":["obj:object","key:*"],"description":["=:+","If the provided key exists, removes the key from the provided object, ","and returns the removed value if the key exists, otherwise returned undefined."],"tags":["object","key","value","mutate","delete_prop","remove"],"requires":["not","delete_prop"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"object_methods":{ "name":"object_methods","fn_args":"(obj)","description":"Given a instantiated object, get all methods (functions) that the object and it's prototype chain contains.","usage":["obj:object"],"tags":["object","methods","functions","introspection","keys"],"requires":["map","is_function?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"expand_dot_accessor":{ "name":"expand_dot_accessor","fn_args":"(val ctx)","description":"Used for compilation. Expands dotted notation of a.b.0.1 to a[\"b\"][0][1]","usage":["val:string","ctx:object"],"tags":["compiler","system"],"requires":["split_by","take","is_object?","contains?","object_methods","not","join","conj","flatten","is_number?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"from_mixed_case":{ "name":"from_mixed_case","fn_args":"(mixed_case_key)","description":["=:+","<br><br>Given a mixed case string, will return the standardized key format ","representation of the string.  For example,  the string `myVariable` will be ","returned as `my_variable` with this function.  A TypeError will be thrown if a ","non-string argument is provided. "],"usage":["mixed_case_key:string"],"tags":["key","convert","snake","mixed","case","format"],"requires":["is_string?","split_by","push","lowercase","join"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"to_mixed_case":{ "name":"to_mixed_case","fn_args":"(snake_case_key)","description":["=:+","<br><br>Given a snake case string, will return a mixed case key format ","representation of the string.  For example,  the string `my_variable` will be ","returned as `myVariable` with this function.  A TypeError will be thrown if a ","non-string argument is provided. "],"usage":["snake_case_key:string"],"tags":["key","convert","snake","mixed","case","format"],"requires":["is_string?","split_by","push","uppercase","join"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"new_ctx":{ "name":"new_ctx","fn_args":"(ctx)","description":"Used for compilation. Given a context structure, provides a utility function for retrieving a context value based on a provided identifier.","usage":["ctx:?object"],"tags":["compiler","system","context","ctx","setf_ctx"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"getf_ctx":{ "name":"getf_ctx","fn_args":"(ctx name _value)","description":"Used for compilation. Given a context structure, provides a utility function for retrieving a context value based on a provided identifier.","usage":["ctx:object","name:string"],"tags":["compiler","system","context","ctx","new_ctx","setf_ctx"],"requires":["is_string?","not","getf_ctx"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"setf_ctx":{ "name":"setf_ctx","fn_args":"(ctx name value)","description":"Used for compilation. Given a context structure, provides a utility function for setting a context place with value.","usage":["ctx:object","name:string","value:*"],"tags":["compiler","system","context","ctx","new_ctx","getf_ctx"],"requires":["getf_ctx"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"set_path":{ "name":"set_path","fn_args":"(path obj value)","description":["=:+","Given a path value as an array, a tree structure, and a value, ","sets the value within the tree at the path value, potentially overriding any existing value at that path.<br><br>","(defglobal foo [ 0 2 [ { `foo: [ 1 4 3 ] `bar: [ 0 1 2 ] } ] 3 ])<br>","(set_path [ 2 0 `bar 1 ] foo 10) => [ 0 10 2 ]<br>","foo => [ 0 2 [ { foo: [ 1 4 3 ] bar: [ 0 10 2 ] } ] 3 ]"],"tags":["resolve_path","make_path","path","set","tree","mutate"],"usage":["path:array","tree:array|object","value:*"],"requires":["pop","resolve_path"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"make_path":{ "name":"make_path","fn_args":"(target_path root_obj value _pos)","description":["=:+","Given a target_path array, a target object and a value to set, ","constructs the path to the object, constructing where ","required.  If the path cannot be made due to a ","non-nil, non-object value encountered at one of ","the path segments, the function will throw a TypeError, ","otherwise it will return the provided value if successful."],"usage":["path:array","root_obj:object","value:*"],"tags":["set_path","path","set","object","resolve_path","mutate"],"requires":["take","push","set_path","resolve_path","is_object?","first","make_path","as_lisp","add"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"minmax":{ "name":"minmax","fn_args":"(container)","usage":["container:array"],"description":"Given an array of numbers returns an array containing the smallest and the largest values found in the provided array. ","tags":["list","number","range","value"],"requires":["MAX_SAFE_INTEGER","is_array?","length","is_number?"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
 },"aif":{ "eval_when":{ "compile_time":true
-},"name":"aif","macro":true,"fn_args":"(test_expr eval_when_true eval_when_false)","description":["=:+","Anaphoric If - This macro defines a scope in which the symbol `it is used ","to store the evaluation of the test form or expression.  It is then available ","in the eval_when_true form and, if provided, the eval_when_false expression."],"usage":["test_expression:*","eval_when_true:*","eval_when_false:*?"],"tags":["conditional","logic","anaphoric","if","it"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"aif","macro":true,"fn_args":"(test_expr eval_when_true eval_when_false)","description":["=:+","Anaphoric If - This macro defines a scope in which the symbol `it is used ","to store the evaluation of the test form or expression.  It is then available ","in the eval_when_true form and, if provided, the eval_when_false expression."],"usage":["test_expression:*","eval_when_true:*","eval_when_false:*?"],"tags":["conditional","logic","anaphoric","if","it"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"ifa":{ "eval_when":{ "compile_time":true
-},"name":"ifa","macro":true,"fn_args":"(test thenclause elseclause)","description":"Similar to if, the ifa macro is anaphoric in binding, where the it value is defined as the return value of the test form. Use like if, but the it reference is bound within the bodies of the thenclause or elseclause.","usage":["test:*","thenclause:*","elseclause:*"],"tags":["cond","it","if","anaphoric"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"map_range":{ "name":"map_range","fn_args":"(n from_range to_range)","usage":["n:number","from_range:array","to_range:array"],"tags":["range","scale","conversion"],"description":["=:+","Given an initial number n, and two numeric ranges, maps n from the first range ","to the second range, returning the value of n as scaled into the second range. "],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"range_inc":{ "name":"range_inc","fn_args":"(start end step)","description":["=:+","Similar to range, but is end inclusive: [start end] returning an array containing values from start, including end. ","vs. the regular range function that returns [start end).  ","If just 1 argument is provided, the function returns an array starting from 0, up to and including the provided value."],"usage":["start:number","end?:number","step?:number"],"tags":["range","iteration","loop"],"requires":["range","add"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"HSV_to_RGB":{ "name":"HSV_to_RGB","fn_args":"(h s v)","description":["=:+","Given a hue, saturation and brightness, all of which ","should be values between 0 and 1, returns an object ","containing 3 keys: r, g, b, with values between 0 and 255, ","representing the corresponding red, green and blue values ","for the provided hue, saturation and brightness."],"usage":["hue:number","saturation:number","value:number"],"tags":["color","conversion","hue","saturation","brightness","red","green","blue","rgb"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"color_for_number":{ "name":"color_for_number","fn_args":"(num saturation brightness)","usage":["number:number","saturation:float","brightness:float"],"description":"Given an arbitrary integer, a saturation between 0 and 1 and a brightness between 0 and 1, return an RGB color string","tags":["ui","color","view"],"requires":["map_range","HSV_to_RGB"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"flatten_ctx":{ "name":"flatten_ctx","fn_args":"(ctx _var_table)","description":"Internal usage by the compiler, flattens the hierarchical context structure to a single level. Shadowing rules apply.","usage":["ctx_object:object"],"tags":["system","compiler"],"requires":["keys","not","contains?","flatten_ctx"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"identify_symbols":{ "name":"identify_symbols","fn_args":"(quoted_form _state)","requires":["is_array?","push","identify_symbols","is_string?","starts_with?","as_lisp","describe","is_object?","values"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"ifa","macro":true,"fn_args":"(test thenclause elseclause)","description":"Similar to if, the ifa macro is anaphoric in binding, where the it value is defined as the return value of the test form. Use like if, but the it reference is bound within the bodies of the thenclause or elseclause.","usage":["test:*","thenclause:*","elseclause:*"],"tags":["cond","it","if","anaphoric"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"map_range":{ "name":"map_range","fn_args":"(n from_range to_range)","usage":["n:number","from_range:array","to_range:array"],"tags":["range","scale","conversion"],"description":["=:+","Given an initial number n, and two numeric ranges, maps n from the first range ","to the second range, returning the value of n as scaled into the second range. "],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"range_inc":{ "name":"range_inc","fn_args":"(start end step)","description":["=:+","Similar to range, but is end inclusive: [start end] returning an array containing values from start, including end. ","vs. the regular range function that returns [start end).  ","If just 1 argument is provided, the function returns an array starting from 0, up to and including the provided value."],"usage":["start:number","end?:number","step?:number"],"tags":["range","iteration","loop"],"requires":["range","add"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"HSV_to_RGB":{ "name":"HSV_to_RGB","fn_args":"(h s v)","description":["=:+","Given a hue, saturation and brightness, all of which ","should be values between 0 and 1, returns an object ","containing 3 keys: r, g, b, with values between 0 and 255, ","representing the corresponding red, green and blue values ","for the provided hue, saturation and brightness."],"usage":["hue:number","saturation:number","value:number"],"tags":["color","conversion","hue","saturation","brightness","red","green","blue","rgb"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"color_for_number":{ "name":"color_for_number","fn_args":"(num saturation brightness)","usage":["number:number","saturation:float","brightness:float"],"description":"Given an arbitrary integer, a saturation between 0 and 1 and a brightness between 0 and 1, return an RGB color string","tags":["ui","color","view"],"requires":["map_range","HSV_to_RGB"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"flatten_ctx":{ "name":"flatten_ctx","fn_args":"(ctx _var_table)","description":"Internal usage by the compiler, flattens the hierarchical context structure to a single level. Shadowing rules apply.","usage":["ctx_object:object"],"tags":["system","compiler"],"requires":["keys","not","contains?","flatten_ctx"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"identify_symbols":{ "name":"identify_symbols","fn_args":"(quoted_form _state)","requires":["is_array?","push","identify_symbols","is_string?","starts_with?","as_lisp","describe","is_object?","values"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"unless":{ "eval_when":{ "compile_time":true
-},"name":"unless","macro":true,"fn_args":"(condition \"&\" forms)","description":"opposite of if, if the condition is false then the forms are evaluated","usage":["condition:array","forms:array"],"tags":["if","not","ifnot","logic","conditional"],"requires":["slice"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"unless","macro":true,"fn_args":"(condition \"&\" forms)","description":"opposite of if, if the condition is false then the forms are evaluated","usage":["condition:array","forms:array"],"tags":["if","not","ifnot","logic","conditional"],"requires":["slice"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"use_quoted_initializer":{ "eval_when":{ "compile_time":true
-},"name":"use_quoted_initializer","macro":true,"fn_args":"[\"&\" forms]","description":["=:+","The macro `use_quoted_initializer` preserves the source form in the ","symbol definition object.  When the environment is saved, any source forms that ","wish to be preserved through the serialization process should be in the body of ","this macro.  This is a necessity for global objects that hold callable ","functions, or functions or structures that require initializers, such as things ","that connect or use environmental resources.  "],"usage":["forms:array"],"tags":["compilation","save_env","export","source","use","compiler","compile"],"requires":["slice","is_array?","is_object?","resolve_path","set_path","warn","is_string?","macroexpand"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"but_last":{ "name":"but_last","fn_args":"(arr)","description":["=:+","Given an array, returns all elements except the final element.  This ","function is the inverse of `last`.  If there are less than 2 elements in the ","array (0 or 1 elements), then an empty array is returned.  If a non-array is ","provided, the function will throw a `TypeError`. "],"usage":["arr:array"],"tags":["array","last","elements","front","head","rest"],"requires":["is_array?","slice","sub_type"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"random_int":{ "name":"random_int","fn_args":"[\"&\" \"args\"]","description":["=:+","Returns a random integer between 0 and the argument. ","If two arguments are provided then returns an integer ","between the first argument and the second argument."],"usage":["arg1:number","arg2?:number"],"tags":["rand","number","integer"],"requires":["length","add"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"resolve_multi_path":{ "name":"resolve_multi_path","fn_args":"(path obj not_found)","tags":["path","wildcard","tree","structure"],"usage":["path:array","obj:object","not_found:?*"],"description":["=:+","Given a list containing a path to a value in a nested array, return the value at the given ","path. If the value * is in the path, the path value is a wild card if the passed object ","structure at the path position is a vector or list."],"requires":["is_object?","length","first","not","is_array?","resolve_multi_path","rest","values"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"delete_path":{ "name":"delete_path","fn_args":"(path obj)","description":["=:+","Given a path and an target object, removes the specified value ","at the path and returns the original object, which will have been modified. ","If the value isn't found, there are no modifications to the object and the ","object is returned.  Will throw a TypeError if the obj argument isn't an ","object type, of if the path isn't an array with at least one element."],"usage":["path:array","obj:object"],"tags":["path","delete","remove","object","resolve","modify","value"],"requires":["pop","not","is_array?","is_object?","length","is_value?","delete_prop","resolve_path"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"symbol_tree":{ "name":"symbol_tree","fn_args":"(quoted_form _state _current_path)","description":"Given a quoted form as input, isolates the symbols of the form in a tree structure so dependencies can be seen.","usage":["quoted_form:quote"],"tags":["structure","development","analysis"],"requires":["unquotify","resolve_multi_path","is_array?","push","map","symbol_tree","conj","add","is_string?","starts_with?","is_object?","pairs"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"except_nil":{ "name":"except_nil","fn_args":"[\"items\"]","description":"Takes the passed list or set and returns a new list that doesn't contain any undefined or nil values.  Unlike no_empties, false values and blank strings will pass through.","usage":["items:list|set"],"tags":["filter","nil","undefined","remove","no_empties"],"requires":["not","sub_type","push"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"each":{ "name":"each","fn_args":"(items property)","description":["=:+","Provided a list of items, provide a property name or ","a list of property names to be extracted and returned from the source array as a new list.","If property is an array, and contains values that are arrays, those arrays will be treated as a path."],"usage":["items:list","property:string|list|function|AsyncFunction"],"tags":["pluck","element","only","list","object","property"],"requires":["is_string?","is_number?","except_nil","sub_type","is_array?","push","resolve_path","is_function?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"replace":{ "name":"replace","fn_args":"[\"&\" args]","description":["=:+","Given at least 3 arguments, finds the first  argument, and replaces with the second argument, operating on the third plus argument.  ","This function will act to replace and find values in strings, arrays and objects.  When replacing values in strings, be aware that ","only the first matching value will be replaced.  To replace ALL values in strings, use a RegExp with the `g flag set, such as ","(new RegExp \"Target String\" `g).  For example, the following replaces all target values in the target string:<br>","(replace (new RegExp \"Indiana\" `g) \"Illinois\" \"The address of the location in Indiana has now been changed to 123 Main Street, Townville, Indiana.\")"],"usage":["target:string|regexp","replacement:string|number","container:string|array|object"],"tags":["replace","find","change","edit","string","array","object"],"requires":["slice","push","replace","keys","not","first"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"get_symbol_details_for_ns":{ "name":"get_symbol_details_for_ns","fn_args":"(namespace symbol_name)","description":"Given a namespace and a symbol name returns the details for the specific symbol in the namespace if found, or nil if not.","tags":["namespace","symbol","find","meta","details"],"usage":["namespace:string","symbol_name:string"],"requires":["is_string?","first","push","meta_for_symbol"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"env_encode_string":{ "name":"env_encode_string","fn_args":"(text)","requires":["push"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"cl_encode_string":{ "name":"cl_encode_string","fn_args":"(text)","requires":["is_string?","replace","add","split_by","join"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"fn_signature":{ "name":"fn_signature","fn_args":"(f)","description":["=:+","For a given function as an argument, returns an object with a ","type key containing the function type (async, sync) and an args ","key with an array for the arguments.  Note that a string value which ","is the result of a function serialized with the function's ","toString() method can also be passed."],"usage":["f:function|string"],"tags":["function","signature","arity","inspect"],"requires":["is_function?","is_string?","trim","first","split_by","replace","starts_with?","second","chop","index_of"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"path_to_js_syntax":{ "name":"path_to_js_syntax","fn_args":"(comps)","description":"Used by the compiler, converts an array containing the components of a path to Javascript syntax, which is then returned as a string.","usage":["comps:array"],"tags":["compiler","path","js","javascript"],"requires":["is_array?","join","map","int","starts_with?","sub_type"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"first_is_upper_case?":{ "name":"first_is_upper_case?","fn_args":"(str_val)","description":"Returns true if the first character of the provided string is an uppercase value in the range [A-Z]. ","usage":["str_val:string"],"tags":["string","case","uppercase","capitalized"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"safe_access_2":{ "name":"safe_access_2","fn_args":"(token ctx sanitizer_fn)","requires":["split_by","push","take","join","expand_dot_accessor","flatten"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"safe_access":{ "name":"safe_access","fn_args":"(token ctx sanitizer_fn)","requires":["split_by","push","take","expand_dot_accessor","join","flatten"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"use_quoted_initializer","macro":true,"fn_args":"[\"&\" forms]","description":["=:+","The macro `use_quoted_initializer` preserves the source form in the ","symbol definition object.  When the environment is saved, any source forms that ","wish to be preserved through the serialization process should be in the body of ","this macro.  This is a necessity for global objects that hold callable ","functions, or functions or structures that require initializers, such as things ","that connect or use environmental resources.  "],"usage":["forms:array"],"tags":["compilation","save_env","export","source","use","compiler","compile"],"requires":["slice","is_array?","is_object?","resolve_path","set_path","warn","is_string?","macroexpand"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"but_last":{ "name":"but_last","fn_args":"(arr)","description":["=:+","Given an array, returns all elements except the final element.  This ","function is the inverse of `last`.  If there are less than 2 elements in the ","array (0 or 1 elements), then an empty array is returned.  If a non-array is ","provided, the function will throw a `TypeError`. "],"usage":["arr:array"],"tags":["array","last","elements","front","head","rest"],"requires":["is_array?","slice","sub_type"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"random_int":{ "name":"random_int","fn_args":"[\"&\" \"args\"]","description":["=:+","Returns a random integer between 0 and the argument. ","If two arguments are provided then returns an integer ","between the first argument and the second argument."],"usage":["arg1:number","arg2?:number"],"tags":["rand","number","integer"],"requires":["length","add"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"resolve_multi_path":{ "name":"resolve_multi_path","fn_args":"(path obj not_found)","tags":["path","wildcard","tree","structure"],"usage":["path:array","obj:object","not_found:?*"],"description":["=:+","Given a list containing a path to a value in a nested array, return the value at the given ","path. If the value * is in the path, the path value is a wild card if the passed object ","structure at the path position is a vector or list."],"requires":["is_object?","length","first","not","is_array?","resolve_multi_path","rest","values"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"delete_path":{ "name":"delete_path","fn_args":"(path obj)","description":["=:+","Given a path and an target object, removes the specified value ","at the path and returns the original object, which will have been modified. ","If the value isn't found, there are no modifications to the object and the ","object is returned.  Will throw a TypeError if the obj argument isn't an ","object type, of if the path isn't an array with at least one element."],"usage":["path:array","obj:object"],"tags":["path","delete","remove","object","resolve","modify","value"],"requires":["pop","not","is_array?","is_object?","length","is_value?","delete_prop","resolve_path"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"symbol_tree":{ "name":"symbol_tree","fn_args":"(quoted_form _state _current_path)","description":"Given a quoted form as input, isolates the symbols of the form in a tree structure so dependencies can be seen.","usage":["quoted_form:quote"],"tags":["structure","development","analysis"],"requires":["unquotify","resolve_multi_path","is_array?","push","map","symbol_tree","conj","add","is_string?","starts_with?","is_object?","pairs"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"except_nil":{ "name":"except_nil","fn_args":"[\"items\"]","description":"Takes the passed list or set and returns a new list that doesn't contain any undefined or nil values.  Unlike no_empties, false values and blank strings will pass through.","usage":["items:list|set"],"tags":["filter","nil","undefined","remove","no_empties"],"requires":["not","sub_type","push"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"each":{ "name":"each","fn_args":"(items property)","description":["=:+","Provided a list of items, provide a property name or ","a list of property names to be extracted and returned from the source array as a new list.","If property is an array, and contains values that are arrays, those arrays will be treated as a path."],"usage":["items:list","property:string|list|function|AsyncFunction"],"tags":["pluck","element","only","list","object","property"],"requires":["is_string?","is_number?","except_nil","sub_type","is_array?","push","resolve_path","is_function?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"replace":{ "name":"replace","fn_args":"[\"&\" args]","description":["=:+","Given at least 3 arguments, finds the first  argument, and replaces with the second argument, operating on the third plus argument.  ","This function will act to replace and find values in strings, arrays and objects.  When replacing values in strings, be aware that ","only the first matching value will be replaced.  To replace ALL values in strings, use a RegExp with the `g flag set, such as ","(new RegExp \"Target String\" `g).  For example, the following replaces all target values in the target string:<br>","(replace (new RegExp \"Indiana\" `g) \"Illinois\" \"The address of the location in Indiana has now been changed to 123 Main Street, Townville, Indiana.\")"],"usage":["target:string|regexp","replacement:string|number","container:string|array|object"],"tags":["replace","find","change","edit","string","array","object"],"requires":["slice","push","replace","keys","not","first"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"get_symbol_details_for_ns":{ "name":"get_symbol_details_for_ns","fn_args":"(namespace symbol_name)","description":"Given a namespace and a symbol name returns the details for the specific symbol in the namespace if found, or nil if not.","tags":["namespace","symbol","find","meta","details"],"usage":["namespace:string","symbol_name:string"],"requires":["is_string?","first","push","meta_for_symbol"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"env_encode_string":{ "name":"env_encode_string","fn_args":"(text)","requires":["push"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"cl_encode_string":{ "name":"cl_encode_string","fn_args":"(text)","requires":["is_string?","replace","add","split_by","join"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"fn_signature":{ "name":"fn_signature","fn_args":"(f)","description":["=:+","For a given function as an argument, returns an object with a ","type key containing the function type (async, sync) and an args ","key with an array for the arguments.  Note that a string value which ","is the result of a function serialized with the function's ","toString() method can also be passed."],"usage":["f:function|string"],"tags":["function","signature","arity","inspect"],"requires":["is_function?","is_string?","trim","first","split_by","replace","starts_with?","second","chop","index_of"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"path_to_js_syntax":{ "name":"path_to_js_syntax","fn_args":"(comps)","description":"Used by the compiler, converts an array containing the components of a path to Javascript syntax, which is then returned as a string.","usage":["comps:array"],"tags":["compiler","path","js","javascript"],"requires":["is_array?","join","map","int","starts_with?","sub_type"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"first_is_upper_case?":{ "name":"first_is_upper_case?","fn_args":"(str_val)","description":"Returns true if the first character of the provided string is an uppercase value in the range [A-Z]. ","usage":["str_val:string"],"tags":["string","case","uppercase","capitalized"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"safe_access_2":{ "name":"safe_access_2","fn_args":"(token ctx sanitizer_fn)","requires":["split_by","push","take","join","expand_dot_accessor","flatten"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"safe_access":{ "name":"safe_access","fn_args":"(token ctx sanitizer_fn)","requires":["split_by","push","take","expand_dot_accessor","join","flatten"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"compile_to_js":{ "eval_when":{ "compile_time":true
-},"name":"compile_to_js","macro":true,"fn_args":"(quoted_form)","description":["=:+","Given a quoted form, returns an array with two elements, element 0 is the compilation metadata, ","and element 1 is the output Javascript as a string."],"usage":["quoted_form:*"],"tags":["compilation","source","javascript","environment"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"compile_to_js","macro":true,"fn_args":"(quoted_form)","description":["=:+","Given a quoted form, returns an array with two elements, element 0 is the compilation metadata, ","and element 1 is the output Javascript as a string."],"usage":["quoted_form:*"],"tags":["compilation","source","javascript","environment"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"evaluate_compiled_source":{ "eval_when":{ "compile_time":true
-},"name":"evaluate_compiled_source","macro":true,"fn_args":"(compiled_source)","description":["=:+","The macro evaluate_compiled_source takes the direct output of the compiler, ","which can be captured using the macro compile_to_js, and performs the ","evaluation of the compiled source, thereby handling the second half of the ","compile then evaluate cycle.  This call will return the results of ","the evaluation of the compiled code assembly."],"usage":["compiled_source:array"],"tags":["compilation","compile","eval","pre-compilation"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"form_structure":{ "name":"form_structure","fn_args":"(quoted_form max_depth)","description":["=:+","Given a form and an optional max_depth positive number, ","traverses the passed JSON form and produces a nested array structure that contains","the contents of the form classified as either a \"symbol\", \"number\", \"string\", \"boolean\", \"array\", \"object\", or the elem itself. ","The returned structure will mirror the passed structure in form, except with the leaf contents ","being replaced with generalized categorizations."],"tags":["validation","compilation","structure"],"usage":["quoted_form:*","max_depth:?number"],"requires":["MAX_SAFE_INTEGER","is_array?","is_object?","map","add","pairs","is_string?","starts_with?","is_number?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"validate_form_structure":{ "name":"validate_form_structure","fn_args":"(validation_rules quoted_form)","description":["=:+","Given a validation rule structure and a quoted form to analyze returns an object with ","two keys, valid and invalid, which are arrays containing the outcome of the rule ","evaluation, a rule_count key containing the total rules passed, and an all_passed key","which will be set to true if all rules passed, otherwise it will fail.","If the rule evaluates successfully, valid is populated with the rule path, ","otherwise the rule path is placed in the invalid array.<br><br>","Rule structure is as follows:<br><code>","[ [path [validation validation ...] \"rule_name\"] [path [validation ...] \"rule_name\"] ]<br>","</code>","where path is an array with the index path and ","validation is a single argument lambda (fn (v) v) that must either ","return true or false. If true, the validation is considered correct, ","false for incorrect.  The result of the rule application will be put in the valid array, ","otherwise the result will be put in invalid."],"tags":["validation","rules","form","structure"],"usage":["validation_rules:array","quoted_form:*"],"requires":["length","is_array?","resolve_path","not","push"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"*compiler_syntax_rules*":{ "requires":["is_array?","not","length","rest"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"tokenize_lisp":{ "name":"tokenize_lisp","fn_args":"(quoted_source)","description":["=:+","Given a quoted source, returns the compilation tokens for the source, prior ","to the actual compilation step.  Any functions that are specified as ","compile_time for eval_when, such as macros, will be expanded and the results of ","the expansions will be in the returned token form. "],"usage":["quoted_source:*"],"tags":["compilation","compiler","tokenize","token","tokens","precompiler"],"requires":["current_namespace","compiler"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"detokenize":{ "name":"detokenize","fn_args":"(token)","description":["=:+","Converts the provided compiler tokens to a JSON structure representing ","the original source tree. "],"usage":["token_structure:object|array"],"tags":["compilation","compiler","tokenize","token","tokens","precompiler"],"requires":["is_array?","detokenize","is_object?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"describe_all":{ "name":"describe_all","fn_args":"[]","description":"Returns an object with all defined symbols as the keys and their corresponding descriptions.","usage":[],"tags":["env","environment","symbol","symbols","global","globals"],"requires":["add","to_object","describe","symbols"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"is_value?":{ "name":"is_value?","fn_args":"(val)","description":"Returns true for anything that is not nil or undefined or false.","usage":["val:*"],"tags":["if","value","truthy",false,true],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"sort":{ "name":"sort","fn_args":"(elems options)","description":["=:+","Given an array of elements, and an optional options object, returns a new sorted array.","With no options provided, the elements are sorted in ascending order.  If the key ","reversed is set to true in options, then the elements are reverse sorted. ","<br>","An optional synchronous function can be provided (defined by the comparitor key) which is expected to take ","two values and return the difference between them as can be used by the sort method of ","JS Array.  Additionally a key value can be provided as either a string (separated by dots) or as an array ","which will be used to bind (destructure) the a and b values to be compared to nested values in the elements ","of the array.","<br>","<br>","Options:<br>","reversed:boolean:if true, the elements are reverse sorted.  Note that if a comparitor function is provided, then ","this key cannot be present, as the comparitor should deal with the sorting order.<br>","key:string|array:A path to the comparison values in the provided elements. If a string, it is provided as period ","separated values.  If it is an array, each component of the array is a successive path value in the element to be ","sorted. <br>","comparitor:function:A synchronous function that is to be provided for comparison of two elements.  It should take ","two arguments, and return the difference between the arguments, either a positive or negative."],"usage":["elements:array","options:object?"],"tags":["array","sorting","order","reverse","comparison","objects"],"requires":["is_object?","is_function?","is_string?","assert","is_array?","not","path_to_js_syntax","get_object_path","conj"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"and*":{ "name":"and*","fn_args":"[\"&\" vals]","description":["=:+","Similar to and, but unlike and, values that ","are \"\" (blank) or NaN are considered to be true.","Uses is_value? to determine if the value should be considered to be true.","Returns true if the given arguments all are considered a value, ","otherwise false.  If no arguments are provided, returns undefined."],"usage":["val0:*","val1:*","val2:*"],"tags":["truth","and","logic","truthy"],"requires":["slice","not","is_value?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"or*":{ "name":"or*","fn_args":"[\"&\" vals]","description":["=:+","Similar to or, but unlike or, values that ","are \"\" (blank) or NaN are considered to be true.","Uses is_value? to determine if the value should be considered to be true.","Returns true if the given arguments all are considered a value, ","otherwise false.  If no arguments are provided, returns undefined."],"usage":["val0:*","val1:*","val2:*"],"tags":["truth","or","logic","truthy"],"requires":["slice","is_value?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"either":{ "name":"either","fn_args":"[\"&\" args]","description":["=:+","Similar to or, but unlike or, returns the first non nil ","or undefined value in the argument list whereas or returns ","the first truthy value."],"usage":["values:*"],"tags":["nil","truthy","logic","or","undefined"],"requires":["slice","not"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"sanitize_js_ref_name":{ "name":"sanitize_js_ref_name","fn_args":"(symname)","requires":["not","is_string?","split_by","push","contains?","join"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"evaluate_compiled_source","macro":true,"fn_args":"(compiled_source)","description":["=:+","The macro evaluate_compiled_source takes the direct output of the compiler, ","which can be captured using the macro compile_to_js, and performs the ","evaluation of the compiled source, thereby handling the second half of the ","compile then evaluate cycle.  This call will return the results of ","the evaluation of the compiled code assembly."],"usage":["compiled_source:array"],"tags":["compilation","compile","eval","pre-compilation"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"form_structure":{ "name":"form_structure","fn_args":"(quoted_form max_depth)","description":["=:+","Given a form and an optional max_depth positive number, ","traverses the passed JSON form and produces a nested array structure that contains","the contents of the form classified as either a \"symbol\", \"number\", \"string\", \"boolean\", \"array\", \"object\", or the elem itself. ","The returned structure will mirror the passed structure in form, except with the leaf contents ","being replaced with generalized categorizations."],"tags":["validation","compilation","structure"],"usage":["quoted_form:*","max_depth:?number"],"requires":["MAX_SAFE_INTEGER","is_array?","is_object?","map","add","pairs","is_string?","starts_with?","is_number?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"validate_form_structure":{ "name":"validate_form_structure","fn_args":"(validation_rules quoted_form)","description":["=:+","Given a validation rule structure and a quoted form to analyze returns an object with ","two keys, valid and invalid, which are arrays containing the outcome of the rule ","evaluation, a rule_count key containing the total rules passed, and an all_passed key","which will be set to true if all rules passed, otherwise it will fail.","If the rule evaluates successfully, valid is populated with the rule path, ","otherwise the rule path is placed in the invalid array.<br><br>","Rule structure is as follows:<br><code>","[ [path [validation validation ...] \"rule_name\"] [path [validation ...] \"rule_name\"] ]<br>","</code>","where path is an array with the index path and ","validation is a single argument lambda (fn (v) v) that must either ","return true or false. If true, the validation is considered correct, ","false for incorrect.  The result of the rule application will be put in the valid array, ","otherwise the result will be put in invalid."],"tags":["validation","rules","form","structure"],"usage":["validation_rules:array","quoted_form:*"],"requires":["length","is_array?","resolve_path","not","push"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"*compiler_syntax_rules*":{ "requires":["is_array?","not","length","rest"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"tokenize_lisp":{ "name":"tokenize_lisp","fn_args":"(quoted_source)","description":["=:+","Given a quoted source, returns the compilation tokens for the source, prior ","to the actual compilation step.  Any functions that are specified as ","compile_time for eval_when, such as macros, will be expanded and the results of ","the expansions will be in the returned token form. "],"usage":["quoted_source:*"],"tags":["compilation","compiler","tokenize","token","tokens","precompiler"],"requires":["current_namespace","compiler"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"detokenize":{ "name":"detokenize","fn_args":"(token)","description":["=:+","Converts the provided compiler tokens to a JSON structure representing ","the original source tree. "],"usage":["token_structure:object|array"],"tags":["compilation","compiler","tokenize","token","tokens","precompiler"],"requires":["is_array?","detokenize","is_object?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"describe_all":{ "name":"describe_all","fn_args":"[]","description":"Returns an object with all defined symbols as the keys and their corresponding descriptions.","usage":[],"tags":["env","environment","symbol","symbols","global","globals"],"requires":["add","to_object","describe","symbols"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"is_value?":{ "name":"is_value?","fn_args":"(val)","description":"Returns true for anything that is not nil or undefined or false.","usage":["val:*"],"tags":["if","value","truthy",false,true],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"sort":{ "name":"sort","fn_args":"(elems options)","description":["=:+","Given an array of elements, and an optional options object, returns a new sorted array.","With no options provided, the elements are sorted in ascending order.  If the key ","reversed is set to true in options, then the elements are reverse sorted. ","<br>","An optional synchronous function can be provided (defined by the comparitor key) which is expected to take ","two values and return the difference between them as can be used by the sort method of ","JS Array.  Additionally a key value can be provided as either a string (separated by dots) or as an array ","which will be used to bind (destructure) the a and b values to be compared to nested values in the elements ","of the array.","<br>","<br>","Options:<br>","reversed:boolean:if true, the elements are reverse sorted.  Note that if a comparitor function is provided, then ","this key cannot be present, as the comparitor should deal with the sorting order.<br>","key:string|array:A path to the comparison values in the provided elements. If a string, it is provided as period ","separated values.  If it is an array, each component of the array is a successive path value in the element to be ","sorted. <br>","comparitor:function:A synchronous function that is to be provided for comparison of two elements.  It should take ","two arguments, and return the difference between the arguments, either a positive or negative."],"usage":["elements:array","options:object?"],"tags":["array","sorting","order","reverse","comparison","objects"],"requires":["is_object?","is_function?","is_string?","assert","is_array?","not","path_to_js_syntax","get_object_path","conj"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"and*":{ "name":"and*","fn_args":"[\"&\" vals]","description":["=:+","Similar to and, but unlike and, values that ","are \"\" (blank) or NaN are considered to be true.","Uses is_value? to determine if the value should be considered to be true.","Returns true if the given arguments all are considered a value, ","otherwise false.  If no arguments are provided, returns undefined."],"usage":["val0:*","val1:*","val2:*"],"tags":["truth","and","logic","truthy"],"requires":["slice","not","is_value?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"or*":{ "name":"or*","fn_args":"[\"&\" vals]","description":["=:+","Similar to or, but unlike or, values that ","are \"\" (blank) or NaN are considered to be true.","Uses is_value? to determine if the value should be considered to be true.","Returns true if the given arguments all are considered a value, ","otherwise false.  If no arguments are provided, returns undefined."],"usage":["val0:*","val1:*","val2:*"],"tags":["truth","or","logic","truthy"],"requires":["slice","is_value?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"either":{ "name":"either","fn_args":"[\"&\" args]","description":["=:+","Similar to or, but unlike or, returns the first non nil ","or undefined value in the argument list whereas or returns ","the first truthy value."],"usage":["values:*"],"tags":["nil","truthy","logic","or","undefined"],"requires":["slice","not"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"sanitize_js_ref_name":{ "name":"sanitize_js_ref_name","fn_args":"(symname)","requires":["not","is_string?","split_by","push","contains?","join"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"is_symbol?":{ "eval_when":{ "compile_time":true
-},"name":"is_symbol?","macro":true,"fn_args":"(symbol_to_find)","usage":["symbol:string|*"],"description":["=:+","If provided a quoted symbol, will return true if the symbol can be found ","in the local or global contexts."],"tags":["context","env","def"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"is_symbol?","macro":true,"fn_args":"(symbol_to_find)","usage":["symbol:string|*"],"description":["=:+","If provided a quoted symbol, will return true if the symbol can be found ","in the local or global contexts."],"tags":["context","env","def"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"defvalue":{ "eval_when":{ "compile_time":true
-},"name":"defvalue","macro":true,"fn_args":"(sym value meta)","description":["=:+","If the provided symbol is already defined as an accessible ","global value from the current namespace it will return the ","defined value, otherwise it will define the global in the ","current (implicit) namespace or the explicitly referenced ","namespace.  Returns the newly defined value or previously ","defined value."],"usage":["sym:symbol|string","value:*","meta:?object"],"tags":["allocation","reference","symbol","value","set","reference","global"],"requires":["is_object?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"defvalue","macro":true,"fn_args":"(sym value meta)","description":["=:+","If the provided symbol is already defined as an accessible ","global value from the current namespace it will return the ","defined value, otherwise it will define the global in the ","current (implicit) namespace or the explicitly referenced ","namespace.  Returns the newly defined value or previously ","defined value."],"usage":["sym:symbol|string","value:*","meta:?object"],"tags":["allocation","reference","symbol","value","set","reference","global"],"requires":["is_object?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"defparameter":{ "eval_when":{ "compile_time":true
-},"name":"defparameter","macro":true,"fn_args":"(sym value meta)","description":["=:+","Defines a global that is always reset to the provided value, ","when called or when the image is reloaded, ensuring that the ","initial value is always set to a specific value.  If the value ","is already defined, it will be overwritten.  To set a symbol in ","an explicit namespace, provide a fully qualified symbol name ","in the form of namspace/symname as the symbol to be defined. ","Returns the defined value."],"usage":["sym:symbol|string","value:*","meta:?object"],"tags":["allocation","reference","symbol","value","set","reference","global"],"requires":["is_object?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"get_function_args":{ "name":"get_function_args","fn_args":"(f)","description":"Given a javascript function, return a list of arg names for that function","usage":["function:function"],"tags":["function","introspect","introspection","arguments"],"requires":["scan_str","is_object?","map","ends_with?","chop","split_by","second"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"findpaths":{ "name":"findpaths","fn_args":"(value structure)","requires":["is_array?","map","is_object?","conj","push","pairs"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"defparameter","macro":true,"fn_args":"(sym value meta)","description":["=:+","Defines a global that is always reset to the provided value, ","when called or when the image is reloaded, ensuring that the ","initial value is always set to a specific value.  If the value ","is already defined, it will be overwritten.  To set a symbol in ","an explicit namespace, provide a fully qualified symbol name ","in the form of namspace/symname as the symbol to be defined. ","Returns the defined value."],"usage":["sym:symbol|string","value:*","meta:?object"],"tags":["allocation","reference","symbol","value","set","reference","global"],"requires":["is_object?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"get_function_args":{ "name":"get_function_args","fn_args":"(f)","description":"Given a javascript function, return a list of arg names for that function","usage":["function:function"],"tags":["function","introspect","introspection","arguments"],"requires":["scan_str","is_object?","map","ends_with?","chop","split_by","second"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"findpaths":{ "name":"findpaths","fn_args":"(value structure)","requires":["is_array?","map","is_object?","conj","push","pairs"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"warn":{ "description":"Prefixes a warning symbol prior to the arguments to the console.  Otherwise the same as console.log.","usage":["args0:*","argsN:*"],"tags":["log","warning","error","signal","output","notify","defclog"],"initializer":["=:defclog",{ "prefix":"⚠️  "
-}],"requires":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+}],"requires":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"success":{ "description":"Prefixes a green checkmark symbol prior to the arguments to the console.  Otherwise the same as console.log.","usage":["args0:*","argsN:*"],"tags":["log","warning","notify","signal","output","ok","success","defclog"],"initializer":["=:defclog",{ "color":"green","prefix":"✓  "
-}],"requires":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+}],"requires":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"in_background":{ "eval_when":{ "compile_time":true
-},"name":"in_background","macro":true,"fn_args":"[\"&\" forms]","description":["=:+","Given a form or forms, evaluates the forms in the background, with ","the function returning true immediately prior to starting the forms."],"usage":["forms:*"],"tags":["eval","background","promise","evaluation"],"requires":["slice"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"set_compiler":{ "name":"set_compiler","fn_args":"(compiler_function)","description":["=:+","Given a compiled compiler function, installs the provided function as the ","environment's compiler, and returns the compiler function."],"usage":["compiler_function:function"],"tags":["compilation","environment","compiler"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"show":{ "name":"show","fn_args":"(thing)","usage":["thing:function"],"description":"Given a name to a compiled function, returns the source of the compiled function.  Otherwise just returns the passed argument.","tags":["compile","source","javascript","js","display"],"requires":["is_function?"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"name":"in_background","macro":true,"fn_args":"[\"&\" forms]","description":["=:+","Given a form or forms, evaluates the forms in the background, with ","the function returning true immediately prior to starting the forms."],"usage":["forms:*"],"tags":["eval","background","promise","evaluation"],"requires":["slice"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"set_compiler":{ "name":"set_compiler","fn_args":"(compiler_function)","description":["=:+","Given a compiled compiler function, installs the provided function as the ","environment's compiler, and returns the compiler function."],"usage":["compiler_function:function"],"tags":["compilation","environment","compiler"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"show":{ "name":"show","fn_args":"(thing)","usage":["thing:function"],"description":"Given a name to a compiled function, returns the source of the compiled function.  Otherwise just returns the passed argument.","tags":["compile","source","javascript","js","display"],"requires":["is_function?"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
 },"export_symbols":{ "eval_when":{ "compile_time":true
-},"name":"export_symbols","macro":true,"fn_args":"[\"&\" args]","usage":["arg0:string|array","argN:string|array"],"description":["=:+","The export_symbols macro facilitates the Javascript module export functionality.  ","To make available defined lisp symbols from the current module the export_symbols ","macro is called with it's arguments being either the direct symbols or, if an ","argument is an array, the first is the defined symbol within the lisp environment ","or current module and the second element in the array is the name to be exported ","as.  For example: <br> ","(export lisp_symbol1 lisp_symbol2) ;; exports lisp_symbol1 and lisp_symbol2 directly. <br>","(export (lisp_symbol1 external_name)) ;; exports lisp_symbol1 as 'external_name`. <br>","(export (initialize default) symbol2) ;; exports initialize as default and symbol2 as itself."],"tags":["env","enviroment","module","export","import","namespace","scope"],"requires":["slice","length","is_array?","push","is_string?","starts_with?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"register_feature":{ "name":"register_feature","fn_args":"(feature)","description":"Adds the provided string to the *env_config* features.  Features are used to mark what functionality is present in the environment.","tags":["environment","modules","libraries","namespaces"],"usage":["feature:string"],"requires":["not","contains?","*env_config*","push"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"uniq":{ "name":"uniq","fn_args":"(values)","description":["=:+","Given a list of values, returns a new list with unique, deduplicated values. ","If the values list contains complex types such as objects or arrays, set the ","handle_complex_types argument to true so they are handled appropriately. "],"usage":["values:list"],"tags":["list","dedup","duplicates","unique","values"],"requires":["map","to_array"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"export_symbols","macro":true,"fn_args":"[\"&\" args]","usage":["arg0:string|array","argN:string|array"],"description":["=:+","The export_symbols macro facilitates the Javascript module export functionality.  ","To make available defined lisp symbols from the current module the export_symbols ","macro is called with it's arguments being either the direct symbols or, if an ","argument is an array, the first is the defined symbol within the lisp environment ","or current module and the second element in the array is the name to be exported ","as.  For example: <br> ","(export lisp_symbol1 lisp_symbol2) ;; exports lisp_symbol1 and lisp_symbol2 directly. <br>","(export (lisp_symbol1 external_name)) ;; exports lisp_symbol1 as 'external_name`. <br>","(export (initialize default) symbol2) ;; exports initialize as default and symbol2 as itself."],"tags":["env","enviroment","module","export","import","namespace","scope"],"requires":["slice","length","is_array?","push","is_string?","starts_with?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"register_feature":{ "name":"register_feature","fn_args":"(feature)","description":"Adds the provided string to the *env_config* features.  Features are used to mark what functionality is present in the environment.","tags":["environment","modules","libraries","namespaces"],"usage":["feature:string"],"requires":["not","contains?","*env_config*","push"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"uniq":{ "name":"uniq","fn_args":"(values)","description":["=:+","Given a list of values, returns a new list with unique, deduplicated values. ","If the values list contains complex types such as objects or arrays, set the ","handle_complex_types argument to true so they are handled appropriately. "],"usage":["values:list"],"tags":["list","dedup","duplicates","unique","values"],"requires":["map","to_array"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"time_in_millis":{ "eval_when":{ "compile_time":true
-},"name":"time_in_millis","macro":true,"fn_args":"[]","usage":[],"tags":["time","milliseconds","number","integer","date"],"description":"Returns the current time in milliseconds as an integer","requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"defns":{ "name":"defns","fn_args":"(name options)","usage":["name:string","options:object"],"description":["=:+","Given a name and an optional options object, creates a new namespace ","identified by the name argument.  If the options object is provided, the following keys are available:","<br>","ignore_if_exists:boolean:If set to true, if the namespace is already defined, do not return an error ","and instead just return with the name of the requested namespace. Any other options are ignored and ","the existing namespace isn't altered.","contained:boolean:If set to true, the newly defined namespace will not have visibility to other namespaces ","beyond 'core' and itself.  Any fully qualified symbols that reference other non-core namespaces will ","fail.","serialize_with_image:boolean:If set to false, if the environment is saved, the namespace will not be ","included in the saved image file.  Default is true."],"tags":["namespace","environment","define","scope","context"],"requires":["is_string?","contains?","namespaces","create_namespace"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"time_in_millis","macro":true,"fn_args":"[]","usage":[],"tags":["time","milliseconds","number","integer","date"],"description":"Returns the current time in milliseconds as an integer","requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"defns":{ "name":"defns","fn_args":"(name options)","usage":["name:string","options:object"],"description":["=:+","Given a name and an optional options object, creates a new namespace ","identified by the name argument.  If the options object is provided, the following keys are available:","<br>","ignore_if_exists:boolean:If set to true, if the namespace is already defined, do not return an error ","and instead just return with the name of the requested namespace. Any other options are ignored and ","the existing namespace isn't altered.","contained:boolean:If set to true, the newly defined namespace will not have visibility to other namespaces ","beyond 'core' and itself.  Any fully qualified symbols that reference other non-core namespaces will ","fail.","serialize_with_image:boolean:If set to false, if the environment is saved, the namespace will not be ","included in the saved image file.  Default is true."],"tags":["namespace","environment","define","scope","context"],"requires":["is_string?","contains?","namespaces","create_namespace"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"use_ns":{ "eval_when":{ "compile_time":true
-},"name":"use_ns","macro":true,"fn_args":"(name)","usage":["name:symbol"],"description":"Sets the current namespace to the provided name.  Returns the name of the new namespace if succesful, otherwise an Eval error is thrown","tags":["namespace","environment","scope","change","set"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"bind_and_call":{ "name":"bind_and_call","fn_args":"(target_object this_object method \"&\" args)","usage":["target_object:object","this_object:object","method:string","args0:*","argsn:*"],"description":"Binds the provided method of the target object with the this_object context, and then calls the object method with the optional provided arguments.","tags":["bind","object","this","context","call"],"requires":["slice","bind"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"clamp":{ "name":"clamp","fn_args":"(value min max)","description":["=:+","Given a numeric value, along with minimum and maximum values for the provided value, ","the function will return the value if between the bounding values, otherwise ","the closest bounding value will be returned.  If the value is above the provided ","maximum, then the maximum will be returned.  If the value is below the minimum, then ","the minimum value is returned."],"tags":["value","number","min","max","bounds","boundary","range"],"usage":["value:number","min:number","max:number"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"save_locally":{ "name":"save_locally","fn_args":"(fname data content_type)","description":["=:+","Provided a filename, a data buffer, and a MIME type, such as \"text/javascript\", ","triggers a browser download of the provided data with the filename.  Depending ","on the browser configuration, the data will be saved to the configured ","user download directory, or prompt the user for a save location. "],"usage":["filename:string","data:*","content_type:string"],"tags":["save","download","browser"],"requires":["document"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"fetch_text":{ "name":"fetch_text","fn_args":"(url)","description":["=:+","Given a url, returns the text content of that url. ","This function is a helper function for the import macro."],"usage":["url:string"],"tags":["fetch","text","string"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"use_ns","macro":true,"fn_args":"(name)","usage":["name:symbol"],"description":"Sets the current namespace to the provided name.  Returns the name of the new namespace if succesful, otherwise an Eval error is thrown","tags":["namespace","environment","scope","change","set"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"bind_and_call":{ "name":"bind_and_call","fn_args":"(target_object this_object method \"&\" args)","usage":["target_object:object","this_object:object","method:string","args0:*","argsn:*"],"description":"Binds the provided method of the target object with the this_object context, and then calls the object method with the optional provided arguments.","tags":["bind","object","this","context","call"],"requires":["slice","bind"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"clamp":{ "name":"clamp","fn_args":"(value min max)","description":["=:+","Given a numeric value, along with minimum and maximum values for the provided value, ","the function will return the value if between the bounding values, otherwise ","the closest bounding value will be returned.  If the value is above the provided ","maximum, then the maximum will be returned.  If the value is below the minimum, then ","the minimum value is returned."],"tags":["value","number","min","max","bounds","boundary","range"],"usage":["value:number","min:number","max:number"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"save_locally":{ "name":"save_locally","fn_args":"(fname data content_type)","description":["=:+","Provided a filename, a data buffer, and a MIME type, such as \"text/javascript\", ","triggers a browser download of the provided data with the filename.  Depending ","on the browser configuration, the data will be saved to the configured ","user download directory, or prompt the user for a save location. "],"usage":["filename:string","data:*","content_type:string"],"tags":["save","download","browser"],"requires":["document"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"fetch_text":{ "name":"fetch_text","fn_args":"(url)","description":["=:+","Given a url, returns the text content of that url. ","This function is a helper function for the import macro."],"usage":["url:string"],"tags":["fetch","text","string"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"import":{ "eval_when":{ "compile_time":true
-},"name":"import","macro":true,"fn_args":"[\"&\" args]","description":["=:+","Dynamically load the contents of the specified source file (including ","path) into the Lisp environment in the current namespace.<br>If the file is a ","Lisp source, it will be evaluated as part of the load and the final result ","returned.  <br>If the file is a JS source, it will be loaded into the ","environment and a handle returned.  When importing non-Lisp sources (javascript ","or typescript), import requires a binding symbol in an array as the first ","argument.  <br>The allowed extensions are `.lisp`, `.js`, `.json`, `.juno`, and ","if the JS platform is Deno, `.ts` is allowed.  Otherwise an `EvalError` will be ","thrown due to a non-handled file type.<br><br>#### Examples - Server ","<br><br>When on a server instance the path can be relative:```(import ","\"tests/compiler_tests.lisp\")```<br><br>For a remote Javascript/Typescript ","resource:```(import (logger) ","\"https://deno.land/std@0.148.0/log/mod.ts\")```<br><br>For a local ","Javascript/Typescript resource:```(import (logger) ","\"/absolute/path/to/library.js\")\n```<br><br>Note that this is a dynamic import. ","<br><br>#### Example - Browser <br><br>With the browser, to import, the ","environment should be hosted for access to served resources:```(import ","\"/pkg/doc_generation.juno\")```<br><br><br> "],"tags":["compile","read","io","file","get","fetch","load","dynamic_import"],"usage":["binding_symbols:array","filename:string"],"requires":["slice","last","contains?","not","starts_with?","ends_with?","length","is_array?","push","current_namespace"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"system_date_format":{ "description":"The system date format structure that is used by the system_date_formatter.If modified, the system_date_formatter, which is a Intl.DateTimeFormat object should be reinitialized by calling (new Intl.DateTimeFormat [] system_date_format).","tags":["time","date","system"],"requires":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"import","macro":true,"fn_args":"[\"&\" args]","description":["=:+","Dynamically load the contents of the specified source file (including ","path) into the Lisp environment in the current namespace.<br>If the file is a ","Lisp source, it will be evaluated as part of the load and the final result ","returned.  <br>If the file is a JS source, it will be loaded into the ","environment and a handle returned.  When importing non-Lisp sources (javascript ","or typescript), import requires a binding symbol in an array as the first ","argument.  <br>The allowed extensions are `.lisp`, `.js`, `.json`, `.juno`, and ","if the JS platform is Deno, `.ts` is allowed.  Otherwise an `EvalError` will be ","thrown due to a non-handled file type.<br><br>#### Examples - Server ","<br><br>When on a server instance the path can be relative:```(import ","\"tests/compiler_tests.lisp\")```<br><br>For a remote Javascript/Typescript ","resource:```(import (logger) ","\"https://deno.land/std@0.148.0/log/mod.ts\")```<br><br>For a local ","Javascript/Typescript resource:```(import (logger) ","\"/absolute/path/to/library.js\")\n```<br><br>Note that this is a dynamic import. ","<br><br>#### Example - Browser <br><br>With the browser, to import, the ","environment should be hosted for access to served resources:```(import ","\"/pkg/doc_generation.juno\")```<br><br><br> "],"tags":["compile","read","io","file","get","fetch","load","dynamic_import"],"usage":["binding_symbols:array","filename:string"],"requires":["slice","last","contains?","not","starts_with?","ends_with?","length","is_array?","push","current_namespace"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"system_date_format":{ "description":"The system date format structure that is used by the system_date_formatter.If modified, the system_date_formatter, which is a Intl.DateTimeFormat object should be reinitialized by calling (new Intl.DateTimeFormat [] system_date_format).","tags":["time","date","system"],"requires":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"system_date_formatter":{ "initializer":["=:new","=:Intl.DateTimeFormat",[],{ "weekday":"long","year":"numeric","month":"2-digit","day":"2-digit","hour":"numeric","minute":"numeric","second":"numeric","fractionalSecondDigits":3,"hourCycle":"h24","hour12":false,"timeZoneName":"short"
-}],"tags":["time","date","system"],"description":"The instantiation of the system_date_format.  See system_date_format for additional information.","requires":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"tzoffset":{ "name":"tzoffset","fn_args":"[]","description":"Returns the number of seconds the local timezone is offset from GMT","usage":[],"tags":["time","date","timezone"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"date_components":{ "name":"date_components","fn_args":"(date_value date_formatter)","usage":["date_value:Date","date_formatter:DateTimeFormat?"],"description":"Given a date value, returns an object containing a the current time information broken down by time component. Optionally pass a Intl.DateTimeFormat object as a second argument.","tags":["date","time","object","component"],"requires":["is_date?","to_object","map","bind_and_call","system_date_formatter"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"formatted_date":{ "name":"formatted_date","fn_args":"(dval date_formatter)","usage":["dval:Date","date_formatter:DateTimeFormat?"],"description":"Given a date object, return a formatted string in the form of: \"yyyy-MM-d HH:mm:ss\".  Optionally pass a Intl.DateTimeFormat object as a second argument.","tags":["date","format","time","string"],"requires":["date_components","join","values"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"*LANGUAGE*":{ "requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"dtext":{ "name":"dtext","fn_args":"(default_text)","usage":["text:string","key:string?"],"description":["=:+","Given a default text string and an optional key, if a key ","exists in the global object *LANGUAGE*, return the text associated with the key. ","If no key is provided, attempts to find the default text as a key in the *LANGUAGE* object. ","If that is a nil entry, returns the default text."],"tags":["text","multi-lingual","language","translation","translate"],"requires":["*LANGUAGE*"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"nth":{ "name":"nth","fn_args":"(idx collection)","description":["=:+","Based on the index or index list passed as the first argument, ","and a collection as a second argument, return the specified values ","from the collection. If an index value is negative, the value ","retrieved will be at the offset starting from the end of the array, ","i.e. -1 will return the last value in the array."],"tags":["filter","select","pluck","object","list","key","array"],"usage":["idx:string|number|array","collection:list|object"],"requires":["is_array?","map","nth","is_number?","length","add"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"max_index":{ "name":"max_index","fn_args":"(container)","description":["=:+","Given a container, typically an Array or derivative, ","return the max index value, calculated as length - 1.<br>"],"usage":["container:array"],"tags":["length","array","container","max","index","range","limit"],"requires":["length"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"decode_text":{ "name":"decode_text","fn_args":"(buffer)","description":"Given a source buffer, such as a Uint8Array, decode into utf-8 text.","usage":["buffer:ArrayBuffer"],"tags":["decode","encode","string","array","text"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"encode_text":{ "name":"encode_text","fn_args":"(text)","description":"Given a source buffer, such as a Uint8Array, decode into utf-8 text.","usage":["buffer:ArrayBuffer"],"tags":["decode","encode","string","array","text"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"hostname":{ "name":"hostname","fn_args":"[]","description":"Returns the hostname of the system the environment is running on.","usage":[],"tags":["hostname","server","environment"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+}],"tags":["time","date","system"],"description":"The instantiation of the system_date_format.  See system_date_format for additional information.","requires":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"tzoffset":{ "name":"tzoffset","fn_args":"[]","description":"Returns the number of seconds the local timezone is offset from GMT","usage":[],"tags":["time","date","timezone"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"date_components":{ "name":"date_components","fn_args":"(date_value date_formatter)","usage":["date_value:Date","date_formatter:DateTimeFormat?"],"description":"Given a date value, returns an object containing a the current time information broken down by time component. Optionally pass a Intl.DateTimeFormat object as a second argument.","tags":["date","time","object","component"],"requires":["is_date?","to_object","map","bind_and_call","system_date_formatter"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"formatted_date":{ "name":"formatted_date","fn_args":"(dval date_formatter)","usage":["dval:Date","date_formatter:DateTimeFormat?"],"description":"Given a date object, return a formatted string in the form of: \"yyyy-MM-d HH:mm:ss\".  Optionally pass a Intl.DateTimeFormat object as a second argument.","tags":["date","format","time","string"],"requires":["date_components","join","values"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"*LANGUAGE*":{ "requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"dtext":{ "name":"dtext","fn_args":"(default_text)","usage":["text:string","key:string?"],"description":["=:+","Given a default text string and an optional key, if a key ","exists in the global object *LANGUAGE*, return the text associated with the key. ","If no key is provided, attempts to find the default text as a key in the *LANGUAGE* object. ","If that is a nil entry, returns the default text."],"tags":["text","multi-lingual","language","translation","translate"],"requires":["*LANGUAGE*"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"nth":{ "name":"nth","fn_args":"(idx collection)","description":["=:+","Based on the index or index list passed as the first argument, ","and a collection as a second argument, return the specified values ","from the collection. If an index value is negative, the value ","retrieved will be at the offset starting from the end of the array, ","i.e. -1 will return the last value in the array."],"tags":["filter","select","pluck","object","list","key","array"],"usage":["idx:string|number|array","collection:list|object"],"requires":["is_array?","map","nth","is_number?","length","add"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"max_index":{ "name":"max_index","fn_args":"(container)","description":["=:+","Given a container, typically an Array or derivative, ","return the max index value, calculated as length - 1.<br>"],"usage":["container:array"],"tags":["length","array","container","max","index","range","limit"],"requires":["length"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"decode_text":{ "name":"decode_text","fn_args":"(buffer)","description":"Given a source buffer, such as a Uint8Array, decode into utf-8 text.","usage":["buffer:ArrayBuffer"],"tags":["decode","encode","string","array","text"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"encode_text":{ "name":"encode_text","fn_args":"(text)","description":"Given a source buffer, such as a Uint8Array, decode into utf-8 text.","usage":["buffer:ArrayBuffer"],"tags":["decode","encode","string","array","text"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"hostname":{ "name":"hostname","fn_args":"[]","description":"Returns the hostname of the system the environment is running on.","usage":[],"tags":["hostname","server","environment"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"use_symbols":{ "eval_when":{ "compile_time":true
-},"name":"use_symbols","macro":true,"fn_args":"(namespace symbol_list target_namespace)","description":["=:+","Given a namespace and an array of symbols (quoted or unquoted), ","the macro will faciltate the binding of the symbols into the ","current namespace."],"usage":["namespace:string|symbol","symbol_list:array","target_namespace?:string"],"tags":["namespace","binding","import","use","symbols"],"requires":["is_string?","starts_with?","push","current_namespace"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"use_unique_symbols":{ "name":"use_unique_symbols","fn_args":"(namespace)","description":["=:+","This function binds all symbols unique to the provided ","namespace identifier into the current namespace. Returns ","the amount of symbol bound."],"usage":["namespace:string"],"tags":["namespace","binding","import","use","symbols"],"requires":["is_string?","length"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"sort_dependencies":{ "name":"sort_dependencies","fn_args":"[]","description":["=:+","Returns an object containing two keys, `namespaces` and `symbols`, each ","being arrays that contains the needed load order to satisfy the dependencies ","for the current environment with all namespaces.  For symbols, the array is ","sorted in terms of dependencies: a symbol appearing with a higher index value ","will mean that it is dependent on symbols at a lower index value, with the ","first symbol having no dependencies, and the final element having the most ","dependencies.  For example, if the final symbol in the returned array is to be ","compiled, symbols at a lower index must be defined prior to compiling the final ","symbol.<br>The namespaces reflect the same rule: a lower indexed namespace must ","be loaded prior to a higher indexed namespace. "],"usage":[],"tags":["symbol","symbols","dependencies","requirements","order","compile"],"requires":["index_of","push","decomp_symbol","pairs","conj","not","namespaces","contains?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"symbols_by_namespace":{ "name":"symbols_by_namespace","fn_args":"(options)","description":["=:+","<br><br>By default, when called with no options, the `symbols_by_namespace` ","function returns an object with a key for each namespace, with an array ","containing the symbols (in a string format) defined in that ","namespace. <br>There is an optional `options` object argument which can modify ","the returned results and format.  <br><br>#### Options ","<br><br>include_meta:function -If true, will return the meta data associated ","with each symbol from the Environment definitions.  The output format is ","changed in this situation: instead of an array being returned, an object with ","the symbol names as keys and the meta data values as their value is returned.   "],"usage":["options:object"],"tags":["symbols","namespace"],"requires":["to_object","conj","add","pairs","sub_type","sort","push","uniq","keys","namespaces"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"*formatting_rules*":{ "requires":["flatten","resolve_multi_path","conj","resolve_path"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"all_globals":{ "name":"all_globals","fn_args":"[]","usage":[],"description":"Returns a set of all global symbols, regardless of namespace.","tags":["editor","globals","autocomplete"],"requires":["keys","resolve_path","namespaces"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"process_tree_symbols":{ "name":"process_tree_symbols","fn_args":"(tree prefix _ctx)","usage":["tree:*"],"description":["=:+","Given a JSON structure, such as produced by the reader, returns an object containing the various determined types of the provided structure:<br>","allocations:array - All locally allocated symbols<br>","symbols:array - All identified symbols<br>","keywords:array - All keywords used in the structure","literals:array - All identified literals (i.e. not a symbol)","globals:array - All referenced globals"],"tags":["editor","usage","scope","structure"],"requires":["as_lisp","not","is_array?","process_tree_symbols","contains?","*formatting_rules*","meta_for_symbol","length","is_string?","starts_with?","is_number?","is_function?","is_object?","pairs","to_array"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"keys*":{ "name":"keys*","fn_args":"(obj)","description":["=:+","Like keys, but where keys uses Object.keys, keys* uses the function Object.getOwnpropertynames and returns the ","prototype keys as well."],"usage":["obj:Object"],"tags":["object","array","keys","property","properties","introspection"],"requires":["is_object?","first","push","flatten"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"pairs*":{ "name":"pairs*","fn_args":"(obj)","description":"Like pairs, but where keys uses Object.keys, pairs* returns the key-value pairs prototype heirarchy as well.","usage":["obj:Object"],"tags":["object","array","keys","property","properties","introspection","values"],"requires":["is_object?","keys*"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"use_symbols","macro":true,"fn_args":"(namespace symbol_list target_namespace)","description":["=:+","Given a namespace and an array of symbols (quoted or unquoted), ","the macro will faciltate the binding of the symbols into the ","current namespace."],"usage":["namespace:string|symbol","symbol_list:array","target_namespace?:string"],"tags":["namespace","binding","import","use","symbols"],"requires":["is_string?","starts_with?","push","current_namespace"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"use_unique_symbols":{ "name":"use_unique_symbols","fn_args":"(namespace)","description":["=:+","This function binds all symbols unique to the provided ","namespace identifier into the current namespace. Returns ","the amount of symbol bound."],"usage":["namespace:string"],"tags":["namespace","binding","import","use","symbols"],"requires":["is_string?","length"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"sort_dependencies":{ "name":"sort_dependencies","fn_args":"[]","description":["=:+","Returns an object containing two keys, `namespaces` and `symbols`, each ","being arrays that contains the needed load order to satisfy the dependencies ","for the current environment with all namespaces.  For symbols, the array is ","sorted in terms of dependencies: a symbol appearing with a higher index value ","will mean that it is dependent on symbols at a lower index value, with the ","first symbol having no dependencies, and the final element having the most ","dependencies.  For example, if the final symbol in the returned array is to be ","compiled, symbols at a lower index must be defined prior to compiling the final ","symbol.<br>The namespaces reflect the same rule: a lower indexed namespace must ","be loaded prior to a higher indexed namespace. "],"usage":[],"tags":["symbol","symbols","dependencies","requirements","order","compile"],"requires":["index_of","push","decomp_symbol","pairs","conj","not","namespaces","contains?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"symbols_by_namespace":{ "name":"symbols_by_namespace","fn_args":"(options)","description":["=:+","<br><br>By default, when called with no options, the `symbols_by_namespace` ","function returns an object with a key for each namespace, with an array ","containing the symbols (in a string format) defined in that ","namespace. <br>There is an optional `options` object argument which can modify ","the returned results and format.  <br><br>#### Options ","<br><br>include_meta:function -If true, will return the meta data associated ","with each symbol from the Environment definitions.  The output format is ","changed in this situation: instead of an array being returned, an object with ","the symbol names as keys and the meta data values as their value is returned.   "],"usage":["options:object"],"tags":["symbols","namespace"],"requires":["to_object","conj","add","pairs","sub_type","sort","push","uniq","keys","namespaces"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"*formatting_rules*":{ "requires":["flatten","resolve_multi_path","conj","resolve_path"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"all_globals":{ "name":"all_globals","fn_args":"[]","usage":[],"description":"Returns a set of all global symbols, regardless of namespace.","tags":["editor","globals","autocomplete"],"requires":["keys","resolve_path","namespaces"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"sleep":{ "name":"sleep","fn_args":"(seconds)","usage":["seconds:number"],"tags":["time","timing","pause","control"],"description":"Pauses execution for the number of seconds provided to the function.","requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"process_tree_symbols":{ "name":"process_tree_symbols","fn_args":"(tree prefix _ctx)","usage":["tree:*"],"description":["=:+","Given a JSON structure, such as produced by the reader, returns an object containing the various determined types of the provided structure:<br>","allocations:array - All locally allocated symbols<br>","symbols:array - All identified symbols<br>","keywords:array - All keywords used in the structure","literals:array - All identified literals (i.e. not a symbol)","globals:array - All referenced globals"],"tags":["editor","usage","scope","structure"],"requires":["as_lisp","not","is_array?","process_tree_symbols","contains?","*formatting_rules*","meta_for_symbol","length","is_string?","starts_with?","is_number?","is_function?","is_object?","pairs","to_array"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"keys*":{ "name":"keys*","fn_args":"(obj)","description":["=:+","Like keys, but where keys uses Object.keys, keys* uses the function Object.getOwnpropertynames and returns the ","prototype keys as well."],"usage":["obj:Object"],"tags":["object","array","keys","property","properties","introspection"],"requires":["is_object?","first","push","flatten"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"pairs*":{ "name":"pairs*","fn_args":"(obj)","description":"Like pairs, but where keys uses Object.keys, pairs* returns the key-value pairs prototype heirarchy as well.","usage":["obj:Object"],"tags":["object","array","keys","property","properties","introspection","values"],"requires":["is_object?","keys*"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"for":{ "eval_when":{ "compile_time":true
-},"name":"for","macro":true,"fn_args":"[(symbol_list array_ref) \"&\" body_forms]","description":["=:+","The for macro provides a facility for looping through arrays, ","destructuring their contents into local symbols that can be used in a block.  ","The `for` macro is a higher level construct than the `for_each` operator, as it ","allows for multiple symbols to be mapped into the contents iteratively, vs. ","for_each allowing only a single symbol to be bound to each top level element in ","the provided array.<br>The symbol_list is provided as the lambda list to a ","`destructuring_bind` if multiple symbols are provided, otherwise, if only a ","single variable is provided, the `for` macro will convert to  a for_each call, ","with the `body_forms` enclosed in a `progn` block.  <br><br>#### Examples ","<br><br>An example of a multiple bindings is below.  The values of `positions` ","are mapped (destructured) into x, y, w and h, respectively, each iteration ","through the loop mapping to the next structured element of the array:```(let\n ","((positions\n      [[[1 2] [5 3]]\n       [[6 3] [10 2]]]))\n  (for ([[x y] [w h]] ","positions)\n       (log \"x,y,w,h=\" x y w h)\n       (+ \"\" x \",\" y \"+\"  w \",\" h ",")))```<br><br>Upon evaluation the log output is as follows:```\"x,y,w,h=\" 1 2 5 ","3```<br>```\"x,y,w,h=\" 6 3 10 2```<br><br>The results returned from the ","call:```[\"1,2+5,3\"\n \"6,3+10,2\"]```<br><br>Notice that the `for` body is wrapped ","in an explicit `progn` such that the last value is accumulated and returned ","from the `for` operation.<br>An example of single bindings, which essentially ","transforms into a `for_each` call with an implicit `progn` around the body ","forms.  This form is essentially a convenience call around `for_each`.  ```(for ","(x [1 2 3])\n     (log \"x is: \" x) \n     (+ x 2))```<br><br>Both the log form ","and the final body form `(+ x 2)` are the body forms and will be evaluated in ","sequence, the final form results accumulating to be returned to the ","caller.<br>Log output from the above:```\"x is: \" 1\n\"x is: \" 2\n\"x is: \" ","3```<br><br>Return value:```[3 4 5]```<br>"],"usage":["allocations_and_values:array","body_forms:*"],"tags":["iteration","loop","for","array","destructuring"],"requires":["slice","is_array?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"for","macro":true,"fn_args":"[(symbol_list array_ref) \"&\" body_forms]","description":["=:+","The for macro provides a facility for looping through arrays, ","destructuring their contents into local symbols that can be used in a block.  ","The `for` macro is a higher level construct than the `for_each` operator, as it ","allows for multiple symbols to be mapped into the contents iteratively, vs. ","for_each allowing only a single symbol to be bound to each top level element in ","the provided array.<br>The symbol_list is provided as the lambda list to a ","`destructuring_bind` if multiple symbols are provided, otherwise, if only a ","single variable is provided, the `for` macro will convert to  a for_each call, ","with the `body_forms` enclosed in a `progn` block.  <br><br>#### Examples ","<br><br>An example of a multiple bindings is below.  The values of `positions` ","are mapped (destructured) into x, y, w and h, respectively, each iteration ","through the loop mapping to the next structured element of the array:```(let\n ","((positions\n      [[[1 2] [5 3]]\n       [[6 3] [10 2]]]))\n  (for ([[x y] [w h]] ","positions)\n       (log \"x,y,w,h=\" x y w h)\n       (+ \"\" x \",\" y \"+\"  w \",\" h ",")))```<br><br>Upon evaluation the log output is as follows:```\"x,y,w,h=\" 1 2 5 ","3```<br>```\"x,y,w,h=\" 6 3 10 2```<br><br>The results returned from the ","call:```[\"1,2+5,3\"\n \"6,3+10,2\"]```<br><br>Notice that the `for` body is wrapped ","in an explicit `progn` such that the last value is accumulated and returned ","from the `for` operation.<br>An example of single bindings, which essentially ","transforms into a `for_each` call with an implicit `progn` around the body ","forms.  This form is essentially a convenience call around `for_each`.  ```(for ","(x [1 2 3])\n     (log \"x is: \" x) \n     (+ x 2))```<br><br>Both the log form ","and the final body form `(+ x 2)` are the body forms and will be evaluated in ","sequence, the final form results accumulating to be returned to the ","caller.<br>Log output from the above:```\"x is: \" 1\n\"x is: \" 2\n\"x is: \" ","3```<br><br>Return value:```[3 4 5]```<br>"],"usage":["allocations_and_values:array","body_forms:*"],"tags":["iteration","loop","for","array","destructuring"],"requires":["slice","is_array?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"for_items":{ "eval_when":{ "compile_time":true
-},"name":"for_items","macro":true,"fn_args":"[(iteration_symbol collection) \"&\" body_forms]","description":["=:+","The `for_items` macro takes a collection, checks the length property ","and then iterates through the collection assigning each value in the collection ","to the provided iterator symbol.  The behavior is similar to `for_each` where ","the final result of the body forms is accumulated and returned as an ","array.  <br>The `for_items` macro provides a `progn` wrapper around the body ","forms so it is not required to provide a block specifier in the body forms ","provided.<br> "],"usage":["allocation_and_collection:array","body:array"],"tags":["iteration","for","loop","iterator","collection"],"requires":["slice"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"word_wrap":{ "name":"word_wrap","fn_args":"(text ncols)","description":["=:+","Given a string of text and an optional column length ","returns an array of lines wrapped at or before the ","column length.  If no column length is provided, ","the default is 80."],"usage":["text:string","ncols:?number"],"tags":["text","string","wrap","format"],"requires":["split_by","length","push","join","add"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"for_items","macro":true,"fn_args":"[(iteration_symbol collection) \"&\" body_forms]","description":["=:+","The `for_items` macro takes a collection, checks the length property ","and then iterates through the collection assigning each value in the collection ","to the provided iterator symbol.  The behavior is similar to `for_each` where ","the final result of the body forms is accumulated and returned as an ","array.  <br>The `for_items` macro provides a `progn` wrapper around the body ","forms so it is not required to provide a block specifier in the body forms ","provided.<br> "],"usage":["allocation_and_collection:array","body:array"],"tags":["iteration","for","loop","iterator","collection"],"requires":["slice"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"word_wrap":{ "name":"word_wrap","fn_args":"(text ncols)","description":["=:+","Given a string of text and an optional column length ","returns an array of lines wrapped at or before the ","column length.  If no column length is provided, ","the default is 80."],"usage":["text:string","ncols:?number"],"tags":["text","string","wrap","format"],"requires":["split_by","length","push","join","add"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"progc":{ "eval_when":{ "compile_time":true
-},"name":"progc","macro":true,"fn_args":"[\"&\" forms]","description":["=:+","This macro wraps the provided forms in a ","try-catch, and returns the last value if ","no errors, like progn, or if an error ","occurs, logs to the console.  Simple ","help for debugging."],"tags":["debug","error","catch","handler","progn","eval"],"usage":["forms:*"],"requires":["slice"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"reverse_string":{ "name":"reverse_string","fn_args":"(text)","description":"Given a string, returns the characters in reverse order.","usage":["text:string"],"tags":["string","text","reverse","modify"],"requires":["join","split_by"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"last_n_chars":{ "name":"last_n_chars","fn_args":"(n text)","description":"For a given string, returns the last n characters as a string.","usage":["n:number","text:string"],"tags":["string","text","last","amount","end","tail"],"requires":["is_string?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"last_n":{ "name":"last_n","fn_args":"(n arr)","description":"For a given array, returns the last n elements as an array.","usage":["n:number","arr:array"],"tags":["array","list","last","amount","end","tail"],"requires":["is_array?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"from_last":{ "name":"from_last","fn_args":"(amount arr)","description":["=:+","Given an offset amount and an array, `from_last` returns the value at ","the offset amount from the end of the array. "],"usage":["amount:number","arr:array"],"tags":["array","list","last","amount","end","tail"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"analyze_text_line":{ "name":"analyze_text_line","fn_args":"(line)","description":["=:+","Given a line of text, analyzes the text for form/block openers, identified as ","(,{,[ and their corresponding closers, which correspod to ),},].  It then returns ","an object containing the following: <br><br>","{ delta:int   - a positive or negative integer that is represents the positive or negative depth change, <br>","  final_type: string - the final delimiter character found which can either be an opener or a closer, <br>","  final_pos: int - the position of the final delimiter, <br>","  line: string - the line of text analyzed, <br>","  indent: int - the indentation space count found in the line, <br>","  openers: array - an array of integers representing all column positions of found openers in the line.<br>","  closers: array - an array of integers representing all column positions of found closers in the line. }<br><br>","The function does not count opening and closing tokens if they appear in a string."],"tags":["text","tokens","form","block","formatting","indentation"],"usage":["line:string"],"requires":["not","push","split_by"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"calculate_indent_rule":{ "name":"calculate_indent_rule","fn_args":"(delta movement_needed)","description":["=:+","Given a delta object as returned from analyze_text_line, and an integer representing the ","the amount of tree depth to change, calculates the line indentation required for the ","given delta object, and creates an indent property in the delta object containing ","the given amount of spaces to prepend to the line.  References the *formatting_rules* ","object as needed to determine minor indentation from standard indentation, as well as ","which symbols are identified as keywords.  Returns the provided delta object with the ","indent key added."],"tags":["indentation","text","formatting"],"usage":["delta:object","movement_needed:int"],"requires":["first","not","blank?","push","split_by","contains?","meta_for_symbol","starts_with?","*formatting_rules*","length","built_ins"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"format_lisp_line":{ "name":"format_lisp_line","fn_args":"(line_number get_line)","description":["=:+","Given a line number and an accessor function (synchronous), returns a","a text string representing the computed indentation for the provided ","line number. The get_line function to be provided will be called with ","a single integer argument representing a requested line number from ","the text buffer being analyzed.  The provided get_line function should ","return a string representing the line of text from the buffer containing ","the requested line. Once the string is returned, it is mandatory to update ","the line buffer with the updated indented string, otherwise the function ","will not work properly."],"tags":["formatting","indentation","text","indent"],"usage":["line_number:integer","get_line:function"],"requires":["is_function?","trim","analyze_text_line","calculate_indent_rule","join","range"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"progc","macro":true,"fn_args":"[\"&\" forms]","description":["=:+","This macro wraps the provided forms in a ","try-catch, and returns the last value if ","no errors, like progn, or if an error ","occurs, logs to the console.  Simple ","help for debugging."],"tags":["debug","error","catch","handler","progn","eval"],"usage":["forms:*"],"requires":["slice"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"reverse_string":{ "name":"reverse_string","fn_args":"(text)","description":"Given a string, returns the characters in reverse order.","usage":["text:string"],"tags":["string","text","reverse","modify"],"requires":["join","split_by"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"last_n_chars":{ "name":"last_n_chars","fn_args":"(n text)","description":"For a given string, returns the last n characters as a string.","usage":["n:number","text:string"],"tags":["string","text","last","amount","end","tail"],"requires":["is_string?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"last_n":{ "name":"last_n","fn_args":"(n arr)","description":"For a given array, returns the last n elements as an array.","usage":["n:number","arr:array"],"tags":["array","list","last","amount","end","tail"],"requires":["is_array?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"from_last":{ "name":"from_last","fn_args":"(amount arr)","description":["=:+","Given an offset amount and an array, `from_last` returns the value at ","the offset amount from the end of the array. "],"usage":["amount:number","arr:array"],"tags":["array","list","last","amount","end","tail"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"analyze_text_line":{ "name":"analyze_text_line","fn_args":"(line)","description":["=:+","Given a line of text, analyzes the text for form/block openers, identified as ","(,{,[ and their corresponding closers, which correspod to ),},].  It then returns ","an object containing the following: <br><br>","{ delta:int   - a positive or negative integer that is represents the positive or negative depth change, <br>","  final_type: string - the final delimiter character found which can either be an opener or a closer, <br>","  final_pos: int - the position of the final delimiter, <br>","  line: string - the line of text analyzed, <br>","  indent: int - the indentation space count found in the line, <br>","  openers: array - an array of integers representing all column positions of found openers in the line.<br>","  closers: array - an array of integers representing all column positions of found closers in the line. }<br><br>","The function does not count opening and closing tokens if they appear in a string."],"tags":["text","tokens","form","block","formatting","indentation"],"usage":["line:string"],"requires":["not","push","split_by"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"calculate_indent_rule":{ "name":"calculate_indent_rule","fn_args":"(delta movement_needed)","description":["=:+","Given a delta object as returned from analyze_text_line, and an integer representing the ","the amount of tree depth to change, calculates the line indentation required for the ","given delta object, and creates an indent property in the delta object containing ","the given amount of spaces to prepend to the line.  References the *formatting_rules* ","object as needed to determine minor indentation from standard indentation, as well as ","which symbols are identified as keywords.  Returns the provided delta object with the ","indent key added."],"tags":["indentation","text","formatting"],"usage":["delta:object","movement_needed:int"],"requires":["first","not","blank?","push","split_by","contains?","meta_for_symbol","starts_with?","*formatting_rules*","length","built_ins"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"format_lisp_line":{ "name":"format_lisp_line","fn_args":"(line_number get_line)","description":["=:+","Given a line number and an accessor function (synchronous), returns a","a text string representing the computed indentation for the provided ","line number. The get_line function to be provided will be called with ","a single integer argument representing a requested line number from ","the text buffer being analyzed.  The provided get_line function should ","return a string representing the line of text from the buffer containing ","the requested line. Once the string is returned, it is mandatory to update ","the line buffer with the updated indented string, otherwise the function ","will not work properly."],"tags":["formatting","indentation","text","indent"],"usage":["line_number:integer","get_line:function"],"requires":["is_function?","trim","analyze_text_line","calculate_indent_rule","join","range"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"set_default":{ "eval_when":{ "compile_time":true
-},"name":"set_default","macro":true,"fn_args":"(path value)","description":["=:+","Given a path to a value in the *env_config* object, and a value to set, creates or sets the value ","at the provided path position.  The path can be in the following forms:<br>","path.to.default_value:symbol - A period delimited non-quoted symbol<br>","[ `path `to `default_value ] - An array with quoted values or strings, in the standard path format.<br>","\"path.to.default_value\" - A string delimited by periods<br>","\"path~to~default_value\" - A string delimited by the path delimiter ~<br>","<br>","The value returned from the macro is the new default value as set in the *env_config*.<br>"],"tags":["default","defaults","set","application","editor","repl"],"usage":["path:symbol|string|array","value:*"],"requires":["is_string?","starts_with?","contains?","split_by","as_lisp"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"get_default":{ "name":"get_default","fn_args":"(key alt_val)","description":["=:+","Given a path (array form) to a key in `*env_config*` , returns the ","value at the path.  If the value cannot be found, will return `undefined`.  If ","the second argument is provided, `alt_val`, that value will be returned if the ","provided path isn't found. "],"usage":["key:array","alt_val:*"],"tags":["settings","config","defaults","default","environment","env","application"],"requires":["is_array?","resolve_multi_path","*env_config*"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"traverse":{ "name":"traverse","fn_args":"(structure operator_function _path)","description":["=:+","Given a structure such as an object or an array, and an operator ","function argument, the function will recursively call the operator function ","with the value and the path to each value in the structure.   The operator ","function can choose to operate on the value at the path by calling `set_path` ","for the root object, or otherwise examine the value and the path.  The return ","value of the operator function is ignored.  The operator function signature is ","called with `(value path_to_value)` as a signature.<br><br> "],"usage":["structure:object","operator_function:function"],"tags":["recursion","recurse","structure","object","array","search","find"],"requires":["is_array?","map","traverse","conj","is_object?","pairs"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"truncate":{ "name":"truncate","fn_args":"(len value trailer)","description":["=:+","Given a length and a string or an array, return the value ","with a length no more than then the provided value. If ","the value is a string an optional trailer string can be ","provided that will be appeneded to the truncated string."],"usage":["len:number","value:array|string","trailer:string?"],"tags":["array","string","length","max","min"],"requires":["is_string?","add","is_array?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"all_global_functions":{ "name":"all_global_functions","fn_args":"[]","description":"Returns a Set object of all accessible functions in the environment, including all namespaces.","usage":[],"tags":["global","function","scope","environment"],"requires":["is_function?","pairs","namespaces"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"pretty_print":{ "name":"pretty_print","fn_args":"(in_struct report_callout)","description":["=:+","The pretty_print function attempts to format the presented input, provided ","either as a string or JSON. The return is a string with the formatted input."],"tags":["format","pretty","lisp","display","output"],"usage":["input:array|string"],"requires":["is_object?","as_lisp","is_string?","split_by","*formatting_rules*","all_global_functions","push","join","contains?","ends_with?","not","starts_with?","last","last_n","format_lisp_line","range"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"get_dependencies":{ "name":"get_dependencies","fn_args":"(global_symbol _deps _req_ns _externs)","description":["=:+","<br><br>Given a symbol in string form, returns the global dependencies that the ","symbol is dependent on in the runtime environment.  The return structure is in ","the form:```{\n  dependencies: []\n  namespaces: []   \n  externals: ","[]\n}```<br><br>The return structure will contain all the qualified and ","non-qualified symbols referenced by the provided target symbol, plus the ","dependencies of the required symbols.  <br>The needed namespace environments ","are also returned in the `namespaces` value.\n<br>References to external global ","Javascript values are listed in the `externals` result.  These values are ","defined as dependencies for the provided symbol, but are not defined in a Juno ","Environment.<br> "],"usage":["quoted_symbol:string"],"tags":["dependencies","tree","required","dependency"],"requires":["split_by","second","first","current_namespace","not","get_dependencies","to_array"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"pad_left":{ "name":"pad_left","fn_args":"(value pad_amount padchar)","description":["=:+","<br><br>Given a value (number or text). an amount to pad, and an optional ","character to use a padding value, returns a string that will contain pad amount ","leading characters of the padchar value.<br><br>#### Example <br>```(pad_left ","23 5 `0)\n<- \"00023\"\n\n(pad_left 4 5)\n<- \"    4\"```<br> "],"usage":["value:number|string","pad_amount:number","padchar:?string"],"tags":["pad","string","text","left"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"symbol_dependencies":{ "name":"symbol_dependencies","fn_args":"(symbol_array)","description":["=:+","Given an array of symbols in string form, returns the global dependencies that the ","symbols are dependent on in the runtime environment.  The return structure is in ","the form:```{\n  dependencies: []\n  namespaces: []\n}```<br><br>The return ","structure will contain all the qualified and non-qualified symbols referenced ","by the provided target symbol, plus the dependencies of the required ","symbols.  <br>The needed namespace environments are also returned in the ","namespaces value.<br> "],"usage":["quoted_symbol:array"],"tags":["dependencies","tree","required","dependency"],"requires":["is_array?","get_dependencies","to_array"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"keyword_mapper":{ "name":"keyword_mapper","fn_args":"(token)","requires":["contains?","*formatting_rules*"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"set_default","macro":true,"fn_args":"(path value)","description":["=:+","Given a path to a value in the *env_config* object, and a value to set, creates or sets the value ","at the provided path position.  The path can be in the following forms:<br>","path.to.default_value:symbol - A period delimited non-quoted symbol<br>","[ `path `to `default_value ] - An array with quoted values or strings, in the standard path format.<br>","\"path.to.default_value\" - A string delimited by periods<br>","\"path~to~default_value\" - A string delimited by the path delimiter ~<br>","<br>","The value returned from the macro is the new default value as set in the *env_config*.<br>"],"tags":["default","defaults","set","application","editor","repl"],"usage":["path:symbol|string|array","value:*"],"requires":["is_string?","starts_with?","contains?","split_by","as_lisp"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"get_default":{ "name":"get_default","fn_args":"(key alt_val)","description":["=:+","Given a path (array form) to a key in `*env_config*` , returns the ","value at the path.  If the value cannot be found, will return `undefined`.  If ","the second argument is provided, `alt_val`, that value will be returned if the ","provided path isn't found. "],"usage":["key:array","alt_val:*"],"tags":["settings","config","defaults","default","environment","env","application"],"requires":["is_array?","resolve_multi_path","*env_config*"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"traverse":{ "name":"traverse","fn_args":"(structure operator_function _path)","description":["=:+","Given a structure such as an object or an array, and an operator ","function argument, the function will recursively call the operator function ","with the value and the path to each value in the structure.   The operator ","function can choose to operate on the value at the path by calling `set_path` ","for the root object, or otherwise examine the value and the path.  The return ","value of the operator function is ignored.  The operator function signature is ","called with `(value path_to_value)` as a signature.<br><br> "],"usage":["structure:object","operator_function:function"],"tags":["recursion","recurse","structure","object","array","search","find"],"requires":["is_array?","map","traverse","conj","is_object?","pairs"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"truncate":{ "name":"truncate","fn_args":"(len value trailer)","description":["=:+","Given a length and a string or an array, return the value ","with a length no more than then the provided value. If ","the value is a string an optional trailer string can be ","provided that will be appeneded to the truncated string."],"usage":["len:number","value:array|string","trailer:string?"],"tags":["array","string","length","max","min"],"requires":["is_string?","add","is_array?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"all_global_functions":{ "name":"all_global_functions","fn_args":"[]","description":"Returns a Set object of all accessible functions in the environment, including all namespaces.","usage":[],"tags":["global","function","scope","environment"],"requires":["is_function?","pairs","namespaces"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"pretty_print":{ "name":"pretty_print","fn_args":"(in_struct report_callout)","description":["=:+","The pretty_print function attempts to format the presented input, provided ","either as a string or JSON. The return is a string with the formatted input."],"tags":["format","pretty","lisp","display","output"],"usage":["input:array|string"],"requires":["is_object?","as_lisp","is_string?","split_by","*formatting_rules*","all_global_functions","push","join","contains?","ends_with?","not","starts_with?","last","last_n","format_lisp_line","range"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"get_dependencies":{ "name":"get_dependencies","fn_args":"(global_symbol _deps _req_ns _externs)","description":["=:+","<br><br>Given a symbol in string form, returns the global dependencies that the ","symbol is dependent on in the runtime environment.  The return structure is in ","the form:```{\n  dependencies: []\n  namespaces: []   \n  externals: ","[]\n}```<br><br>The return structure will contain all the qualified and ","non-qualified symbols referenced by the provided target symbol, plus the ","dependencies of the required symbols.  <br>The needed namespace environments ","are also returned in the `namespaces` value.\n<br>References to external global ","Javascript values are listed in the `externals` result.  These values are ","defined as dependencies for the provided symbol, but are not defined in a Juno ","Environment.<br> "],"usage":["quoted_symbol:string"],"tags":["dependencies","tree","required","dependency"],"requires":["split_by","second","first","current_namespace","not","get_dependencies","to_array"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"pad_left":{ "name":"pad_left","fn_args":"(value pad_amount padchar)","description":["=:+","<br><br>Given a value (number or text). an amount to pad, and an optional ","character to use a padding value, returns a string that will contain pad amount ","leading characters of the padchar value.<br><br>#### Example <br>```(pad_left ","23 5 `0)\n<- \"00023\"\n\n(pad_left 4 5)\n<- \"    4\"```<br> "],"usage":["value:number|string","pad_amount:number","padchar:?string"],"tags":["pad","string","text","left"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"symbol_dependencies":{ "name":"symbol_dependencies","fn_args":"(symbol_array)","description":["=:+","Given an array of symbols in string form, returns the global dependencies that the ","symbols are dependent on in the runtime environment.  The return structure is in ","the form:```{\n  dependencies: []\n  namespaces: []\n}```<br><br>The return ","structure will contain all the qualified and non-qualified symbols referenced ","by the provided target symbol, plus the dependencies of the required ","symbols.  <br>The needed namespace environments are also returned in the ","namespaces value.<br> "],"usage":["quoted_symbol:array"],"tags":["dependencies","tree","required","dependency"],"requires":["is_array?","get_dependencies","to_array"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"keyword_mapper":{ "name":"keyword_mapper","fn_args":"(token)","requires":["contains?","*formatting_rules*"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"with_each_entry":{ "eval_when":{ "compile_time":true
-},"name":"with_each_entry","macro":true,"fn_args":"[(binding_sym) iteration_form \"&\" body_forms]","description":["=:+","Given a binding symbol, a form or symbol that resolves to an iteration ","object with a `next` function, and the body forms to be used with the ","binding_symbol, will call the binding forms for every value in the iterator, ","with the binding symbol being set to the next value each time through the ","loop.<br><br>#### Example <br>```(with_each_value (entries)\n   (-> ","request_headers `entries) ;; will return an iterator\n   (if (== entries.0 ","\"content-type\")\n       (= content_type entries.1)))```<br><br><br> "],"usage":["binding_sym:array","iteration_form:*","body_forms:*"],"tags":["iteration","loop","iterator","entries","flow","values"],"requires":["slice"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"operating_system":{ "name":"operating_system","fn_args":"[]","description":"Returns a text string of the operating system name: darwin, linux, windows","usage":[],"tags":["os","environment","build","platform","env"],"requires":["resolve_path"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"platform_architecture":{ "name":"platform_architecture","fn_args":"[]","description":"Returns a text string of the underlying hardware architecture, for example aarch64 or X86_64.","usage":[],"tags":["os","platform","architecture","hardware","type","build"],"requires":["resolve_path"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"platform":{ "name":"platform","fn_args":"[]","description":"Returns an object with keys for 'target', 'arch', 'os' and 'vendor'.  ","usage":[],"tags":["os","platform","architecture","hardware","type","build"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"exit":{ "name":"exit","fn_args":"(return_code)","description":"Exits the system and returns the provided integer return code","usage":["return_code:?number"],"tags":["exit","quit","return","leave"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
-},"permissions":{ "name":"permissions","fn_args":"[]","requires":["to_object"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno"],"source_name":"core.lisp"
+},"name":"with_each_entry","macro":true,"fn_args":"[(binding_sym) iteration_form \"&\" body_forms]","description":["=:+","Given a binding symbol, a form or symbol that resolves to an iteration ","object with a `next` function, and the body forms to be used with the ","binding_symbol, will call the binding forms for every value in the iterator, ","with the binding symbol being set to the next value each time through the ","loop.<br><br>#### Example <br>```(with_each_value (entries)\n   (-> ","request_headers `entries) ;; will return an iterator\n   (if (== entries.0 ","\"content-type\")\n       (= content_type entries.1)))```<br><br><br> "],"usage":["binding_sym:array","iteration_form:*","body_forms:*"],"tags":["iteration","loop","iterator","entries","flow","values"],"requires":["slice"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"operating_system":{ "name":"operating_system","fn_args":"[]","description":"Returns a text string of the operating system name: darwin, linux, windows","usage":[],"tags":["os","environment","build","platform","env"],"requires":["resolve_path"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"platform_architecture":{ "name":"platform_architecture","fn_args":"[]","description":"Returns a text string of the underlying hardware architecture, for example aarch64 or X86_64.","usage":[],"tags":["os","platform","architecture","hardware","type","build"],"requires":["resolve_path"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"platform":{ "name":"platform","fn_args":"[]","description":"Returns an object with keys for 'target', 'arch', 'os' and 'vendor'.  ","usage":[],"tags":["os","platform","architecture","hardware","type","build"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"exit":{ "name":"exit","fn_args":"(return_code)","description":"Exits the system and returns the provided integer return code","usage":["return_code:?number"],"tags":["exit","quit","return","leave"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"permissions":{ "name":"permissions","fn_args":"[]","requires":["to_object"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 },"compiler":{ "requires":["take","is_array?","is_string?","is_function?","get_object_path","is_object?","blank?","delete_prop","scan_str","keys","is_element?","chop","as_lisp","resolve_path","push","split_by","safe_access","expand_dot_accessor","pairs","pop","assert","rest","setf_ctx","prepend","ends_with?","range","join","path_to_js_syntax","get_outside_global","to_array","bind_function","each","read_lisp","warn","make_set","truncate"],"externals":["clone","LispSyntaxError","console","Object","Set","Function","AsyncFunction","Array","Boolean","SyntaxError","TypeError","RegExp","Error","JSON","ReferenceError","EvalError","subtype","String","parseInt","isNaN","globalThis","Math","check_true"],"source_name":"compiler.lisp"
 },"read_text_file":{ "description":"Given an accessible filename including path with read permissions returns the file contents as a string.","usage":["filename:string","options:object"],"tags":["file","read","text","input","io"],"initializer":["=:bind","=:Deno.readTextFile","=:Deno"],"requires":["Deno","EvalError","JSON","Uint8Array"],"source_name":"pkg/base-io.lisp"
 },"readline_mod":{ "is_import":true,"initializer":["=:import",["=:readline_mod"],"https://deno.land/x/readline/mod.ts"],"source_name":"./src/repl.lisp"
@@ -3606,110 +3607,109 @@ export async function init_dlisp(Environment)  {
 },"compile_file":{ "name":"compile_file","fn_args":"(lisp_file export_function_name options)","requires":["path","read_text_file","read_lisp","compile_buffer","add"],"externals":["Date","RegExp","SyntaxError","console","JSON"],"source_name":"src/build-tools.lisp"
 },"rebuild_env":{ "name":"rebuild_env","fn_args":"(opts)","description":["=:+","Builds the lisp environment from the Lisp sources and produces the Javascript output files ","necessary for initializing the environment. Options: <br>","source_dir:string:The directory of the Lisp sources, the default is './src'.<br>","output_dir:string:The directory to where the output Javascript files are placed.  The default is './js'.<br>","include_source:boolean:If true, the compiler will include comments of the lisp source (not fully supported yet).<br>","version_tag:string:A string based label signifying the text to use as the version.  If not specified, the version ","tag uses the format year.month.day.hour.minute.<br>"],"usage":["options:object?"],"tags":["compile","export","build","environment","javascript"],"requires":["date_components","not","blank?","join","formatted_date","path","*namespace*","push","success","compile_file"],"externals":["Date","RegExp","SyntaxError","console","JSON"],"source_name":"src/build-tools.lisp"
 },"if_undefined":{ "eval_when":{ "compile_time":true
-},"name":"if_undefined","macro":true,"fn_args":"(value replacer)","description":"If the first value is undefined, return the second value","usage":["value:*","replacer:*"],"requires":[],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"str":{ "name":"str","fn_args":"[\"&\" \"args\"]","description":"Joins arguments into a single string separated by spaces and returns a single string.","usage":["arg0:string","argn:string"],"tags":["string","join","text"],"requires":["slice","join"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"COPY_DATA":{ "requires":[],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"name":"if_undefined","macro":true,"fn_args":"(value replacer)","description":"If the first value is undefined, return the second value","usage":["value:*","replacer:*"],"requires":[],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"str":{ "name":"str","fn_args":"[\"&\" \"args\"]","description":"Joins arguments into a single string separated by spaces and returns a single string.","usage":["arg0:string","argn:string"],"tags":["string","join","text"],"requires":["slice","join"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"COPY_DATA":{ "requires":[],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
 },"on_nil":{ "eval_when":{ "compile_time":true
-},"name":"on_nil","macro":true,"fn_args":"(nil_form value)","usage":["nil_form:form","value:*"],"description":"If the value argument is not nil or not undefined, return the value, otherwise evaluate the provided nil_form and return the results of the evaluation of the nil_form.","tags":["condition","nil","eval","undefined"],"requires":[],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"name":"on_nil","macro":true,"fn_args":"(nil_form value)","usage":["nil_form:form","value:*"],"description":"If the value argument is not nil or not undefined, return the value, otherwise evaluate the provided nil_form and return the results of the evaluation of the nil_form.","tags":["condition","nil","eval","undefined"],"requires":[],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
 },"on_empty":{ "eval_when":{ "compile_time":true
-},"name":"on_empty","macro":true,"fn_args":"(on_empty_form value)","usage":["empty_form:form","value:*"],"description":"If the value argument is not an empty array, an empty object, nil or undefined, return the value, otherwise evaluate the provided empty_form and return the results of the evaluation of the empty_form.","tags":["condition","empty","list","array","object","eval","undefined"],"requires":[],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"name":"on_empty","macro":true,"fn_args":"(on_empty_form value)","usage":["empty_form:form","value:*"],"description":"If the value argument is not an empty array, an empty object, nil or undefined, return the value, otherwise evaluate the provided empty_form and return the results of the evaluation of the empty_form.","tags":["condition","empty","list","array","object","eval","undefined"],"requires":[],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
 },"sum":{ "eval_when":{ "compile_time":true
-},"name":"sum","macro":true,"fn_args":"(vals)","description":["=:+","Given an array of values, add up the contents of the array in an applied add operation.  ","If these are numbers, they will be added arithmetically.  ","If given strings, they will be joined together (appended). ","If given a first value of an array, all subsequent values will be added into the array. ","If given an array of objects, all the keys/values will be merged and a single object retuned."],"usage":["vals:array"],"tags":["add","join","summation","numbers"],"requires":[],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"options_and_args":{ "name":"options_and_args","fn_args":"(arg_array)","usage":["arg_array:array"],"tags":["arguments","options"],"description":["=:+","Given an array of values, returns an array containing two values.  ","If the value at position 0 in the provided array is an non nil object, ","it will be in the position 0 of the returned value and the remaining ","values will be in position 1 of the returned array.","If the value at position 0 in the provided array is not an object type,","the value in position 0 of the returned array will be nil and ","all values will be placed in the returned array in position 1."],"requires":["is_array?","type","slice","null"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"enum":{ "name":"enum","fn_args":"(value_list)","usage":["value_list:array"],"description":"Given a list of string values, returns an object with each value in the list corresponding to a numerical value.","tags":["enumeration","values"],"requires":["assert","is_array?"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"gen_id":{ "name":"gen_id","fn_args":"(prefix)","usage":["prefix:string"],"tags":["web","html","identification"],"description":"Given a prefix returns a element safe unique id","requires":[],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"macros":{ "name":"macros","fn_args":"[]","usage":[],"description":"Returns the list of currently defined macros.  This function takes no arguments.","tags":["environment","macro","defined"],"requires":["push","pairs"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"name":"sum","macro":true,"fn_args":"(vals)","description":["=:+","Given an array of values, add up the contents of the array in an applied add operation.  ","If these are numbers, they will be added arithmetically.  ","If given strings, they will be joined together (appended). ","If given a first value of an array, all subsequent values will be added into the array. ","If given an array of objects, all the keys/values will be merged and a single object retuned."],"usage":["vals:array"],"tags":["add","join","summation","numbers"],"requires":[],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"options_and_args":{ "name":"options_and_args","fn_args":"(arg_array)","usage":["arg_array:array"],"tags":["arguments","options"],"description":["=:+","Given an array of values, returns an array containing two values.  ","If the value at position 0 in the provided array is an non nil object, ","it will be in the position 0 of the returned value and the remaining ","values will be in position 1 of the returned array.","If the value at position 0 in the provided array is not an object type,","the value in position 0 of the returned array will be nil and ","all values will be placed in the returned array in position 1."],"requires":["is_array?","type","slice","null"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"enum":{ "name":"enum","fn_args":"(value_list)","usage":["value_list:array"],"description":"Given a list of string values, returns an object with each value in the list corresponding to a numerical value.","tags":["enumeration","values"],"requires":["assert","is_array?"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"gen_id":{ "name":"gen_id","fn_args":"(prefix)","usage":["prefix:string"],"tags":["web","html","identification"],"description":"Given a prefix returns a element safe unique id","requires":[],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"macros":{ "name":"macros","fn_args":"[]","usage":[],"description":"Returns the list of currently defined macros.  This function takes no arguments.","tags":["environment","macro","defined"],"requires":["push","pairs"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
 },"pluck":{ "eval_when":{ "compile_time":true
-},"name":"pluck","macro":true,"fn_args":"(fields data)","description":"Similar to the 'each' commmand, given the set of desired fields as a first argument, and the data as the second argument, return only the specified fields from the supplied list of data","usage":["fields:string|array","data:array"],"tags":["list","each","filter","only","object"],"requires":[],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"objects_from_list":{ "name":"objects_from_list","fn_args":"(key_path objects)","usage":["key_path:string|array","objects:array"],"description":"Given a path (string or array), and an array of object values, the function returns a new object with keys named via the value at the given path, and the object as the value.","tags":["list","object","conversion","transform"],"requires":["is_array?","resolve_path"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"pairs_from_list":{ "name":"pairs_from_list","fn_args":"(value_list size)","usage":["value:list","size?:number"],"description":"Given a list, segment the passed list into sub list (default in pairs) or as otherwise specified in the optional size","tags":["list","pairs","collect"],"requires":["push","length"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"reorder_keys":{ "name":"reorder_keys","fn_args":"(key_list obj)","description":"Given a list of keys, returns a new object that has the keys in the order of the provided key list.","usage":["key_list:array","obj:object"],"tags":["list","object","key","order"],"requires":["keys","nth","to_object","pairs_from_list","interlace"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"only":{ "name":"only","fn_args":"(fields data)","usage":["fields:array","data:array|object"],"description":"Given an array of objects, or a single object, return objects only containing the specified keys and the corresponging value.","tags":["pluck","filter","select","object","each","list","objects","keys"],"requires":["is_array?","map","reorder_keys","is_object?"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"sleep":{ "name":"sleep","fn_args":"(seconds)","usage":["seconds:number"],"tags":["time","timing","pause","control"],"description":"Pauses execution for the number of seconds provided to the function.","requires":[],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"from_universal_time":{ "name":"from_universal_time","fn_args":"(seconds)","description":"Given a universal_time_value (i.e. seconds from Jan 1 1900) returns a Date object.","usage":["seconds:number"],"tags":["date","time","universal","1900"],"requires":[],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"name":"pluck","macro":true,"fn_args":"(fields data)","description":"Similar to the 'each' commmand, given the set of desired fields as a first argument, and the data as the second argument, return only the specified fields from the supplied list of data","usage":["fields:string|array","data:array"],"tags":["list","each","filter","only","object"],"requires":[],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"objects_from_list":{ "name":"objects_from_list","fn_args":"(key_path objects)","usage":["key_path:string|array","objects:array"],"description":"Given a path (string or array), and an array of object values, the function returns a new object with keys named via the value at the given path, and the object as the value.","tags":["list","object","conversion","transform"],"requires":["is_array?","resolve_path"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"pairs_from_list":{ "name":"pairs_from_list","fn_args":"(value_list size)","usage":["value:list","size?:number"],"description":"Given a list, segment the passed list into sub list (default in pairs) or as otherwise specified in the optional size","tags":["list","pairs","collect"],"requires":["push","length"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"reorder_keys":{ "name":"reorder_keys","fn_args":"(key_list obj)","description":"Given a list of keys, returns a new object that has the keys in the order of the provided key list.","usage":["key_list:array","obj:object"],"tags":["list","object","key","order"],"requires":["keys","nth","to_object","pairs_from_list","interlace"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"only":{ "name":"only","fn_args":"(fields data)","usage":["fields:array","data:array|object"],"description":"Given an array of objects, or a single object, return objects only containing the specified keys and the corresponging value.","tags":["pluck","filter","select","object","each","list","objects","keys"],"requires":["is_array?","map","reorder_keys","is_object?"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"from_universal_time":{ "name":"from_universal_time","fn_args":"(seconds)","description":"Given a universal_time_value (i.e. seconds from Jan 1 1900) returns a Date object.","usage":["seconds:number"],"tags":["date","time","universal","1900"],"requires":[],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
 },"+=":{ "eval_when":{ "compile_time":true
-},"name":"+=","macro":true,"fn_args":"(symbol \"&\" args)","usage":["symbol:*","arg0:*","argn?:*"],"description":"Appends in place the arguments to the symbol, adding the values of the arguments to the end.","tags":["append","mutate","text","add","number"],"requires":["slice"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"minmax_index":{ "name":"minmax_index","fn_args":"(container)","usage":["container:array"],"description":"Given an array of numbers returns an array containing the indexes of the smallest and the largest values found in the provided array.","tags":["list","number","range","value","index"],"requires":["MAX_SAFE_INTEGER","is_array?","length","is_number?"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"invert_pairs":{ "name":"invert_pairs","fn_args":"(value)","description":"Given an array value containing pairs of value, as in [[1 2] [3 4]], invert the positions to be: [[2 1] [4 3]]","usage":["value:array"],"tags":["array","list","invert","flip","reverse","swap"],"requires":["is_array?","map"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"noop":{ "name":"noop","fn_args":"(val)","usage":["val:*"],"description":"No operation, just returns the value.  To be used as a placeholder operation, such as in apply_operator_list.","tags":["apply","value"],"requires":[],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"apply_list_to_list":{ "name":"apply_list_to_list","fn_args":"(operator list1 list2)","usage":["operator:function","modifier_list:array","target_list:array"],"description":["=:+","Given an operator (function), a list of values to be applied (modifier list), and a list of source values (the target), ","returns a new list (array) that contains the result of calling the operator function with ","each value from the target list with the values from the modifier list. The operator function is called ","with <code>(operator source_value modifer_value)</code>."],"tags":["map","list","array","apply","range","index"],"requires":["map","length"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"apply_operator_list":{ "name":"apply_operator_list","fn_args":"(modifier_list target_list)","usage":["operator_list:array","target_list:array"],"description":["=:+","<p>Note: Deprecated.Given a list containing quoted functions (modifier list), and a list of source values (the target), ","returns a new list (array) that contains the result of calling the relative index of the modifier functions with ","the value from the relative index from the target list. The modifiers are applied in the following form: ","<code>(modifier_function target_value)</code>.</p>","<p>If the modifer_list is shorter than the target list, the modifer_list index cycles back to 0 (modulus).</p>"],"tags":["map","list","array","apply","range","index"],"example":["=:quote",["=:apply_operator_list",["first","+"],["John","Smith"]]],"deprecated":true,"requires":["map","length"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"range_overlap?":{ "name":"range_overlap?","fn_args":"(range_a range_b)","description":"Given two ranges in the form of [low_val high_val], returns true if they overlap, otherwise false.  The results are undefined if the range values are not ordered from low to high.","usage":["range_a:array","range_b:array"],"tags":["range","iteration","loop"],"requires":[],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"remaining_in_range":{ "name":"remaining_in_range","fn_args":"(value check_range)","usage":["value:number","check_range:array"],"description":"Given a value, and an array containing a start and end value, returns the remaining amount of positions in the given range.  If the value isn't in range, the function will return nil.","tags":["range","iteration","loop"],"requires":[],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"form_id":{ "name":"form_id","fn_args":"(name)","usage":["name:string"],"description":"Given a standard string returns a compliant HTML ID suitable for forms.","requires":["replace","join","split","lowercase"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"from_key":{ "name":"from_key","fn_args":"(value sep? ignore?)","usage":["value:string","separator?:string"],"description":["=:+","Takes a key formatted value such as \"last_name\" and returns a \"prettier\" string that contains spaces ","in place of the default separator, '_' and each word's first letter is capitalized. ","An optional separator argument can be provided to use an alternative separator token.<br>E.G. last_name becomes \"Last Name\"."],"tags":["string","split","key","hash","record","form","ui"],"requires":["is_string?","dtext","join","split_by"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"from_key1":{ "name":"from_key1","fn_args":"(v)","description":"Useful for calling with map, since this function prevents the other values being passed as arguments by map from being passed to the from_key function.","tags":["map","function","key","pretty","ui","to_key"],"usage":["value:string"],"requires":["from_key"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"to_key":{ "name":"to_key","fn_args":"(value sep? ignore?)","usage":["value:string","separator?:string"],"description":["=:+","Takes a value such as \"Last Name\" and returns a string that has the spaces removed and the characters replaced ","by the default separator, '_'.  Each word is converted to lowercase characters as well.","An optional separator argument can be provided to use an alternative separator token.<br>E.G. \"Last Name\" becomes \"last_name\"."],"tags":["string","split","key","hash","record","form","ui"],"requires":["is_string?","lowercase","split_by","join"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"is_object_or_function?":{ "requires":[],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"extend":{ "name":"extend","fn_args":"(target_object source_object)","description":"Given a target object and a source object, add the keys and values of the source object to the target object.","usage":["target_object:object","source_object:object"],"tags":["object","extension","keys","add","values"],"requires":["is_object?","pairs"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"no_empties":{ "name":"no_empties","fn_args":"[\"items\"]","description":"Takes the passed list or set and returns a new list that doesn't contain any undefined, nil or empty values","usage":["items:list|set"],"tags":["filter","nil","undefined","remove","except_nil"],"requires":["sub_type","not","push"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"first_with":{ "name":"first_with","fn_args":"(prop_list data_value)","usage":["property_list:array","data:object|array"],"description":"Given a list of properties or indexes and a data value, sequentially looks through the property list and returns the first non-null result.","tags":["list","array","index","properties","search","find"],"requires":["not"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"fixed":{ "name":"fixed","fn_args":"(v p)","description":"Given a floating point value and an optional precision value, return a string corresponding to the desired precision.  If precision is left out, defaults to 3.","usage":["value:number","precision?:number"],"tags":["format","conversion"],"requires":[],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"hide":{ "name":"hide","fn_args":"(value)","requires":[],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"array_to_object":{ "name":"array_to_object","fn_args":"(input_array)","usage":["list_to_process:array"],"tags":["list","array","object","convert"],"description":"Takes the provided list and returns an object with the even indexed items as keys and odd indexed items as values.","requires":["length","take","type","add"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"split_text_in_array":{ "name":"split_text_in_array","fn_args":"(split_element input_array)","usage":["split_element:text","input_array:array"],"tags":["text","string","split","separate","parse"],"description":"Takes the provided array, and split_element, and returns an array of arrays which contain the split text strings of the input list.","requires":["is_string?","push","split","null"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"words_and_quotes":{ "name":"words_and_quotes","fn_args":"(text)","description":"Given a text string, separates the words and quoted words, returning quoted words as their isolated string.","tags":["text","string","split","separate","parse"],"usage":["text:string"],"requires":["not","map","join","no_empties","split_by","trim"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"split_words":{ "name":"split_words","fn_args":"(text_string)","description":"Like words and quotes, splits the text string into words and quoted words, but the unquoted words are split by spaces.  Both the unquoted words and the quoted words inhabit their own array.","usage":["text:string"],"tags":["text","string","split","separate","words","parse"],"requires":["no_empties","map","split_by","trim","words_and_quotes"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"from_style_text":{ "name":"from_style_text","fn_args":"(text)","usage":["text:string"],"description":"Given a string or text in the format of an Element style attribute: \"css_attrib:value; css_attrib2:value\", split into pairs containing attribute name and value.","tags":["text","css","style","pairs","string","array","list","ui","html"],"requires":["no_empties","map","trim","split_by","replace","flatten","words_and_quotes"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"sha1":{ "name":"sha1","fn_args":"(text)","description":"Given a text string as input, returns a SHA-1 hash digest string of the given input.","usage":["text:string"],"tags":["digest","crypto","hash","comparison"],"requires":["is_string?","push","range","join"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"remove_if":{ "name":"remove_if","fn_args":"(f container)","usage":["f:function","container:array"],"tags":["collections","reduce","filter","where","list","array","reduce"],"description":"Given a function with a single argument, if that function returns true, the value will excluded from the returned array.  Opposite of filter.","requires":["not","push"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"filter":{ "name":"filter","fn_args":"(f container)","usage":["f:function","container:array"],"tags":["collections","reduce","reject","where","list","array","reduce"],"description":"Given a function with a single argument, if that function returns true, the value will included in the returned array, otherwise it will not.  Opposite of reject.","requires":["push"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"add_days":{ "name":"add_days","fn_args":"(date_obj num_days)","usage":["date_obj:Date","num_days:number"],"description":"Given a date object and the number of days (either positive or negative) modifies the given date object to the appropriate date value, and returns the date object.","tags":["date","time","duration","days","add"],"requires":["add"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"day_of_week":{ "name":"day_of_week","fn_args":"(dval)","description":"Given a date object, returns the day of the week for that date object","usage":["date:Date"],"tags":["time","week","date","day"],"requires":[],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"add_hours":{ "name":"add_hours","fn_args":"(date_obj hours)","usage":["date_obj:Date","hours:number"],"description":"Given a date object and the number of hours (either positive or negative) modifies the given date object to the appropriate date value, and returns the date object.","tags":["date","time","duration","hours","add"],"requires":[],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"clear_time":{ "name":"clear_time","fn_args":"(date_obj)","usage":["date_obj:Date"],"description":"Given a date object, modifies the date object by clearing the time value and leaving the date value.  Returns the date object.","tags":["date","time","duration","midnight","add"],"requires":[],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"yesterday":{ "name":"yesterday","fn_args":"[]","description":"This function returns an array with two Date values.  The first, in index 0, is the start of the prior day (yesterday midnight), and the second is 24 hours later, i.e. midnight from last night.","usage":[],"tags":["time","date","range","prior","hours","24"],"requires":["clear_time","add_days","add_hours"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"next_sunday":{ "name":"next_sunday","fn_args":"(dval)","usage":["date:Date?"],"description":"Called with no arguments returns a date representing the upcoming sunday at midnight, 12:00 AM.  If given a date, returns the next sunday from the given date.","tags":["time","date","range","next","week","24"],"requires":["clear_time","add_days","day_of_week"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"last_sunday":{ "name":"last_sunday","fn_args":"(dval)","usage":["date:Date?"],"description":"Called with no arguments returns a date representing the prior sunday at midnight, 12:00 AM.  If given a date, returns the prior sunday from the given date.","tags":["time","date","range","prior","week","24"],"requires":["clear_time","add_days","day_of_week"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"day_before_yesterday":{ "name":"day_before_yesterday","fn_args":"[]","description":"This function returns an array with two Date values.  The first, in index 0, is the start of the day before yesterday (midnight), and the second is 24 later.","usage":[],"tags":["time","date","range","prior","hours","24"],"requires":["clear_time","add_days"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"last_week":{ "name":"last_week","fn_args":"[]","description":"This function returns an array with two Date values.  The first, in index 0, is the start of the prior week at midnight, and the second is 7 days later, at midnight.","usage":[],"tags":["time","date","range","prior","hours","24"],"requires":["clear_time","add_days","next_sunday","last_sunday"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"midnight-to-midnight":{ "name":"midnight-to-midnight","fn_args":"(dval)","description":"This function returns an array with two Date values.  The first, in index 0, is the start of the prior day (yesterday midnight), and the second is 24 hours later, i.e. midnight from last night.","usage":["val:Date"],"tags":["time","date","range","prior","hours","24"],"requires":["clear_time","add_hours"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"date_to_string":{ "name":"date_to_string","fn_args":"(date_val str_layout)","description":["=:+","Given a date value and a formatted template string, return a string representation of the date based on the formatted template string.","<br>","E.g. (date_to_string (new Date) \"yyyy-MM-dd HH:mm:ss\")<br>","<table>","<tr><td>","yyyy","</td><td>","Four position formatted year, e.g. 2021","</td></tr>","<tr><td>","yy","</td><td>","Two position formatted year, e.g. 21","</td></tr>","<tr><td>","dd","</td><td>","Two position formatted day of month, e.g. 03","</td></tr>","<tr><td>","d","</td><td>","1 position numeric day of month, e.g. 3","</td></tr>","<tr><td>","MM","</td><td>","Two position formatted month number, e.g. 06","</td></tr>","<tr><td>","M","</td><td>","One or two position formatted month number, e.g. 6 or 10","</td></tr>","<tr><td>","HH","</td><td>","Two position formatted 24 hour number, e.g. 08","</td></tr>","<tr><td>","H","</td><td>","One position formatted 24 hour, e.g 8","</td></tr>","<tr><td>","hh","</td><td>","Two position formatted 12 hour clock, e.g. 08","</td></tr>","<tr><td>","h","</td><td>","One position formatted 12 hour clock, e.g 8","</td></tr>","<tr><td>","mm","</td><td>","Minutes with 2 position width, eg. 05","</td></tr>","<tr><td>","m","</td><td>","Minutes with 1 or 2 positions, e.g 5 or 15.","</td></tr>","<tr><td>","ss","</td><td>","Seconds with 2 positions, e.g 03 or 25.","</td></tr>","<tr><td>","s","</td><td>","Seconds with 1 or 2 positions, e.g 3 or 25.","</td></tr>","<tr><td>","sss","</td><td>","Milliseconds with 3 digits, such as 092 or 562.","</td></tr>","<tr><td>","TZ","</td><td>","Include timezone abbreviated, e.g. GMT+1.","</td></tr>","<tr><td>","D","</td><td>","Weekday abbreviated to 1 position, such as T for Tuesday or Thursday, or W for Wednesday (in certain locales)","</td></tr>","<tr><td>","DD","</td><td>","Weekday shortened to 3 positions, such as Fri for Friday.","</td></tr>","<tr><td>","DDD","</td><td>","Full name of weekday, such as Saturday.","</td></tr>","</table>"],"usage":["date_val:Date","formatted_string:string"],"tags":["time","date","string","text","format","formatted"],"requires":["is_string?","split_by","push","date_components","join"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"is_even?":{ "name":"is_even?","fn_args":"(x)","usage":["value:number"],"description":"If the argument passed is an even number, return true, else returns false.","tags":["list","filter","modulus","odd","number"],"requires":[],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"is_odd?":{ "name":"is_odd?","fn_args":"(x)","usage":["value:number"],"description":"If the argument passed is an odd number, return true, else returns false.","tags":["list","filter","modulus","even","number"],"requires":[],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"set_path_value":{ "name":"set_path_value","fn_args":"(root path value)","description":"Given an object (the root), a path array, and a value to set, sets the value at the path point in the root object.","usage":["root:object","path:list","value:*"],"tags":["object","path","resolve","assign"],"requires":["is_array?","last","resolve_path","chop"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"has_items?":{ "name":"has_items?","fn_args":"(value)","usage":["value:list"],"description":"Returns true if the list provided has a length greater than one, or false if the list is 0 or nil","tags":["list","values","contains"],"requires":["not","length"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"match_all_js":{ "requires":[],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"match_all":{ "name":"match_all","fn_args":"(regex_str search_string)","usage":["regex_str:string","search_string:string"],"description":"Given a regex expression as a string, and the string to search through, returns all matched items via matchAll.","tags":["match","regex","string","find","scan"],"requires":["match_all_js"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"chop_front":{ "name":"chop_front","fn_args":"(container amount)","usage":["container:array|string","amount:integer"],"mutates":false,"tags":["text","string","list","reduce"],"description":"Given a string or array, returns a new container with the first value removed from the provided container.  An optional amount can be provided to remove more than one value from the container.","requires":["is_string?","is_array?"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"compile_lisp":{ "name":"compile_lisp","fn_args":"(text)","usage":["text:string"],"description":"Given an input string of lisp text, returns a JSON structure ready for evaluation.","requires":["reader"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"name":"+=","macro":true,"fn_args":"(symbol \"&\" args)","usage":["symbol:*","arg0:*","argn?:*"],"description":"Appends in place the arguments to the symbol, adding the values of the arguments to the end.","tags":["append","mutate","text","add","number"],"requires":["slice"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"minmax_index":{ "name":"minmax_index","fn_args":"(container)","usage":["container:array"],"description":"Given an array of numbers returns an array containing the indexes of the smallest and the largest values found in the provided array.","tags":["list","number","range","value","index"],"requires":["MAX_SAFE_INTEGER","is_array?","length","is_number?"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"invert_pairs":{ "name":"invert_pairs","fn_args":"(value)","description":"Given an array value containing pairs of value, as in [[1 2] [3 4]], invert the positions to be: [[2 1] [4 3]]","usage":["value:array"],"tags":["array","list","invert","flip","reverse","swap"],"requires":["is_array?","map"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"noop":{ "name":"noop","fn_args":"(val)","usage":["val:*"],"description":"No operation, just returns the value.  To be used as a placeholder operation, such as in apply_operator_list.","tags":["apply","value"],"requires":[],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"apply_list_to_list":{ "name":"apply_list_to_list","fn_args":"(operator list1 list2)","usage":["operator:function","modifier_list:array","target_list:array"],"description":["=:+","Given an operator (function), a list of values to be applied (modifier list), and a list of source values (the target), ","returns a new list (array) that contains the result of calling the operator function with ","each value from the target list with the values from the modifier list. The operator function is called ","with <code>(operator source_value modifer_value)</code>."],"tags":["map","list","array","apply","range","index"],"requires":["map","length"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"apply_operator_list":{ "name":"apply_operator_list","fn_args":"(modifier_list target_list)","usage":["operator_list:array","target_list:array"],"description":["=:+","<p>Note: Deprecated.Given a list containing quoted functions (modifier list), and a list of source values (the target), ","returns a new list (array) that contains the result of calling the relative index of the modifier functions with ","the value from the relative index from the target list. The modifiers are applied in the following form: ","<code>(modifier_function target_value)</code>.</p>","<p>If the modifer_list is shorter than the target list, the modifer_list index cycles back to 0 (modulus).</p>"],"tags":["map","list","array","apply","range","index"],"example":["=:quote",["=:apply_operator_list",["first","+"],["John","Smith"]]],"deprecated":true,"requires":["map","length"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"range_overlap?":{ "name":"range_overlap?","fn_args":"(range_a range_b)","description":"Given two ranges in the form of [low_val high_val], returns true if they overlap, otherwise false.  The results are undefined if the range values are not ordered from low to high.","usage":["range_a:array","range_b:array"],"tags":["range","iteration","loop"],"requires":[],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"remaining_in_range":{ "name":"remaining_in_range","fn_args":"(value check_range)","usage":["value:number","check_range:array"],"description":"Given a value, and an array containing a start and end value, returns the remaining amount of positions in the given range.  If the value isn't in range, the function will return nil.","tags":["range","iteration","loop"],"requires":[],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"form_id":{ "name":"form_id","fn_args":"(name)","usage":["name:string"],"description":"Given a standard string returns a compliant HTML ID suitable for forms.","requires":["replace","join","split","lowercase"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"from_key":{ "name":"from_key","fn_args":"(value sep? ignore?)","usage":["value:string","separator?:string"],"description":["=:+","Takes a key formatted value such as \"last_name\" and returns a \"prettier\" string that contains spaces ","in place of the default separator, '_' and each word's first letter is capitalized. ","An optional separator argument can be provided to use an alternative separator token.<br>E.G. last_name becomes \"Last Name\"."],"tags":["string","split","key","hash","record","form","ui"],"requires":["is_string?","dtext","join","split_by"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"from_key1":{ "name":"from_key1","fn_args":"(v)","description":"Useful for calling with map, since this function prevents the other values being passed as arguments by map from being passed to the from_key function.","tags":["map","function","key","pretty","ui","to_key"],"usage":["value:string"],"requires":["from_key"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"to_key":{ "name":"to_key","fn_args":"(value sep? ignore?)","usage":["value:string","separator?:string"],"description":["=:+","Takes a value such as \"Last Name\" and returns a string that has the spaces removed and the characters replaced ","by the default separator, '_'.  Each word is converted to lowercase characters as well.","An optional separator argument can be provided to use an alternative separator token.<br>E.G. \"Last Name\" becomes \"last_name\"."],"tags":["string","split","key","hash","record","form","ui"],"requires":["is_string?","lowercase","split_by","join"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"is_object_or_function?":{ "requires":[],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"extend":{ "name":"extend","fn_args":"(target_object source_object)","description":"Given a target object and a source object, add the keys and values of the source object to the target object.","usage":["target_object:object","source_object:object"],"tags":["object","extension","keys","add","values"],"requires":["is_object?","pairs"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"no_empties":{ "name":"no_empties","fn_args":"[\"items\"]","description":"Takes the passed list or set and returns a new list that doesn't contain any undefined, nil or empty values","usage":["items:list|set"],"tags":["filter","nil","undefined","remove","except_nil"],"requires":["sub_type","not","push"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"first_with":{ "name":"first_with","fn_args":"(prop_list data_value)","usage":["property_list:array","data:object|array"],"description":"Given a list of properties or indexes and a data value, sequentially looks through the property list and returns the first non-null result.","tags":["list","array","index","properties","search","find"],"requires":["not"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"fixed":{ "name":"fixed","fn_args":"(v p)","description":"Given a floating point value and an optional precision value, return a string corresponding to the desired precision.  If precision is left out, defaults to 3.","usage":["value:number","precision?:number"],"tags":["format","conversion"],"requires":[],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"hide":{ "name":"hide","fn_args":"(value)","requires":[],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"array_to_object":{ "name":"array_to_object","fn_args":"(input_array)","usage":["list_to_process:array"],"tags":["list","array","object","convert"],"description":"Takes the provided list and returns an object with the even indexed items as keys and odd indexed items as values.","requires":["length","take","type","add"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"split_text_in_array":{ "name":"split_text_in_array","fn_args":"(split_element input_array)","usage":["split_element:text","input_array:array"],"tags":["text","string","split","separate","parse"],"description":"Takes the provided array, and split_element, and returns an array of arrays which contain the split text strings of the input list.","requires":["is_string?","push","split","null"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"words_and_quotes":{ "name":"words_and_quotes","fn_args":"(text)","description":"Given a text string, separates the words and quoted words, returning quoted words as their isolated string.","tags":["text","string","split","separate","parse"],"usage":["text:string"],"requires":["not","map","join","no_empties","split_by","trim"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"split_words":{ "name":"split_words","fn_args":"(text_string)","description":"Like words and quotes, splits the text string into words and quoted words, but the unquoted words are split by spaces.  Both the unquoted words and the quoted words inhabit their own array.","usage":["text:string"],"tags":["text","string","split","separate","words","parse"],"requires":["no_empties","map","split_by","trim","words_and_quotes"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"from_style_text":{ "name":"from_style_text","fn_args":"(text)","usage":["text:string"],"description":"Given a string or text in the format of an Element style attribute: \"css_attrib:value; css_attrib2:value\", split into pairs containing attribute name and value.","tags":["text","css","style","pairs","string","array","list","ui","html"],"requires":["no_empties","map","trim","split_by","replace","flatten","words_and_quotes"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"sha1":{ "name":"sha1","fn_args":"(text)","description":"Given a text string as input, returns a SHA-1 hash digest string of the given input.","usage":["text:string"],"tags":["digest","crypto","hash","comparison"],"requires":["is_string?","push","range","join"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"remove_if":{ "name":"remove_if","fn_args":"(f container)","usage":["f:function","container:array"],"tags":["collections","reduce","filter","where","list","array","reduce"],"description":"Given a function with a single argument, if that function returns true, the value will excluded from the returned array.  Opposite of filter.","requires":["not","push"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"filter":{ "name":"filter","fn_args":"(f container)","usage":["f:function","container:array"],"tags":["collections","reduce","reject","where","list","array","reduce"],"description":"Given a function with a single argument, if that function returns true, the value will included in the returned array, otherwise it will not.  Opposite of reject.","requires":["push"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"add_days":{ "name":"add_days","fn_args":"(date_obj num_days)","usage":["date_obj:Date","num_days:number"],"description":"Given a date object and the number of days (either positive or negative) modifies the given date object to the appropriate date value, and returns the date object.","tags":["date","time","duration","days","add"],"requires":["add"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"day_of_week":{ "name":"day_of_week","fn_args":"(dval)","description":"Given a date object, returns the day of the week for that date object","usage":["date:Date"],"tags":["time","week","date","day"],"requires":[],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"add_hours":{ "name":"add_hours","fn_args":"(date_obj hours)","usage":["date_obj:Date","hours:number"],"description":"Given a date object and the number of hours (either positive or negative) modifies the given date object to the appropriate date value, and returns the date object.","tags":["date","time","duration","hours","add"],"requires":[],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"clear_time":{ "name":"clear_time","fn_args":"(date_obj)","usage":["date_obj:Date"],"description":"Given a date object, modifies the date object by clearing the time value and leaving the date value.  Returns the date object.","tags":["date","time","duration","midnight","add"],"requires":[],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"yesterday":{ "name":"yesterday","fn_args":"[]","description":"This function returns an array with two Date values.  The first, in index 0, is the start of the prior day (yesterday midnight), and the second is 24 hours later, i.e. midnight from last night.","usage":[],"tags":["time","date","range","prior","hours","24"],"requires":["clear_time","add_days","add_hours"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"next_sunday":{ "name":"next_sunday","fn_args":"(dval)","usage":["date:Date?"],"description":"Called with no arguments returns a date representing the upcoming sunday at midnight, 12:00 AM.  If given a date, returns the next sunday from the given date.","tags":["time","date","range","next","week","24"],"requires":["clear_time","add_days","day_of_week"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"last_sunday":{ "name":"last_sunday","fn_args":"(dval)","usage":["date:Date?"],"description":"Called with no arguments returns a date representing the prior sunday at midnight, 12:00 AM.  If given a date, returns the prior sunday from the given date.","tags":["time","date","range","prior","week","24"],"requires":["clear_time","add_days","day_of_week"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"day_before_yesterday":{ "name":"day_before_yesterday","fn_args":"[]","description":"This function returns an array with two Date values.  The first, in index 0, is the start of the day before yesterday (midnight), and the second is 24 later.","usage":[],"tags":["time","date","range","prior","hours","24"],"requires":["clear_time","add_days"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"last_week":{ "name":"last_week","fn_args":"[]","description":"This function returns an array with two Date values.  The first, in index 0, is the start of the prior week at midnight, and the second is 7 days later, at midnight.","usage":[],"tags":["time","date","range","prior","hours","24"],"requires":["clear_time","add_days","next_sunday","last_sunday"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"midnight-to-midnight":{ "name":"midnight-to-midnight","fn_args":"(dval)","description":"This function returns an array with two Date values.  The first, in index 0, is the start of the prior day (yesterday midnight), and the second is 24 hours later, i.e. midnight from last night.","usage":["val:Date"],"tags":["time","date","range","prior","hours","24"],"requires":["clear_time","add_hours"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"date_to_string":{ "name":"date_to_string","fn_args":"(date_val str_layout)","description":["=:+","Given a date value and a formatted template string, return a string representation of the date based on the formatted template string.","<br>","E.g. (date_to_string (new Date) \"yyyy-MM-dd HH:mm:ss\")<br>","<table>","<tr><td>","yyyy","</td><td>","Four position formatted year, e.g. 2021","</td></tr>","<tr><td>","yy","</td><td>","Two position formatted year, e.g. 21","</td></tr>","<tr><td>","dd","</td><td>","Two position formatted day of month, e.g. 03","</td></tr>","<tr><td>","d","</td><td>","1 position numeric day of month, e.g. 3","</td></tr>","<tr><td>","MM","</td><td>","Two position formatted month number, e.g. 06","</td></tr>","<tr><td>","M","</td><td>","One or two position formatted month number, e.g. 6 or 10","</td></tr>","<tr><td>","HH","</td><td>","Two position formatted 24 hour number, e.g. 08","</td></tr>","<tr><td>","H","</td><td>","One position formatted 24 hour, e.g 8","</td></tr>","<tr><td>","hh","</td><td>","Two position formatted 12 hour clock, e.g. 08","</td></tr>","<tr><td>","h","</td><td>","One position formatted 12 hour clock, e.g 8","</td></tr>","<tr><td>","mm","</td><td>","Minutes with 2 position width, eg. 05","</td></tr>","<tr><td>","m","</td><td>","Minutes with 1 or 2 positions, e.g 5 or 15.","</td></tr>","<tr><td>","ss","</td><td>","Seconds with 2 positions, e.g 03 or 25.","</td></tr>","<tr><td>","s","</td><td>","Seconds with 1 or 2 positions, e.g 3 or 25.","</td></tr>","<tr><td>","sss","</td><td>","Milliseconds with 3 digits, such as 092 or 562.","</td></tr>","<tr><td>","TZ","</td><td>","Include timezone abbreviated, e.g. GMT+1.","</td></tr>","<tr><td>","D","</td><td>","Weekday abbreviated to 1 position, such as T for Tuesday or Thursday, or W for Wednesday (in certain locales)","</td></tr>","<tr><td>","DD","</td><td>","Weekday shortened to 3 positions, such as Fri for Friday.","</td></tr>","<tr><td>","DDD","</td><td>","Full name of weekday, such as Saturday.","</td></tr>","</table>"],"usage":["date_val:Date","formatted_string:string"],"tags":["time","date","string","text","format","formatted"],"requires":["is_string?","split_by","push","date_components","join"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"is_even?":{ "name":"is_even?","fn_args":"(x)","usage":["value:number"],"description":"If the argument passed is an even number, return true, else returns false.","tags":["list","filter","modulus","odd","number"],"requires":[],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"is_odd?":{ "name":"is_odd?","fn_args":"(x)","usage":["value:number"],"description":"If the argument passed is an odd number, return true, else returns false.","tags":["list","filter","modulus","even","number"],"requires":[],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"set_path_value":{ "name":"set_path_value","fn_args":"(root path value)","description":"Given an object (the root), a path array, and a value to set, sets the value at the path point in the root object.","usage":["root:object","path:list","value:*"],"tags":["object","path","resolve","assign"],"requires":["is_array?","last","resolve_path","chop"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"has_items?":{ "name":"has_items?","fn_args":"(value)","usage":["value:list"],"description":"Returns true if the list provided has a length greater than one, or false if the list is 0 or nil","tags":["list","values","contains"],"requires":["not","length"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"match_all_js":{ "requires":[],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"match_all":{ "name":"match_all","fn_args":"(regex_str search_string)","usage":["regex_str:string","search_string:string"],"description":"Given a regex expression as a string, and the string to search through, returns all matched items via matchAll.","tags":["match","regex","string","find","scan"],"requires":["match_all_js"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"chop_front":{ "name":"chop_front","fn_args":"(container amount)","usage":["container:array|string","amount:integer"],"mutates":false,"tags":["text","string","list","reduce"],"description":"Given a string or array, returns a new container with the first value removed from the provided container.  An optional amount can be provided to remove more than one value from the container.","requires":["is_string?","is_array?"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"compile_lisp":{ "name":"compile_lisp","fn_args":"(text)","usage":["text:string"],"description":"Given an input string of lisp text, returns a JSON structure ready for evaluation.","requires":["reader"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
 },"has_the_keys?":{ "name":"has_the_keys?","fn_args":"(key_list obj)","usage":["key_list:list","object_to_check:object"],"description":"Given a provided key_list, validate that each listed key or dotted-path-notation value exist in the object.","example":[[["=:quotem",["=:has_the_keys?",["type","values.sub_transaction_id"],{ "type":"Transaction","group":"Receivables","values":{ "sub_transaction_id":1242424
 }
-}]],true]],"requires":["resolve_path"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"demarked_number":{ "name":"demarked_number","fn_args":"(value separator precision no_show_sign)","usage":["value:number","separator:string","precision:number","no_show_sign:boolean"],"description":["=:+","Given a numeric value, a separator string, such as \",\" and a precision value ","for the fractional-part or mantissa of the value, the demarked_number function will return a string with a formatted value. ","Default value for precision is 2 if not provided.","If no_show_sign is true, there will be no negative sign returned, which can be useful for alternative formatting.  See compile_format."],"tags":["format","conversion","currency"],"requires":["reverse","split","length","not","range","join","chop_front"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+}]],true]],"requires":["resolve_path"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"demarked_number":{ "name":"demarked_number","fn_args":"(value separator precision no_show_sign)","usage":["value:number","separator:string","precision:number","no_show_sign:boolean"],"description":["=:+","Given a numeric value, a separator string, such as \",\" and a precision value ","for the fractional-part or mantissa of the value, the demarked_number function will return a string with a formatted value. ","Default value for precision is 2 if not provided.","If no_show_sign is true, there will be no negative sign returned, which can be useful for alternative formatting.  See compile_format."],"tags":["format","conversion","currency"],"requires":["reverse","split","length","not","range","join","chop_front"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
 },"measure_time":{ "eval_when":{ "compile_time":true
-},"name":"measure_time","macro":true,"fn_args":"[\"&\" forms]","usage":["form:list"],"tags":["time","measurement","debug","timing"],"description":"Given a form as input, returns an object containing time taken to evaluate the form in milliseconds with the key time and a result key with the evaluation results.","requires":["slice"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"compare_list_ends":{ "name":"compare_list_ends","fn_args":"(l1 l2)","usage":["array1:array","array2:array"],"tags":["comparision","values","list","array"],"description":"Compares the ends of the provided flat arrays, where the shortest list must match completely the tail end of the longer list. Returns true if the comparison matches, false if they don't.","requires":["length","reverse","map"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"hsv_to_rgb":{ "usage":["hsv_values:array"],"description":"Takes an array with three values corresponding to hue, saturation and brightness. Each value should be between 0 and 1.  The function returns an array with three values corresponding to red, green and blue.","tags":["colors","graphics","rgb","conversion"],"requires":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"rgb_to_text":{ "name":"rgb_to_text","fn_args":"(rgb)","usage":["rgb_values:array"],"description":["=:+","Given an array with 3 values ranging from 0 to 1, corresponding to the \"red\",\"green\",\"blue\" values of the described color, ","the function returns a string in the form of FFFFFF."],"tags":["colors","graphics"],"requires":["join","length"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"text_to_rgb":{ "name":"text_to_rgb","fn_args":"(rgb_string)","usage":["rgb_string:string"],"description":"Given an RGB hex color string in the form of \"FFFFFF\", returns an array containing [ red green blue ] in the set [ 0 1 ].","tags":["colors","graphics"],"requires":["join","nth"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"rgb_to_hsv":{ "name":"rgb_to_hsv","fn_args":"(rgb)","description":["=:+","Takes an array with three values corresponding to red, green and blue: [red green blue].","Each value should be between 0 and 1 (i.e the set [0 1]) ","The function returns an array with three values corresponding to [hue saturation value] in the set [0 1]."],"usage":["rgb_values:array"],"tags":["colors","graphics","rgb","conversion","hsv"],"requires":[],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"tint_rgb":{ "name":"tint_rgb","fn_args":"(rgb tint_factor)","description":["=:+","Given an array containing three values between 0 and 1 corresponding to red, ","green and blue, apply the provided tint factor to the color and return the result as an rgb array.","The provided tint factor should be in the range 0 (for no tint) to 1 (full tint)."],"usage":["rgb_value:array","tint_factor:number"],"tags":["colors","graphics"],"requires":["add"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"shade_rgb":{ "name":"shade_rgb","fn_args":"(rgb shade_factor)","description":["=:+","Given an array containing three values between 0 and 1 corresponding to red, ","green and blue, apply the provided tint factor to the color and return the result as an rgb array.","The provided tint factor should be in the range 0 (for no tint) to 1 (full tint)."],"usage":["rgb_value:array","tint_factor:number"],"tags":["colors","graphics"],"requires":[],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"modify_color_ts":{ "name":"modify_color_ts","fn_args":"(rgb factor)","description":["=:+","Given an array containing three values between 0 and 1 corresponding to red, ","green and blue, apply the provided factor to the color and return the result as an rgb array.","The provided factor should be in the range -1 to 1: -1 to 0 applies shade to the color and 0 to 1 applies tinting to the color."],"usage":["rgb_value:array","tint_factor:number"],"tags":["colors","graphics"],"requires":["tint_rgb","shade_rgb"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"is_lower?":{ "name":"is_lower?","fn_args":"(v)","usage":["value:string"],"description":"Given a string as an argument, returns true if the first character of the string is a lowercase character value (ASCII), and false otherwise.","tags":["text","string","lowercase","uppercase"],"requires":[],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"is_upper?":{ "name":"is_upper?","fn_args":"(v)","usage":["value:string"],"description":"Given a string as an argument, returns true if the first character of the string is an uppercase character value (ASCII), and false otherwise.","tags":["text","string","lowercase","uppercase"],"requires":[],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"camel_case_to_lower":{ "name":"camel_case_to_lower","fn_args":"(val)","usage":[],"description":"Given a camel case string such as camelCase, returns the equivalent lowercase/underscore: camel_case.","tags":["text","string","conversion","lowercase","uppercase"],"requires":["join","map","is_upper?","lowercase","is_lower?","split"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"scan_list":{ "name":"scan_list","fn_args":"(regex container)","description":["=:+","Scans a list for the provided regex expression and returns the indexes in the list where it is found.  ","The provided regex expression can be a plain string or a RegExp object."],"usage":["regex:string","container:list"],"tags":["search","index","list","regex","array","string"],"requires":["not","sub_type","is_string?","push"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"gather_up_prop":{ "name":"gather_up_prop","fn_args":"(key values)","usage":["key:string","values:array|object"],"description":"Given a key and an object or array of objects, return all the values associated with the provided key.","tags":["key","property","objects","iteration"],"requires":["is_array?","no_empties","map","gather_up_prop","is_object?"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"sum_up_prop":{ "name":"sum_up_prop","fn_args":"(key values)","usage":["key:string","values:array|object"],"description":"Given a key and an object or array of objects, return the total sum amount of the given key.","tags":["sum","key","property","objects","iteration"],"requires":["sum","flatten","gather_up_prop"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"scan_for":{ "name":"scan_for","fn_args":"(non_nil_prop list_of_objects)","description":"Given a property name and a list of objects, find the first object with the non-nil property value specified by non_nil_prop. Returns the value of the non-nil property.","usage":["non_nil_prop:string","list_of_objects:array"],"tags":["find","scan","object","list","array","value"],"requires":[],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"make_sort_buckets":{ "name":"make_sort_buckets","fn_args":"[]","usage":[],"description":["=:+","Called with no arguments, this function returns a function that when called with a ","category and a value, will store that value under the category name in an array, ","which acts as an accumulator of items for that category.  In this mode, the function ","returns the passed item to be stored.<br><br>","When the returned function is called with no arguments, the function returns the ","object containing all passed categories as its keys, with the values being the accumulated","items passed in previous calls."],"tags":["objects","accumulator","values","sorting","categorize","categorization","buckets"],"requires":["push"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"bytes_from_int_16":{ "requires":[],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"int_16_from_bytes":{ "requires":[],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"parse_csv":{ "name":"parse_csv","fn_args":"(csv_data options)","description":["=:+","Given a text file of CSV data and an optional options value, parse and return a JSON structure of the CSV data as nested arrays.","<br>","Options can contain the following values:<br>","<table><tr><td>separator</td><td>A text value for the separator to use.  ","The default is a comma.</td></tr><tr><td>interruptions</td><td>If set to true, ","will pause regularly during processing for 1/10th of a second to allow other event queue activities to occur.</td>","</tr><tr><td>notifier</td><td>If interruptions is true, notifier will be triggered with ","the progress of work as a percentage of completion (0 - 1), the current count and the total rows.</td></tr></table>"],"usage":["csv_data:string","options:object?"],"tags":["parse","list","values","table","tabular","csv"],"requires":["is_array?","is_string?","split_by","replace","sleep","reverse","scan_str","push","length"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"to_csv":{ "name":"to_csv","fn_args":"[\"rows\" delimiter]","description":["=:+","Given a list of rows, which are expected to be lists themselves, ","join the contents of the rows together via , and then join the rows ","together into a csv buffer using a newline, then returned as a string."],"usage":["rows:list","delimiter:string"],"tags":["csv","values","report","comma","serialize","list"],"requires":["join","map","is_string?","contains?","replace"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"squeeze":{ "name":"squeeze","fn_args":"(s)","usage":["string_value:string"],"description":"Returns a string that has all spaces removed from the supplied string value.","tags":["text","space","trim","remove"],"requires":["replace"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"ensure_keys":{ "name":"ensure_keys","fn_args":"(keylist obj default_value)","description":["=:+","Given a list of key values, an object (or nil) and an optional default value to be ","assigned each key, ensures that the object returned has the specified keys (if not already set) set to either ","the specified default value, or nil."],"usage":["keylist","obj:object","default_value:*?"],"tags":["object","keys","values","required","key"],"requires":[],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"show_time_in_words":{ "description":"Given an integer value representing seconds of a time duration, return a string representing the time in words, such as 2 mins.  If the key longForm is set to true in options return full words instead of contracted forms.  For example min vs. minute.","usage":["seconds:integer","options:object"],"tags":["time","date","format","string","elapsed"],"requires":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"ago":{ "name":"ago","fn_args":"(dval)","usage":["dval:Date"],"description":"Given a date object, return a formatted string in English with the amount of time elapsed from the provided date.","tags":["date","format","time","string","elapsed"],"requires":["show_time_in_words"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"lifespan":{ "name":"lifespan","fn_args":"(dval)","usage":["dval:Date"],"description":"Given a date object, return a formatted string in English with the amount of time until the specified date.","tags":["date","format","time","string","elapsed"],"requires":["show_time_in_words"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"rotate_right":{ "name":"rotate_right","fn_args":"(array_obj)","description":["=:+","Given an array, takes the element at the last ","position (highest index), removes it and places ","it at the front (index 0) and returns the array. "],"usage":["array_obj:array"],"tags":["array","rotation","shift","right"],"requires":["prepend","pop"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"rotate_left":{ "name":"rotate_left","fn_args":"(array_obj)","description":["=:+","Given an array, takes the element at the first ","position (index 0), removes it and places ","it at the front (highest index) and returns the array. "],"usage":["array_obj:array"],"tags":["array","rotation","shift","left"],"requires":["push","take"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"interpolate":{ "name":"interpolate","fn_args":"(from to steps)","description":"Returns an array of length steps which has ascending or descending values inclusive of from and to.","usage":["from:number","to:number","steps:number"],"tags":["range","interpolation","fill"],"requires":["assert","is_number?","push"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"encode_to_base64":{ "name":"encode_to_base64","fn_args":"(array_buffer_data)","description":["=:+","Given a value of type `ArrayBuffer` as input, returns a base64 encoded ","string, suitable for use in image URLs or serialized storage.<br>#### Example ","<br>```(defun file_to_img (file)\n   (img { src: (+ \"data:\" file.type \";base64,\" ","\n        (encode_to_base64 (read_file file { `read_as: \"binary\" }))) ","}))```<br>"],"usage":["array_buffer_data:ArrayBuffer"],"tags":["encode","base64","b64","ArrayBuffer","array","convert","conversion"],"requires":["second","split_by"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"unload_core_ext":{ "name":"unload_core_ext","fn_args":"[]","requires":["log"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
-},"documentation_coverage":{ "name":"documentation_coverage","fn_args":"(ns)","description":["=:+","This function returns the coverage details for the documentation of ","global symbols by assessing how many descriptions are registered as part of a ","namespace's symbol meta data.  The lower the coverage score the less documented ","a namespace is.  The returned data is contained in an object with the total ","symbol count, the coverage ratio (number-of-documented-symbols / ","total-symbols), the amounts of good and missing documentation and the symbols ","grouped as arrays that represent completed and missing documentation ","respectively. "],"usage":["namespace:?string"],"tags":["documentation","coverage","help","namespace"],"requires":["push","pairs"],"externals":["ReferenceError","Object","Date","Promise","setTimeout","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"name":"measure_time","macro":true,"fn_args":"[\"&\" forms]","usage":["form:list"],"tags":["time","measurement","debug","timing"],"description":"Given a form as input, returns an object containing time taken to evaluate the form in milliseconds with the key time and a result key with the evaluation results.","requires":["slice"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"compare_list_ends":{ "name":"compare_list_ends","fn_args":"(l1 l2)","usage":["array1:array","array2:array"],"tags":["comparision","values","list","array"],"description":"Compares the ends of the provided flat arrays, where the shortest list must match completely the tail end of the longer list. Returns true if the comparison matches, false if they don't.","requires":["length","reverse","map"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"hsv_to_rgb":{ "usage":["hsv_values:array"],"description":"Takes an array with three values corresponding to hue, saturation and brightness. Each value should be between 0 and 1.  The function returns an array with three values corresponding to red, green and blue.","tags":["colors","graphics","rgb","conversion"],"requires":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"rgb_to_text":{ "name":"rgb_to_text","fn_args":"(rgb)","usage":["rgb_values:array"],"description":["=:+","Given an array with 3 values ranging from 0 to 1, corresponding to the \"red\",\"green\",\"blue\" values of the described color, ","the function returns a string in the form of FFFFFF."],"tags":["colors","graphics"],"requires":["join","length"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"text_to_rgb":{ "name":"text_to_rgb","fn_args":"(rgb_string)","usage":["rgb_string:string"],"description":"Given an RGB hex color string in the form of \"FFFFFF\", returns an array containing [ red green blue ] in the set [ 0 1 ].","tags":["colors","graphics"],"requires":["join","nth"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"rgb_to_hsv":{ "name":"rgb_to_hsv","fn_args":"(rgb)","description":["=:+","Takes an array with three values corresponding to red, green and blue: [red green blue].","Each value should be between 0 and 1 (i.e the set [0 1]) ","The function returns an array with three values corresponding to [hue saturation value] in the set [0 1]."],"usage":["rgb_values:array"],"tags":["colors","graphics","rgb","conversion","hsv"],"requires":[],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"tint_rgb":{ "name":"tint_rgb","fn_args":"(rgb tint_factor)","description":["=:+","Given an array containing three values between 0 and 1 corresponding to red, ","green and blue, apply the provided tint factor to the color and return the result as an rgb array.","The provided tint factor should be in the range 0 (for no tint) to 1 (full tint)."],"usage":["rgb_value:array","tint_factor:number"],"tags":["colors","graphics"],"requires":["add"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"shade_rgb":{ "name":"shade_rgb","fn_args":"(rgb shade_factor)","description":["=:+","Given an array containing three values between 0 and 1 corresponding to red, ","green and blue, apply the provided tint factor to the color and return the result as an rgb array.","The provided tint factor should be in the range 0 (for no tint) to 1 (full tint)."],"usage":["rgb_value:array","tint_factor:number"],"tags":["colors","graphics"],"requires":[],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"modify_color_ts":{ "name":"modify_color_ts","fn_args":"(rgb factor)","description":["=:+","Given an array containing three values between 0 and 1 corresponding to red, ","green and blue, apply the provided factor to the color and return the result as an rgb array.","The provided factor should be in the range -1 to 1: -1 to 0 applies shade to the color and 0 to 1 applies tinting to the color."],"usage":["rgb_value:array","tint_factor:number"],"tags":["colors","graphics"],"requires":["tint_rgb","shade_rgb"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"is_lower?":{ "name":"is_lower?","fn_args":"(v)","usage":["value:string"],"description":"Given a string as an argument, returns true if the first character of the string is a lowercase character value (ASCII), and false otherwise.","tags":["text","string","lowercase","uppercase"],"requires":[],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"is_upper?":{ "name":"is_upper?","fn_args":"(v)","usage":["value:string"],"description":"Given a string as an argument, returns true if the first character of the string is an uppercase character value (ASCII), and false otherwise.","tags":["text","string","lowercase","uppercase"],"requires":[],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"camel_case_to_lower":{ "name":"camel_case_to_lower","fn_args":"(val)","usage":[],"description":"Given a camel case string such as camelCase, returns the equivalent lowercase/underscore: camel_case.","tags":["text","string","conversion","lowercase","uppercase"],"requires":["join","map","is_upper?","lowercase","is_lower?","split"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"scan_list":{ "name":"scan_list","fn_args":"(regex container)","description":["=:+","Scans a list for the provided regex expression and returns the indexes in the list where it is found.  ","The provided regex expression can be a plain string or a RegExp object."],"usage":["regex:string","container:list"],"tags":["search","index","list","regex","array","string"],"requires":["not","sub_type","is_string?","push"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"gather_up_prop":{ "name":"gather_up_prop","fn_args":"(key values)","usage":["key:string","values:array|object"],"description":"Given a key and an object or array of objects, return all the values associated with the provided key.","tags":["key","property","objects","iteration"],"requires":["is_array?","no_empties","map","gather_up_prop","is_object?"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"sum_up_prop":{ "name":"sum_up_prop","fn_args":"(key values)","usage":["key:string","values:array|object"],"description":"Given a key and an object or array of objects, return the total sum amount of the given key.","tags":["sum","key","property","objects","iteration"],"requires":["sum","flatten","gather_up_prop"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"scan_for":{ "name":"scan_for","fn_args":"(non_nil_prop list_of_objects)","description":"Given a property name and a list of objects, find the first object with the non-nil property value specified by non_nil_prop. Returns the value of the non-nil property.","usage":["non_nil_prop:string","list_of_objects:array"],"tags":["find","scan","object","list","array","value"],"requires":[],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"make_sort_buckets":{ "name":"make_sort_buckets","fn_args":"[]","usage":[],"description":["=:+","Called with no arguments, this function returns a function that when called with a ","category and a value, will store that value under the category name in an array, ","which acts as an accumulator of items for that category.  In this mode, the function ","returns the passed item to be stored.<br><br>","When the returned function is called with no arguments, the function returns the ","object containing all passed categories as its keys, with the values being the accumulated","items passed in previous calls."],"tags":["objects","accumulator","values","sorting","categorize","categorization","buckets"],"requires":["push"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"bytes_from_int_16":{ "requires":[],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"int_16_from_bytes":{ "requires":[],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"parse_csv":{ "name":"parse_csv","fn_args":"(csv_data options)","description":["=:+","Given a text file of CSV data and an optional options value, parse and return a JSON structure of the CSV data as nested arrays.","<br>","Options can contain the following values:<br>","<table><tr><td>separator</td><td>A text value for the separator to use.  ","The default is a comma.</td></tr><tr><td>interruptions</td><td>If set to true, ","will pause regularly during processing for 1/10th of a second to allow other event queue activities to occur.</td>","</tr><tr><td>notifier</td><td>If interruptions is true, notifier will be triggered with ","the progress of work as a percentage of completion (0 - 1), the current count and the total rows.</td></tr></table>"],"usage":["csv_data:string","options:object?"],"tags":["parse","list","values","table","tabular","csv"],"requires":["is_array?","is_string?","split_by","replace","sleep","reverse","scan_str","push","length"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"to_csv":{ "name":"to_csv","fn_args":"[\"rows\" delimiter]","description":["=:+","Given a list of rows, which are expected to be lists themselves, ","join the contents of the rows together via , and then join the rows ","together into a csv buffer using a newline, then returned as a string."],"usage":["rows:list","delimiter:string"],"tags":["csv","values","report","comma","serialize","list"],"requires":["join","map","is_string?","contains?","replace"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"squeeze":{ "name":"squeeze","fn_args":"(s)","usage":["string_value:string"],"description":"Returns a string that has all spaces removed from the supplied string value.","tags":["text","space","trim","remove"],"requires":["replace"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"ensure_keys":{ "name":"ensure_keys","fn_args":"(keylist obj default_value)","description":["=:+","Given a list of key values, an object (or nil) and an optional default value to be ","assigned each key, ensures that the object returned has the specified keys (if not already set) set to either ","the specified default value, or nil."],"usage":["keylist","obj:object","default_value:*?"],"tags":["object","keys","values","required","key"],"requires":[],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"show_time_in_words":{ "description":"Given an integer value representing seconds of a time duration, return a string representing the time in words, such as 2 mins.  If the key longForm is set to true in options return full words instead of contracted forms.  For example min vs. minute.","usage":["seconds:integer","options:object"],"tags":["time","date","format","string","elapsed"],"requires":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"ago":{ "name":"ago","fn_args":"(dval)","usage":["dval:Date"],"description":"Given a date object, return a formatted string in English with the amount of time elapsed from the provided date.","tags":["date","format","time","string","elapsed"],"requires":["show_time_in_words"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"lifespan":{ "name":"lifespan","fn_args":"(dval)","usage":["dval:Date"],"description":"Given a date object, return a formatted string in English with the amount of time until the specified date.","tags":["date","format","time","string","elapsed"],"requires":["show_time_in_words"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"rotate_right":{ "name":"rotate_right","fn_args":"(array_obj)","description":["=:+","Given an array, takes the element at the last ","position (highest index), removes it and places ","it at the front (index 0) and returns the array. "],"usage":["array_obj:array"],"tags":["array","rotation","shift","right"],"requires":["prepend","pop"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"rotate_left":{ "name":"rotate_left","fn_args":"(array_obj)","description":["=:+","Given an array, takes the element at the first ","position (index 0), removes it and places ","it at the front (highest index) and returns the array. "],"usage":["array_obj:array"],"tags":["array","rotation","shift","left"],"requires":["push","take"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"interpolate":{ "name":"interpolate","fn_args":"(from to steps)","description":"Returns an array of length steps which has ascending or descending values inclusive of from and to.","usage":["from:number","to:number","steps:number"],"tags":["range","interpolation","fill"],"requires":["assert","is_number?","push"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"encode_to_base64":{ "name":"encode_to_base64","fn_args":"(array_buffer_data)","description":["=:+","Given a value of type `ArrayBuffer` as input, returns a base64 encoded ","string, suitable for use in image URLs or serialized storage.<br>#### Example ","<br>```(defun file_to_img (file)\n   (img { src: (+ \"data:\" file.type \";base64,\" ","\n        (encode_to_base64 (read_file file { `read_as: \"binary\" }))) ","}))```<br>"],"usage":["array_buffer_data:ArrayBuffer"],"tags":["encode","base64","b64","ArrayBuffer","array","convert","conversion"],"requires":["second","split_by"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"unload_core_ext":{ "name":"unload_core_ext","fn_args":"[]","requires":["log"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
+},"documentation_coverage":{ "name":"documentation_coverage","fn_args":"(ns)","description":["=:+","This function returns the coverage details for the documentation of ","global symbols by assessing how many descriptions are registered as part of a ","namespace's symbol meta data.  The lower the coverage score the less documented ","a namespace is.  The returned data is contained in an object with the total ","symbol count, the coverage ratio (number-of-documented-symbols / ","total-symbols), the amounts of good and missing documentation and the symbols ","grouped as arrays that represent completed and missing documentation ","respectively. "],"usage":["namespace:?string"],"tags":["documentation","coverage","help","namespace"],"requires":["push","pairs"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"src/core-ext.lisp"
 },"save_file":{ "name":"save_file","fn_args":"(filename array_buffer)","description":["=:+","<br><br>Given an pathname as a string, either relative or absolute, and an ","`array_buffer`, writes the provided array buffer as an unsigned 8 bit integer ","array to the target path.  Returns the total amount of bytes written. "],"tags":["io","save","write","binary"],"usage":["filename:string","array_buffer:ArrayBuffer"],"requires":["assert","is_string?"],"externals":["Deno","EvalError","JSON","Uint8Array"],"source_name":"pkg/base-io.lisp"
 },"*lz_string_contents*":{ "requires":["read_text_file"],"externals":[],"source_name":"pkg/lz-string.juno"
 },"LZString":{ "initializer":["=:eval",["=:function",[],["=:javascript"," {// Copyright (c) 2013 Pieroxy <pieroxy@pieroxy.net>\n// This work is free. You can redistribute it and/or modify it\n// under the terms of the WTFPL, Version 2\n// For more information see LICENSE.txt or http://www.wtfpl.net/\n//\n// For more information, the home page:\n// http://pieroxy.net/blog/pages/lz-string/testing.html\n//\n// LZ-based compression algorithm, version 1.4.4\n\n\n// private property\nvar f = String.fromCharCode;\nvar keyStrBase64 = \"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=\";\nvar keyStrUriSafe = \"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-$\";\nvar baseReverseDic = {};\n\nfunction getBaseValue(alphabet, character) {\n  if (!baseReverseDic[alphabet]) {\n    baseReverseDic[alphabet] = {};\n    for (var i=0 ; i<alphabet.length ; i++) {\n      baseReverseDic[alphabet][alphabet.charAt(i)] = i;\n    }\n  }\n  return baseReverseDic[alphabet][character];\n}\n\nconst LZString = {\n  compressToBase64 : function (input) {\n    if (input == null) return \"\";\n    var res = LZString._compress(input, 6, function(a){return keyStrBase64.charAt(a);});\n    switch (res.length % 4) { // To produce valid Base64\n    default: // When could this happen ?\n    case 0 : return res;\n    case 1 : return res+\"===\";\n    case 2 : return res+\"==\";\n    case 3 : return res+\"=\";\n    }\n  },\n\n  decompressFromBase64 : function (input) {\n    if (input == null) return \"\";\n    if (input == \"\") return null;\n    return LZString._decompress(input.length, 32, function(index) { return getBaseValue(keyStrBase64, input.charAt(index)); });\n  },\n\n  compressToUTF16 : function (input) {\n    if (input == null) return \"\";\n    return LZString._compress(input, 15, function(a){return f(a+32);}) + \" \";\n  },\n\n  decompressFromUTF16: function (compressed) {\n    if (compressed == null) return \"\";\n    if (compressed == \"\") return null;\n    return LZString._decompress(compressed.length, 16384, function(index) { return compressed.charCodeAt(index) - 32; });\n  },\n\n  //compress into uint8array (UCS-2 big endian format)\n  compressToUint8Array: function (uncompressed) {\n    var compressed = LZString.compress(uncompressed);\n    var buf=new Uint8Array(compressed.length*2); // 2 bytes per character\n\n    for (var i=0, TotalLen=compressed.length; i<TotalLen; i++) {\n      var current_value = compressed.charCodeAt(i);\n      buf[i*2] = current_value >>> 8;\n      buf[i*2+1] = current_value % 256;\n    }\n    return buf;\n  },\n\n  //decompress from uint8array (UCS-2 big endian format)\n  decompressFromUint8Array:function (compressed) {\n    if (compressed===null || compressed===undefined){\n        return LZString.decompress(compressed);\n    } else {\n        var buf=new Array(compressed.length/2); // 2 bytes per character\n        for (var i=0, TotalLen=buf.length; i<TotalLen; i++) {\n          buf[i]=compressed[i*2]*256+compressed[i*2+1];\n        }\n\n        var result = [];\n        buf.forEach(function (c) {\n          result.push(f(c));\n        });\n        return LZString.decompress(result.join(''));\n\n    }\n\n  },\n\n\n  //compress into a string that is already URI encoded\n  compressToEncodedURIComponent: function (input) {\n    if (input == null) return \"\";\n    return LZString._compress(input, 6, function(a){return keyStrUriSafe.charAt(a);});\n  },\n\n  //decompress from an output of compressToEncodedURIComponent\n  decompressFromEncodedURIComponent:function (input) {\n    if (input == null) return \"\";\n    if (input == \"\") return null;\n    input = input.replace(/ /g, \"+\");\n    return LZString._decompress(input.length, 32, function(index) { return getBaseValue(keyStrUriSafe, input.charAt(index)); });\n  },\n\n  compress: function (uncompressed) {\n    return LZString._compress(uncompressed, 16, function(a){return f(a);});\n  },\n  _compress: function (uncompressed, bitsPerChar, getCharFromInt) {\n    if (uncompressed == null) return \"\";\n    var i, value,\n        context_dictionary= {},\n        context_dictionaryToCreate= {},\n        context_c=\"\",\n        context_wc=\"\",\n        context_w=\"\",\n        context_enlargeIn= 2, // Compensate for the first entry which should not count\n        context_dictSize= 3,\n        context_numBits= 2,\n        context_data=[],\n        context_data_val=0,\n        context_data_position=0,\n        ii;\n\n    for (ii = 0; ii < uncompressed.length; ii += 1) {\n      context_c = uncompressed.charAt(ii);\n      if (!Object.prototype.hasOwnProperty.call(context_dictionary,context_c)) {\n        context_dictionary[context_c] = context_dictSize++;\n        context_dictionaryToCreate[context_c] = true;\n      }\n\n      context_wc = context_w + context_c;\n      if (Object.prototype.hasOwnProperty.call(context_dictionary,context_wc)) {\n        context_w = context_wc;\n      } else {\n        if (Object.prototype.hasOwnProperty.call(context_dictionaryToCreate,context_w)) {\n          if (context_w.charCodeAt(0)<256) {\n            for (i=0 ; i<context_numBits ; i++) {\n              context_data_val = (context_data_val << 1);\n              if (context_data_position == bitsPerChar-1) {\n                context_data_position = 0;\n                context_data.push(getCharFromInt(context_data_val));\n                context_data_val = 0;\n              } else {\n                context_data_position++;\n              }\n            }\n            value = context_w.charCodeAt(0);\n            for (i=0 ; i<8 ; i++) {\n              context_data_val = (context_data_val << 1) | (value&1);\n              if (context_data_position == bitsPerChar-1) {\n                context_data_position = 0;\n                context_data.push(getCharFromInt(context_data_val));\n                context_data_val = 0;\n              } else {\n                context_data_position++;\n              }\n              value = value >> 1;\n            }\n          } else {\n            value = 1;\n            for (i=0 ; i<context_numBits ; i++) {\n              context_data_val = (context_data_val << 1) | value;\n              if (context_data_position ==bitsPerChar-1) {\n                context_data_position = 0;\n                context_data.push(getCharFromInt(context_data_val));\n                context_data_val = 0;\n              } else {\n                context_data_position++;\n              }\n              value = 0;\n            }\n            value = context_w.charCodeAt(0);\n            for (i=0 ; i<16 ; i++) {\n              context_data_val = (context_data_val << 1) | (value&1);\n              if (context_data_position == bitsPerChar-1) {\n                context_data_position = 0;\n                context_data.push(getCharFromInt(context_data_val));\n                context_data_val = 0;\n              } else {\n                context_data_position++;\n              }\n              value = value >> 1;\n            }\n          }\n          context_enlargeIn--;\n          if (context_enlargeIn == 0) {\n            context_enlargeIn = Math.pow(2, context_numBits);\n            context_numBits++;\n          }\n          delete context_dictionaryToCreate[context_w];\n        } else {\n          value = context_dictionary[context_w];\n          for (i=0 ; i<context_numBits ; i++) {\n            context_data_val = (context_data_val << 1) | (value&1);\n            if (context_data_position == bitsPerChar-1) {\n              context_data_position = 0;\n              context_data.push(getCharFromInt(context_data_val));\n              context_data_val = 0;\n            } else {\n              context_data_position++;\n            }\n            value = value >> 1;\n          }\n\n\n        }\n        context_enlargeIn--;\n        if (context_enlargeIn == 0) {\n          context_enlargeIn = Math.pow(2, context_numBits);\n          context_numBits++;\n        }\n        // Add wc to the dictionary.\n        context_dictionary[context_wc] = context_dictSize++;\n        context_w = String(context_c);\n      }\n    }\n\n    // Output the code for w.\n    if (context_w !== \"\") {\n      if (Object.prototype.hasOwnProperty.call(context_dictionaryToCreate,context_w)) {\n        if (context_w.charCodeAt(0)<256) {\n          for (i=0 ; i<context_numBits ; i++) {\n            context_data_val = (context_data_val << 1);\n            if (context_data_position == bitsPerChar-1) {\n              context_data_position = 0;\n              context_data.push(getCharFromInt(context_data_val));\n              context_data_val = 0;\n            } else {\n              context_data_position++;\n            }\n          }\n          value = context_w.charCodeAt(0);\n          for (i=0 ; i<8 ; i++) {\n            context_data_val = (context_data_val << 1) | (value&1);\n            if (context_data_position == bitsPerChar-1) {\n              context_data_position = 0;\n              context_data.push(getCharFromInt(context_data_val));\n              context_data_val = 0;\n            } else {\n              context_data_position++;\n            }\n            value = value >> 1;\n          }\n        } else {\n          value = 1;\n          for (i=0 ; i<context_numBits ; i++) {\n            context_data_val = (context_data_val << 1) | value;\n            if (context_data_position == bitsPerChar-1) {\n              context_data_position = 0;\n              context_data.push(getCharFromInt(context_data_val));\n              context_data_val = 0;\n            } else {\n              context_data_position++;\n            }\n            value = 0;\n          }\n          value = context_w.charCodeAt(0);\n          for (i=0 ; i<16 ; i++) {\n            context_data_val = (context_data_val << 1) | (value&1);\n            if (context_data_position == bitsPerChar-1) {\n              context_data_position = 0;\n              context_data.push(getCharFromInt(context_data_val));\n              context_data_val = 0;\n            } else {\n              context_data_position++;\n            }\n            value = value >> 1;\n          }\n        }\n        context_enlargeIn--;\n        if (context_enlargeIn == 0) {\n          context_enlargeIn = Math.pow(2, context_numBits);\n          context_numBits++;\n        }\n        delete context_dictionaryToCreate[context_w];\n      } else {\n        value = context_dictionary[context_w];\n        for (i=0 ; i<context_numBits ; i++) {\n          context_data_val = (context_data_val << 1) | (value&1);\n          if (context_data_position == bitsPerChar-1) {\n            context_data_position = 0;\n            context_data.push(getCharFromInt(context_data_val));\n            context_data_val = 0;\n          } else {\n            context_data_position++;\n          }\n          value = value >> 1;\n        }\n\n\n      }\n      context_enlargeIn--;\n      if (context_enlargeIn == 0) {\n        context_enlargeIn = Math.pow(2, context_numBits);\n        context_numBits++;\n      }\n    }\n\n    // Mark the end of the stream\n    value = 2;\n    for (i=0 ; i<context_numBits ; i++) {\n      context_data_val = (context_data_val << 1) | (value&1);\n      if (context_data_position == bitsPerChar-1) {\n        context_data_position = 0;\n        context_data.push(getCharFromInt(context_data_val));\n        context_data_val = 0;\n      } else {\n        context_data_position++;\n      }\n      value = value >> 1;\n    }\n\n    // Flush the last char\n    while (true) {\n      context_data_val = (context_data_val << 1);\n      if (context_data_position == bitsPerChar-1) {\n        context_data.push(getCharFromInt(context_data_val));\n        break;\n      }\n      else context_data_position++;\n    }\n    return context_data.join('');\n  },\n\n  decompress: function (compressed) {\n    if (compressed == null) return \"\";\n    if (compressed == \"\") return null;\n    return LZString._decompress(compressed.length, 32768, function(index) { return compressed.charCodeAt(index); });\n  },\n\n  _decompress: function (length, resetValue, getNextValue) {\n    var dictionary = [],\n        next,\n        enlargeIn = 4,\n        dictSize = 4,\n        numBits = 3,\n        entry = \"\",\n        result = [],\n        i,\n        w,\n        bits, resb, maxpower, power,\n        c,\n        data = {val:getNextValue(0), position:resetValue, index:1};\n\n    for (i = 0; i < 3; i += 1) {\n      dictionary[i] = i;\n    }\n\n    bits = 0;\n    maxpower = Math.pow(2,2);\n    power=1;\n    while (power!=maxpower) {\n      resb = data.val & data.position;\n      data.position >>= 1;\n      if (data.position == 0) {\n        data.position = resetValue;\n        data.val = getNextValue(data.index++);\n      }\n      bits |= (resb>0 ? 1 : 0) * power;\n      power <<= 1;\n    }\n\n    switch (next = bits) {\n      case 0:\n          bits = 0;\n          maxpower = Math.pow(2,8);\n          power=1;\n          while (power!=maxpower) {\n            resb = data.val & data.position;\n            data.position >>= 1;\n            if (data.position == 0) {\n              data.position = resetValue;\n              data.val = getNextValue(data.index++);\n            }\n            bits |= (resb>0 ? 1 : 0) * power;\n            power <<= 1;\n          }\n        c = f(bits);\n        break;\n      case 1:\n          bits = 0;\n          maxpower = Math.pow(2,16);\n          power=1;\n          while (power!=maxpower) {\n            resb = data.val & data.position;\n            data.position >>= 1;\n            if (data.position == 0) {\n              data.position = resetValue;\n              data.val = getNextValue(data.index++);\n            }\n            bits |= (resb>0 ? 1 : 0) * power;\n            power <<= 1;\n          }\n        c = f(bits);\n        break;\n      case 2:\n        return \"\";\n    }\n    dictionary[3] = c;\n    w = c;\n    result.push(c);\n    while (true) {\n      if (data.index > length) {\n        return \"\";\n      }\n\n      bits = 0;\n      maxpower = Math.pow(2,numBits);\n      power=1;\n      while (power!=maxpower) {\n        resb = data.val & data.position;\n        data.position >>= 1;\n        if (data.position == 0) {\n          data.position = resetValue;\n          data.val = getNextValue(data.index++);\n        }\n        bits |= (resb>0 ? 1 : 0) * power;\n        power <<= 1;\n      }\n\n      switch (c = bits) {\n        case 0:\n          bits = 0;\n          maxpower = Math.pow(2,8);\n          power=1;\n          while (power!=maxpower) {\n            resb = data.val & data.position;\n            data.position >>= 1;\n            if (data.position == 0) {\n              data.position = resetValue;\n              data.val = getNextValue(data.index++);\n            }\n            bits |= (resb>0 ? 1 : 0) * power;\n            power <<= 1;\n          }\n\n          dictionary[dictSize++] = f(bits);\n          c = dictSize-1;\n          enlargeIn--;\n          break;\n        case 1:\n          bits = 0;\n          maxpower = Math.pow(2,16);\n          power=1;\n          while (power!=maxpower) {\n            resb = data.val & data.position;\n            data.position >>= 1;\n            if (data.position == 0) {\n              data.position = resetValue;\n              data.val = getNextValue(data.index++);\n            }\n            bits |= (resb>0 ? 1 : 0) * power;\n            power <<= 1;\n          }\n          dictionary[dictSize++] = f(bits);\n          c = dictSize-1;\n          enlargeIn--;\n          break;\n        case 2:\n          return result.join('');\n      }\n\n      if (enlargeIn == 0) {\n        enlargeIn = Math.pow(2, numBits);\n        numBits++;\n      }\n\n      if (dictionary[c]) {\n        entry = dictionary[c];\n      } else {\n        if (c === dictSize) {\n          entry = w + w.charAt(0);\n        } else {\n          return null;\n        }\n      }\n      result.push(entry);\n\n      // Add w+entry[0] to the dictionary.\n      dictionary[dictSize++] = w + entry.charAt(0);\n      enlargeIn--;\n\n      w = entry;\n\n      if (enlargeIn == 0) {\n        enlargeIn = Math.pow(2, numBits);\n        numBits++;\n      }\n\n    }\n  }\n};\nreturn LZString;\n\n\n\n\n}"]]],"license":"Copyright (c) 2013 Pieroxy <pieroxy@pieroxy.net>\nThis work is free. You can redistribute it and/or modify it\nunder the terms of the WTFPL, Version 2\nFor more information see LICENSE.txt or http://www.wtfpl.net/\n\nFor more information, the home page:\nhttp://pieroxy.net/blog/pages/lz-string/testing.html","requires":["*lz_string_contents*"],"source_name":"pkg/lz-string.juno"
@@ -3728,7 +3728,7 @@ export async function init_dlisp(Environment)  {
 },config:{
     export:{
         save_path:"js/juno.js",default_namespace:"user",include_source:false,save_executable:"bin/juno"
-    },features:["compiler","repl","io","Deno","build-tools","core-ext","http_server","http_client","system","*env_skeleton*"],build:"2023.04.14.09.15",imports:await ( async function(){
+    },features:["compiler","repl","io","Deno","build-tools","core-ext","http_server","http_client","system","*env_skeleton*"],build:"2023.04.14.11.05",imports:await ( async function(){
         let __obj__286=new Object();
         __obj__286["core/readline_mod"]={
             symbol:"readline_mod",namespace:"core",location:"https://deno.land/x/readline/mod.ts"
@@ -4442,21 +4442,21 @@ export async function init_dlisp(Environment)  {
         
     };
     await (async function() {
-        let __for_body__93=async function(x) {
+        let __for_body__92=async function(x) {
             if (check_true (await (await Environment.get_global("not"))(await isNaN(x)))){
                 return m=await Math.min(x,m)
             }
         };
-        let __array__94=[],__elements__92=v;
+        let __array__93=[],__elements__91=v;
         let __BREAK__FLAG__=false;
-        for(let __iter__91 in __elements__92) {
-            __array__94.push(await __for_body__93(__elements__92[__iter__91]));
+        for(let __iter__90 in __elements__91) {
+            __array__93.push(await __for_body__92(__elements__91[__iter__90]));
             if(__BREAK__FLAG__) {
-                 __array__94.pop();
+                 __array__93.pop();
                 break;
                 
             }
-        }return __array__94;
+        }return __array__93;
          
     })();
     if (check_true ((m===(await Environment.get_global("MAX_SAFE_INTEGER"))))){
@@ -4472,21 +4472,21 @@ export async function init_dlisp(Environment)  {
         
     };
     await (async function() {
-        let __for_body__89=async function(x) {
+        let __for_body__88=async function(x) {
             if (check_true (await (await Environment.get_global("not"))(await isNaN(x)))){
                 return m=await Math.max(x,m)
             }
         };
-        let __array__90=[],__elements__88=v;
+        let __array__89=[],__elements__87=v;
         let __BREAK__FLAG__=false;
-        for(let __iter__87 in __elements__88) {
-            __array__90.push(await __for_body__89(__elements__88[__iter__87]));
+        for(let __iter__86 in __elements__87) {
+            __array__89.push(await __for_body__88(__elements__87[__iter__86]));
             if(__BREAK__FLAG__) {
-                 __array__90.pop();
+                 __array__89.pop();
                 break;
                 
             }
-        }return __array__90;
+        }return __array__89;
          
     })();
     return m
@@ -5488,7 +5488,7 @@ export async function init_dlisp(Environment)  {
                             } else {
                                 return await clone(val,0,Environment)
                             }
-                        };__obj__1["*env_config*"]={export:{save_path:"js/juno.js",default_namespace:"user",include_source:false,save_executable:"bin/juno"},features:["compiler","repl","io","Deno","build-tools","core-ext","http_server","http_client","system","*env_skeleton*"],build:"2023.04.14.09.15",imports:await ( async function(){let __obj__2=new Object();__obj__2["core/readline_mod"]={symbol:"readline_mod",namespace:"core",location:"https://deno.land/x/readline/mod.ts"};__obj__2["core/streams"]={symbol:"streams",namespace:"core",location:"https://deno.land/std@0.170.0/streams/conversion.ts"};__obj__2["user/path"]={symbol:"path",namespace:"user",location:"https://deno.land/std@0.110.0/path/mod.ts"};return __obj__2;})(),repl:new Object(),http_services:{listen_on_start:false,port:56432,base_directory:"./"}};__obj__1["create_namespace"]=async function(name,options,defer_initialization) {
+                        };__obj__1["*env_config*"]={export:{save_path:"js/juno.js",default_namespace:"user",include_source:false,save_executable:"bin/juno"},features:["compiler","repl","io","Deno","build-tools","core-ext","http_server","http_client","system","*env_skeleton*"],build:"2023.04.14.11.05",imports:await ( async function(){let __obj__2=new Object();__obj__2["core/readline_mod"]={symbol:"readline_mod",namespace:"core",location:"https://deno.land/x/readline/mod.ts"};__obj__2["core/streams"]={symbol:"streams",namespace:"core",location:"https://deno.land/std@0.170.0/streams/conversion.ts"};__obj__2["user/path"]={symbol:"path",namespace:"user",location:"https://deno.land/std@0.110.0/path/mod.ts"};return __obj__2;})(),repl:new Object(),http_services:{listen_on_start:false,port:56432,base_directory:"./"}};__obj__1["create_namespace"]=async function(name,options,defer_initialization) {
                                 return await async function(){
                                     if (check_true (await not((name instanceof String || typeof name==='string')))) {
                                         throw new TypeError("namespace name must be a string");
@@ -5657,6 +5657,7 @@ export async function init_dlisp(Environment)  {
                 let reading_object;
                 let mode;
                 let symbol_start;
+                let pause_time;
                 let cpath;
                 let ctx;
                 let last_final_column_num;
@@ -5715,6 +5716,13 @@ export async function init_dlisp(Environment)  {
                 reading_object=false;
                 mode=in_code;
                 symbol_start=null;
+                pause_time=await (async function(){
+                    if (check_true (await (await Environment.get_global("is_number?"))((opts && opts["pause_time"])))){
+                        return (opts && opts["pause_time"])
+                    } else {
+                        return null
+                    }
+                })();
                 cpath=[];
                 ctx={
                     scope:{
@@ -6102,6 +6110,9 @@ export async function init_dlisp(Environment)  {
                     _ctx=_ctx;
                     block_return=null;
                     depth=_depth;
+                    if (check_true (pause_time)){
+                        await (await Environment.get_global("sleep"))(pause_time)
+                    };
                     await (async function(){
                          let __test_condition__12=async function() {
                             return (await (await Environment.get_global("not"))(stop)&& (idx<len))
@@ -7051,6 +7062,7 @@ export async function init_dlisp(Environment)  {
                 let reading_object;
                 let mode;
                 let symbol_start;
+                let pause_time;
                 let cpath;
                 let ctx;
                 let last_final_column_num;
@@ -7109,6 +7121,13 @@ export async function init_dlisp(Environment)  {
                 reading_object=false;
                 mode=in_code;
                 symbol_start=null;
+                pause_time=await (async function(){
+                    if (check_true (await (await Environment.get_global("is_number?"))((opts && opts["pause_time"])))){
+                        return (opts && opts["pause_time"])
+                    } else {
+                        return null
+                    }
+                })();
                 cpath=[];
                 ctx={
                     scope:{
@@ -7496,6 +7515,9 @@ export async function init_dlisp(Environment)  {
                     _ctx=_ctx;
                     block_return=null;
                     depth=_depth;
+                    if (check_true (pause_time)){
+                        await (await Environment.get_global("sleep"))(pause_time)
+                    };
                     await (async function(){
                          let __test_condition__12=async function() {
                             return (await (await Environment.get_global("not"))(stop)&& (idx<len))
@@ -9033,32 +9055,32 @@ return await (async function() {
     if (check_true ((container&& (container instanceof Array)&& (await (await Environment.get_global("length"))(container)>0)))){
         {
             await (async function() {
-                let __for_body__26=async function(value) {
+                let __for_body__25=async function(value) {
                     return (await (await Environment.get_global("is_number?"))(value)&& await (async function(){
                         value_found=true;
                         smallest=await Math.min(value,smallest);
                         return biggest=await Math.max(value,biggest)
                     })())
                 };
-                let __array__27=[],__elements__25=container;
+                let __array__26=[],__elements__24=container;
                 let __BREAK__FLAG__=false;
-                for(let __iter__24 in __elements__25) {
-                    __array__27.push(await __for_body__26(__elements__25[__iter__24]));
+                for(let __iter__23 in __elements__24) {
+                    __array__26.push(await __for_body__25(__elements__24[__iter__23]));
                     if(__BREAK__FLAG__) {
-                         __array__27.pop();
+                         __array__26.pop();
                         break;
                         
                     }
-                }return __array__27;
+                }return __array__26;
                  
             })();
             if (check_true (value_found)){
                 return await (async function(){
-                    let __array_op_rval__28=smallest;
-                     if (__array_op_rval__28 instanceof Function){
-                        return await __array_op_rval__28(biggest) 
+                    let __array_op_rval__27=smallest;
+                     if (__array_op_rval__27 instanceof Function){
+                        return await __array_op_rval__27(biggest) 
                     } else {
-                        return [__array_op_rval__28,biggest]
+                        return [__array_op_rval__27,biggest]
                     }
                 })()
             } else {
@@ -9670,21 +9692,21 @@ return await (async function() {
         items=[items]
     };
     await (async function() {
-        let __for_body__62=async function(value) {
+        let __for_body__61=async function(value) {
             if (check_true (await (await Environment.get_global("not"))((null==value)))){
                 return (acc).push(value)
             }
         };
-        let __array__63=[],__elements__61=items;
+        let __array__62=[],__elements__60=items;
         let __BREAK__FLAG__=false;
-        for(let __iter__60 in __elements__61) {
-            __array__63.push(await __for_body__62(__elements__61[__iter__60]));
+        for(let __iter__59 in __elements__60) {
+            __array__62.push(await __for_body__61(__elements__60[__iter__59]));
             if(__BREAK__FLAG__) {
-                 __array__63.pop();
+                 __array__62.pop();
                 break;
                 
             }
-        }return __array__63;
+        }return __array__62;
          
     })();
     return acc
@@ -11474,16 +11496,16 @@ return await (async function() {
                                     return await (async function() {
                                         let __for_body__289=async function(req) {
                                             {
-                                                let _expr_98983;
+                                                let _expr_19373;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_98983=await (async function(){
+                                                _expr_19373=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req) 
                                                 })();
-                                                req_sym=(_expr_98983 && _expr_98983["0"]);
-                                                req_ns=(_expr_98983 && _expr_98983["1"]);
-                                                explicit=(_expr_98983 && _expr_98983["2"]);
+                                                req_sym=(_expr_19373 && _expr_19373["0"]);
+                                                req_ns=(_expr_19373 && _expr_19373["1"]);
+                                                explicit=(_expr_19373 && _expr_19373["2"]);
                                                 if (check_true (req_ns)){
                                                     {
                                                         return await splice_before(await symbol_marker(name,symname),await symbol_marker(req_ns,req_sym))
@@ -11586,13 +11608,13 @@ return await (async function() {
                 __collector=[];
                 __result=null;
                 __action=async function(sym) {
-                    let _expr_72282;
+                    let _expr_66008;
                     let nspace;
-                    _expr_72282=await (async function(){
+                    _expr_66008=await (async function(){
                          return await (await Environment.get_global("decomp_symbol"))(sym) 
                     })();
-                    sym=(_expr_72282 && _expr_72282["0"]);
-                    nspace=(_expr_72282 && _expr_72282["1"]);
+                    sym=(_expr_66008 && _expr_66008["0"]);
+                    nspace=(_expr_66008 && _expr_66008["1"]);
                     if (check_true (await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(nspace,acc)))){
                         {
                             (acc).push(nspace);
@@ -12019,6 +12041,19 @@ return await (async function() {
          
     })();
     return acc
+};__obj__1["sleep"]=async function(seconds) {
+    return new Promise(async function(resolve) {
+        return await setTimeout(async function() {
+            return await (async function(){
+                let __array_op_rval__329=resolve;
+                 if (__array_op_rval__329 instanceof Function){
+                    return await __array_op_rval__329(true) 
+                } else {
+                    return [__array_op_rval__329,true]
+                }
+            })()
+        },(seconds* 1000))
+    })
 };__obj__1["process_tree_symbols"]=async function(tree,prefix,_ctx) {
     let is_root;
     let rval;
@@ -12079,23 +12114,23 @@ return await (async function() {
         if (check_true (((tree instanceof Array)&& ((tree && tree.length)>0)))) {
             {
                 allocator=await (async function(){
-                    let __targ__329=(await Environment.get_global("*formatting_rules*.allocating_forms"));
-                    if (__targ__329){
-                         return(__targ__329)[(""+ await (await Environment.get_global("as_lisp"))(tree[0]))]
+                    let __targ__330=(await Environment.get_global("*formatting_rules*.allocating_forms"));
+                    if (__targ__330){
+                         return(__targ__330)[(""+ await (await Environment.get_global("as_lisp"))(tree[0]))]
                     } 
                 })();
                 if (check_true (allocator instanceof Function)){
                     {
                         allocations=await (async function(){
-                            let __array_op_rval__330=allocator;
-                             if (__array_op_rval__330 instanceof Function){
-                                return await __array_op_rval__330(tree) 
+                            let __array_op_rval__331=allocator;
+                             if (__array_op_rval__331 instanceof Function){
+                                return await __array_op_rval__331(tree) 
                             } else {
-                                return [__array_op_rval__330,tree]
+                                return [__array_op_rval__331,tree]
                             }
                         })();
                         await (async function() {
-                            let __for_body__333=async function(allocation) {
+                            let __for_body__334=async function(allocation) {
                                 symbol=(""+ await (await Environment.get_global("as_lisp"))(allocation));
                                 if (check_true (await (await Environment.get_global("not"))(((symbol===prefix)|| (symbol==="\"&\""))))){
                                     {
@@ -12103,54 +12138,54 @@ return await (async function() {
                                     }
                                 }
                             };
-                            let __array__334=[],__elements__332=allocations;
+                            let __array__335=[],__elements__333=allocations;
                             let __BREAK__FLAG__=false;
-                            for(let __iter__331 in __elements__332) {
-                                __array__334.push(await __for_body__333(__elements__332[__iter__331]));
+                            for(let __iter__332 in __elements__333) {
+                                __array__335.push(await __for_body__334(__elements__333[__iter__332]));
                                 if(__BREAK__FLAG__) {
-                                     __array__334.pop();
+                                     __array__335.pop();
                                     break;
                                     
                                 }
-                            }return __array__334;
+                            }return __array__335;
                              
                         })()
                     }
                 };
                 return await (async function() {
-                    let __for_body__337=async function(t) {
+                    let __for_body__338=async function(t) {
                         return await sort_token(t)
                     };
-                    let __array__338=[],__elements__336=tree;
+                    let __array__339=[],__elements__337=tree;
                     let __BREAK__FLAG__=false;
-                    for(let __iter__335 in __elements__336) {
-                        __array__338.push(await __for_body__337(__elements__336[__iter__335]));
+                    for(let __iter__336 in __elements__337) {
+                        __array__339.push(await __for_body__338(__elements__337[__iter__336]));
                         if(__BREAK__FLAG__) {
-                             __array__338.pop();
+                             __array__339.pop();
                             break;
                             
                         }
-                    }return __array__338;
+                    }return __array__339;
                      
                 })()
             }
         } else if (check_true ((tree instanceof Object))) {
             {
                 await (async function() {
-                    let __for_body__341=async function(pset) {
+                    let __for_body__342=async function(pset) {
                         await (_ctx && _ctx["literals"])["add"].call((_ctx && _ctx["literals"]),(pset && pset["0"]));
                         return await sort_token((pset && pset["1"]))
                     };
-                    let __array__342=[],__elements__340=await (await Environment.get_global("pairs"))(tree);
+                    let __array__343=[],__elements__341=await (await Environment.get_global("pairs"))(tree);
                     let __BREAK__FLAG__=false;
-                    for(let __iter__339 in __elements__340) {
-                        __array__342.push(await __for_body__341(__elements__340[__iter__339]));
+                    for(let __iter__340 in __elements__341) {
+                        __array__343.push(await __for_body__342(__elements__341[__iter__340]));
                         if(__BREAK__FLAG__) {
-                             __array__342.pop();
+                             __array__343.pop();
                             break;
                             
                         }
-                    }return __array__342;
+                    }return __array__343;
                      
                 })()
             }
@@ -12186,29 +12221,29 @@ return await (async function() {
                 prototypes=[];
                 properties= ( Environment.get_global("first"))(prototypes);
                  ( function(){
-                     let __body_ref__344=function() {
+                     let __body_ref__345=function() {
                         properties=new Set();
                         (prototypes).push(properties);
                          ( function() {
-                            let __for_body__347=function(item) {
+                            let __for_body__348=function(item) {
                                 return  properties["add"].call(properties,item)
                             };
-                            let __array__348=[],__elements__346= Object.getOwnPropertyNames(current_obj);
+                            let __array__349=[],__elements__347= Object.getOwnPropertyNames(current_obj);
                             let __BREAK__FLAG__=false;
-                            for(let __iter__345 in __elements__346) {
-                                __array__348.push( __for_body__347(__elements__346[__iter__345]));
+                            for(let __iter__346 in __elements__347) {
+                                __array__349.push( __for_body__348(__elements__347[__iter__346]));
                                 if(__BREAK__FLAG__) {
-                                     __array__348.pop();
+                                     __array__349.pop();
                                     break;
                                     
                                 }
-                            }return __array__348;
+                            }return __array__349;
                              
                         })();
                         return current_obj= Object.getPrototypeOf(current_obj)
                     };
                     let __BREAK__FLAG__=false;
-                    while(current_obj) {  __body_ref__344();
+                    while(current_obj) {  __body_ref__345();
                      if(__BREAK__FLAG__) {
                          break;
                         
@@ -12217,7 +12252,7 @@ return await (async function() {
                 
             })();
             return  ( Environment.get_global("flatten"))( ( function() {
-                let __for_body__351=function(s) {
+                let __for_body__352=function(s) {
                     return  ( function() {
                         {
                              let __call_target__= Array.from(s), __call_method__="sort";
@@ -12225,16 +12260,16 @@ return await (async function() {
                         } 
                     })()
                 };
-                let __array__352=[],__elements__350=prototypes;
+                let __array__353=[],__elements__351=prototypes;
                 let __BREAK__FLAG__=false;
-                for(let __iter__349 in __elements__350) {
-                    __array__352.push( __for_body__351(__elements__350[__iter__349]));
+                for(let __iter__350 in __elements__351) {
+                    __array__353.push( __for_body__352(__elements__351[__iter__350]));
                     if(__BREAK__FLAG__) {
-                         __array__352.pop();
+                         __array__353.pop();
                         break;
                         
                     }
-                }return __array__352;
+                }return __array__353;
                  
             })())
         }
@@ -12245,26 +12280,26 @@ return await (async function() {
 };__obj__1["pairs*"]=function(obj) {
         if (check_true ((obj instanceof Object))){
             return  ( function() {
-                let __for_body__355=function(k) {
+                let __for_body__356=function(k) {
                     return  ( function(){
-                        let __array_op_rval__357=k;
-                         if (__array_op_rval__357 instanceof Function){
-                            return  __array_op_rval__357(obj[k]) 
+                        let __array_op_rval__358=k;
+                         if (__array_op_rval__358 instanceof Function){
+                            return  __array_op_rval__358(obj[k]) 
                         } else {
-                            return [__array_op_rval__357,obj[k]]
+                            return [__array_op_rval__358,obj[k]]
                         }
                     })()
                 };
-                let __array__356=[],__elements__354= ( Environment.get_global("keys*"))(obj);
+                let __array__357=[],__elements__355= ( Environment.get_global("keys*"))(obj);
                 let __BREAK__FLAG__=false;
-                for(let __iter__353 in __elements__354) {
-                    __array__356.push( __for_body__355(__elements__354[__iter__353]));
+                for(let __iter__354 in __elements__355) {
+                    __array__357.push( __for_body__356(__elements__355[__iter__354]));
                     if(__BREAK__FLAG__) {
-                         __array__356.pop();
+                         __array__357.pop();
                         break;
                         
                     }
-                }return __array__356;
+                }return __array__357;
                  
             })()
         }
@@ -12304,17 +12339,17 @@ return await (async function() {
         current_line=[];
         lines=[];
          ( function() {
-            let __for_body__360=function(word) {
+            let __for_body__361=function(word) {
                 return   (function(){
                     if (check_true (((line_length+  ( Environment.get_global("length"))(word))>=max_cols))) {
                         {
                             (lines).push((current_line).join(" "));
                             current_line= ( function(){
-                                let __array_op_rval__362=word;
-                                 if (__array_op_rval__362 instanceof Function){
-                                    return  __array_op_rval__362() 
+                                let __array_op_rval__363=word;
+                                 if (__array_op_rval__363 instanceof Function){
+                                    return  __array_op_rval__363() 
                                 } else {
-                                    return [__array_op_rval__362]
+                                    return [__array_op_rval__363]
                                 }
                             })();
                             return line_length= ( Environment.get_global("add"))( ( Environment.get_global("length"))(word),1)
@@ -12327,16 +12362,16 @@ return await (async function() {
                     }
                 } )()
             };
-            let __array__361=[],__elements__359=(words|| []);
+            let __array__362=[],__elements__360=(words|| []);
             let __BREAK__FLAG__=false;
-            for(let __iter__358 in __elements__359) {
-                __array__361.push( __for_body__360(__elements__359[__iter__358]));
+            for(let __iter__359 in __elements__360) {
+                __array__362.push( __for_body__361(__elements__360[__iter__359]));
                 if(__BREAK__FLAG__) {
-                     __array__361.pop();
+                     __array__362.pop();
                     break;
                     
                 }
-            }return __array__361;
+            }return __array__362;
              
         })();
         if (check_true (((current_line && current_line.length)>0))){
@@ -12390,7 +12425,7 @@ return await (async function() {
         last_c=null;
         last_delim=null;
          ( function() {
-            let __for_body__365=function(c) {
+            let __for_body__366=function(c) {
                 idx+=1;
                   (function(){
                     if (check_true (((c==="\"")&& ((null==last_c)|| (last_c&&  ( Environment.get_global("not"))((92=== last_c["charCodeAt"]()))))))) {
@@ -12425,16 +12460,16 @@ return await (async function() {
                 } )();
                 return last_c=c
             };
-            let __array__366=[],__elements__364=(line).split("");
+            let __array__367=[],__elements__365=(line).split("");
             let __BREAK__FLAG__=false;
-            for(let __iter__363 in __elements__364) {
-                __array__366.push( __for_body__365(__elements__364[__iter__363]));
+            for(let __iter__364 in __elements__365) {
+                __array__367.push( __for_body__366(__elements__365[__iter__364]));
                 if(__BREAK__FLAG__) {
-                     __array__366.pop();
+                     __array__367.pop();
                     break;
                     
                 }
-            }return __array__366;
+            }return __array__367;
              
         })();
         if (check_true ((undefined==base_indent))){
@@ -12455,9 +12490,9 @@ return await (async function() {
         remainder_pos= ( function(){
             if (check_true (((delta && delta["openers"] && delta["openers"]["length"])>0))){
                 return ( ( function(){
-                    let __targ__367=(delta && delta["openers"]);
-                    if (__targ__367){
-                         return(__targ__367)[(movement_needed- 1)]
+                    let __targ__368=(delta && delta["openers"]);
+                    if (__targ__368){
+                         return(__targ__368)[(movement_needed- 1)]
                     } 
                 })()||  ( Environment.get_global("first"))((delta && delta["openers"]))|| (delta && delta["indent"]))
             } else {
@@ -12480,22 +12515,22 @@ return await (async function() {
             };
             ;
              ( function() {
-                let __for_body__370=function(__item) {
+                let __for_body__371=function(__item) {
                     __result= __action(__item);
                     if (check_true (__result)){
                         return (__collector).push(__result)
                     }
                 };
-                let __array__371=[],__elements__369=(remainder).split(" ");
+                let __array__372=[],__elements__370=(remainder).split(" ");
                 let __BREAK__FLAG__=false;
-                for(let __iter__368 in __elements__369) {
-                    __array__371.push( __for_body__370(__elements__369[__iter__368]));
+                for(let __iter__369 in __elements__370) {
+                    __array__372.push( __for_body__371(__elements__370[__iter__369]));
                     if(__BREAK__FLAG__) {
-                         __array__371.pop();
+                         __array__372.pop();
                         break;
                         
                     }
-                }return __array__371;
+                }return __array__372;
                  
             })();
             return __collector
@@ -12617,32 +12652,32 @@ return await (async function() {
                 current_row=(line_number- 1);
                 prior_line= ( function(){
                     let v= ( function(){
-                        let __array_op_rval__382=get_line;
-                         if (__array_op_rval__382 instanceof Function){
-                            return  __array_op_rval__382(current_row) 
+                        let __array_op_rval__383=get_line;
+                         if (__array_op_rval__383 instanceof Function){
+                            return  __array_op_rval__383(current_row) 
                         } else {
-                            return [__array_op_rval__382,current_row]
+                            return [__array_op_rval__383,current_row]
                         }
                     })();
                     ;
                      ( function(){
-                         let __test_condition__383=function() {
+                         let __test_condition__384=function() {
                             return (((v).trim()==="")&& (current_row>0))
                         };
-                        let __body_ref__384=function() {
+                        let __body_ref__385=function() {
                             current_row-=1;
                             return v= ( function(){
-                                let __array_op_rval__385=get_line;
-                                 if (__array_op_rval__385 instanceof Function){
-                                    return  __array_op_rval__385(current_row) 
+                                let __array_op_rval__386=get_line;
+                                 if (__array_op_rval__386 instanceof Function){
+                                    return  __array_op_rval__386(current_row) 
                                 } else {
-                                    return [__array_op_rval__385,current_row]
+                                    return [__array_op_rval__386,current_row]
                                 }
                             })()
                         };
                         let __BREAK__FLAG__=false;
-                        while( __test_condition__383()) {
-                              __body_ref__384();
+                        while( __test_condition__384()) {
+                              __body_ref__385();
                              if(__BREAK__FLAG__) {
                                  break;
                                 
@@ -12672,37 +12707,37 @@ return await (async function() {
                             remainder=null;
                             symbol_details=null;
                              ( function(){
-                                 let __test_condition__386=function() {
+                                 let __test_condition__387=function() {
                                     return ((movement_needed<0)&& (current_row>0))
                                 };
-                                let __body_ref__387=function() {
+                                let __body_ref__388=function() {
                                     current_row-=1;
                                     prior_line= ( function(){
-                                        let __array_op_rval__388=get_line;
-                                         if (__array_op_rval__388 instanceof Function){
-                                            return  __array_op_rval__388(current_row) 
+                                        let __array_op_rval__389=get_line;
+                                         if (__array_op_rval__389 instanceof Function){
+                                            return  __array_op_rval__389(current_row) 
                                         } else {
-                                            return [__array_op_rval__388,current_row]
+                                            return [__array_op_rval__389,current_row]
                                         }
                                     })();
                                      ( function(){
-                                         let __test_condition__389=function() {
+                                         let __test_condition__390=function() {
                                             return ((current_row>0)&& ((prior_line).trim()===""))
                                         };
-                                        let __body_ref__390=function() {
+                                        let __body_ref__391=function() {
                                             current_row-=1;
                                             return prior_line= ( function(){
-                                                let __array_op_rval__391=get_line;
-                                                 if (__array_op_rval__391 instanceof Function){
-                                                    return  __array_op_rval__391(current_row) 
+                                                let __array_op_rval__392=get_line;
+                                                 if (__array_op_rval__392 instanceof Function){
+                                                    return  __array_op_rval__392(current_row) 
                                                 } else {
-                                                    return [__array_op_rval__391,current_row]
+                                                    return [__array_op_rval__392,current_row]
                                                 }
                                             })()
                                         };
                                         let __BREAK__FLAG__=false;
-                                        while( __test_condition__389()) {
-                                              __body_ref__390();
+                                        while( __test_condition__390()) {
+                                              __body_ref__391();
                                              if(__BREAK__FLAG__) {
                                                  break;
                                                 
@@ -12714,8 +12749,8 @@ return await (async function() {
                                     return movement_needed=(movement_needed+ (delta && delta["delta"]))
                                 };
                                 let __BREAK__FLAG__=false;
-                                while( __test_condition__386()) {
-                                      __body_ref__387();
+                                while( __test_condition__387()) {
+                                      __body_ref__388();
                                      if(__BREAK__FLAG__) {
                                          break;
                                         
@@ -12732,19 +12767,19 @@ return await (async function() {
                     }
                 } )();
                 return ( ( function() {
-                    let __for_body__394=function(c) {
+                    let __for_body__395=function(c) {
                         return " "
                     };
-                    let __array__395=[],__elements__393= ( Environment.get_global("range"))( Math.max(0,(delta && delta["indent"])));
+                    let __array__396=[],__elements__394= ( Environment.get_global("range"))( Math.max(0,(delta && delta["indent"])));
                     let __BREAK__FLAG__=false;
-                    for(let __iter__392 in __elements__393) {
-                        __array__395.push( __for_body__394(__elements__393[__iter__392]));
+                    for(let __iter__393 in __elements__394) {
+                        __array__396.push( __for_body__395(__elements__394[__iter__393]));
                         if(__BREAK__FLAG__) {
-                             __array__395.pop();
+                             __array__396.pop();
                             break;
                             
                         }
-                    }return __array__395;
+                    }return __array__396;
                      
                 })()).join("")
             }
@@ -12773,11 +12808,11 @@ return await (async function() {
         
     }
 };__obj__1["traverse"]=async function(structure,operator_function,_path) {
-    let __path__396= async function(){
+    let __path__397= async function(){
         return (_path|| [])
     };
     {
-        let path=await __path__396();
+        let path=await __path__397();
         ;
         if (check_true ((null==operator_function))){
             throw new Error("traverse: requires a function as a second argument");
@@ -12787,11 +12822,11 @@ return await (async function() {
             if (check_true ((structure instanceof Array))) {
                 {
                     await (async function(){
-                        let __array_op_rval__397=operator_function;
-                         if (__array_op_rval__397 instanceof Function){
-                            return await __array_op_rval__397(structure,path) 
+                        let __array_op_rval__398=operator_function;
+                         if (__array_op_rval__398 instanceof Function){
+                            return await __array_op_rval__398(structure,path) 
                         } else {
-                            return [__array_op_rval__397,structure,path]
+                            return [__array_op_rval__398,structure,path]
                         }
                     })();
                     return await (await Environment.get_global("map"))(async function(elem,idx) {
@@ -12801,15 +12836,15 @@ return await (async function() {
             } else if (check_true ((structure instanceof Object))) {
                 {
                     await (async function(){
-                        let __array_op_rval__398=operator_function;
-                         if (__array_op_rval__398 instanceof Function){
-                            return await __array_op_rval__398(structure,path) 
+                        let __array_op_rval__399=operator_function;
+                         if (__array_op_rval__399 instanceof Function){
+                            return await __array_op_rval__399(structure,path) 
                         } else {
-                            return [__array_op_rval__398,structure,path]
+                            return [__array_op_rval__399,structure,path]
                         }
                     })();
                     await (async function() {
-                        let __for_body__401=async function(pset) {
+                        let __for_body__402=async function(pset) {
                             {
                                 let key;
                                 let value;
@@ -12818,26 +12853,26 @@ return await (async function() {
                                 return await (await Environment.get_global("traverse"))(value,operator_function,await (await Environment.get_global("conj"))(path,key))
                             }
                         };
-                        let __array__402=[],__elements__400=await (await Environment.get_global("pairs"))(structure);
+                        let __array__403=[],__elements__401=await (await Environment.get_global("pairs"))(structure);
                         let __BREAK__FLAG__=false;
-                        for(let __iter__399 in __elements__400) {
-                            __array__402.push(await __for_body__401(__elements__400[__iter__399]));
+                        for(let __iter__400 in __elements__401) {
+                            __array__403.push(await __for_body__402(__elements__401[__iter__400]));
                             if(__BREAK__FLAG__) {
-                                 __array__402.pop();
+                                 __array__403.pop();
                                 break;
                                 
                             }
-                        }return __array__402;
+                        }return __array__403;
                          
                     })()
                 }
             } else {
                 await (async function(){
-                    let __array_op_rval__403=operator_function;
-                     if (__array_op_rval__403 instanceof Function){
-                        return await __array_op_rval__403(structure,path) 
+                    let __array_op_rval__404=operator_function;
+                     if (__array_op_rval__404 instanceof Function){
+                        return await __array_op_rval__404(structure,path) 
                     } else {
-                        return [__array_op_rval__403,structure,path]
+                        return [__array_op_rval__404,structure,path]
                     }
                 })()
             }
@@ -12865,37 +12900,37 @@ return await (async function() {
         acc=new Set();
         env_a=null;
          ( function() {
-            let __for_body__406=function(ns) {
+            let __for_body__407=function(ns) {
                 env_a= Environment["get_namespace_handle"].call(Environment,ns);
                 return  ( function() {
-                    let __for_body__410=function(pset) {
+                    let __for_body__411=function(pset) {
                         if (check_true ((pset && pset["1"]) instanceof Function)){
                             return  acc["add"].call(acc,(pset && pset["0"]))
                         }
                     };
-                    let __array__411=[],__elements__409= ( Environment.get_global("pairs"))((env_a && env_a["context"] && env_a["context"]["scope"]));
+                    let __array__412=[],__elements__410= ( Environment.get_global("pairs"))((env_a && env_a["context"] && env_a["context"]["scope"]));
                     let __BREAK__FLAG__=false;
-                    for(let __iter__408 in __elements__409) {
-                        __array__411.push( __for_body__410(__elements__409[__iter__408]));
+                    for(let __iter__409 in __elements__410) {
+                        __array__412.push( __for_body__411(__elements__410[__iter__409]));
                         if(__BREAK__FLAG__) {
-                             __array__411.pop();
+                             __array__412.pop();
                             break;
                             
                         }
-                    }return __array__411;
+                    }return __array__412;
                      
                 })()
             };
-            let __array__407=[],__elements__405= ( Environment.get_global("namespaces"))();
+            let __array__408=[],__elements__406= ( Environment.get_global("namespaces"))();
             let __BREAK__FLAG__=false;
-            for(let __iter__404 in __elements__405) {
-                __array__407.push( __for_body__406(__elements__405[__iter__404]));
+            for(let __iter__405 in __elements__406) {
+                __array__408.push( __for_body__407(__elements__406[__iter__405]));
                 if(__BREAK__FLAG__) {
-                     __array__407.pop();
+                     __array__408.pop();
                     break;
                     
                 }
-            }return __array__407;
+            }return __array__408;
              
         })();
         return acc
@@ -12954,9 +12989,9 @@ return await (async function() {
         })();
         chars=(in_text).split("");
         key_words= ( function(){
-            let __targ__412=( Environment.get_global("*formatting_rules*"));
-            if (__targ__412){
-                 return(__targ__412)["keywords"]
+            let __targ__413=( Environment.get_global("*formatting_rules*"));
+            if (__targ__413){
+                 return(__targ__413)["keywords"]
             } 
         })();
         block_words=["try","progn","progl","progc","do","let","cond"];
@@ -12966,19 +13001,19 @@ return await (async function() {
             let tmp= ( Environment.get_global("all_global_functions"))();
             ;
              ( function() {
-                let __for_body__415=function(op) {
+                let __for_body__416=function(op) {
                     return  tmp["add"].call(tmp,op)
                 };
-                let __array__416=[],__elements__414=(key_words|| []);
+                let __array__417=[],__elements__415=(key_words|| []);
                 let __BREAK__FLAG__=false;
-                for(let __iter__413 in __elements__414) {
-                    __array__416.push( __for_body__415(__elements__414[__iter__413]));
+                for(let __iter__414 in __elements__415) {
+                    __array__417.push( __for_body__416(__elements__415[__iter__414]));
                     if(__BREAK__FLAG__) {
-                         __array__416.pop();
+                         __array__417.pop();
                         break;
                         
                     }
-                }return __array__416;
+                }return __array__417;
                  
             })();
             return tmp
@@ -13049,15 +13084,15 @@ return await (async function() {
                 {
                     next_char_pos=(cpos+ 1);
                      ( function(){
-                         let __test_condition__417=function() {
+                         let __test_condition__418=function() {
                             return (chars[next_char_pos]&&  is_whitespace_ques_(chars[next_char_pos]))
                         };
-                        let __body_ref__418=function() {
+                        let __body_ref__419=function() {
                             return next_char_pos+=1
                         };
                         let __BREAK__FLAG__=false;
-                        while( __test_condition__417()) {
-                              __body_ref__418();
+                        while( __test_condition__418()) {
+                              __body_ref__419();
                              if(__BREAK__FLAG__) {
                                  break;
                                 
@@ -13070,10 +13105,10 @@ return await (async function() {
             }
         };
          ( function(){
-             let __test_condition__419=function() {
+             let __test_condition__420=function() {
                 return (cpos<(chars && chars.length))
             };
-            let __body_ref__420=function() {
+            let __body_ref__421=function() {
                 cpos+=1;
                 char=chars[cpos];
                 rule=null;
@@ -13253,9 +13288,9 @@ return await (async function() {
                         if (check_true (debug_mode)){
                             {
                                 return (report).push( ( function(){
-                                    let __array_op_rval__421=cpos;
-                                     if (__array_op_rval__421 instanceof Function){
-                                        return  __array_op_rval__421(char, ( function(){
+                                    let __array_op_rval__422=cpos;
+                                     if (__array_op_rval__422 instanceof Function){
+                                        return  __array_op_rval__422(char, ( function(){
                                             if (check_true ((cpos<=next_char_pos))){
                                                 return next_char
                                             } else {
@@ -13281,7 +13316,7 @@ return await (async function() {
                                             }
                                         })(),rule,word,operator,(line_acc).join("")) 
                                     } else {
-                                        return [__array_op_rval__421,char, ( function(){
+                                        return [__array_op_rval__422,char, ( function(){
                                             if (check_true ((cpos<=next_char_pos))){
                                                 return next_char
                                             } else {
@@ -13314,8 +13349,8 @@ return await (async function() {
                 }
             };
             let __BREAK__FLAG__=false;
-            while( __test_condition__419()) {
-                  __body_ref__420();
+            while( __test_condition__420()) {
+                  __body_ref__421();
                  if(__BREAK__FLAG__) {
                      break;
                     
@@ -13326,13 +13361,13 @@ return await (async function() {
         if (check_true (debug_mode)){
             {
                  ( function(){
-                    let __array_op_rval__422=report_callout;
-                     if (__array_op_rval__422 instanceof Function){
-                        return  __array_op_rval__422(report,{
+                    let __array_op_rval__423=report_callout;
+                     if (__array_op_rval__423 instanceof Function){
+                        return  __array_op_rval__423(report,{
                             columns:["CPOS","CHAR","NEXTC","LPOS","NCD","DEPTHC","MODE","ARGNUM","WS?","NLS?","SKIP_FOR","rule","word","op","Line_ACC"]
                         }) 
                     } else {
-                        return [__array_op_rval__422,report,{
+                        return [__array_op_rval__423,report,{
                             columns:["CPOS","CHAR","NEXTC","LPOS","NCD","DEPTHC","MODE","ARGNUM","WS?","NLS?","SKIP_FOR","rule","word","op","Line_ACC"]
                         }]
                     }
@@ -13345,7 +13380,7 @@ return await (async function() {
             }
         };
          ( function() {
-            let __for_body__425=function(line_num) {
+            let __for_body__426=function(line_num) {
                 text=(""+ lines[line_num]+ "\n");
                 if (check_true ((line_num>0))){
                     indent_string= ( Environment.get_global("format_lisp_line"))(line_num,get_line)
@@ -13358,16 +13393,16 @@ return await (async function() {
                     
                 })()
             };
-            let __array__426=[],__elements__424= ( Environment.get_global("range"))((lines && lines.length));
+            let __array__427=[],__elements__425= ( Environment.get_global("range"))((lines && lines.length));
             let __BREAK__FLAG__=false;
-            for(let __iter__423 in __elements__424) {
-                __array__426.push( __for_body__425(__elements__424[__iter__423]));
+            for(let __iter__424 in __elements__425) {
+                __array__427.push( __for_body__426(__elements__425[__iter__424]));
                 if(__BREAK__FLAG__) {
-                     __array__426.pop();
+                     __array__427.pop();
                     break;
                     
                 }
-            }return __array__426;
+            }return __array__427;
              
         })();
         return (lines).join("")
@@ -13407,7 +13442,7 @@ return await (async function() {
     await async function(){
         if (check_true ((namespace&& sym_meta&& ((sym_meta && sym_meta.length)>0)))) {
             return await (async function() {
-                let __for_body__430=async function(m) {
+                let __for_body__431=async function(m) {
                     if (check_true (((m && m["namespace"])===namespace))){
                         {
                             sym_meta=m;
@@ -13416,16 +13451,16 @@ return await (async function() {
                         }
                     }
                 };
-                let __array__431=[],__elements__429=sym_meta;
+                let __array__432=[],__elements__430=sym_meta;
                 let __BREAK__FLAG__=false;
-                for(let __iter__428 in __elements__429) {
-                    __array__431.push(await __for_body__430(__elements__429[__iter__428]));
+                for(let __iter__429 in __elements__430) {
+                    __array__432.push(await __for_body__431(__elements__430[__iter__429]));
                     if(__BREAK__FLAG__) {
-                         __array__431.pop();
+                         __array__432.pop();
                         break;
                         
                     }
-                }return __array__431;
+                }return __array__432;
                  
             })()
         } else {
@@ -13441,19 +13476,19 @@ return await (async function() {
     if (check_true ((sym_meta && sym_meta["externals"]))){
         {
             await (async function() {
-                let __for_body__434=async function(external_ref) {
+                let __for_body__435=async function(external_ref) {
                     return await externals["add"].call(externals,external_ref)
                 };
-                let __array__435=[],__elements__433=(sym_meta && sym_meta["externals"]);
+                let __array__436=[],__elements__434=(sym_meta && sym_meta["externals"]);
                 let __BREAK__FLAG__=false;
-                for(let __iter__432 in __elements__433) {
-                    __array__435.push(await __for_body__434(__elements__433[__iter__432]));
+                for(let __iter__433 in __elements__434) {
+                    __array__436.push(await __for_body__435(__elements__434[__iter__433]));
                     if(__BREAK__FLAG__) {
-                         __array__435.pop();
+                         __array__436.pop();
                         break;
                         
                     }
-                }return __array__435;
+                }return __array__436;
                  
             })()
         }
@@ -13461,7 +13496,7 @@ return await (async function() {
     if (check_true ((sym_meta&& namespace))){
         {
             await (async function() {
-                let __for_body__438=async function(required_symbol) {
+                let __for_body__439=async function(required_symbol) {
                     if (check_true (await (await Environment.get_global("not"))(await dependencies["has"].call(dependencies,required_symbol)))){
                         {
                             added=true;
@@ -13469,33 +13504,33 @@ return await (async function() {
                         }
                     }
                 };
-                let __array__439=[],__elements__437=(sym_meta && sym_meta["requires"]);
+                let __array__440=[],__elements__438=(sym_meta && sym_meta["requires"]);
                 let __BREAK__FLAG__=false;
-                for(let __iter__436 in __elements__437) {
-                    __array__439.push(await __for_body__438(__elements__437[__iter__436]));
+                for(let __iter__437 in __elements__438) {
+                    __array__440.push(await __for_body__439(__elements__438[__iter__437]));
                     if(__BREAK__FLAG__) {
-                         __array__439.pop();
+                         __array__440.pop();
                         break;
                         
                     }
-                }return __array__439;
+                }return __array__440;
                  
             })();
             if (check_true (added)){
                 await (async function() {
-                    let __for_body__442=async function(required_symbol) {
+                    let __for_body__443=async function(required_symbol) {
                         return await (await Environment.get_global("get_dependencies"))(required_symbol,dependencies,required_namespaces,externals)
                     };
-                    let __array__443=[],__elements__441=(sym_meta && sym_meta["requires"]);
+                    let __array__444=[],__elements__442=(sym_meta && sym_meta["requires"]);
                     let __BREAK__FLAG__=false;
-                    for(let __iter__440 in __elements__441) {
-                        __array__443.push(await __for_body__442(__elements__441[__iter__440]));
+                    for(let __iter__441 in __elements__442) {
+                        __array__444.push(await __for_body__443(__elements__442[__iter__441]));
                         if(__BREAK__FLAG__) {
-                             __array__443.pop();
+                             __array__444.pop();
                             break;
                             
                         }
-                    }return __array__443;
+                    }return __array__444;
                      
                 })()
             }
@@ -13534,19 +13569,19 @@ return await (async function() {
                 externals=new Set();
                 deps=null;
                 await (async function() {
-                    let __for_body__446=async function(sym) {
+                    let __for_body__447=async function(sym) {
                         return await (await Environment.get_global("get_dependencies"))(sym,dependencies,ns_deps,externals)
                     };
-                    let __array__447=[],__elements__445=symbol_array;
+                    let __array__448=[],__elements__446=symbol_array;
                     let __BREAK__FLAG__=false;
-                    for(let __iter__444 in __elements__445) {
-                        __array__447.push(await __for_body__446(__elements__445[__iter__444]));
+                    for(let __iter__445 in __elements__446) {
+                        __array__448.push(await __for_body__447(__elements__446[__iter__445]));
                         if(__BREAK__FLAG__) {
-                             __array__447.pop();
+                             __array__448.pop();
                             break;
                             
                         }
-                    }return __array__447;
+                    }return __array__448;
                      
                 })();
                 return {
@@ -13587,40 +13622,40 @@ return await (async function() {
     let perms;
     perms=["run","env","write","read","net","ffi","sys"];
     return await (await Environment.get_global("to_object"))(await (async function() {
-        let __for_body__450=async function(p) {
+        let __for_body__451=async function(p) {
             return await (async function(){
-                let __array_op_rval__453=p;
-                 if (__array_op_rval__453 instanceof Function){
-                    return await __array_op_rval__453(await (async function(){
-                        let __targ__452=await Deno.permissions.query({
+                let __array_op_rval__454=p;
+                 if (__array_op_rval__454 instanceof Function){
+                    return await __array_op_rval__454(await (async function(){
+                        let __targ__453=await Deno.permissions.query({
                             name:p
                         });
-                        if (__targ__452){
-                             return(__targ__452)["state"]
+                        if (__targ__453){
+                             return(__targ__453)["state"]
                         } 
                     })()) 
                 } else {
-                    return [__array_op_rval__453,await (async function(){
-                        let __targ__452=await Deno.permissions.query({
+                    return [__array_op_rval__454,await (async function(){
+                        let __targ__453=await Deno.permissions.query({
                             name:p
                         });
-                        if (__targ__452){
-                             return(__targ__452)["state"]
+                        if (__targ__453){
+                             return(__targ__453)["state"]
                         } 
                     })()]
                 }
             })()
         };
-        let __array__451=[],__elements__449=perms;
+        let __array__452=[],__elements__450=perms;
         let __BREAK__FLAG__=false;
-        for(let __iter__448 in __elements__449) {
-            __array__451.push(await __for_body__450(__elements__449[__iter__448]));
+        for(let __iter__449 in __elements__450) {
+            __array__452.push(await __for_body__451(__elements__450[__iter__449]));
             if(__BREAK__FLAG__) {
-                 __array__451.pop();
+                 __array__452.pop();
                 break;
                 
             }
-        }return __array__451;
+        }return __array__452;
          
     })())
 };__obj__1["compiler"]=async function(quoted_lisp,opts) {
@@ -23950,19 +23985,6 @@ return await (async function() {
             return data
         }
     } ()
-};__obj__1["sleep"]=async function(seconds) {
-    return new Promise(async function(resolve) {
-        return await setTimeout(async function() {
-            return await (async function(){
-                let __array_op_rval__23=resolve;
-                 if (__array_op_rval__23 instanceof Function){
-                    return await __array_op_rval__23(true) 
-                } else {
-                    return [__array_op_rval__23,true]
-                }
-            })()
-        },(seconds* 1000))
-    })
 };__obj__1["from_universal_time"]=function(seconds) {
         let d;
         let ue;
@@ -23991,7 +24013,7 @@ return await (async function() {
     if (check_true ((container&& (container instanceof Array)&& (await (await Environment.get_global("length"))(container)>0)))){
         {
             await (async function() {
-                let __for_body__31=async function(value) {
+                let __for_body__30=async function(value) {
                     return (await (await Environment.get_global("is_number?"))(value)&& await (async function(){
                         value_found=true;
                         if (check_true ((value<smallest))){
@@ -24009,25 +24031,25 @@ return await (async function() {
                         return idx+=1
                     })())
                 };
-                let __array__32=[],__elements__30=container;
+                let __array__31=[],__elements__29=container;
                 let __BREAK__FLAG__=false;
-                for(let __iter__29 in __elements__30) {
-                    __array__32.push(await __for_body__31(__elements__30[__iter__29]));
+                for(let __iter__28 in __elements__29) {
+                    __array__31.push(await __for_body__30(__elements__29[__iter__28]));
                     if(__BREAK__FLAG__) {
-                         __array__32.pop();
+                         __array__31.pop();
                         break;
                         
                     }
-                }return __array__32;
+                }return __array__31;
                  
             })();
             if (check_true (value_found)){
                 return await (async function(){
-                    let __array_op_rval__33=idx_small;
-                     if (__array_op_rval__33 instanceof Function){
-                        return await __array_op_rval__33(idx_largest) 
+                    let __array_op_rval__32=idx_small;
+                     if (__array_op_rval__32 instanceof Function){
+                        return await __array_op_rval__32(idx_largest) 
                     } else {
-                        return [__array_op_rval__33,idx_largest]
+                        return [__array_op_rval__32,idx_largest]
                     }
                 })()
             } else {
@@ -24041,11 +24063,11 @@ return await (async function() {
     if (check_true ((value instanceof Array))){
         return await (await Environment.get_global("map"))(async function(v) {
             return await (async function(){
-                let __array_op_rval__34=(v && v["1"]);
-                 if (__array_op_rval__34 instanceof Function){
-                    return await __array_op_rval__34((v && v["0"])) 
+                let __array_op_rval__33=(v && v["1"]);
+                 if (__array_op_rval__33 instanceof Function){
+                    return await __array_op_rval__33((v && v["0"])) 
                 } else {
-                    return [__array_op_rval__34,(v && v["0"])]
+                    return [__array_op_rval__33,(v && v["0"])]
                 }
             })()
         },value)
@@ -24058,11 +24080,11 @@ return await (async function() {
 };__obj__1["apply_list_to_list"]=async function(operator,list1,list2) {
     return await (await Environment.get_global("map"))(async function(val,idx) {
         return await (async function(){
-            let __array_op_rval__35=operator;
-             if (__array_op_rval__35 instanceof Function){
-                return await __array_op_rval__35(val,list1[(idx% await (await Environment.get_global("length"))(list1))]) 
+            let __array_op_rval__34=operator;
+             if (__array_op_rval__34 instanceof Function){
+                return await __array_op_rval__34(val,list1[(idx% await (await Environment.get_global("length"))(list1))]) 
             } else {
-                return [__array_op_rval__35,val,list1[(idx% await (await Environment.get_global("length"))(list1))]]
+                return [__array_op_rval__34,val,list1[(idx% await (await Environment.get_global("length"))(list1))]]
             }
         })()
     },list2)
@@ -24071,11 +24093,11 @@ return await (async function() {
         let op=await Environment["eval"].call(Environment,("=:"+ modifier_list[(idx% await (await Environment.get_global("length"))(modifier_list))]));
         ;
         return await (async function(){
-            let __array_op_rval__36=op;
-             if (__array_op_rval__36 instanceof Function){
-                return await __array_op_rval__36(val) 
+            let __array_op_rval__35=op;
+             if (__array_op_rval__35 instanceof Function){
+                return await __array_op_rval__35(val) 
             } else {
-                return [__array_op_rval__36,val]
+                return [__array_op_rval__35,val]
             }
         })()
     },target_list)
@@ -24106,7 +24128,7 @@ return await (async function() {
                 };
                 sep_ques_=(sep_ques_|| "_");
                 return  ( Environment.get_global("dtext"))(( ( function() {
-                    let __for_body__40=function(v) {
+                    let __for_body__39=function(v) {
                         return (""+  ( function() {
                             {
                                  let __call_target__= v["charAt"].call(v,0), __call_method__="toUpperCase";
@@ -24114,16 +24136,16 @@ return await (async function() {
                             } 
                         })()+  v["slice"].call(v,1))
                     };
-                    let __array__41=[],__elements__39=(value).split(sep_ques_);
+                    let __array__40=[],__elements__38=(value).split(sep_ques_);
                     let __BREAK__FLAG__=false;
-                    for(let __iter__38 in __elements__39) {
-                        __array__41.push( __for_body__40(__elements__39[__iter__38]));
+                    for(let __iter__37 in __elements__38) {
+                        __array__40.push( __for_body__39(__elements__38[__iter__37]));
                         if(__BREAK__FLAG__) {
-                             __array__41.pop();
+                             __array__40.pop();
                             break;
                             
                         }
-                    }return __array__41;
+                    }return __array__40;
                      
                 })()).join(" "))
             }
@@ -24141,19 +24163,19 @@ return await (async function() {
                 };
                 sep_ques_="_";
                 let tokens= ( function() {
-                    let __for_body__45=function(v) {
+                    let __for_body__44=function(v) {
                         return (""+ (v).toLowerCase())
                     };
-                    let __array__46=[],__elements__44=(value).split(" ");
+                    let __array__45=[],__elements__43=(value).split(" ");
                     let __BREAK__FLAG__=false;
-                    for(let __iter__43 in __elements__44) {
-                        __array__46.push( __for_body__45(__elements__44[__iter__43]));
+                    for(let __iter__42 in __elements__43) {
+                        __array__45.push( __for_body__44(__elements__43[__iter__42]));
                         if(__BREAK__FLAG__) {
-                             __array__46.pop();
+                             __array__45.pop();
                             break;
                             
                         }
-                    }return __array__46;
+                    }return __array__45;
                      
                 })();
                 ;
@@ -24173,23 +24195,23 @@ var type = typeof obj; return type === 'function' || type === 'object' && !!obj;
     if (check_true (((target_object instanceof Object)&& (source_object instanceof Object)))){
         {
             await (async function() {
-                let __for_body__49=async function(pset) {
+                let __for_body__48=async function(pset) {
                     return await async function(){
                         target_object[(pset && pset["0"])]=(pset && pset["1"]);
                         return target_object;
                         
                     }()
                 };
-                let __array__50=[],__elements__48=await (await Environment.get_global("pairs"))(source_object);
+                let __array__49=[],__elements__47=await (await Environment.get_global("pairs"))(source_object);
                 let __BREAK__FLAG__=false;
-                for(let __iter__47 in __elements__48) {
-                    __array__50.push(await __for_body__49(__elements__48[__iter__47]));
+                for(let __iter__46 in __elements__47) {
+                    __array__49.push(await __for_body__48(__elements__47[__iter__46]));
                     if(__BREAK__FLAG__) {
-                         __array__50.pop();
+                         __array__49.pop();
                         break;
                         
                     }
-                }return __array__50;
+                }return __array__49;
                  
             })();
             return target_object
@@ -24222,22 +24244,22 @@ var type = typeof obj; return type === 'function' || type === 'object' && !!obj;
         };
         ;
         await (async function() {
-            let __for_body__54=async function(__item) {
+            let __for_body__53=async function(__item) {
                 __result=await __action(__item);
                 if (check_true (__result)){
                     return (__collector).push(__result)
                 }
             };
-            let __array__55=[],__elements__53=items;
+            let __array__54=[],__elements__52=items;
             let __BREAK__FLAG__=false;
-            for(let __iter__52 in __elements__53) {
-                __array__55.push(await __for_body__54(__elements__53[__iter__52]));
+            for(let __iter__51 in __elements__52) {
+                __array__54.push(await __for_body__53(__elements__52[__iter__51]));
                 if(__BREAK__FLAG__) {
-                     __array__55.pop();
+                     __array__54.pop();
                     break;
                     
                 }
-            }return __array__55;
+            }return __array__54;
              
         })();
         return __collector
@@ -24248,7 +24270,7 @@ var type = typeof obj; return type === 'function' || type === 'object' && !!obj;
     rval=null;
     found=false;
     await (async function() {
-        let __for_body__58=async function(p) {
+        let __for_body__57=async function(p) {
             rval=data_value[p];
             if (check_true (await (await Environment.get_global("not"))((null==rval)))){
                 {
@@ -24258,16 +24280,16 @@ var type = typeof obj; return type === 'function' || type === 'object' && !!obj;
                 }
             }
         };
-        let __array__59=[],__elements__57=prop_list;
+        let __array__58=[],__elements__56=prop_list;
         let __BREAK__FLAG__=false;
-        for(let __iter__56 in __elements__57) {
-            __array__59.push(await __for_body__58(__elements__57[__iter__56]));
+        for(let __iter__55 in __elements__56) {
+            __array__58.push(await __for_body__57(__elements__56[__iter__55]));
             if(__BREAK__FLAG__) {
-                 __array__59.pop();
+                 __array__58.pop();
                 break;
                 
             }
-        }return __array__59;
+        }return __array__58;
          
     })();
     if (check_true (found)){
@@ -24305,10 +24327,10 @@ var type = typeof obj; return type === 'function' || type === 'object' && !!obj;
          return await clone(input_array) 
     })();
     await (async function(){
-         let __test_condition__64=async function() {
+         let __test_condition__63=async function() {
             return (await (await Environment.get_global("length"))(working_array)>0)
         };
-        let __body_ref__65=async function() {
+        let __body_ref__64=async function() {
             let v1=(working_array).shift();
             ;
             let v1t=await (async function(){
@@ -24318,11 +24340,11 @@ var type = typeof obj; return type === 'function' || type === 'object' && !!obj;
             return await async function(){
                 if (check_true ((v1t==="object"))) {
                     return output=await (await Environment.get_global("add"))(await (async function(){
-                        let __array_op_rval__66=output;
-                         if (__array_op_rval__66 instanceof Function){
-                            return await __array_op_rval__66(v1) 
+                        let __array_op_rval__65=output;
+                         if (__array_op_rval__65 instanceof Function){
+                            return await __array_op_rval__65(v1) 
                         } else {
-                            return [__array_op_rval__66,v1]
+                            return [__array_op_rval__65,v1]
                         }
                     })())
                 } else {
@@ -24335,8 +24357,8 @@ var type = typeof obj; return type === 'function' || type === 'object' && !!obj;
             } ()
         };
         let __BREAK__FLAG__=false;
-        while(await __test_condition__64()) {
-             await __body_ref__65();
+        while(await __test_condition__63()) {
+             await __body_ref__64();
              if(__BREAK__FLAG__) {
                  break;
                 
@@ -24349,7 +24371,7 @@ var type = typeof obj; return type === 'function' || type === 'object' && !!obj;
     let output=[];
     ;
     await (async function() {
-        let __for_body__70=async function(item) {
+        let __for_body__69=async function(item) {
             return await async function(){
                 if (check_true ((item instanceof String || typeof item==='string'))) {
                     return (output).push(await (await Environment.get_global("split"))(item,split_element))
@@ -24360,16 +24382,16 @@ var type = typeof obj; return type === 'function' || type === 'object' && !!obj;
                 }
             } ()
         };
-        let __array__71=[],__elements__69=input_array;
+        let __array__70=[],__elements__68=input_array;
         let __BREAK__FLAG__=false;
-        for(let __iter__68 in __elements__69) {
-            __array__71.push(await __for_body__70(__elements__69[__iter__68]));
+        for(let __iter__67 in __elements__68) {
+            __array__70.push(await __for_body__69(__elements__68[__iter__67]));
             if(__BREAK__FLAG__) {
-                 __array__71.pop();
+                 __array__70.pop();
                 break;
                 
             }
-        }return __array__71;
+        }return __array__70;
          
     })();
     return output
@@ -24392,11 +24414,11 @@ var type = typeof obj; return type === 'function' || type === 'object' && !!obj;
                 return await (await Environment.get_global("no_empties"))(((x).trim()).split(" "))
             } else {
                 return await (async function(){
-                    let __array_op_rval__72=x;
-                     if (__array_op_rval__72 instanceof Function){
-                        return await __array_op_rval__72() 
+                    let __array_op_rval__71=x;
+                     if (__array_op_rval__71 instanceof Function){
+                        return await __array_op_rval__71() 
                     } else {
-                        return [__array_op_rval__72]
+                        return [__array_op_rval__71]
                     }
                 })()
             }
@@ -24437,7 +24459,7 @@ var type = typeof obj; return type === 'function' || type === 'object' && !!obj;
             hexcodes=[];
             view=new DataView(hash);
             await (async function() {
-                let __for_body__75=async function(i) {
+                let __for_body__74=async function(i) {
                     return (hexcodes).push(await (async function() {
                         {
                              let __call_target__=await (async function() {
@@ -24450,16 +24472,16 @@ var type = typeof obj; return type === 'function' || type === 'object' && !!obj;
                         } 
                     })())
                 };
-                let __array__76=[],__elements__74=await (await Environment.get_global("range"))((view && view["byteLength"]));
+                let __array__75=[],__elements__73=await (await Environment.get_global("range"))((view && view["byteLength"]));
                 let __BREAK__FLAG__=false;
-                for(let __iter__73 in __elements__74) {
-                    __array__76.push(await __for_body__75(__elements__74[__iter__73]));
+                for(let __iter__72 in __elements__73) {
+                    __array__75.push(await __for_body__74(__elements__73[__iter__72]));
                     if(__BREAK__FLAG__) {
-                         __array__76.pop();
+                         __array__75.pop();
                         break;
                         
                     }
-                }return __array__76;
+                }return __array__75;
                  
             })();
             return (hexcodes).join("")
@@ -24476,11 +24498,11 @@ var type = typeof obj; return type === 'function' || type === 'object' && !!obj;
     __result=null;
     __action=async function(v) {
         if (check_true (await (await Environment.get_global("not"))(await (async function(){
-            let __array_op_rval__77=f;
-             if (__array_op_rval__77 instanceof Function){
-                return await __array_op_rval__77(v) 
+            let __array_op_rval__76=f;
+             if (__array_op_rval__76 instanceof Function){
+                return await __array_op_rval__76(v) 
             } else {
-                return [__array_op_rval__77,v]
+                return [__array_op_rval__76,v]
             }
         })()))){
             return v
@@ -24488,22 +24510,22 @@ var type = typeof obj; return type === 'function' || type === 'object' && !!obj;
     };
     ;
     await (async function() {
-        let __for_body__80=async function(__item) {
+        let __for_body__79=async function(__item) {
             __result=await __action(__item);
             if (check_true (__result)){
                 return (__collector).push(__result)
             }
         };
-        let __array__81=[],__elements__79=container;
+        let __array__80=[],__elements__78=container;
         let __BREAK__FLAG__=false;
-        for(let __iter__78 in __elements__79) {
-            __array__81.push(await __for_body__80(__elements__79[__iter__78]));
+        for(let __iter__77 in __elements__78) {
+            __array__80.push(await __for_body__79(__elements__78[__iter__77]));
             if(__BREAK__FLAG__) {
-                 __array__81.pop();
+                 __array__80.pop();
                 break;
                 
             }
-        }return __array__81;
+        }return __array__80;
          
     })();
     return __collector
@@ -24515,11 +24537,11 @@ var type = typeof obj; return type === 'function' || type === 'object' && !!obj;
     __result=null;
     __action=async function(v) {
         if (check_true (await (async function(){
-            let __array_op_rval__82=f;
-             if (__array_op_rval__82 instanceof Function){
-                return await __array_op_rval__82(v) 
+            let __array_op_rval__81=f;
+             if (__array_op_rval__81 instanceof Function){
+                return await __array_op_rval__81(v) 
             } else {
-                return [__array_op_rval__82,v]
+                return [__array_op_rval__81,v]
             }
         })())){
             return v
@@ -24527,22 +24549,22 @@ var type = typeof obj; return type === 'function' || type === 'object' && !!obj;
     };
     ;
     await (async function() {
-        let __for_body__85=async function(__item) {
+        let __for_body__84=async function(__item) {
             __result=await __action(__item);
             if (check_true (__result)){
                 return (__collector).push(__result)
             }
         };
-        let __array__86=[],__elements__84=container;
+        let __array__85=[],__elements__83=container;
         let __BREAK__FLAG__=false;
-        for(let __iter__83 in __elements__84) {
-            __array__86.push(await __for_body__85(__elements__84[__iter__83]));
+        for(let __iter__82 in __elements__83) {
+            __array__85.push(await __for_body__84(__elements__83[__iter__82]));
             if(__BREAK__FLAG__) {
-                 __array__86.pop();
+                 __array__85.pop();
                 break;
                 
             }
-        }return __array__86;
+        }return __array__85;
          
     })();
     return __collector
@@ -24577,11 +24599,11 @@ var type = typeof obj; return type === 'function' || type === 'object' && !!obj;
     d1=await (await Environment.get_global("clear_time"))(await (await Environment.get_global("add_days"))(new Date(),-2));
     d2=await (await Environment.get_global("clear_time"))(await (await Environment.get_global("add_days"))(new Date(),-1));
     return await (async function(){
-        let __array_op_rval__95=d1;
-         if (__array_op_rval__95 instanceof Function){
-            return await __array_op_rval__95(d2) 
+        let __array_op_rval__94=d1;
+         if (__array_op_rval__94 instanceof Function){
+            return await __array_op_rval__94(d2) 
         } else {
-            return [__array_op_rval__95,d2]
+            return [__array_op_rval__94,d2]
         }
     })()
 };__obj__1["last_week"]=async function() {
@@ -24596,11 +24618,11 @@ var type = typeof obj; return type === 'function' || type === 'object' && !!obj;
     d1=await (await Environment.get_global("clear_time"))(new Date(dval));
     d2=await (await Environment.get_global("clear_time"))(new Date(dval));
     return await (async function(){
-        let __array_op_rval__96=d1;
-         if (__array_op_rval__96 instanceof Function){
-            return await __array_op_rval__96(await (await Environment.get_global("add_hours"))(d2,24)) 
+        let __array_op_rval__95=d1;
+         if (__array_op_rval__95 instanceof Function){
+            return await __array_op_rval__95(await (await Environment.get_global("add_hours"))(d2,24)) 
         } else {
-            return [__array_op_rval__96,await (await Environment.get_global("add_hours"))(d2,24)]
+            return [__array_op_rval__95,await (await Environment.get_global("add_hours"))(d2,24)]
         }
     })()
 };__obj__1["date_to_string"]=async function(date_val,str_layout) {
@@ -24648,7 +24670,7 @@ var type = typeof obj; return type === 'function' || type === 'object' && !!obj;
     };
     format_desc=new Object();
     await (async function() {
-        let __for_body__101=async function(c) {
+        let __for_body__100=async function(c) {
             return await async function(){
                 if (check_true ((c==="yyyy"))) {
                     return await add_formatter("year","numeric")
@@ -24693,16 +24715,16 @@ var type = typeof obj; return type === 'function' || type === 'object' && !!obj;
                 }
             } ()
         };
-        let __array__102=[],__elements__100=comps;
+        let __array__101=[],__elements__99=comps;
         let __BREAK__FLAG__=false;
-        for(let __iter__99 in __elements__100) {
-            __array__102.push(await __for_body__101(__elements__100[__iter__99]));
+        for(let __iter__98 in __elements__99) {
+            __array__101.push(await __for_body__100(__elements__99[__iter__98]));
             if(__BREAK__FLAG__) {
-                 __array__102.pop();
+                 __array__101.pop();
                 break;
                 
             }
-        }return __array__102;
+        }return __array__101;
          
     })();
     formatter=new Intl.DateTimeFormat([],format_desc);
@@ -24710,19 +24732,19 @@ var type = typeof obj; return type === 'function' || type === 'object' && !!obj;
          return await (await Environment.get_global("date_components"))(date_val,formatter) 
     })();
     return (await (async function() {
-        let __for_body__105=async function(key) {
+        let __for_body__104=async function(key) {
             return (date_comps[key]|| key)
         };
-        let __array__106=[],__elements__104=construction;
+        let __array__105=[],__elements__103=construction;
         let __BREAK__FLAG__=false;
-        for(let __iter__103 in __elements__104) {
-            __array__106.push(await __for_body__105(__elements__104[__iter__103]));
+        for(let __iter__102 in __elements__103) {
+            __array__105.push(await __for_body__104(__elements__103[__iter__102]));
             if(__BREAK__FLAG__) {
-                 __array__106.pop();
+                 __array__105.pop();
                 break;
                 
             }
-        }return __array__106;
+        }return __array__105;
          
     })()).join("")
 };__obj__1["is_even?"]=async function(x) {
@@ -24784,19 +24806,19 @@ let rval=[];let regex=new RegExp(regex_str,'g'); while ((m = regex.exec(search_s
     is_fit=true;
     {
         await (async function() {
-            let __for_body__110=async function(item) {
+            let __for_body__109=async function(item) {
                 return is_fit=((await (await Environment.get_global("resolve_path"))(item,obj)|| false)&& is_fit)
             };
-            let __array__111=[],__elements__109=key_list;
+            let __array__110=[],__elements__108=key_list;
             let __BREAK__FLAG__=false;
-            for(let __iter__108 in __elements__109) {
-                __array__111.push(await __for_body__110(__elements__109[__iter__108]));
+            for(let __iter__107 in __elements__108) {
+                __array__110.push(await __for_body__109(__elements__108[__iter__107]));
                 if(__BREAK__FLAG__) {
-                     __array__111.pop();
+                     __array__110.pop();
                     break;
                     
                 }
-            }return __array__111;
+            }return __array__110;
              
         })();
         return is_fit
@@ -24828,19 +24850,19 @@ let rval=[];let regex=new RegExp(regex_str,'g'); while ((m = regex.exec(search_s
     })();
     if (check_true ((l>3))){
         await (async function() {
-            let __for_body__114=async function(p) {
+            let __for_body__113=async function(p) {
                 return await comps["splice"].call(comps,p,0,sep)
             };
-            let __array__115=[],__elements__113=(await (await Environment.get_global("range"))(3,l,3)).slice(0).reverse();
+            let __array__114=[],__elements__112=(await (await Environment.get_global("range"))(3,l,3)).slice(0).reverse();
             let __BREAK__FLAG__=false;
-            for(let __iter__112 in __elements__113) {
-                __array__115.push(await __for_body__114(__elements__113[__iter__112]));
+            for(let __iter__111 in __elements__112) {
+                __array__114.push(await __for_body__113(__elements__112[__iter__111]));
                 if(__BREAK__FLAG__) {
-                     __array__115.pop();
+                     __array__114.pop();
                     break;
                     
                 }
-            }return __array__115;
+            }return __array__114;
              
         })()
     };
@@ -24913,7 +24935,7 @@ let rval=[];let regex=new RegExp(regex_str,'g'); while ((m = regex.exec(search_s
     }
 };__obj__1["rgb_to_text"]=async function(rgb) {
     return (await (async function() {
-        let __for_body__118=async function(v) {
+        let __for_body__117=async function(v) {
             let vs=await (async function() {
                 {
                      let __call_target__=await Math.round((v* 255)), __call_method__="toString";
@@ -24927,32 +24949,32 @@ let rval=[];let regex=new RegExp(regex_str,'g'); while ((m = regex.exec(search_s
                 return vs
             }
         };
-        let __array__119=[],__elements__117=rgb;
+        let __array__118=[],__elements__116=rgb;
         let __BREAK__FLAG__=false;
-        for(let __iter__116 in __elements__117) {
-            __array__119.push(await __for_body__118(__elements__117[__iter__116]));
+        for(let __iter__115 in __elements__116) {
+            __array__118.push(await __for_body__117(__elements__116[__iter__115]));
             if(__BREAK__FLAG__) {
-                 __array__119.pop();
+                 __array__118.pop();
                 break;
                 
             }
-        }return __array__119;
+        }return __array__118;
          
     })()).join("")
 };__obj__1["text_to_rgb"]=async function(rgb_string) {
     if (check_true (rgb_string)){
         return await (async function(){
-            let __array_op_rval__120=(await parseInt((await (async function(){
+            let __array_op_rval__119=(await parseInt((await (async function(){
                  return await (await Environment.get_global("nth"))([0,1],rgb_string) 
             })()).join(''),16)/ 255);
-             if (__array_op_rval__120 instanceof Function){
-                return await __array_op_rval__120((await parseInt((await (async function(){
+             if (__array_op_rval__119 instanceof Function){
+                return await __array_op_rval__119((await parseInt((await (async function(){
                      return await (await Environment.get_global("nth"))([2,3],rgb_string) 
                 })()).join(''),16)/ 255),(await parseInt((await (async function(){
                      return await (await Environment.get_global("nth"))([4,5],rgb_string) 
                 })()).join(''),16)/ 255)) 
             } else {
-                return [__array_op_rval__120,(await parseInt((await (async function(){
+                return [__array_op_rval__119,(await parseInt((await (async function(){
                      return await (await Environment.get_global("nth"))([2,3],rgb_string) 
                 })()).join(''),16)/ 255),(await parseInt((await (async function(){
                      return await (await Environment.get_global("nth"))([4,5],rgb_string) 
@@ -25016,11 +25038,11 @@ let rval=[];let regex=new RegExp(regex_str,'g'); while ((m = regex.exec(search_s
             computedS=((maxRGB- minRGB)/ maxRGB);
             computedV=maxRGB;
             return await (async function(){
-                let __array_op_rval__122=computedH;
-                 if (__array_op_rval__122 instanceof Function){
-                    return await __array_op_rval__122(computedS,computedV) 
+                let __array_op_rval__121=computedH;
+                 if (__array_op_rval__121 instanceof Function){
+                    return await __array_op_rval__121(computedS,computedV) 
                 } else {
-                    return [__array_op_rval__122,computedS,computedV]
+                    return [__array_op_rval__121,computedS,computedV]
                 }
             })()
         }
@@ -25028,20 +25050,20 @@ let rval=[];let regex=new RegExp(regex_str,'g'); while ((m = regex.exec(search_s
 };__obj__1["tint_rgb"]=async function(rgb,tint_factor) {
     if (check_true ((rgb&& tint_factor))){
         return await (async function() {
-            let __for_body__125=async function(c) {
+            let __for_body__124=async function(c) {
                 c=(255* c);
                 return (await (await Environment.get_global("add"))(c,((255- c)* tint_factor))/ 255)
             };
-            let __array__126=[],__elements__124=rgb;
+            let __array__125=[],__elements__123=rgb;
             let __BREAK__FLAG__=false;
-            for(let __iter__123 in __elements__124) {
-                __array__126.push(await __for_body__125(__elements__124[__iter__123]));
+            for(let __iter__122 in __elements__123) {
+                __array__125.push(await __for_body__124(__elements__123[__iter__122]));
                 if(__BREAK__FLAG__) {
-                     __array__126.pop();
+                     __array__125.pop();
                     break;
                     
                 }
-            }return __array__126;
+            }return __array__125;
              
         })()
     } else {
@@ -25050,20 +25072,20 @@ let rval=[];let regex=new RegExp(regex_str,'g'); while ((m = regex.exec(search_s
 };__obj__1["shade_rgb"]=async function(rgb,shade_factor) {
     if (check_true ((rgb&& shade_factor))){
         return await (async function() {
-            let __for_body__129=async function(c) {
+            let __for_body__128=async function(c) {
                 c=(255* c);
                 return ((c* (1- shade_factor))/ 255)
             };
-            let __array__130=[],__elements__128=rgb;
+            let __array__129=[],__elements__127=rgb;
             let __BREAK__FLAG__=false;
-            for(let __iter__127 in __elements__128) {
-                __array__130.push(await __for_body__129(__elements__128[__iter__127]));
+            for(let __iter__126 in __elements__127) {
+                __array__129.push(await __for_body__128(__elements__127[__iter__126]));
                 if(__BREAK__FLAG__) {
-                     __array__130.pop();
+                     __array__129.pop();
                     break;
                     
                 }
-            }return __array__130;
+            }return __array__129;
              
         })()
     } else {
@@ -25141,7 +25163,7 @@ let rval=[];let regex=new RegExp(regex_str,'g'); while ((m = regex.exec(search_s
     let r=null;
     ;
     await (async function() {
-        let __for_body__133=async function(item) {
+        let __for_body__132=async function(item) {
             r=await (async function(){
                 if (check_true ((item instanceof String || typeof item==='string'))){
                     return await item["match"].call(item,expr)
@@ -25159,16 +25181,16 @@ let rval=[];let regex=new RegExp(regex_str,'g'); while ((m = regex.exec(search_s
             };
             return cnt+=1
         };
-        let __array__134=[],__elements__132=(container|| []);
+        let __array__133=[],__elements__131=(container|| []);
         let __BREAK__FLAG__=false;
-        for(let __iter__131 in __elements__132) {
-            __array__134.push(await __for_body__133(__elements__132[__iter__131]));
+        for(let __iter__130 in __elements__131) {
+            __array__133.push(await __for_body__132(__elements__131[__iter__130]));
             if(__BREAK__FLAG__) {
-                 __array__134.pop();
+                 __array__133.pop();
                 break;
                 
             }
-        }return __array__134;
+        }return __array__133;
          
     })();
     return results
@@ -25196,7 +25218,7 @@ let rval=[];let regex=new RegExp(regex_str,'g'); while ((m = regex.exec(search_s
     let rval=null;
     ;
     await (async function() {
-        let __for_body__137=async function(val) {
+        let __for_body__136=async function(val) {
             if (check_true ((val&& val[non_nil_prop]))){
                 {
                     rval=val[non_nil_prop];
@@ -25205,16 +25227,16 @@ let rval=[];let regex=new RegExp(regex_str,'g'); while ((m = regex.exec(search_s
                 }
             }
         };
-        let __array__138=[],__elements__136=(list_of_objects|| []);
+        let __array__137=[],__elements__135=(list_of_objects|| []);
         let __BREAK__FLAG__=false;
-        for(let __iter__135 in __elements__136) {
-            __array__138.push(await __for_body__137(__elements__136[__iter__135]));
+        for(let __iter__134 in __elements__135) {
+            __array__137.push(await __for_body__136(__elements__135[__iter__134]));
             if(__BREAK__FLAG__) {
-                 __array__138.pop();
+                 __array__137.pop();
                 break;
                 
             }
-        }return __array__138;
+        }return __array__137;
          
     })();
     return rval
@@ -25235,11 +25257,11 @@ let rval=[];let regex=new RegExp(regex_str,'g'); while ((m = regex.exec(search_s
                 } else {
                     await async function(){
                         buckets[category]=await (async function(){
-                            let __array_op_rval__140=thing;
-                             if (__array_op_rval__140 instanceof Function){
-                                return await __array_op_rval__140() 
+                            let __array_op_rval__139=thing;
+                             if (__array_op_rval__139 instanceof Function){
+                                return await __array_op_rval__139() 
                             } else {
-                                return [__array_op_rval__140]
+                                return [__array_op_rval__139]
                             }
                         })();
                         return buckets;
@@ -25294,7 +25316,7 @@ let rval=[];let regex=new RegExp(regex_str,'g'); while ((m = regex.exec(search_s
         await (await Environment.get_global("sleep"))(0.1)
     };
     return await (async function() {
-        let __for_body__143=async function(v) {
+        let __for_body__142=async function(v) {
             if (check_true (interruptions)){
                 {
                     count+=1;
@@ -25303,11 +25325,11 @@ let rval=[];let regex=new RegExp(regex_str,'g'); while ((m = regex.exec(search_s
                             await (await Environment.get_global("sleep"))(0.1);
                             if (check_true ((options && options["notifier"]))){
                                 await (async function(){
-                                    let __array_op_rval__145=(options && options["notifier"]);
-                                     if (__array_op_rval__145 instanceof Function){
-                                        return await __array_op_rval__145((count/ total_lines),count,total_lines) 
+                                    let __array_op_rval__144=(options && options["notifier"]);
+                                     if (__array_op_rval__144 instanceof Function){
+                                        return await __array_op_rval__144((count/ total_lines),count,total_lines) 
                                     } else {
-                                        return [__array_op_rval__145,(count/ total_lines),count,total_lines]
+                                        return [__array_op_rval__144,(count/ total_lines),count,total_lines]
                                     }
                                 })()
                             }
@@ -25321,43 +25343,43 @@ let rval=[];let regex=new RegExp(regex_str,'g'); while ((m = regex.exec(search_s
                     {
                         rval=[];
                         await (async function() {
-                            let __for_body__148=async function(m) {
+                            let __for_body__147=async function(m) {
                                 return (rval).push(await (async function(){
-                                    let __array_op_rval__150=(m && m["index"]);
-                                     if (__array_op_rval__150 instanceof Function){
-                                        return await __array_op_rval__150(await (await Environment.get_global("replace"))(sepval_r,"!SEPVAL!",m["1"]),m["1"]) 
+                                    let __array_op_rval__149=(m && m["index"]);
+                                     if (__array_op_rval__149 instanceof Function){
+                                        return await __array_op_rval__149(await (await Environment.get_global("replace"))(sepval_r,"!SEPVAL!",m["1"]),m["1"]) 
                                     } else {
-                                        return [__array_op_rval__150,await (await Environment.get_global("replace"))(sepval_r,"!SEPVAL!",m["1"]),m["1"]]
+                                        return [__array_op_rval__149,await (await Environment.get_global("replace"))(sepval_r,"!SEPVAL!",m["1"]),m["1"]]
                                     }
                                 })())
                             };
-                            let __array__149=[],__elements__147=match_list;
+                            let __array__148=[],__elements__146=match_list;
                             let __BREAK__FLAG__=false;
-                            for(let __iter__146 in __elements__147) {
-                                __array__149.push(await __for_body__148(__elements__147[__iter__146]));
+                            for(let __iter__145 in __elements__146) {
+                                __array__148.push(await __for_body__147(__elements__146[__iter__145]));
                                 if(__BREAK__FLAG__) {
-                                     __array__149.pop();
+                                     __array__148.pop();
                                     break;
                                     
                                 }
-                            }return __array__149;
+                            }return __array__148;
                              
                         })();
                         tmp=v;
                         await (async function() {
-                            let __for_body__153=async function(r) {
+                            let __for_body__152=async function(r) {
                                 return tmp=(""+ await tmp["substr"].call(tmp,0,(r && r["0"]))+ (r && r["1"])+ await tmp["substr"].call(tmp,(2+ (r && r["0"])+ await (await Environment.get_global("length"))((r && r["2"])))))
                             };
-                            let __array__154=[],__elements__152=rval;
+                            let __array__153=[],__elements__151=rval;
                             let __BREAK__FLAG__=false;
-                            for(let __iter__151 in __elements__152) {
-                                __array__154.push(await __for_body__153(__elements__152[__iter__151]));
+                            for(let __iter__150 in __elements__151) {
+                                __array__153.push(await __for_body__152(__elements__151[__iter__150]));
                                 if(__BREAK__FLAG__) {
-                                     __array__154.pop();
+                                     __array__153.pop();
                                     break;
                                     
                                 }
-                            }return __array__154;
+                            }return __array__153;
                              
                         })();
                         return tmp
@@ -25367,39 +25389,39 @@ let rval=[];let regex=new RegExp(regex_str,'g'); while ((m = regex.exec(search_s
                 }
             })();
             return await (async function() {
-                let __for_body__157=async function(segment) {
+                let __for_body__156=async function(segment) {
                     return await (await Environment.get_global("replace"))(fixer_r,sepval,segment)
                 };
-                let __array__158=[],__elements__156=(line).split(sepval);
+                let __array__157=[],__elements__155=(line).split(sepval);
                 let __BREAK__FLAG__=false;
-                for(let __iter__155 in __elements__156) {
-                    __array__158.push(await __for_body__157(__elements__156[__iter__155]));
+                for(let __iter__154 in __elements__155) {
+                    __array__157.push(await __for_body__156(__elements__155[__iter__154]));
                     if(__BREAK__FLAG__) {
-                         __array__158.pop();
+                         __array__157.pop();
                         break;
                         
                     }
-                }return __array__158;
+                }return __array__157;
                  
             })()
         };
-        let __array__144=[],__elements__142=lines;
+        let __array__143=[],__elements__141=lines;
         let __BREAK__FLAG__=false;
-        for(let __iter__141 in __elements__142) {
-            __array__144.push(await __for_body__143(__elements__142[__iter__141]));
+        for(let __iter__140 in __elements__141) {
+            __array__143.push(await __for_body__142(__elements__141[__iter__140]));
             if(__BREAK__FLAG__) {
-                 __array__144.pop();
+                 __array__143.pop();
                 break;
                 
             }
-        }return __array__144;
+        }return __array__143;
          
     })()
 };__obj__1["to_csv"]=async function(rows,delimiter) {
     let quote_quoter=new RegExp("\"","g");
     ;
     return (await (async function() {
-        let __for_body__161=async function(row) {
+        let __for_body__160=async function(row) {
             return (await (async function(){
                  return await (await Environment.get_global("map"))(async function(v) {
                     if (check_true (((v instanceof String || typeof v==='string')&& (await (await Environment.get_global("contains?"))(" ",(""+ v+ ""))|| await (await Environment.get_global("contains?"))(delimiter,v)|| await (await Environment.get_global("contains?"))("\"",v))))){
@@ -25416,16 +25438,16 @@ let rval=[];let regex=new RegExp(regex_str,'g'); while ((m = regex.exec(search_s
                 }
             })())
         };
-        let __array__162=[],__elements__160=rows;
+        let __array__161=[],__elements__159=rows;
         let __BREAK__FLAG__=false;
-        for(let __iter__159 in __elements__160) {
-            __array__162.push(await __for_body__161(__elements__160[__iter__159]));
+        for(let __iter__158 in __elements__159) {
+            __array__161.push(await __for_body__160(__elements__159[__iter__158]));
             if(__BREAK__FLAG__) {
-                 __array__162.pop();
+                 __array__161.pop();
                 break;
                 
             }
-        }return __array__162;
+        }return __array__161;
          
     })()).join("\n")
 };__obj__1["squeeze"]=async function(s) {
@@ -25444,7 +25466,7 @@ let rval=[];let regex=new RegExp(regex_str,'g'); while ((m = regex.exec(search_s
         }
     };
     await (async function() {
-        let __for_body__165=async function(key) {
+        let __for_body__164=async function(key) {
             if (check_true ((undefined===obj[key]))){
                 {
                     return await async function(){
@@ -25455,16 +25477,16 @@ let rval=[];let regex=new RegExp(regex_str,'g'); while ((m = regex.exec(search_s
                 }
             }
         };
-        let __array__166=[],__elements__164=keylist;
+        let __array__165=[],__elements__163=keylist;
         let __BREAK__FLAG__=false;
-        for(let __iter__163 in __elements__164) {
-            __array__166.push(await __for_body__165(__elements__164[__iter__163]));
+        for(let __iter__162 in __elements__163) {
+            __array__165.push(await __for_body__164(__elements__163[__iter__162]));
             if(__BREAK__FLAG__) {
-                 __array__166.pop();
+                 __array__165.pop();
                 break;
                 
             }
-        }return __array__166;
+        }return __array__165;
          
     })();
     return obj
@@ -25538,16 +25560,16 @@ options=options||{}
         if (check_true ((to>from))){
             {
                  ( function(){
-                     let __test_condition__168=function() {
+                     let __test_condition__167=function() {
                         return (cur<=to)
                     };
-                    let __body_ref__169=function() {
+                    let __body_ref__168=function() {
                         (acc).push(cur);
                         return cur=(cur+ step_size)
                     };
                     let __BREAK__FLAG__=false;
-                    while( __test_condition__168()) {
-                          __body_ref__169();
+                    while( __test_condition__167()) {
+                          __body_ref__168();
                          if(__BREAK__FLAG__) {
                              break;
                             
@@ -25562,16 +25584,16 @@ options=options||{}
         } else {
             {
                  ( function(){
-                     let __test_condition__170=function() {
+                     let __test_condition__169=function() {
                         return (cur>=to)
                     };
-                    let __body_ref__171=function() {
+                    let __body_ref__170=function() {
                         (acc).push(cur);
                         return cur=(cur+ step_size)
                     };
                     let __BREAK__FLAG__=false;
-                    while( __test_condition__170()) {
-                          __body_ref__171();
+                    while( __test_condition__169()) {
+                          __body_ref__170();
                          if(__BREAK__FLAG__) {
                              break;
                             
@@ -25587,20 +25609,20 @@ options=options||{}
         return acc
     };__obj__1["encode_to_base64"]=async function(array_buffer_data) {
     return new Promise(async function(resolve) {
-        let __reader__172= async function(){
+        let __reader__171= async function(){
             return new FileReader()
         };
         let complete;
         {
-            let reader=await __reader__172();
+            let reader=await __reader__171();
             ;
             complete=async function() {
                 return await (async function(){
-                    let __array_op_rval__173=resolve;
-                     if (__array_op_rval__173 instanceof Function){
-                        return await __array_op_rval__173(await (await Environment.get_global("second"))(((reader && reader["result"])).split(","))) 
+                    let __array_op_rval__172=resolve;
+                     if (__array_op_rval__172 instanceof Function){
+                        return await __array_op_rval__172(await (await Environment.get_global("second"))(((reader && reader["result"])).split(","))) 
                     } else {
-                        return [__array_op_rval__173,await (await Environment.get_global("second"))(((reader && reader["result"])).split(","))]
+                        return [__array_op_rval__172,await (await Environment.get_global("second"))(((reader && reader["result"])).split(","))]
                     }
                 })()
             };
@@ -25610,11 +25632,11 @@ options=options||{}
                 
             }();
             return await reader["readAsDataURL"].call(reader,new Blob(await (async function(){
-                let __array_op_rval__175=array_buffer_data;
-                 if (__array_op_rval__175 instanceof Function){
-                    return await __array_op_rval__175() 
+                let __array_op_rval__174=array_buffer_data;
+                 if (__array_op_rval__174 instanceof Function){
+                    return await __array_op_rval__174() 
                 } else {
-                    return [__array_op_rval__175]
+                    return [__array_op_rval__174]
                 }
             })()))
         }
@@ -25625,7 +25647,7 @@ options=options||{}
     count=0;
     core_handle=await Environment["get_namespace_handle"].call(Environment,"core");
     await (async function() {
-        let __for_body__178=async function(def) {
+        let __for_body__177=async function(def) {
             if (check_true (((def && def["source_name"])==="src/core-ext.lisp"))){
                 {
                     console.log(("(undefine `"+ (def && def.name)+ ")"));
@@ -25635,16 +25657,16 @@ options=options||{}
                 }
             }
         };
-        let __array__179=[],__elements__177=(core_handle && core_handle["definitions"]);
+        let __array__178=[],__elements__176=(core_handle && core_handle["definitions"]);
         let __BREAK__FLAG__=false;
-        for(let __iter__176 in __elements__177) {
-            __array__179.push(await __for_body__178(__elements__177[__iter__176]));
+        for(let __iter__175 in __elements__176) {
+            __array__178.push(await __for_body__177(__elements__176[__iter__175]));
             if(__BREAK__FLAG__) {
-                 __array__179.pop();
+                 __array__178.pop();
                 break;
                 
             }
-        }return __array__179;
+        }return __array__178;
          
     })();
     console.log(("removed "+ count+ " definitions."));
@@ -25665,7 +25687,7 @@ options=options||{}
     missing=[];
     total=0;
     await (async function() {
-        let __for_body__182=async function(_pset) {
+        let __for_body__181=async function(_pset) {
             {
                 let sym;
                 let meta;
@@ -25678,16 +25700,16 @@ options=options||{}
                 }
             }
         };
-        let __array__183=[],__elements__181=await (await Environment.get_global("pairs"))((env && env["definitions"]));
+        let __array__182=[],__elements__180=await (await Environment.get_global("pairs"))((env && env["definitions"]));
         let __BREAK__FLAG__=false;
-        for(let __iter__180 in __elements__181) {
-            __array__183.push(await __for_body__182(__elements__181[__iter__180]));
+        for(let __iter__179 in __elements__180) {
+            __array__182.push(await __for_body__181(__elements__180[__iter__179]));
             if(__BREAK__FLAG__) {
-                 __array__183.pop();
+                 __array__182.pop();
                 break;
                 
             }
-        }return __array__183;
+        }return __array__182;
          
     })();
     total=((good && good.length)+ (missing && missing.length));
@@ -26813,6 +26835,7 @@ let reader=async function(text,opts) {    return await async function(){        
                 let reading_object;
                 let mode;
                 let symbol_start;
+                let pause_time;
                 let cpath;
                 let ctx;
                 let last_final_column_num;
@@ -26871,6 +26894,13 @@ let reader=async function(text,opts) {    return await async function(){        
                 reading_object=false;
                 mode=in_code;
                 symbol_start=null;
+                pause_time=await (async function(){
+                    if (check_true (await (await Environment.get_global("is_number?"))((opts && opts["pause_time"])))){
+                        return (opts && opts["pause_time"])
+                    } else {
+                        return null
+                    }
+                })();
                 cpath=[];
                 ctx={
                     scope:{
@@ -27258,6 +27288,9 @@ let reader=async function(text,opts) {    return await async function(){        
                     _ctx=_ctx;
                     block_return=null;
                     depth=_depth;
+                    if (check_true (pause_time)){
+                        await (await Environment.get_global("sleep"))(pause_time)
+                    };
                     await (async function(){
                          let __test_condition__12=async function() {
                             return (await (await Environment.get_global("not"))(stop)&& (idx<len))

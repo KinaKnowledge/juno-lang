@@ -11418,8 +11418,6 @@
                                 (= busy_with_cache_update true)
                                 (defvar start_time (time_in_millis))
                                 (defvar timings [])
-                                (when (> __VERBOSITY__ 0)
-                                   (log options.name ": available_symbols: timings: " (as_lisp timings)))
                                 (if options.remote_repl
                                    (let
                                       ((result (try
@@ -11432,7 +11430,7 @@
                                       (if result
                                          (progn
                                             (try 
-                                               (= result (read_lisp result.result))
+                                               (= result (reader result.result { pause_time: 0.01 }))
                                                (catch Error (e)
                                                   (log "ERROR on available_symbols update: " result)))
                                             (= busy_with_cache_update false)
@@ -11471,7 +11469,7 @@
                                                           (clog "Unable to parse json data: " e.message)
                                                           (= data event.data))))
                                                  (if (or options.debug 
-                                                         (> __VERBOSITY__ 1))
+                                                         (> __VERBOSITY__ 0))
                                                     (clog "remote: <-" data))
                                                  (if (and (is_object? data)
                                                           data.ws_id)

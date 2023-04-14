@@ -33,7 +33,9 @@
 ;;                           when an error is encountered.  This suppresses it 
 ;;                           and if the on_error function is present, it will be
 ;;                           called..otherwise error is ignored
-
+;; pause_time - Pause between multiple form reads for a certain amount of time
+;;              to prevent non-responsiveness on slower machine.  This value
+;;              is specified in seconds or fractions of seconds
 
 (defglobal `reader
    (fn (text opts)
@@ -74,6 +76,9 @@
              (reading_object false)
              (mode in_code)  ;; start out in code
              (symbol_start nil)
+             (pause_time (if (is_number? opts.pause_time)
+                             opts.pause_time
+                             nil))
              (cpath [])
              (ctx {
                      scope:{ op_chain:[] 
@@ -324,7 +329,8 @@
                                  (_ctx _ctx)
                                  (block_return nil))
                                 (= depth _depth)
-                                
+                                (if pause_time
+                                   (sleep pause_time))
                                 (while (and (not stop)
                                             (< idx len))
                                    (do

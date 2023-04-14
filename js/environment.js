@@ -1,7 +1,7 @@
 // Source: environment.lisp  
-// Build Time: 2023-04-14 09:15:51
-// Version: 2023.04.14.09.15
-export const DLISP_ENV_VERSION='2023.04.14.09.15';
+// Build Time: 2023-04-14 11:05:55
+// Version: 2023.04.14.11.05
+export const DLISP_ENV_VERSION='2023.04.14.11.05';
 
 
 
@@ -3966,6 +3966,7 @@ export async function init_dlisp(Environment)  {
                 let reading_object;
                 let mode;
                 let symbol_start;
+                let pause_time;
                 let cpath;
                 let ctx;
                 let last_final_column_num;
@@ -4024,6 +4025,13 @@ export async function init_dlisp(Environment)  {
                 reading_object=false;
                 mode=in_code;
                 symbol_start=null;
+                pause_time=await (async function(){
+                    if (check_true (await (await Environment.get_global("is_number?"))((opts && opts["pause_time"])))){
+                        return (opts && opts["pause_time"])
+                    } else {
+                        return null
+                    }
+                })();
                 cpath=[];
                 ctx={
                     scope:{
@@ -4411,6 +4419,9 @@ export async function init_dlisp(Environment)  {
                     _ctx=_ctx;
                     block_return=null;
                     depth=_depth;
+                    if (check_true (pause_time)){
+                        await (await Environment.get_global("sleep"))(pause_time)
+                    };
                     await (async function(){
                          let __test_condition__12=async function() {
                             return (await (await Environment.get_global("not"))(stop)&& (idx<len))

@@ -3667,6 +3667,15 @@
        `tags: ["editor" "globals" "autocomplete"]
    })
 
+
+(defun sleep (seconds)
+       (new Promise 
+            (fn (resolve)
+                (setTimeout (lambda() (resolve true)) (* seconds 1000))))
+        {"usage":["seconds:number"]
+         "tags":["time" "timing" "pause" "control"]
+         "description":"Pauses execution for the number of seconds provided to the function." }) 
+
 (defun process_tree_symbols (tree prefix _ctx)
    (let
       ((is_root (eq nil _ctx))
