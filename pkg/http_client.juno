@@ -292,8 +292,6 @@
 
 (defun send_to_ws (ws data)
    (progn
-      (if (> __VERBOSITY__ 0)
-          (log "send_to_ws: sending: " ws.ws_id ": " data))
       (try
          (-> ws `send (if (is_object? data)
                           (JSON.stringify data)

@@ -329,7 +329,8 @@
                                  (_ctx _ctx)
                                  (block_return nil))
                                 (= depth _depth)
-                                (if pause_time
+                                (if (and pause_time 
+                                         (< _depth 3))
                                    (sleep pause_time))
                                 (while (and (not stop)
                                             (< idx len))

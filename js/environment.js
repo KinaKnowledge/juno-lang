@@ -1,7 +1,7 @@
 // Source: environment.lisp  
-// Build Time: 2023-04-14 11:05:55
-// Version: 2023.04.14.11.05
-export const DLISP_ENV_VERSION='2023.04.14.11.05';
+// Build Time: 2023-04-14 11:35:39
+// Version: 2023.04.14.11.35
+export const DLISP_ENV_VERSION='2023.04.14.11.35';
 
 
 
@@ -4419,7 +4419,7 @@ export async function init_dlisp(Environment)  {
                     _ctx=_ctx;
                     block_return=null;
                     depth=_depth;
-                    if (check_true (pause_time)){
+                    if (check_true ((pause_time&& (_depth<3)))){
                         await (await Environment.get_global("sleep"))(pause_time)
                     };
                     await (async function(){
