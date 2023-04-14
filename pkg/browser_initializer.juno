@@ -11418,6 +11418,8 @@
                                 (= busy_with_cache_update true)
                                 (defvar start_time (time_in_millis))
                                 (defvar timings [])
+                                (when (> __VERBOSITY__ 0)
+                                   (log options.name ": available_symbols: timings: " (as_lisp timings)))
                                 (if options.remote_repl
                                    (let
                                       ((result (try
@@ -11469,7 +11471,7 @@
                                                           (clog "Unable to parse json data: " e.message)
                                                           (= data event.data))))
                                                  (if (or options.debug 
-                                                         (> __VERBOSITY__ 0))
+                                                         (> __VERBOSITY__ 1))
                                                     (clog "remote: <-" data))
                                                  (if (and (is_object? data)
                                                           data.ws_id)
@@ -16753,7 +16755,7 @@
              (return nil)))
        
        ;; validate the environment..
-       (= server_platform (-> remote_connection `evaluate (operating_system)))
+       (= server_platform (-> remote_connection `evaluate (as_lisp `(operating_system))))
        (log "Build Environment is: " server_platform)
        (if (== server_platform "windows")
            (= kickstart_result (-> remote_connection `evaluate (as_lisp `(sys/system "./scripts/build_browser_env.ps1"))))
