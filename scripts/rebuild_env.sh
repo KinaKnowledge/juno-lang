@@ -1,16 +1,21 @@
 #!/usr/bin/env bash
+# Juno Environment Build for Unix
+# (c) 2023 Kina
+# MIT License
 
 if [ -f "./BUILD_DATE.txt" ]; then 
    echo "Removing Build time stamp."
    rm "./BUILD_DATE.txt"
 fi
    
+# Rebuild the core environment
 cat <<EOI | lib/juno
 (import "src/base-io.lisp")
 (import "src/build-tools.lisp")
 (rebuild_env)
 EOI
 
+# Run Tests
 echo
 echo "Running compiler tests.."
 cat <<EOI | lib/juno
@@ -19,6 +24,7 @@ cat <<EOI | lib/juno
 (tests/report_tests)
 EOI
 
+# Build Binary Version for the Architecture
 cat <<EOI | lib/juno
 (try 
   (progn
@@ -60,9 +66,9 @@ BINNAME="bin/juno.$MACHINE.$SYSTEM"
 if [ -f "./BUILD_DATE.txt" ]; then    
     # lib/juno --compile -A bin/build.tmp js/juno.js
     if [ -f "bin/build.tmp" ]; then
-	mv "bin/build.tmp" $BINNAME
-	echo
-	echo "Build Completed - $BINNAME constructed"
+	   mv "bin/build.tmp" $BINNAME
+	   echo
+	   echo "Build Completed - $BINNAME constructed"
     fi
 else
     echo "Build failed"

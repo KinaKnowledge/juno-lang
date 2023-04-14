@@ -56,6 +56,12 @@ if ($Env:OS -eq "Windows_NT") {
     $MACHINE=(uname -m|tr '[:upper:]' '[:lower:]')
 }
 
+# Clean up our temp
+if (Test-Path -Path "${Home}/.temp-lisp" -PathType Leaf) {
+   Remove-Item -Path "${Home}/.temp-lisp"    
+}
+
+
 # Finish up and write the correct binary name
 
 $BINNAME="bin/juno.$MACHINE.$SYSTEM.exe"

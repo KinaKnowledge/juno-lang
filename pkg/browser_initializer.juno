@@ -11416,6 +11416,8 @@
                                 (while busy_with_cache_update
                                    (sleep 0.2))
                                 (= busy_with_cache_update true)
+                                (defvar start_time (time_in_millis))
+                                (defvar timings [])
                                 (if options.remote_repl
                                    (let
                                       ((result (try
@@ -11424,6 +11426,7 @@
                                                      (progn
                                                         (log "ERROR on available_symbols: remote: " e)
                                                         nil)))))
+                                      (push timings (- (time_in_millis) start_time))
                                       (if result
                                          (progn
                                             (try 
@@ -11431,9 +11434,15 @@
                                                (catch Error (e)
                                                   (log "ERROR on available_symbols update: " result)))
                                             (= busy_with_cache_update false)
+                                            (push timings (- (time_in_millis) start_time))
+                                            (when (> __VERBOSITY__ 0)
+                                               (log options.name ": timings: " (as_lisp timings)))
                                             result)
                                          (progn
                                             (= busy_with_cache_update false)
+                                            (push timings (- (time_in_millis) start_time))
+                                            (when (> __VERBOSITY__ 0)
+                                               (log options.name ": timings: " (as_lisp timings)))
                                             {})))
                                    (progn
                                       (= busy_with_cache_update false)
@@ -16724,6 +16733,7 @@
     (let
        ((remote_connection nil)
         (remote_id nil)
+        (server_platform nil)
         (kickstart_result nil)
         (opt (or opts {})))
        (log "Building Starter Environment..")
@@ -16743,8 +16753,11 @@
              (return nil)))
        
        ;; validate the environment..
-       
-       (= kickstart_result (-> remote_connection `evaluate (as_lisp `(sys/system "./scripts/build_browser_env.sh"))))
+       (= server_platform (-> remote_connection `evaluate (operating_system)))
+       (log "Build Environment is: " server_platform)
+       (if (== server_platform "windows")
+           (= kickstart_result (-> remote_connection `evaluate (as_lisp `(sys/system "./scripts/build_browser_env.ps1"))))
+           (= kickstart_result (-> remote_connection `evaluate (as_lisp `(sys/system "./scripts/build_browser_env.sh")))))
        (when kickstart_result.success
           (for_each (v (split_by "\n" kickstart_result.stdout))
              (log v))
