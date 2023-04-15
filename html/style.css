@@ -1887,10 +1887,6 @@ div.juno-symbol-browser {
   text-overflow: ellipsis;
 }
 
-.juno-menu-item:hover {
-  background-color: var(--highlight-bg-color) !important;
-  color: var(--highlight-color) !important;
-}
 
 .juno-highlighted {
   background-color: var(--highlight-bg-color) !important;

@@ -6069,6 +6069,7 @@
                  (catch Error (e)
                     (progn
                        (log (+ "Error on event handler for route: " handler_key ": removing: " e.message))
+                       (console.log (+ "Error on event handler for route: " handler_key ": removing: " e.message))
                        (try (remove_event_handler event_obj.source event_obj.command handler.fid)
                           (catch Error (e)
                              (log (+ "Error Cannot remove problematic event_handler: " handler_key ": " handler.fid ": " e.message))))))))
@@ -15335,7 +15336,13 @@
                            
     (on_initialize (fn (self)
                       (progn
-                         (register_event_handler nil "display_usage" handler_function_id message_receiver)
+                         (register_event_handler nil "display_usage" handler_function_id (eval `(fn (event_obj force)
+                                                                                                   (let
+                                                                                                      ((id ,#self.options.id)
+                                                                                                       (fid ,#handler_function_id))
+                                                                                                      (aif (get_control_by_id id)
+                                                                                                           (-> it `message_receiver event_obj force)
+                                                                                                           (remove_event_handler nil "display_usage" fid))))))
                          (attach_event_listener pin_button
                             `click
                             (fn (e)
@@ -15441,6 +15448,7 @@
                [ `search_by_tag search_by_tag ]
                [ `show_documentation show_documentation ]
                [ `is_displayed? is_displayed? ]
+               [ `message_receiver message_receiver]
                [ `take_focus take_focus ]
                [ `get_history (function () (clone history)) ]]
       usage: []
