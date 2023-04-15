@@ -2385,6 +2385,7 @@
                                                  (progn
                                                     (cmenu_remove)
                                                     (focus_to_editor intf))))))))))
+            (refresh_symbol_time 10000)
             (refresh_symbol_timer nil)
             (symbol_positions_timer nil)
             (evaluate_selection (function (editor)
@@ -2400,7 +2401,7 @@
                                              (progn
                                                 (when refresh_symbol_timer
                                                    (clearTimeout refresh_symbol_timer))
-                                                (= refresh_symbol_timer (setTimeout (fn () (progn (get_current_symbols) (= refresh_symbol_timer nil))) 5000))
+                                                (= refresh_symbol_timer (setTimeout (fn () (progn (get_current_symbols) (= refresh_symbol_timer nil))) refresh_symbol_time))
                                                 (= rval (evaluator copytext nil (not options.repl_mode) nil { `source_name: (or options.filename options.path) } ))
                                                 (-> rval `then
                                                    (function (val)
@@ -3004,14 +3005,20 @@
             (sorted_symbols [])
             (get_current_symbols (fn ()
                                     (let
-                                       ((symbol_set (if evaluator_control
+                                       ((start_time (time_in_millis))
+                                        (symbol_set (if evaluator_control
                                                         (-> evaluator_control `available_symbols)))
+                                        (processing_time (- (time_in_millis) start_time))
                                         (cns (if evaluator_control
                                                  (-> evaluator_control `current_namespace)))
                                         (in_path nil)
                                         (search_order nil))
                                        (when (== intf nil)
                                           (log_error "text_editor: getting current symbols and shouldn't be since we are destroyed!"))
+                                       (when (> processing_time 4000)
+                                           (if (< refresh_symbol_time 60000)
+                                               (log options.name ": symbol refresh time is slow, setting refresh update delay to 60 seconds after last activity"))
+                                           (= refresh_symbol_time 60000))
                                        (when (is_object? symbol_set)
                                           (= cached_symbols symbol_set)
                                           (= search_order
@@ -3302,10 +3309,11 @@
                                          (start_time (time_in_millis))
                                          (extension nil))
                                         (setq initialized true)
+                                        (console.log "text_editor: initializing: " options)
                                         (setq parent_view view.parentElement)
                                         (setq editor
                                            (ace.edit editor_div))
-                                        
+                                        (assert editor (+ "text_editor: ace editor not initializing: received: " editor " from ace.edit"))
                                         (unless (is_number? options.primary_rank)
                                            (set_prop options `primary_rank start_time))
                                         

@@ -23,6 +23,9 @@
 
 ; TODO: SPLIT UP INTO SEPARATE FILES - TOO LARGE 
 
+
+
+
 (defglobal main_menu_button nil) ;; placeholders 
 (defglobal resource_loader_button nil)
 (defglobal juno_container nil)
@@ -111,6 +114,1460 @@
           `history_next_entry { win: "Ctrl-Alt-n" mac: "Ctrl-Alt-n" }                                                               
           `history_prior_entry { win: "Ctrl-Alt-p" mac: "Ctrl-Alt-p" })
 
+
+(defun_sync element_to_lisp (element options)
+   (if (is_element? element)
+       (let
+          ((tag_name (if (is_function? options.tagname_for_element)
+                         (-> options `tagname_for_element element)
+                         element.tagName))
+           (ns (if (is_string? options.use_ns)
+                   (+ options.use_ns "/")
+                   ""))
+           (elem_as_lisp (list (+ "=:" ns (lowercase tag_name))))
+           (acc [])
+           (nodes nil)
+           (ptype nil)
+           (val nil)
+           (attrib_list (prop element `attributes))
+           (attribs {}))
+          (for_each (attrib_num (range (length attrib_list)))
+             (progn
+                (set_prop attribs
+                   (resolve_path [ `attributes attrib_num `name ] element)
+                   (resolve_path [ `attributes attrib_num `value ] element))))
+          (if (prop element `onclick)
+              (set_prop attribs
+                 `onclick
+                 (prop element `onclick)))
+          (when (and (== tag_name "INPUT")
+                     (== (prop attribs `type)
+                         "checkbox"))
+             (if (prop element `checked)
+                 (set_prop attribs
+                    `is_checked
+                    true)
+                 (set_prop attribs
+                    `is_checked
+                    false)))
+          (push elem_as_lisp
+             attribs)
+          (= nodes element.childNodes)
+          (for_each (cnum (range (length nodes)))
+             (cond 
+                (== 3 (resolve_path [ cnum `nodeType ] nodes))
+                (push elem_as_lisp
+                   (if (is_function? options.on_text)
+                       (-> options `on_text (resolve_path [ cnum `nodeValue] nodes) nodes)
+                       (resolve_path [ cnum `nodeValue] nodes)))
+                (== 1 (resolve_path [ cnum `nodeType ] nodes))
+                (progn
+                   (unless (has_class?  "juno-non-value" (resolve_path [ cnum ] nodes) `classList )
+                      (push elem_as_lisp
+                         (element_to_lisp (resolve_path [ cnum ] nodes) options))))))
+          (if (is_function? options.on_element_complete)
+              (-> options `on_element_complete elem_as_lisp)
+              elem_as_lisp))
+       [ "UNKNOWN:" element ])
+   {
+     `description: (+ "Given a DOM element, returns the lisp represenation of the DOM element.<br>"
+                      "If provided with an options object, the following keys are applicable:<br>"
+                      "tagname_for_element:(fn element) - For every new element encountered in the "
+                      "provided tree, will be called with the new element.  The function should "
+                      "return a string value to be used for the tagname as opposed to the original "
+                      "element tagName value.<br>"
+                      "use_ns:string - Qualify the emitted tag symbols with the provided namespace.<br> "
+                      "on_text:(function text nodes) - Will be called on a text node with the text and "
+                      "and the sibling nodes.<br>"
+                      "on_element_complete:(function array) - Will be called with the quoted lisp form "
+                      "that was constructed.  The function can then manipulate the completed form "
+                      "prior to it being placed in the returned lisp form.  Note that this function "
+                      "is called for every completed element, not just the final return value.")
+     `usage: ["element:element" "options:object"]
+     `tags: ["DOM" "ui" "serialize" "serialization" "view" "element" ]
+   })
+
+
+(defun file_picker_button (button_text on_selection)
+  (let
+      ((elem (html/input { type: "file" 
+                          value: (or button_text "Open")
+                          onchange: (fn (e)
+                                      (let
+                                          ((items e.srcElement.files)
+                                           (status nil))
+                                        (when on_selection
+                                          (on_selection items)))) })))
+    (declare (fn on_selection html/input)
+             (global html/input))
+    (when (eq nil on_selection)
+      (throw "on_selection is required for file_picker_button"))
+    elem))
+
+(defun notify (text type on_click)
+        (let
+            ((type (or type "info"))
+             (timer nil)
+             (view (div { `class: "juno-notification" 
+                          `style: (cond
+                                     (== type "error")
+                                     "border-left: 10px solid var(--type-error-color);"
+                                     (== type "success")
+                                     "border-left: 10px solid var(--success-color);"
+                                     else
+                                     "border-left: 10px solid var(--primary-action-bg-color);") }
+                         (or text "-"))))
+            (when (eq nil (get_by_id "lower_right_corner"))
+                  (-> (get_by_id "body")
+                      `appendChild (div { `id: "lower_right_corner" `style: "position: absolute; right: 50px; bottom: 5px; width: 255px;" } )))
+            
+            (-> (get_by_id "lower_right_corner") `appendChild view)
+            (-> view `animate [{ `easing: `ease-in }
+                               { `opacity: 1    `easing: `ease-out  `offset: 0.1 }
+                               { `opacity: 1 `easing: `ease-out } ] 
+                           { `duration: 3000 })
+            
+            (= timer (setTimeout (fn ()
+                                   (do 
+                                     (-> view `animate [{ `opacity: 0  `easing: `ease-in } ] { `duration: 260 })
+                                     (setTimeout (fn () (do
+                                                          (-> view `remove)
+                                                          (= timer nil)
+                                                          (= view nil)))
+                                                 250)))                                                   
+                            10000))
+            (setTimeout (fn ()
+                            (set_style [["opacity" 1]] view))
+                        200)
+            (attach_event_listener view
+                 `click
+                 (fn (e)
+                     (do
+                         (when timer (clearTimeout timer))
+                         (when view (-> view `remove))
+                         (= view nil)
+                         (= timer nil)
+                         (when on_click
+                               (on_click type text)))))
+            true)
+        {
+         `usage: ["text:string" "type?:string" "on_click?:function"]
+         `description: (+ "Given a obligatory text string, and an optional type, and on_click function, " 
+                          "show an alert for 10 seconds in the lower right hand corner."
+                          "<br><br>"
+                          "Types are as follows: <br>"
+                          "error<br>"
+                          "success<br>"
+                          "info (default)<br>"
+                          "<br>Returns true, but is of no significance.")
+         `tags: ["ui" "alerts" "alerting" "message" "notify"]
+         })
+
+
+(defun adjust_element_position (element relative_base)
+   (let
+      ((dims nil))
+      (= dims (-> element `getBoundingClientRect))
+      (when (> dims.bottom window.innerHeight)
+         (if (is_number? relative_base)
+            (set_style [[ "top" (+ "" (- relative_base dims.height) "px") ]] element)
+            (set_style [["top" (+ "" (- dims.top dims.height 10) "px") ]] element)))
+      (when (> dims.right  window.innerWidth)
+         (if (is_number? relative_base)
+            (set_style [[ "left" (+ "" (- relative_base dims.width) "px") ]] element)
+            (set_style [["left" (+ "" (- window.innerWidth dims.width 5) "px") ]] element)))
+      element)
+   {
+     description: (+ "Given an absolute positioned HTML Element, makes sure that the element "
+                     "bottom and right are not partially displayed off screen.  Will adjust the "
+                     "elements position if the geometry is determined to be out of bounds.  Returns "
+                     "the element. If relative_base is a non-nil number, then the left and top are "
+                     "adjusted relative_base to the provided number, vs. an absolute placement.")
+     tags: ["ui" "element" "DOM" "position" ]
+     usage: ["element:Element" "relative_base:?number"]
+   })
+
+(defun editable_element (`& args)
+   (let
+      ((options (if (and (is_object? args.0)
+                         (not (is_element? args.0)))
+                    (take args)
+                    {}))
+       (elem (div { `tabindex: 0 `contenteditable: true `style: (+ "min-width: 20px; display: inline-block;" (or options.style "")) 
+                    `class: options.class  } 
+                  args))
+       (handler (fn (e)
+                   (cond
+                      (and (not options.multiline) 
+                           (== e.key "Enter"))
+                      (handle_event e)
+                      else
+                      (setTimeout (fn ()
+                                     (progn
+                                        (set_prop elem
+                                           `value
+                                           (trim elem.innerText))
+                                        (when options.on_change
+                                           (options.on_change e))))
+                            10)))))
+      (attach_event_listener elem
+                             `keydown
+                             handler)
+      (log "OPTIONS: " options)
+      (set_prop elem `value elem.innerText)
+       elem)
+   {
+       description:(+ "Returns a contenteditable div with an additional value " 
+                      "property for the innerText value.  Single line by default, "
+                      "setting options.multiline to true will allow for multiple "
+                      "line input values. If options.on_change is set as a function "
+                      "it will be called with the keydown event.")
+       usage: ["options:object" "argsN:*"]
+       tags: [`DOM `UI `input `edit `element]
+    })
+
+
+
+
+(defun read_file (file options)
+    (new Promise
+         (fn (resolve reject)
+           (let
+               ((reader (new FileReader))                
+                (options (+ {}                          
+                            {
+                             `read_as: "binary"
+                             `details: false
+                             }
+                            options))
+                (read_as options.read_as))
+             (set_prop reader
+                       `onload
+                       (function (e)
+                                 (progn
+                                  (resolve
+                                   (cond
+                                     options.details
+                                     {
+                                      `name: file.name
+                                      `type: file.type
+                                      `size: file.size
+                                      `data: reader.result                                     
+                                      }
+                                     else
+                                     reader.result))))
+                       `error
+                       (function (e)
+                                 (reject e)))
+             
+             (cond
+               (or (== read_as "binary")
+                   (== read_as "ArrayBuffer"))
+               (-> reader `readAsArrayBuffer file)
+               (== read_as "text")
+               (-> reader `readAsText file)
+               (== read_as "binaryString")
+               (-> reader `readAsBinaryString file)
+               (== read_as "dataURL")
+               (-> reader `readAsDataURL file))))))
+
+
+
+(defun control_tree (content_list control_lambda _parent)
+  (cond
+    (is_array? content_list)    
+    (reduce (c content_list)
+            (control_tree c control_lambda _parent))               
+    content_list.view
+    (progn
+     (when control_lambda
+       (control_lambda content_list _parent))
+     (= _parent content_list)
+     (if content_list.controls
+       [ content_list (control_tree (-> content_list `controls) control_lambda _parent) ]
+       content_list))
+     
+    (is_element? content_list)
+    { view: content_list })) 
+
+                    
+(defvalue *frame_count* -1)
+(defvalue *view_count* -1)
+
+(defun control_container (content options)
+  (let
+      ((contained_content content)
+       (resize_observer nil)
+       (options (or options {}))
+       (name (or options.name
+                 (and options.root_frame (+ "Frame " (inc *frame_count*)))
+                 (+ "view-" (inc *view_count*))))
+       (id (or options.id (generate_id "container")))       
+       (init_timer nil)
+       (view (div { `control_id: id `class: "juno-view-container" } ))
+       (initialized false)
+       (init_count 0)
+       (parent_view nil)
+       (check_observer (fn ()
+                         (when (not (== view.parentElement parent_view))
+                            ;(log "control_container: changing observation: parent view changed: parent now: " (get_attribute view.parentElement `id))
+                            
+                            (-> resize_observer `disconnect)
+                            (-> resize_observer `observe view.parentElement)
+                            (= parent_view view.parentElement))))
+       (perform_resize (fn ()
+                         (when view.parentElement
+                            ;(log "control_container: performing resize: parent view is: "  (get_attribute view.parentElement `id))
+                            (check_observer)
+                            (let
+                               ((new_height (- (prop view.parentElement `offsetHeight) 0))
+                                (new_width  (- (prop view.parentElement `offsetWidth) 0)))
+                               
+                               (set_style [[ "width" (+ "" new_width "px") ]
+                                           [ "height" (+ "" new_height "px") ]]
+                                          view)))))
+       (set_content (fn (position new_content) ;; position is discarded but it is essentially 0 since this is a single unit container
+                      (let
+                          ((new_view nil))
+                        (= new_view
+                           (cond
+                             new_content.view
+                             new_content.view
+
+                             (is_element? new_content)
+                             new_content
+                             
+                             else
+                             (progn
+                              (if new_content 
+                                (div { } (as_lisp new_content))
+                                (div { `class: "juno-empty-content" } "Set Content")))))
+                        (-> view `replaceChildren new_view)
+                        (if (not new_content.view)
+                          (= contained_content
+                             {
+                              `view: view
+                              })
+                          (= contained_content new_content))
+                        (perform_resize)
+                        (when new_content.initialize
+                          (-> new_content `initialize))  ;; initialize if not already
+                        view)))
+       (initialize (fn ()
+                     (when (not initialized)
+                      (when init_timer
+                        (clearInterval init_timer)
+                        (= init_timer nil))
+                      (when (not initialized)
+                        (= initialized true))
+                      (when view.parentElement
+                        (= parent_view view.parentElement)
+                        (-> resize_observer `observe view.parentElement)
+                        (perform_resize)
+                        (console.log "control_container: " name ": initializing with: " contained_content)
+                        (when contained_content
+                          (set_content 0 contained_content))
+                        (when (is_function? contained_content.initialize)
+                          (-> contained_content `initialize))))))
+       (destroy (fn ()
+                  (progn
+                   (when (is_function? contained_content.destroy)
+                     (-> contained_content `destroy)))))
+                        
+       (intf (new Object)))
+    
+    (set_prop options
+              `name
+              name
+              `id
+              id)
+    
+    (= resize_observer (new ResizeObserver (fn ()
+                                              (progn
+                                                 (console.log "control_container: " name ": resize observer fired")
+                                                 (perform_resize)))))
+    
+    (= init_timer (setInterval (fn (e)
+                                   (progn
+                                      (console.log "control_container: resize interval running: timer handle:" init_timer ": count: " init_count)
+                                    (when view.parentElement
+                                      (clearInterval init_timer)
+                                      (initialize))))
+                               250))
+    
+    
+    (set_prop intf
+              `view view              
+              `initialize initialize              
+              `set_content set_content
+              `name options.name
+              `resize_observer resize_observer
+              `resize perform_resize
+              `menu_items options.menu_item
+              `initialized? (fn () initialized)
+              `controls (fn () [contained_content])
+              `toJSON (function ()
+                                 `(control_container ,#contained_content ,#options))
+              `type `control_container
+              `options options)))
+
+(defun split_view_vertical (content_a content_b options)
+  (let
+      ((center_width 7)
+       (right_margin 5)
+       (options (or options { }))
+       (id (or options.id (generate_id "split_view_vertical")))
+       (center_divider (div { `class: "juno-vertical-dragger"
+                              `style: (+ " top: 0px; left: 50%; cursor: col-resize; height: 100%; width: " center_width "px") }))
+       (left_container (div { `class: "juno-view-container" }
+                            (if content_a.view
+                              content_a.view
+                              content_a)))
+       (right_container (div { `class: "juno-view-container" }
+                            (if content_b.view
+                              content_b.view
+                              content_b)))
+       (view_overlay (div { `style: "width: 0%; height: 0%; position: absolute; top: 0px; left; 0px; background: transparent; cursor: col-resize" }))
+       (view (div { `control_id: id  `class: "juno-vertical-split-container" `style: "height: calc(100% - 5px); width: 100%;" }
+                  left_container
+                  center_divider
+                  right_container
+                  view_overlay
+                  ))
+       (parent_view nil)
+       (drag_status nil)       
+       (resize_observer nil)
+       (center_pos nil)
+       (initialized false)
+       (min_size (or options.min_size 20))
+       (init_timer nil)
+       (lock_ratio (function (state)
+                             (when (not drag_status)
+                              (if state
+                                (progn
+                                 (set_prop options
+                                          `ratio_locked
+                                          true)
+                                 (= lock_ratio options.ratio))
+                                (set_prop options
+                                          `ratio_locked
+                                          false)))))
+       (check_observer (fn ()
+                         (when (not (== view.parentElement parent_view))
+                           (-> resize_observer `disconnect)
+                           (-> resize_observer `observe view.parentElement)
+                           (= parent_view view.parentElement))))
+       (saved_ratio nil)
+       (set_show_second_panel (fn (state)
+                                 (progn
+                                    (console.log "set_show_second_panel: ->  state: " state "options.ratio: " options.ratio " saved_ratio: " saved_ratio)
+                                    (set_prop options
+                                       `hide_second_panel
+                                       (not state))
+                                    (cond
+                                       state
+                                       (progn
+                                          (set_prop options
+                                             `ratio
+                                             (or saved_ratio 0.5))
+                                          (= saved_ratio nil))
+                                       else
+                                       (progn
+                                          (if options.ratio 
+                                             (= saved_ratio options.ratio))
+                                          (set_prop options
+                                             `ratio
+                                             1)))
+                                    (console.log "set_show_second_panel: <-  state: " options.hide_second_panel "options.ratio: " options.ratio " saved_ratio: " saved_ratio)
+                                    ;(notify (+ "split_view: show_second_panel: " state ": ratio:" options.ratio " saved: " saved_ratio))
+                                    (perform_resize))))
+       (perform_resize (fn ()
+                         (when view.parentElement
+                           (check_observer)
+                           (if (isNaN (- (prop view.parentElement `offsetHeight) 5))
+                             (progn
+                              (console.log "split_view_vertical: cannot get parent height is NAN: " view.parentElement)
+                              (setTimeout perform_resize 1000))
+                             (let
+                                 ((new_height (- (prop view.parentElement `offsetHeight) 5))
+                                  (new_width  (- (prop view.parentElement `offsetWidth) 0)))
+                               (set_style [[ "width" (+ "" new_width "px") ]
+                                           [ "height" (+ "" new_height "px") ]]
+                                          view)
+                               ;; get the center position - set it to the midpoint if we are just initializing
+                               (when (> view.offsetWidth 0)
+                                  (when (== center_pos nil)
+                                     (console.log "split_view_vertical: center_pos is nil")
+                                     (cond
+                                        (and options.ratio
+                                           (is_number? options.ratio))
+                                        (= center_pos (* (Math.min 1 (Math.max 0.01 options.ratio)) view.offsetWidth))
+                                        options.ratio
+                                        (throw TypeError "Invalid ratio option: must be a number between 0 and 1")
+                                        else
+                                        (= center_pos (/ view.offsetWidth 2))))
+                                  
+                                  (when (and (== drag_status nil)
+                                             (or (isNaN options.ratio)
+                                                 (isNaN center_pos)))
+                                     (console.log "split_view_vertical: options.ratio is NaN: " options.ratio "center_pos: " center_pos)
+                                     (set_prop options
+                                        `ratio
+                                        0.5)
+                                     (= center_pos (* (Math.min 1 (Math.max 0.01 options.ratio)) view.offsetWidth))
+                                     (console.log "split_view_vertical: center_pos now:" center_pos))
+                                  
+                                  (if options.hide_second_panel
+                                     (= center_pos view.offsetWidth)
+                                     (progn
+                                        ;(console.log "split_view: calculating center_pos:" center_pos options.ratio view.offsetWidth)
+                                        (when (and (== drag_status nil)  ;; not doing a drag so we need to preserve the ratio
+                                                   (is_number? options.ratio))
+                                           (= center_pos (* (Math.min 1 (Math.max 0.01 options.ratio)) view.offsetWidth)))
+                                        
+                                        (if (> options.right_panel_max_size 10)
+                                            (= center_pos (- new_width 20 options.right_panel_max_size))
+                                            (= center_pos (Math.max (+ 20 min_size) (Math.min center_pos (- new_width 20 min_size)))))))
+                                  
+                                  (set_style [["width" (+ (- center_pos center_width) "px") ]]
+                                             left_container)
+                                  (set_style [["width" (+ "" center_width "px") ]] center_divider)
+                                  (set_style [["width" (+ (- view.offsetWidth center_pos center_width right_margin) "px") ]]
+                                             right_container)
+                                  
+                                  (when (not options.ratio_locked)
+                                     (set_prop options
+                                        `ratio
+                                        (/ center_pos view.offsetWidth)))
+                                  ;(console.log "split_view: center_pos: <- " center_pos options.ratio view.offsetWidth)
+                                  ;(console.log "[" left_container.offsetWidth "<->" right_container.offsetWidth "]")
+                                  ))))))
+       (init_drag (fn (e)
+                    (when (and (not options.ratio_locked)
+                               (== drag_status nil))
+                      (= drag_status 1)
+                      (set_style [["width" "100%"]
+                                  ["height" "100%"]] view_overlay)
+                      ;; since our overlay covers the center_divider add a class to indicate activity
+                      ;; on the center divider
+                      (add_class "juno-active-hover" center_divider))))
+       
+       (complete_drag (fn (e)
+                        (progn
+                         (set_style [["width" "0%"]
+                                     ["height" "0%"]] view_overlay)
+                         (remove_class "juno-active-hover" center_divider)
+                         (= drag_status nil)                         
+                         (perform_resize))))
+       (perform_drag (fn (e)
+                       (progn
+                        (-> e `preventDefault)
+                        (when drag_status                          
+                          (if (== e.buttons 0)
+                            (complete_drag)
+                            (progn
+                             (= center_pos (Math.max 20 (Math.min e.offsetX (- view.offsetWidth 20))))))
+                          (perform_resize)))))
+       (intf {})                                                                    
+       (initialize (fn ()
+                     (progn
+                      (when init_timer
+                        (clearInterval init_timer)
+                        (= init_timer nil))
+                      (console.log "split_view_vertical: initialize called: " initialized) options
+                      (when (not initialized)                       
+                        (= initialized true)
+                        (= parent_view view.parentElement)
+                        (-> resize_observer `observe view.parentElement)
+                        (perform_resize)
+                        (console.log "split_view_vertical initialized:" initialized)
+                        (when content_a.initialize
+                          (-> content_a `initialize))
+                        (when content_b.initialize
+                          (-> content_b `initialize))))))
+       (destroy (fn ()
+                  (progn
+                   (when (is_function? content_a.destroy)
+                     (-> content_a `destroy))
+                   (when (is_function? content_b.destroy)
+                     (-> content_b `destroy)))))
+       
+       (set_right_panel_max_size (fn (val)
+                                    (when (is_number? val)
+                                       (set_prop options `right_panel_max_size val)
+                                       (perform_resize))))
+       
+       (set_content (fn (position new_content)
+                      (if (and position new_content
+                               (or (== position 0) (== position 1)))
+                        (let
+                            ((target_container (if (== position 0)
+                                                 left_container
+                                                 right_container)))
+                          (console.log "split_view_vertical: adding new content: " new_content)
+                          (if (== position 0)
+                            (= content_a new_content)
+                            (= content_b new_content))
+                          (cond
+                            new_content.view ;; we have been given a control
+                            (progn                             
+                             (-> target_container `replaceChildren new_content.view)
+                             (when new_content.initialize
+                               (-> new_content `initialize)))
+                            (is_element? new_content)                                                         
+                            (-> target_container `replaceChildren new_content)
+                            else
+                            (-> target_container `replaceChildren (pre
+                                                                   (JSON.stringify new_content nil 4))))
+                          (perform_resize)
+                          (console.log "split_view_vertical: added new content: " new_content)
+                          true)
+                        (throw "set_content: invalid or missing arguments")))))
+
+    ;; set up the events
+    (attach_event_listener view_overlay
+                           `mousemove
+                           (fn (e)
+                             (progn
+                              (handle_event e)
+                              (when drag_status
+                                (perform_drag e)))))
+                             
+    (attach_event_listener view_overlay
+                           `mouseup
+                           (fn (e)
+                             (progn
+                              (handle_event e)                              
+                              (complete_drag))))
+
+    (attach_event_listener center_divider
+                           `mouseup
+                           (fn (e)
+                             (progn
+                              (handle_event e)                              
+                              (complete_drag))))
+    (attach_event_listener center_divider
+                           `mousedown
+                           (fn (e)
+                             (progn                              
+                              (handle_event e)                              
+                              (init_drag e))))
+
+   
+
+    (= resize_observer (new ResizeObserver perform_resize))
+    (console.log "split_view_vertical: ready: initialized: " initialized)
+    (when true ;options.auto_initialize
+      (= init_timer (setInterval (fn (e)
+                                   (progn
+                                    (when view.parentElement
+                                      (clearInterval init_timer)
+                                      
+                                      (= init_timer nil)
+                                      (initialize))))
+                                 250)))
+    (set_prop options
+              `ratio_locked (or options.ratio_locked false)
+              `id id
+              `name (or options.name
+                        (+ "vertical-split-" (inc *view_count*))))
+    (set_prop intf
+     `view view
+     `initialize initialize
+     `set_content set_content
+     `set_show_second_panel set_show_second_panel
+     `lock_ratio lock_ratio
+     `set_min_panel_size (fn (val)
+                             (when (is_number? val)
+                               (set_prop options `min_size val)
+                               (= min_size val)
+                               (perform_resize)))
+     `set_right_panel_max_size set_right_panel_max_size
+     `set_second_panel_max_size set_right_panel_max_size
+     `options options
+     `destroy destroy
+     `name options.name
+     `resize perform_resize
+     `type `split_view_vertical
+     `controls (fn () [ content_a content_b ])
+     `toJSON (function ()
+                       `(split_view_vertical ,#content_a ,#content_b ,#options)))
+    intf)
+  {
+    description: (+ "The `split_view_vertical` and the `split_view_horizontal` functions "
+                    "return a framing control that provides a vertical or horizontal partition "
+                    "between two elements or controls.  The ratio of the left side to the right "
+                    "side, or top side to the bottom side can be varied using a draggable "
+                    "handle. <br><br>#### Options   <br><br>ratio_locked:boolean -When true, the "
+                    "ratio between the two panels are non-adjustable and cannot be changed.  "
+                    "Defaults to false.<br>ratio:number -Given a value between 0 and 1, the ratio "
+                    "determines how wide or hight the first panel is relative to the second panel "
+                    "(right or lower).  A ratio of 0.8 results in the first element (left or top) "
+                    "being 80% of the available space, while a ratio of 0.1, result in the first "
+                    "element taking 10% of the available space of the split panel total area.  "
+                    "<br>name:string -The name to be given to the split view.  Note that this is "
+                    "typically handled by the control itself to ensure a unique name, and so "
+                    "generally doesn\'t need to be set.<br>min_size:number -The minimum size of the "
+                    "first panel (left or top) that is allowed. <br>hide_second_panel: When true, "
+                    "the second panel is hidden from view and the split_view looks like a "
+                    "`control_container`.  This option is defaulted to false.<br><br>#### Interface "
+                    "Specifics <br><br>set_second_panel_max_size:function - The maximum size that is "
+                    "allowed for the second panel (right or bottom).  This is specified in pixels so "
+                    "it should be provided as an integer.  By default there is no limit "
+                    "applied.<br>set_min_panel_size:function - Given a number via the signature "
+                    "(number) sets the minimum size of the first panel<br>set_content:function - The "
+                    "set_content function takes the arguments `(position new_content)`, where "
+                    "position is either 0 for first position, or 1 for second position.   The "
+                    "content can wither be a control or a DOM "
+                    "element.  <br>set_show_second_panel:function - Given a boolean value, if true, "
+                    "which is the default, set the secondary panel to visible.  If false, the second "
+                    "panel is hidden.<br><br><br><br> ")
+
+    usage: ["content_a:Element|Object" "content_b:Element|Object" "options:object"]
+    tags: [ `control `view `split `layout `panel `adjust `partition `ui `DOM]
+
+    })
+                             
+
+(defun split_view_horizontal (content_a content_b options)
+  (let
+      ((center_height 7)
+       (bottom_margin 5)
+       (options (or options {}))
+       (id (or options.id (generate_id "split_view_horizontal")))
+       (center_divider (div { `class: "juno-horizontal-dragger"
+                              `style: (+ "cursor: row-resize; width: 100%; height: " center_height "px") }))
+       (top_container (div { `class: "juno-view-container" }
+                            (if content_a.view
+                              content_a.view
+                              content_a)))
+       (bottom_container (div { `class: "juno-view-container" }
+                            (if content_b.view
+                              content_b.view
+                              content_b)))
+       (view_overlay (div { `style: "width: 0%; height: 0%; position: absolute; top: 0px; left; 0px; background: transparent; cursor: row-resize" }))
+       (view (div { `control_id: id `class: "juno-horizontal-split-container" `style: "height: calc(100% - 0px); width: 100%;margin: 0px; padding: 0px;" }
+                  top_container
+                  center_divider
+                  bottom_container
+                  view_overlay
+                 ))
+       (drag_status nil)
+       (initialized false)
+       (resize_observer nil)
+       (center_pos nil)
+       (last_center_pos nil)
+       (initialized false)
+       (init_timer nil)
+       (locked_ratio nil)
+       (last_set_ratio nil)
+       (min_size (or options.min_panel_size 20))
+       (lock_ratio (function (state)
+                             (when (not drag_status)
+                              (if state
+                                (progn
+                                 (set_prop options
+                                          `ratio_locked
+                                          true)
+                                 (= lock_ratio options.ratio))
+                                (set_prop options
+                                          `ratio_locked
+                                          false)))))           
+       (parent_view nil)
+       (check_observer (fn ()
+                         (when (not (== view.parentElement parent_view))
+                           (-> resize_observer `disconnect)
+                           (-> resize_observer `observe view.parentElement)
+                           (= parent_view view.parentElement))))
+       (saved_ratio nil)
+       (set_show_second_panel (fn (state)
+                                 (progn
+                                    (console.log "set_show_second_panel: ->  state: " state "options.ratio: " options.ratio " saved_ratio: " saved_ratio)
+                                    (set_prop options
+                                       `hide_second_panel
+                                       (not state))
+                                    (cond
+                                       state
+                                       (progn
+                                          (set_prop options
+                                             `ratio
+                                             (or saved_ratio 0.5))
+                                          (= saved_ratio nil))
+                                       else
+                                       (progn
+                                          (if options.ratio 
+                                             (= saved_ratio options.ratio))
+                                          (set_prop options
+                                             `ratio
+                                             1)))
+                                    (console.log "set_show_second_panel: <-  state: " options.hide_second_panel "options.ratio: " options.ratio " saved_ratio: " saved_ratio)
+                                    ;(notify (+ "split_view: show_second_panel: " state ": ratio:" options.ratio " saved: " saved_ratio))
+                                    (perform_resize))))
+       (perform_resize (fn ()
+                         (when view.parentElement
+                           (check_observer)
+                           (if (isNaN (- (prop view.parentElement `offsetHeight) 5))
+                             (progn
+                              (console.log "split_view_horizontal: cannot get parent height is NAN: " view.parentElement)
+                              (setTimeout perform_resize 1000))
+                             (let
+                                 ((new_height (- (prop view.parentElement `offsetHeight) 0))
+                                  (new_width  (- (prop view.parentElement `offsetWidth) 0)))
+                                 
+                                 (if (and center_pos
+                                          (> center_pos 0)
+                                          (> new_height 0))
+                                     (= last_center_pos center_pos))
+                                
+                                 
+                               (set_style [[ "width" (+ "" new_width "px") ]
+                                           [ "height" (+ "" new_height "px") ]]
+                                          view)
+                               ;; get the center position - set it to the midpoint if we are just initializing
+                               (when (> view.offsetWidth 0)
+                                  (when (== center_pos nil)
+                                     (cond
+                                        (and options.ratio
+                                           (is_number? options.ratio))
+                                        (= center_pos (* (Math.min 1 (Math.max 0.01 options.ratio)) view.offsetHeight))
+                                        options.ratio
+                                        (throw TypeError "Invalid ratio option: must be a number between 0 and 1")
+                                        else
+                                        (= center_pos (/ view.offsetHeight 2))))  ;; default is 50% 0.5
+                                  (when (and (== drag_status nil)
+                                             (or (isNaN options.ratio)
+                                                 (isNaN center_pos)))
+                                     (log "split_view_horizontal: options.ratio is NaN: " options.ratio "center_pos: " center_pos)
+                                     (set_prop options
+                                        `ratio
+                                        0.5)
+                                     (= center_pos (* (Math.min 1 (Math.max 0.01 options.ratio)) view.offsetHeight)))
+                                  
+                                  
+                                  (if options.hide_second_panel
+                                     (= center_pos view.offsetHeight)
+                                     (progn
+                                        (when (and (== drag_status nil)  ;; not doing a drag so we need to preserve the ratio
+                                                   (is_number? options.ratio))
+                                           (= center_pos (* (Math.min 1 (Math.max 0.01 options.ratio)) view.offsetHeight)))
+                                        
+                                        (when (== new_height 0)
+                                           (= last_set_ratio
+                                              options.ratio))
+                                        
+                                        (cond
+                                           last_set_ratio
+                                           (= center_pos (* new_height last_set_ratio))
+                                           (> options.lower_panel_max_size 10)
+                                           (= center_pos (- new_height 20 options.lower_panel_max_size))
+                                           else
+                                           (= center_pos (Math.max (+ 20 min_size) (Math.min center_pos (- new_height 20 min_size)))))))
+                                  
+                                  (set_style [["height" (+ "" center_pos  "px") ]]
+                                             top_container)
+                                  (set_style [["height" (+ "" center_height "px") ]] center_divider)
+                                  (set_style [["height" (+ (- view.offsetHeight center_height center_pos 0) "px") ]]
+                                             bottom_container)
+                                  (cond
+                                     (and (not options.ratio_locked)
+                                          last_set_ratio)
+                                     (progn
+                                        (set_prop options
+                                           `ratio
+                                           last_set_ratio)
+                                        (= last_set_ratio nil))
+                                     (not options.ratio_locked)
+                                     (set_prop options
+                                        `ratio
+                                        (/ center_pos view.offsetHeight)))
+                                  ;(console.log "[" top_container.offsetHeight "<|>" bottom_container.offsetHeight "]")
+                                  ))))))
+       (init_drag (fn (e)
+                    (when (and (not options.ratio_locked)
+                               (== drag_status nil))
+                      (= drag_status 1)
+                      (set_style [["width" "100%"]
+                                  ["height" "100%"]] view_overlay)
+                      ;; since our overlay covers the center_divider add a class to indicate activity
+                      ;; on the center divider
+                      (add_class "juno-active-hover" center_divider))))
+       
+       (complete_drag (fn (e)
+                        (progn
+                         (set_style [["width" "0%"]
+                                     ["height" "0%"]] view_overlay)
+                         (remove_class "juno-active-hover" center_divider)
+                         (= drag_status nil)                         
+                         (perform_resize))))
+       (perform_drag (fn (e)
+                       (progn
+                        (-> e `preventDefault)
+                        (when drag_status
+                          ;(console.log "view_overlay: center_pos: " center_pos "offsetY: " e.offsetY "movementX: " e.movementY)
+                          (if (== e.buttons 0)
+                            (complete_drag)
+                            (progn
+                             (= center_pos (Math.max 20 (Math.min (- e.offsetY center_height 3) (- view.offsetHeight 40))))))
+                          (perform_resize)))))
+       (intf {})
+       (initialize (fn ()
+                     (progn
+                      (when init_timer
+                        (clearInterval init_timer)
+                        (= init_timer nil))
+                      (when (not initialized)
+                        (= initialized true)
+                        (= parent_view view.parentElement)
+                        (-> resize_observer `observe view.parentElement)
+                        (perform_resize)
+                        (console.log "split_view_horizontal initialized: " initialized)
+                        (when content_a.initialize
+                          (-> content_a `initialize))
+                        (when content_b.initialize
+                          (-> content_b `initialize))))))
+       (destroy (fn ()
+                  (progn
+                   (when (is_function? content_a.destroy)
+                     (-> content_a `destroy))
+                   (when (is_function? content_b.destroy)
+                     (-> content_b `destroy)))))
+       (set_lower_panel_max_size (fn (val)
+                                 (when (is_number? val)                                   
+                                   (set_prop options `lower_panel_max_size val)                                  
+                                   (perform_resize))))
+       (set_content (fn (position new_content)
+                      (if (and position new_content
+                               (or (== position 0) (== position 1)))
+                        (let
+                            ((target_container (if (== position 0)
+                                                 top_container
+                                                 bottom_container)))
+                          (if (== position 0)
+                            (= content_a new_content)
+                            (= content_b new_content))
+                          (cond
+                            new_content.view ;; we have been given a control
+                            (progn                             
+                             (-> target_container `replaceChildren new_content.view)
+                             (when new_content.initialize
+                               (-> new_content `initialize)))
+                            (is_element? new_content)                                                         
+                            (-> target_container `replaceChildren new_content)
+                            else
+                            (-> target_container `replaceChildren (pre
+                                                                   (JSON.stringify new_content nil 4))))
+                          (perform_resize)
+                          true)
+                        (throw "set_content: invalid or missing arguments")))))
+                          
+                                                        
+    ;; set up the events
+    (attach_event_listener view_overlay
+                           `mousemove
+                           (fn (e)
+                             (progn
+                              (handle_event e)
+                              (when drag_status
+                                (perform_drag e)))))
+                             
+    (attach_event_listener view_overlay
+                           `mouseup
+                           (fn (e)
+                             (progn
+                              (handle_event e)                              
+                              (complete_drag))))
+
+    (attach_event_listener center_divider
+                           `mouseup
+                           (fn (e)
+                             (progn
+                              (handle_event e)                              
+                              (complete_drag))))
+    (attach_event_listener center_divider
+                           `mousedown
+                           (fn (e)
+                             (progn                              
+                              (handle_event e)                              
+                              (init_drag e))))
+  
+    (= resize_observer (new ResizeObserver perform_resize))
+    (console.log "split_view_horizontal: ready: initialized: " initialized)
+    (when true ;options.auto_initialize
+      (= init_timer (setInterval (fn (e)
+                                   (progn
+                                    (when view.parentElement
+                                      (clearInterval init_timer)
+                                      (= init_timer nil)
+                                      (initialize))))
+                                 250)))
+    (set_prop options
+              `ratio_locked (or options.ratio_locked false)
+              `id id
+              `name (or options.name
+                        (+ "horizontal-split-" (inc *view_count*))))
+    
+    (set_prop intf
+     `view view
+     `initialize initialize
+     `options options
+     `name options.name
+     `resize perform_resize
+     `set_min_panel_size (fn (val)
+                             (when (is_number? val)
+                               (set_prop options `min_size val)
+                               (= min_size val)
+                               (perform_resize)))
+     `set_lower_panel_max_size set_lower_panel_max_size
+     `set_second_panel_max_size set_lower_panel_max_size
+     `set_show_second_panel set_show_second_panel
+     `destroy destroy
+     `type `split_view_horizontal
+     `controls (fn () [ content_a content_b ])
+     `toJSON (function ()
+                       `(split_view_horizontal  ,#content_a ,#content_b ,#options))
+     `lock_ratio lock_ratio
+     `set_content (fn (position new_content)
+                        (set_content position new_content)))
+     
+    intf)
+  {
+    description: (eval Environment.definitions.split_view_vertical.description)
+    usage: ["content_a:Element|Object" "content_b:Element|Object" "options:object"]
+    tags: [ `control `view `split `layout `panel `adjust `partition `ui `DOM] 
+  })
+
+(defun checkbox (`& args)
+   (let
+      ((options (if (and (is_object? args.0)
+                      (not (is_element? args.0)))
+                 args.0
+                 {}))
+       (args (if (> (length options) 0)
+                 (rest args)
+                 args))
+       (state options.value)
+       (check_input (input (+ { `type: "checkbox" }
+                              (if options.value
+                                 { `checked: true }
+                                 {})
+                              { `style: "padding: 5px; margin-right: 5px;" }
+                              (if (is_object? options.checkbox)
+                                  options.checkbox
+                                  {}))))
+       (view (label (+ {}
+                       (if (is_object? options.label)
+                           options.label
+                        {}))
+                    check_input
+                    args)))
+      (attach_event_listener view
+         `click
+         (fn (e)
+            (progn
+               (= state (prop check_input `checked))
+               (set_prop view
+                  `value
+                  state))))
+      (set_prop view
+         `value
+         state)
+      view)
+   {
+       `description: (+ "Creates a checkbox with a label element and "
+                        "returns the label element.  The state of the "
+                        "check box input is set to the value property "
+                        "of the label, such that when the check box input "
+                        "is checked, the value will be true, otherwise "
+                        "it will be false.  Event listeners can be "
+                        "attached as needed.<br>Example:```"
+                        "(defconst my_checkbox (checkbox { `value: true } \"Completed\"))\n"
+                        "(attach_event_listener my_checkbox\n"
+                        "   `click\n"
+                        "   (fn (e)\n"
+                        "      (log \"State: \" e.srcElement.value)))\n```"
+                        "<br>"
+                        "Options for the checkbox:<br>"
+                        "value:boolean - If true the checkbox is checked when first "
+                        "presented.<br>"
+                        "label:object - If provided, will be used for the attributes of the label element.<br>"
+                        "checkbox:object - If provided, will be used for the attributes of the checkbox input "
+                        "element.<br>")
+       `usage: ["options:?object" "label_contents:string|Element" ]
+       `tags: [ "html" "ui" "DOM" "element" "node"]
+   })
+
+(defun_sync doc_exec (command_name value show_default_ui )
+   (-> document `execCommand command_name 
+                             (if (== show_default_ui true) true false) 
+                             value)
+   {
+       `description: (+ "Executes document.execCommand with the arguments provided "
+                        "on the DOM element currently in focus.<br>"
+                        "Returns false if the command is unsupported.  The " 
+                        "show_default_ui argument defaults to false.<br>" 
+                        "<br>Note that browser support is officially deprecated for the "
+                        "execCommand method of document.")
+       `tags: ["DOM" "ui" "command" "formatting" "editing" ]
+       `resources: ["https://developer.mozilla.org/en-US/docs/Web/API/Document/execCommand"]
+       `usage:["command_name:string" "value:*" "show_default_ui:?boolean"]
+   })
+   
+(defun pair_editor (pair options)
+   (let
+      ((pair [ pair.0 pair.1 ])
+       (key_elem (input (+ { `tabindex: 0 `class: "juno-editable" }
+                           (if options.placeholder_0 
+                              { `placeholder: options.placeholder_0 }
+                              {})
+                           (if options.list_0
+                              { `list: options.list_0 }
+                              {})
+                           (if (is_array? options.path)
+                              { `path: (join "~" (conj options.path [ 0 ])) }
+                              { path: "0" })
+                           { value: (or pair.0 "") 
+                             style: "padding: 5px; flex-grow: 1; flex-basis: 100px;" } )))
+       (value_elem (input (+ { `tabindex: 0 `class: "juno-editable" }
+                             (if options.placeholder_1 
+                              { `placeholder: options.placeholder_1 }
+                              {})
+                             (if options.list_1
+                                { `list: options.list_1 }
+                                {})
+                           (if (is_array? options.path)
+                              { `path:  (join "~"  (conj options.path [ 1 ])) }
+                              { path: "1" })
+                           { value: (or pair.1 "") style: "padding: 5px; flex-grow: 2; flex-basis: 150px;" } )))
+       (view (div { `class: "juno-editable" style: (+ "display:flex; align-items: flex-end; flex-wrap: wrap; gap: 16px;"
+                                                      (if (is_string? options.style)
+                                                          options.style
+                                                          ""))
+                           }
+                  key_elem
+                  value_elem
+                  (if options.additional_elements
+                     options.additional_elements
+                     [])))
+       (handler (fn (e)
+                   (progn
+                      (defvar edited_path (get_attribute e.srcElement "path"))
+                      (if (and edited_path
+                               (is_function? options.on_change))
+                         (-> options `on_change (split_by "~" edited_path) e.srcElement.value))))))
+      (log "pair editor: " pair)
+      (attach_event_listener view
+         `keyup
+         handler)
+      (attach_event_listener view
+         `click
+         handler)
+      view))
+
+(defun filter_icon (size element)
+   (let
+      ((view (or element (div { style: (+ "display: inline-block; width: " size)})))
+       (size (or size 20))
+       (svg_text 
+          (prop (svg { xmlns:"http://www.w3.org/2000/svg"
+                        width: (- size 6)
+                        height: (- size 6)
+                        viewBox:(+ "0 0 " size " " size)
+                        fill:"none"
+                        stroke:"currentColor"
+                        stroke-width:2
+                        stroke-linecap:"round"
+                        stroke-linejoin:"round"
+                        class:"feather feather-filter" }
+        (polygon { points: "22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" })) `outerHTML)))
+      (-> view `insertAdjacentHTML `beforeend svg_text)
+      view))
+
+(defun dtable (row_data options)
+   (let
+      ((search_input (input { `class: "juno-search" title: (or options.title (dtext "Search")) placeholder: (dtext "Search") type: `search } ))
+       (filter_button (filter_icon 22 (button {  `title: (dtext "Filter Matching Rows") `style: "width: 35px; padding: 3px;"})))
+       (search_results_elem (div { `style: "display: none;padding: 5px;" } "No Data Found"))
+       
+       (title (or options.title nil))
+       (view nil)
+       (search_results [])
+       (tview nil)
+       (set_filter_mode (fn (state)
+                           (if state
+                              (progn
+                                 (if (-> tview `querySelector "td.juno-selected") ;; do we have any selections currently?
+                                     (for_items (row (-> tview `querySelectorAll "tr"))
+                                        (if (-> row `querySelector ".juno-selected")
+                                           (remove_class "juno-display-none" row)
+                                           (add_class "juno-display-none" row)))
+                                     (for_items (row (-> tview `querySelectorAll "tr.juno-display-none"))
+                                               (remove_class "juno-display-none" row)))
+                                 (add_class "juno-button-on" filter_button))
+                              (progn
+                                 (remove_class "juno-button-on" filter_button)
+                                 (for_items (row (-> tview `querySelectorAll "tr.juno-display-none"))
+                                           (remove_class "juno-display-none" row))))))
+                                     
+       (reset_search (fn ()
+                        (progn
+                           (set_prop search_input `value "")
+                           (for_items (elem (-> tview `querySelectorAll "td.juno-selected"))
+                                (remove_class "juno-selected" elem))
+                           (for_items (elem (-> tview `querySelectorAll "tr.juno-display-none"))
+                                (remove_class "juno-display-none" elem)))))
+       (search_handler (fn (search_data)
+                          (let
+                             ((found false)
+                              (search_data (lowercase search_data))
+                              (hide_rows (has_class? "juno-button-on" filter_button))
+                              (nothing_found true))
+                             (set_style [["display" "none"]] search_results_elem)
+                             (if (blank? search_data)
+                                (reset_search)
+                                (progn
+                                   (for_items (elem (-> tview `querySelectorAll "td.juno-selected"))
+                                              (remove_class "juno-selected" elem))
+                                   (for_items (elem (-> tview `querySelectorAll "tr"))
+                                              (remove_class "juno-selected" elem))
+                                   (for_items (row (or (-> tview `querySelectorAll "tr") []))
+                                              (progc
+                                                 ;(log "searching row: " row.tagName row.innerText row.children)
+                                                 (= found false)
+                                                 (for_items (col row.children)
+                                                            (progc
+                                                               ;(log "..searching col: " col.innerText (contains? search_data col.innerText))
+                                                               (when (contains? search_data (lowercase col.innerText))
+                                                                  (add_class "juno-selected" col)
+                                                                  (= nothing_found false)
+                                                                  (= found true))))
+                                                 (if hide_rows
+                                                    (if found
+                                                       (remove_class "juno-display-none" row)
+                                                       (add_class "juno-display-none" row)))))
+                                   (when nothing_found
+                                      (reset_search)
+                                      (set_style [["display" "inline-block"]] search_results_elem))
+                                   ))))))
+                             
+      (= tview
+         (table { `style: (or options.table_style "width: 100%") }
+                (if (is_array? options.columns)
+                    (thead
+                       (for_each (colheader options.columns)
+                          (cond
+                             (is_string? colheader)
+                             (th { `style: "padding: 5px;" }  colheader)
+                             (and (is_object? colheader)
+                                  colheader.name)
+                             (th { `style: "padding: 5px;" }  colheader.name))))
+                    [])
+                (tbody
+                   (for_each (row (or row_data []))
+                      (tr { `class: "juno-dtable" }
+                          (for_each (cell row)
+                             (td { `class: "juno-dtable" }
+                                 cell)))))))
+      (= view 
+         (cond 
+            options.display_search
+            (div { }
+                 (div { `style: "padding: 4px; display: flex;" }
+                      (if (is_string? options.title)
+                          (label { `style: "font-weight: bold; margin-right: 20px;margin-top: 4px;font-size: 1.1em;" } options.title)
+                          [])
+                      search_input filter_button search_results_elem)
+                 tview)
+            options.title
+            (div { }
+                 (div { `style: "padding: 4px; display: flex;" }
+                      (if (is_string? options.title)
+                          (label { `style: "font-weight: bold; margin-right: 20px;display: inline-block;" } options.title)
+                          []))
+                 tview)
+            else
+            tview))
+      (attach_event_listener search_input
+         `keyup
+         (fn (e)
+            (when (blank? search_input.value)
+               (reset_search))))
+      (attach_event_listener search_input
+         `search
+         (fn (e)
+            (if (blank? search_input.value)
+                (reset_search)
+                (search_handler search_input.value))))
+      (attach_event_listener filter_button
+         `click
+         (fn (e)
+            (set_filter_mode (not (has_class? "juno-button-on" filter_button)))))
+      (if options.controls
+         {
+             view:view
+             search: search_handler
+             reset: reset_search
+             options: options
+             set_filter_mode: set_filter_mode
+         }
+         view))
+   {
+     description: (+ "Given two dimensional row data in the form of nested arrays, and an "
+                     "optional options object, returns a DOM structure representing the data in an "
+                     "HTMLTable.<br>The row_data should be in the following form:```[[\"Betty Sue\" "
+                     "80]\n [\"John Smith\" 75]\n [\"Harvey Jones\" 70]]```<br><br>where the ordered "
+                     "structure is by row, then by column.<br><br>#### Options  <br><br>columns:array "
+                     "-When provided, the columns array provides the table header information.  If "
+                     "the column object contains an array of strings, then the values in the array "
+                     "are used for the column names.  If the columns array contains objects, then "
+                     "the `name` key will determine the displayed name for the "
+                     "column. <br>controls:boolean  - When set to true, a control interface object is "
+                     "returned, instead of a DOM Element.  The control interface will have the "
+                     "following form:```{ view: DOM Element\n  search: fn(search_data)\n  reset: fn()\n "
+                     "options: object\n  set_filter_mode: fn(boolean) "
+                     "\n}\n```<br><br>display_search:boolean - When true, the table will present search "
+                     "controls on the top, where the user can search, highlight and filter the row "
+                     "data of the table.  Default is false.<br>title:string - If present the text "
+                     "given in the string will be presented to the upper left of the table itself, "
+                     "otherwise no title is displayed.<br><br> ")
+     usage: ["row_data:array" "options:object"]
+     tags: ["table" "data" "DOM" "ui" "element"]
+   })
+
+(defun tabs (tab_list options)
+   (let
+      ((tab_bar (ul { `class: "juno-tabs" } ))
+       (content_container (div { `class: "juno-tab-content-section" } ))
+       (view (div { `style: "width: 100%; overflow: hidden; height: calc(100% - 30px);" }
+                  (nav { }
+                       tab_bar)
+                  content_container))
+       (add_tab (fn (name content)
+                   (progc
+                      (-> tab_bar `append
+                         (li { data-tab-id: (to_key name) } name))
+                      (-> content_container `append
+                         (div { class: "juno-tab-content" data-tab-id: (to_key name) }
+                              (cond 
+                                 (is_element? content.view)
+                                 content.view
+                                 (is_element? content)
+                                 content
+                                 else
+                                 "Invalid content"))))))
+       (remove_tab (fn (pos)
+                      (when (is_number? pos)
+                         (let
+                            ((tab_to_remove (prop tab_bar.children pos))
+                             (content_to_remove (prop content_container.children pos))
+                             (tab_active? (== pos (active_tab))))
+                            
+                            (when tab_to_remove
+                               (-> tab_to_remove `remove))
+                            (when content_to_remove
+                                  (-> content_to_remove `remove))
+                            (when tab_active?
+                               (= pos (clamp (- pos 1) 0 (- (length tab_bar.children) 1)))
+                               (activate_tab pos))
+                            ))))
+       (active_tab (fn ()
+                      (let
+                         ((idx -1))
+                         (for_each (elem tab_bar.children)
+                            (progn
+                               (inc idx)
+                               (when (has_class? "juno-tab-active" elem)
+                                  (break))))
+                         (if (and (< idx tab_bar.children.length)
+                                  (> idx -1))
+                             idx
+                             nil))))
+       (activate_tab_by_source (fn (elem)
+                                  (let
+                                     ((idx -1))
+                                  (for_each (t tab_bar.children)
+                                     (progn
+                                        (inc idx)
+                                        (when (== t elem)
+                                           (activate_tab idx)))))))
+       (activate_tab (fn (pos)
+                        (progc
+                            (when (is_number? pos)
+                               (= pos (clamp pos 0 (- (length tab_bar.children) 1)))
+                               (for_each (elem (-> tab_bar `querySelectorAll ".juno-tab-active"))
+                                  (when (is_element? elem)
+                                     (remove_class "juno-tab-active" elem)))
+                               (add_class "juno-tab-active" (prop tab_bar.children pos))
+                               
+                               (for_each (elem (-> content_container `querySelectorAll ".juno-tab-active"))
+                                  (when (is_element? elem)
+                                     (remove_class "juno-tab-active" elem)))
+                               (add_class "juno-tab-active" (prop content_container.children pos))))))
+       (tab_headers []))
+      
+      (for ((tab_name content) (or tab_list []))
+           (add_tab tab_name content))
+      
+      (activate_tab (or options.active_tab 0))
+      
+      (attach_event_listener tab_bar
+         `click
+         (fn (e)
+            (activate_tab_by_source e.srcElement)))
+      
+      {
+         `view: view
+         `add_tab: add_tab
+         `activate_tab: activate_tab
+         `remove_tab: remove_tab
+         `active_tab: active_tab
+         `tab_names: (fn ()
+                           (each tab_bar.children `innerText))
+      })
+   {
+     description: (+ "Given an array of pairs containing the name of the tab and the tabs "
+                     "content, this function established a view that encapsulates the content and "
+                     "displays the content associated with the active tab.  There is an interface "
+                     "returned, containing control and accessor methods and a view property which is "
+                     "the Element to be mounted to the DOM.<br><br>#### Options "
+                     "<br><br>active_tab:number - When given a number representing the tab position, "
+                     "the corresponding tab will be activated on start.  By default the first tab is "
+                     "the active value.  The value 0 represents the first tab.  <br> ")
+     
+     })
+
+(defun quick_alert (text display_ms)
+   (if (get_default [ `application `quick_alerts `display ] )
+      (let
+         ((display_elem (div { `id: `quick_alert `class: "juno-centered juno-quick-alert" }
+                             text))
+          (existing_quick_alert (get_by_id `quick_alert))
+          (display_ms (or display_ms (get_default [ `application `quick_alerts `default_display_time ] 1000 ))))
+         (declare (number *quick_alert_timer*)
+                  (global *quick_alert_timer*))
+         
+         (if (is_symbol? `*quick_alert_timer*)
+             (clearTimeout *quick_alert_timer*)
+             (defparameter *quick_alert_timer* nil))
+         (if existing_quick_alert
+              (-> existing_quick_alert `remove))
+         
+         (-> (get_by_id `body) `append display_elem)
+         
+         (= *quick_alert_timer*
+            (setTimeout (fn ()
+                           (aif (get_by_id `quick_alert)
+                                (-> it `remove)))
+                        display_ms))))
+   {
+     description: (+ "The `quick_alert` box takes a string and an optional display time in "
+                     "milliseconds which it then uses to show a centered popup box in the middle of "
+                     "the display for the specified time. <br>The display of the pop up message can "
+                     "be disabled via the default in `*env_config*` under the path [ `application "
+                     "`quick_alerts `display ].  The default display time of the message is set via "
+                     "the path [ `application `quick_alerts `default_display_time ]. ")
+     usage: ["text:string" "display_ms:?number"]
+     tags: ["ui" "alert" "popup" "millis" "DOM" "display"]
+   })
 
 
 ;; for determining keycodes
@@ -7963,6 +9420,7 @@
                                                  (progn
                                                     (cmenu_remove)
                                                     (focus_to_editor intf))))))))))
+            (refresh_symbol_time 10000)
             (refresh_symbol_timer nil)
             (symbol_positions_timer nil)
             (evaluate_selection (function (editor)
@@ -7978,7 +9436,7 @@
                                              (progn
                                                 (when refresh_symbol_timer
                                                    (clearTimeout refresh_symbol_timer))
-                                                (= refresh_symbol_timer (setTimeout (fn () (progn (get_current_symbols) (= refresh_symbol_timer nil))) 5000))
+                                                (= refresh_symbol_timer (setTimeout (fn () (progn (get_current_symbols) (= refresh_symbol_timer nil))) refresh_symbol_time))
                                                 (= rval (evaluator copytext nil (not options.repl_mode) nil { `source_name: (or options.filename options.path) } ))
                                                 (-> rval `then
                                                    (function (val)
@@ -8582,14 +10040,20 @@
             (sorted_symbols [])
             (get_current_symbols (fn ()
                                     (let
-                                       ((symbol_set (if evaluator_control
+                                       ((start_time (time_in_millis))
+                                        (symbol_set (if evaluator_control
                                                         (-> evaluator_control `available_symbols)))
+                                        (processing_time (- (time_in_millis) start_time))
                                         (cns (if evaluator_control
                                                  (-> evaluator_control `current_namespace)))
                                         (in_path nil)
                                         (search_order nil))
                                        (when (== intf nil)
                                           (log_error "text_editor: getting current symbols and shouldn't be since we are destroyed!"))
+                                       (when (> processing_time 4000)
+                                           (if (< refresh_symbol_time 60000)
+                                               (log options.name ": symbol refresh time is slow, setting refresh update delay to 60 seconds after last activity"))
+                                           (= refresh_symbol_time 60000))
                                        (when (is_object? symbol_set)
                                           (= cached_symbols symbol_set)
                                           (= search_order
@@ -8880,10 +10344,11 @@
                                          (start_time (time_in_millis))
                                          (extension nil))
                                         (setq initialized true)
+                                        (console.log "text_editor: initializing: " options)
                                         (setq parent_view view.parentElement)
                                         (setq editor
                                            (ace.edit editor_div))
-                                        
+                                        (assert editor (+ "text_editor: ace editor not initializing: received: " editor " from ace.edit"))
                                         (unless (is_number? options.primary_rank)
                                            (set_prop options `primary_rank start_time))
                                         
@@ -11469,7 +12934,7 @@
                                                           (clog "Unable to parse json data: " e.message)
                                                           (= data event.data))))
                                                  (if (or options.debug 
-                                                         (> __VERBOSITY__ 0))
+                                                         (> __VERBOSITY__ 1))
                                                     (clog "remote: <-" data))
                                                  (if (and (is_object? data)
                                                           data.ws_id)
@@ -11903,9 +13368,8 @@
                                                                        (set_prop options `theme theme)
                                                                        (-> input_container `set_theme theme)))])]]))
        (initialize (fn ()
-                     (progn
-                      (if initialized
-                        false
+                      (when (and view.parentElement
+                                 (not initialized))
                         (progn
                          (= initialized true)
                          (console.log "repl initializing")
@@ -11985,7 +13449,7 @@
                              (setTimeout (fn ()
                                             (-> input_container `display_context_message "REPL Mode: Press Shift-Enter to evaluate editor contents")
                                             250)))
-                         true))))))
+                         true)))))
       
        (attach_event_listener output_control.output_container
                            `focusin
@@ -18540,8 +20004,8 @@
        (key_mode (get_operating_platform))
        (repl_split nil))
                                                                
-    (console.log "user/*initializer is running." )
-    
+    (console.log "user/*initializer* is running." )
+    (console.log (sort (symbols)))
     (= *last_focus* nil)
     
     ;(defglobal main_menu_button (li  { `class: "juno-menu-header" }
@@ -18571,7 +20035,7 @@
     ;; the root container which controls are added to..
     (defglobal juno_container
       (div { `id: "juno_container" `style: "height: inherit; width: inherit; position: relative; overflow:hidden;" }))
-
+    (console.log "user/*initializer*: juno_container is: " juno_container)
     
     (set_prop *env_config*.editor
        `extensions_to_mode
@@ -18647,7 +20111,12 @@
                              (process_focus_chain e)))
 
     (-> (get_by_id "body") `appendChild juno_container)
-
+    (console.log "user/*initializer*: validating juno_container is mounted to dom: " (get_by_id "juno_container"))
+    (when (not (get_by_id "juno_container"))
+        (-> (get_by_id "body")
+            `append (div "ERROR: unable to find juno_container mounted"))
+        (throw Error "Juno Container isn't mounted: unable to find juno_container"))
+        
     
     (set_prop *formatting_rules*
        `allocating_forms {
@@ -18940,21 +20409,21 @@
                       exec: jump_to_control
                   }
                   "find" {
-                           win: "Control-F"
+                           win: "Ctrl-F"
                            mac: "Command-F"
                            description: "Search the current focused control or area."
                            exec: (fn (e k)
                                      (global_search_dispatch e k))
                      }
                   "find_next" {
-                                `win: "Control-G"
+                                `win: "Ctrl-G"
                                 `mac: "Command-G"
                                 `description: "If active, move to the next search result"
                                 `exec: (fn (e k)
                                           (global_search_next_dispatch e k))
                                 }
                   "find_prior" {
-                                 `win: "Control-Shift-G"
+                                 `win: "Ctrl-Shift-G"
                                  `mac: "Command-Shift-G"
                                  `description: "If active, move to the prior search result"
                                  `exec: (fn (e k)
@@ -18968,7 +20437,7 @@
                                            (close_periphery e k))
                                  }
                   "frame_0" {
-                              win: "Control-1"
+                              win: "Ctrl-1"
                               mac: "Command-1"
                               description: "Jump to frame 0"
                               exec: (fn (e) (jump_to_frame_0))

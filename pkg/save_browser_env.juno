@@ -85,15 +85,7 @@
   ;; the list below establishes the baseline features, modes, and themes
   ;; included with the editor 
   
-  (defglobal included_editor_assets_old 
-     ["ext-searchbox.js" "ext-split.js" "ext-language_tools.js" 
-      "mode-juno.js" "mode-json.js" "mode-javascript.js"
-      "mode-css.js" "mode-sh.js" "mode-plain_text.js"
-      "theme-juno_light.js" "theme-earth_tones.js" "theme-chrome.js"
-      "theme-crimson_editor.js" "theme-cobalt.js" "theme-idle_fingers.js"
-      "theme-gruvbox.js" "theme-dracula.js" "theme-katzenmilch.js"
-      "theme-solarized_dark.js" "theme-solarized_light.js" 
-      "theme-ice.js"])
+  
   
   (defglobal included_editor_assets (sort (each (sys/list_files "./js_lib/editor-assets") `name)))
   (set_prop Environment.definitions.included_editor_assets
@@ -176,14 +168,14 @@
        (html/serialize_document
          (html/html 
           (html/head { `title: (get_default [ `application `name ]) }
-                   (html/style { `id: "juno-css" } "body { `font-family: \"-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Helvetica,sans-serif;\" }")
-                   (html/script { `id: "juno-core" `type: "module" }
+                   (html/style { id: "juno-css" } core/style_css) ; "body { `font-family: \"-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Helvetica,sans-serif;\" }")
+                   (html/script { id: "juno-core" `type: "module" }
                                 js_resource
                                 "\n\n"                               
                                 "globalThis.in_starter=true;"
                                 "\n\n"
                                 )
-                   (html/script { `id: "ace_editor" `type: "text/javascript" `charset: "utf-8" }
+                   (html/script {`id: "ace_editor" `type: "text/javascript" charset: "utf-8" }
                                 embedded_editor)
                    (for_each (embed_set (conj embeds embeded_editor_assets))
                              (destructuring_bind (id lib)

@@ -331,7 +331,7 @@
                                  (block_return nil))
                                 (= depth _depth)
                                 (if pause_time 
-                                    (when (or (> (- (time_in_millis) processing_time_marker) 100))
+                                    (when (> (- (time_in_millis) processing_time_marker) 50)
                                        (sleep pause_time)
                                        (= processing_time_marker (time_in_millis))))
                                 (while (and (not stop)

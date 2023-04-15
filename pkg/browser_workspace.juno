@@ -20,12 +20,17 @@
 (defun core/*initializer* ()
   (let
       ((scripts (-> (page_header) `querySelectorAll "script[id]")))
+      (aif (-> document `querySelector "#juno-loading-message")
+           (-> it `appendChild (html/div { } "Initializing components...")))
     (console.log "core/*initializer* running: " *namespace*)
     (if (> scripts.length 0)
       (map (fn (idx)
              (when (not (== (-> (prop scripts idx) `getAttribute `id) "juno-core"))
                (eval `(defglobal ,#(+ "$" (-> (prop scripts idx) `getAttribute `id)) ,#(prop scripts idx)))))
-           (range scripts.length)))))
+           (range scripts.length)))
+    (aif (-> document `querySelector "#juno-loading-message")
+         (-> it `remove))
+    ))
 
 
 (defun $set_global_theme (theme_name options)
@@ -232,7 +237,7 @@
         (scaffold_1 (prop
                      (html/head { `title: "Seedling" }
                                 (html/meta { `charset: "utf-8" })
-                                (html/style { `id: "juno-css" } "")
+                                (html/style { `id: "juno-css" } style_css)
                                 (html/script { `id: "juno-core" `type: "module" }
                                              js_resource
                                              "\n\n"                               
@@ -299,17 +304,27 @@
 
 (defun core/*system_initializer* ()
   (let
-      ((pkg (-> Environment `evaluate "core/html_package")))
-    (console.log "system initializer: initializing packaged html_package")
-    (-> Environment `evaluate pkg nil { `source_name: "pkg/html.juno" })
-
-    (aif (-> document `querySelector "#juno-loading-message")
-         (-> it `remove))
-    ;(eval (reader (clone browser_repl_package)))
-    (undefine `browser_repl_package)
-    (undefine `rlog)
-    (set_prop globalThis `env Environment) ;; establish a global handle (not necessary but handy for development)
-    (console.log "system initializer Complete")))
+      ((pkg nil))
+      (try
+         (progn
+             (console.log "At start, namespaces are: " (namespaces)))
+         (catch Error (e)
+            (console.log "well - can't seem to get the namespaces." e)))
+      (if (and (not (prop globalThis `in_starter))
+               (contains? "html" (namespaces)))
+          (progn 
+             (console.log "HTML Library is set - not reloading...loading pends")
+             (console.log "HTML Nameespace: " (-> Environment `get_namespace_handle "html")))
+          (progn
+             (console.log "system_initializer: evaluating core/html_package...")
+             (= pkg (-> Environment `evaluate "core/html_package"))
+             (-> Environment `evaluate pkg nil { `source_name: "pkg/html.juno" })))
+      (console.log "system_initializer: html_package: post eval: " (namespaces))
+      ;(eval (reader (clone browser_repl_package)))
+      (undefine `browser_repl_package)
+      (undefine `rlog)
+      (set_prop globalThis `env Environment) ;; establish a global handle (not necessary but handy for development)
+      (console.log "system initializer Complete")))
 
 (defglobal `repl (core/browser_repl))
 (defun rlog (val)

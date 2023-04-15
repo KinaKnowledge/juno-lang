@@ -703,12 +703,24 @@
    `description: "simple defun for bootstrapping and is replaced by the more sophisticated defun during bootstrapping"
    })
 
-(defun decomp_symbol (quoted_sym)
+(defun decomp_symbol (quoted_sym full_resolution)
   (let
-      ((comps (split_by "/" quoted_sym)))
-    (if (== comps.length 1)
-	[comps.0 (first (each (describe quoted_sym true) `namespace)) false]
-	[comps.1 comps.0 true])))
+      ((comps (split_by "/" quoted_sym))
+       (ns nil))
+    (cond 
+       (and full_resolution
+          (== comps.length 1))
+       (progn
+          (= ns 
+             (first (reduce (symdata (describe quoted_sym true))
+                       (unless symdata.require_ns
+                          symdata.namespace))))
+          [comps.0 ns false])
+       
+       (== comps.length 1)
+       [comps.0 (first (each (describe quoted_sym true) `namespace)) false]
+       else
+       [comps.1 comps.0 true])))
 
 (defmacro defun_sync (name args body meta)
     (let
@@ -3446,101 +3458,182 @@
    })
 
 
-
+(defun common_symbols ()
+   (let
+      ((acc {})
+       (ns nil)
+       (ns_total 0))
+   (for (ns_name (namespaces))
+        (inc ns_total)
+        (= ns (-> Environment `get_namespace_handle ns_name))
+        (for (symname (keys ns.global_ctx.scope))
+             (aif (prop acc symname)
+                 (set_prop acc symname
+                    (+ it 1))
+                 (set_prop acc symname
+                           1))))
+   (reduce (pset (pairs acc))
+      (destructuring_bind (symname count)
+         pset
+         (when (== count ns_total)
+            symname))))
+   {
+       description: "Returns a list of symbols that are common to all namespaces."
+       usage: []
+       tags: [ `symbol `symbols `namespaces `common `namespace ]
+   })
 
 
 (defun sort_dependencies ()
-  (let
+   (let
       ((ordered [])
+       (invalids (make_set (conj (to_array (compiler [] { `special_operators: true `env: Environment }))
+                                 (common_symbols))))
        (ns nil)
+       (depends_on {})
+       (inverted [])
+       (namespace_order [  ])
+       (ensure_before (fn (before after)
+                         (unless (or (== before "EXTERNAL")
+                                     (== after "EXTERNAL"))
+                         (let
+                            ((before_idx (index_of before namespace_order ))
+                             (after_idx (index_of after namespace_order)))
+                            (log "ensure_before: put: " before "(" before_idx ") prior to: " after "(" after_idx ")")
+                            (cond
+                               (== -2 (+ before_idx after_idx)) ;; they are both not found, so insert in order
+                               (progn
+                                  (push namespace_order before)
+                                  (push namespace_order after))
+                               (and (> before_idx -1)  ;; before is found 
+                                    (== after_idx -1)) ;; after is not
+                               (push namespace_order after)
+                               (and (== before_idx -1)   ;; before is not found
+                                    (> after_idx -1))    ;; after is
+                               (progn
+                                  (-> namespace_order `splice after_idx 0 before))
+                               (> before_idx after_idx)  ;; both are found, but inverted order
+                               (progn
+                                  (-> namespace_order `splice before_idx 1) ;; remove before
+                                  (-> namespace_order `splice after_idx 0 before)))
+                            (log "ensure_before: <- " namespace_order)))))
+                                  
        (symname nil)
        (ns_marker (function (ns)
-			    (+ "*NS:" ns)))
+                     (+ "*NS:" ns)))
        (symbol_marker (function (ns symbol_name)
-			    (+ "" ns "/" symbol_name)))
-       (splice_before (fn (target_name value_to_insert)			  
-			    (let
-				((idx (index_of target_name ordered))
-				 (value_idx (index_of value_to_insert ordered)))
-			      (cond
-			       (and (> value_idx -1)   ;; value is already there
-				    (== value_idx idx)) ;; value and target are at the same index (same thing)
-			       true                    ;; do nothing
-			       
-			       (and (> value_idx -1)   ;; value is already there
-				    (< value_idx idx)) ;; and value is before target 
-			       true                    ;; don't do anything
-			       
-			       (and (> idx -1)         ;; target is found
-				    (== value_idx -1)) ;; dependency value isn't found
-			       (-> ordered `splice idx 0 value_to_insert)  ;; splice dependency before target
-
-			       (and (== idx -1)        ;; target isn't found
-				    (> value_idx -1))  ;; value is already there
-			       (push ordered target_name) ;; just add the target at the end
-			                                
-
-			       (== idx -1)             ;; target isn't found and we know value wouldn't be there because above 
-			       (progn
-				 (push ordered          ;; insert the value depended on
-				       value_to_insert)
-				 (push ordered
-				       target_name))   ;; then the symbol depending on it
-			       
-			       (and (> idx -1)         ;; both the target and
-				    (> value_idx -1)   ;; the value are found
-				    (< idx value_idx)) ;; but the target is before the value
-			       (progn				 
-				 (-> ordered `splice value_idx 1) ;; remove the value which is lower down the list
-				 (-> ordered `splice idx 0 value_to_insert)) ;; splice it in before the target.. move it up
-			       else
-			       (console.log "fall through: target: " target_name "@" idx "  " value_to_insert "@" value_idx)))))
+                         (+ "" ns "/" symbol_name)))
+       (splice_before (fn (target_name value_to_insert)
+                         (let
+                            ((idx (index_of target_name ordered))
+                             (value_idx (index_of value_to_insert ordered)))
+                            (cond
+                               (and (> value_idx -1)   ;; value is already there
+                                    (== value_idx idx)) ;; value and target are at the same index (same thing)
+                               true                    ;; do nothing
+                               
+                               (and (> value_idx -1)   ;; value is already there
+                                    (< value_idx idx)) ;; and value is before target
+                               true                    ;; don't do anything
+                               
+                               (and (> idx -1)         ;; target is found
+                                    (== value_idx -1)) ;; dependency value isn't found
+                               (-> ordered `splice idx 0 value_to_insert)  ;; splice dependency before target
+                               
+                               (and (== idx -1)        ;; target isn't found
+                                    (> value_idx -1))  ;; value is already there
+                               (push ordered target_name) ;; just add the target at the end
+                               
+                               
+                               (== idx -1)             ;; target isn't found and we know value wouldn't be there because above
+                               (progn
+                                  (push ordered          ;; insert the value depended on
+                                     value_to_insert)
+                                  (push ordered
+                                     target_name))   ;; then the symbol depending on it
+                               
+                               (and (> idx -1)         ;; both the target and
+                                    (> value_idx -1)   ;; the value are found
+                                    (< idx value_idx)) ;; but the target is before the value
+                               (progn
+                                  (-> ordered `splice value_idx 1) ;; remove the value which is lower down the list
+                                  (-> ordered `splice idx 0 value_to_insert)) ;; splice it in before the target.. move it up
+                               else
+                               (console.log "fall through: target: " target_name "@" idx "  " value_to_insert "@" value_idx)))))
        (current_pos nil))
-    (for_each (name (conj [ "core" ] ;; core always first 
-			  (reduce (name (namespaces))
-			    (unless (== name "core")
-			      name))))
-      (progn
-        (= ns (-> Environment `get_namespace_handle name))  ;; get the namespace handle       
-	;; loop through the definitions and build the dependency
-        (for_each (`pset (pairs ns.definitions))
-	    (destructuring_bind (symname symdef)
-		pset			     
-		(cond
-		 symdef.requires
-		 (for_each (req symdef.requires)
-		     (destructuring_bind (req_sym req_ns explicit)
-			(decomp_symbol req)
-			(when req_ns                          
-			  (splice_before (symbol_marker name symname) (symbol_marker req_ns req_sym)))))
-		 else
-		 (progn
-		   (when (== (index_of (symbol_marker name symname) ordered) -1)
-		     (push ordered
-			   (symbol_marker name symname)))))))))
-    
-    { namespaces: (let
-                      ((`acc []))
-                    (reduce (sym ordered)
-                            (destructuring_bind (sym nspace)
-                                (decomp_symbol sym)
-                                (unless (contains? nspace acc)
-                                   (push acc nspace)
-                                   nspace))))
-      symbols: ordered })
-  {
-    description: (+ "Returns an object containing two keys, `namespaces` and `symbols`, each "
-                    "being arrays that contains the needed load order to satisfy the dependencies "
-                    "for the current environment with all namespaces.  For symbols, the array is "
-                    "sorted in terms of dependencies: a symbol appearing with a higher index value "
-                    "will mean that it is dependent on symbols at a lower index value, with the "
-                    "first symbol having no dependencies, and the final element having the most "
-                    "dependencies.  For example, if the final symbol in the returned array is to be "
-                    "compiled, symbols at a lower index must be defined prior to compiling the final "
-                    "symbol.<br>The namespaces reflect the same rule: a lower indexed namespace must "
-                    "be loaded prior to a higher indexed namespace. ")
-    usage: []
-    tags: [`symbol `symbols `dependencies `requirements `order `compile ]})
+      (for_each (name (conj [ "core" ] ;; core always first
+                            (reduce (name (namespaces))
+                               (unless (== name "core")
+                                  name))))
+         (progn
+            (= ns (-> Environment `get_namespace_handle name))  ;; get the namespace handle
+            ;; loop through the definitions and build the dependency
+            (for_each (`pset (pairs ns.definitions))
+               (destructuring_bind (symname symdef)
+                  pset
+                  (cond
+                     (-> invalids `has symname)
+                     nil ;; do nothing
+                     symdef.require_ns
+                     (progn
+                        (unless (prop depends_on symdef.require_ns)
+                           (set_prop depends_on symdef.require_ns []))
+                        (unless (contains? name (prop depends_on symdef.require_ns))
+                           (push (prop depends_on symdef.require_ns) name)))
+                     symdef.requires
+                     (for_each (req symdef.requires)
+                        (destructuring_bind (req_sym req_ns explicit)
+                           (decomp_symbol req name)
+                           (when (and req_ns 
+                                      (not (== req symname))
+                                      (not (contains? req invalids)))
+                              
+                                      ;; do not count recursive relationships
+                              (when (not (== req_ns name))
+                                 (unless (prop depends_on req_ns)
+                                    (set_prop depends_on req_ns []))
+                                 (when (and (not (contains? name (prop depends_on req_ns)))
+                                            (not (== name "core")))
+                                    (push (prop depends_on req_ns) name)))
+                              (splice_before (symbol_marker name symname) (symbol_marker req_ns req_sym)))))
+                     else
+                     (progn
+                        (when (== (index_of (symbol_marker name symname) ordered) -1)
+                           (push ordered
+                              (symbol_marker name symname)))))))))
+      ;; depends on now is the form of namespace:[dependent namespaces]
+      ;; sort into dependency order
+      ;; core always first 
+      ;(log "depends_on: " (pairs depends_on))
+      (defvar score {})
+      (for ((parent_namespace dependents) (pairs depends_on))
+           (for (dependent dependents)
+                (push inverted [dependent parent_namespace])))
+      (for ((dependent parent_namespace) inverted)
+           (ensure_before parent_namespace dependent))
+       
+      
+      (for (ns (namespaces))
+         (unless (contains? ns namespace_order)
+            (push namespace_order ns )))
+      (log "sort_dependencies: namespace order: " namespace_order)
+      (log "sort_dependencies: all namespaces: " (namespaces))
+      
+      { namespaces: namespace_order
+                   symbols: ordered })
+   {
+     description: (+ "Returns an object containing two keys, `namespaces` and `symbols`, each "
+                     "being arrays that contains the needed load order to satisfy the dependencies "
+                     "for the current environment with all namespaces.  For symbols, the array is "
+                     "sorted in terms of dependencies: a symbol appearing with a higher index value "
+                     "will mean that it is dependent on symbols at a lower index value, with the "
+                     "first symbol having no dependencies, and the final element having the most "
+                     "dependencies.  For example, if the final symbol in the returned array is to be "
+                     "compiled, symbols at a lower index must be defined prior to compiling the final "
+                     "symbol.<br>The namespaces reflect the same rule: a lower indexed namespace must "
+                     "be loaded prior to a higher indexed namespace. ")
+     usage: []
+     tags: [`symbol `symbols `dependencies `requirements `order `compile ]});
 
 ;; *scratch* buffer
 

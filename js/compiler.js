@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2023-04-14 12:00:06
-// Version: 2023.04.14.12.00
-export const DLISP_ENV_VERSION='2023.04.14.12.00';
+// Build Time: 2023-04-15 12:51:00
+// Version: 2023.04.15.12.51
+export const DLISP_ENV_VERSION='2023.04.15.12.51';
 
 
 
@@ -73,10 +73,10 @@ export async function init_compiler(Environment) {
             {
                 rval=[];
                 await (async function(){
-                     let __test_condition__21=async function() {
+                     let __test_condition__26=async function() {
                         return (idx<(tree && tree.length))
                     };
-                    let __body_ref__22=async function() {
+                    let __body_ref__27=async function() {
                         tval=tree[idx];
                         if (check_true ((tval===deferred_operator))){
                             {
@@ -94,8 +94,8 @@ export async function init_compiler(Environment) {
                         return idx+=1
                     };
                     let __BREAK__FLAG__=false;
-                    while(await __test_condition__21()) {
-                         await __body_ref__22();
+                    while(await __test_condition__26()) {
+                         await __body_ref__27();
                          if(__BREAK__FLAG__) {
                              break;
                             
@@ -109,7 +109,7 @@ export async function init_compiler(Environment) {
             {
                 rval=new Object();
                 await (async function() {
-                    let __for_body__25=async function(pset) {
+                    let __for_body__30=async function(pset) {
                         return await async function(){
                             rval[(pset && pset["0"])]=await (async function(){
                                  return await do_deferred_splice((pset && pset["1"])) 
@@ -118,16 +118,16 @@ export async function init_compiler(Environment) {
                             
                         }()
                     };
-                    let __array__26=[],__elements__24=await (await Environment.get_global("pairs"))(tree);
+                    let __array__31=[],__elements__29=await (await Environment.get_global("pairs"))(tree);
                     let __BREAK__FLAG__=false;
-                    for(let __iter__23 in __elements__24) {
-                        __array__26.push(await __for_body__25(__elements__24[__iter__23]));
+                    for(let __iter__28 in __elements__29) {
+                        __array__31.push(await __for_body__30(__elements__29[__iter__28]));
                         if(__BREAK__FLAG__) {
-                             __array__26.pop();
+                             __array__31.pop();
                             break;
                             
                         }
-                    }return __array__26;
+                    }return __array__31;
                      
                 })();
                 return rval
@@ -206,14 +206,14 @@ export async function init_compiler(Environment) {
     properties=new Set();
     current_obj=obj;
     await (async function(){
-         let __body_ref__265=async function() {
+         let __body_ref__270=async function() {
             await (await Environment.get_global("map"))(async function(item) {
                 return await properties["add"].call(properties,item)
             },await Object.getOwnPropertyNames(current_obj));
             return current_obj=await Object.getPrototypeOf(current_obj)
         };
         let __BREAK__FLAG__=false;
-        while(current_obj) { await __body_ref__265();
+        while(current_obj) { await __body_ref__270();
          if(__BREAK__FLAG__) {
              break;
             
