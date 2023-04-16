@@ -128,12 +128,16 @@
 
 (defun open_test_frame (url element_to_replace)
    (let
-      ((frame (div { } "Opening..")))
+      ((frame (div { } "Opening.."))
+       (timer nil))
       (log "Starting test_frame for: " url)
       (new Promise
          (fn (resolve)
             (alert_on_error "Cannot start the iframe"
                (= seedling_booted false)
+               (= timer (setTimeout (fn ()
+                                       (resolve false))
+                                    45000))
                (log "setting event managers")
                (remove_event_handler "initializer" "complete" "child_initializer_complete")
                (register_event_handler "initializer" "complete" "child_initializer_complete"
@@ -141,6 +145,8 @@
                      (progc
                         (log "event for test frame: " event)
                         (when (event.child_frame)
+                           (clearTimeout timer)
+                           (= timer nil)
                            (set_focus_to user/*last_focus*)
                            (= seedling_booted true)
                            (quick_alert "Booted Seedling")
@@ -154,8 +160,7 @@
                            (resolve true)))))
                (log "Opening: " url)
                (= tframe (html/iframe { src: url `style: "width: 100%; height: 100%;"} ))
-               (-> element_to_replace `replaceWith tframe)
-               )))))
+               (-> element_to_replace `replaceWith tframe))))))
 
 
 
@@ -887,27 +892,32 @@
                                                             `innerHTML "Timeout Error: frame didn't signal load complete")
                                                          (add_class "juno-test-fail" header_elem)))
                                                    60000))
-                         (open_test_frame (or options.url "/env/seedling_build.html") test_frame_elem)
-                         (clearTimeout load_timer)
-                         (set_prop header_elem
-                            `innerHTML "Testing")
-                         (= kcom
-                            (to_object
-                               (ev `(for (key (keys (prop *key_bindings* `global)))
-                                         [key (first (split_by "|" (resolve_path [ `global key (user/get_operating_platform) ] *key_bindings*)))]))))
-
-                         (run_test_set layout_and_panel_tests on_result)
-                         (set_prop header_elem
-                            `innerHTML (if fail_state
-                                         "Complete - Failed"
-                                         "Complete - Passed"))
-                         (if fail_state
-                            (add_class "juno-test-fail" header_elem)
-                            (progn
-                               (add_class "juno-test-pass" header_elem)
-                               (when options.deploy
-                                  (deploy_seedling))))
-                         ))))
+                         (if (not (open_test_frame (or options.url "/env/seedling_build.html") test_frame_elem))
+                             (progn 
+                                (clearTimeout load_timer)
+                                (set_prop header_elem
+                                   `innerHTML "Timeout Error: frame didn't signal load complete")
+                                (add_class "juno-test-fail" header_elem))
+                             (progn
+                                (clearTimeout load_timer)
+                                (set_prop header_elem
+                                   `innerHTML "Testing")
+                                (= kcom
+                                   (to_object
+                                      (ev `(for (key (keys (prop *key_bindings* `global)))
+                                                [key (first (split_by "|" (resolve_path [ `global key (user/get_operating_platform) ] *key_bindings*)))]))))
+                                
+                                (run_test_set layout_and_panel_tests on_result)
+                                (set_prop header_elem
+                                   `innerHTML (if fail_state
+                                                 "Complete - Failed"
+                                                 "Complete - Passed"))
+                                (if fail_state
+                                   (add_class "juno-test-fail" header_elem)
+                                   (progn
+                                      (add_class "juno-test-pass" header_elem)
+                                      (when options.deploy
+                                         (deploy_seedling))))))))))
    {
        `expose: [[`on_result on_result]]
        `control_bar: true

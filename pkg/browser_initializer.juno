@@ -6067,7 +6067,6 @@
                                    (or (prop *event_routes* (compute_handler_key event_obj.source nil)) [])
                                    (or (prop *event_routes* (compute_handler_key nil event_obj.command)) [])))))
        (deduper (new Set)))
-                    
       (when (> __VERBOSITY__ 1)
          (log "dispatch_event: " event_obj handler_key handlers))
       (if (> handlers.length 0)
@@ -20612,7 +20611,40 @@
       (try     
          (progn
             (console.log "serialized controls: " *serialized_controls*)
-            (rehydrate_controls juno_container *serialized_controls*))
+            (rehydrate_controls juno_container *serialized_controls*)
+            (if (in_iframe?)
+                (register_event_handler nil "exec" "executor"
+                   (fn (event)
+                      (if (in_iframe?)
+                          (-> window.top `postMessage (JSON.stringify { source: "executor" command: "result"
+                                                                        args: (progn
+                                                                                 (defvar result
+                                                                                    (try
+                                                                                       (eval (second event.args))
+                                                                                       (catch Error (e)
+                                                                                          e)))
+                                                                                 (list (first event.args)
+                                                                                       result
+                                                                                       (if (is_error? result)
+                                                                                           {
+                                                                                             type: (sub_type result)
+                                                                                             message: result.message
+                                                                                             })))
+                                                                        })))))
+                (register_event_handler "executor" "result" "executor_result"
+                   (fn (event)
+                      (let
+                         ((resolver nil)
+                          (pid nil))
+                         (declare (function resolver))
+                         ;(log "event.args: " event)
+                         (when event.args
+                            (= pid (first event.args))
+                            (when (prop *ipc_promise_ids* pid)
+                               (clearTimeout (second (prop *ipc_promise_ids* pid)))
+                               (= resolver (first (prop *ipc_promise_ids* pid)))
+                               (delete_prop *ipc_promise_ids* pid)
+                               (resolver (second event.args)))))))))
          (catch Error (e)
             (progn
                (console.error "Unable to initialize: " e)
