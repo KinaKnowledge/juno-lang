@@ -70,6 +70,9 @@ Write-Output "Binary name is to be: $BINNAME"
 
 if (Test-Path -Path "BUILD_DATE.txt" -PathType Leaf) {
     if (Test-Path -Path "bin/build.tmp.exe") {
+        if (Test-Path -Path $BINNAME) {
+            Remove-Item -Path $BINNAME
+        }
         Move-Item -Path "bin/build.tmp.exe" -Destination $BINNAME
         if ($LASTEXITCODE -eq 0) {
             Write-Output "Completed - binary at: $BINNAME"
