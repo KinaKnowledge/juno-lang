@@ -2470,7 +2470,7 @@
             ;; and evaluate the child
             (when (and rehydrated_children
                        (is_object? (prop included_globals `children)))
-               (console.log "env: child load order: " included_globals.child_load_order)
+               ;(console.log "env: child load order: " included_globals.child_load_order)
                (for_each (childname (or included_globals.child_load_order []))
                   (when (prop included_globals.children childname)
                      ;(console.log "env: loading namespace: " childname)

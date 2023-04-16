@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2023-04-15 12:51:00
-// Version: 2023.04.15.12.51
-export const DLISP_ENV_VERSION='2023.04.15.12.51';
+// Build Time: 2023-04-16 08:29:27
+// Version: 2023.04.16.08.29
+export const DLISP_ENV_VERSION='2023.04.16.08.29';
 
 
 
@@ -4379,8 +4379,7 @@ await Environment.set_global("sort_dependencies",async function() {
                     let after_idx;
                     before_idx=await (await Environment.get_global("index_of"))(before,namespace_order);
                     after_idx=await (await Environment.get_global("index_of"))(after,namespace_order);
-                    console.log("ensure_before: put: ",before,"(",before_idx,") prior to: ",after,"(",after_idx,")");
-                    await async function(){
+                    return await async function(){
                         if (check_true ((-2===(before_idx+ after_idx)))) {
                             {
                                 (namespace_order).push(before);
@@ -4398,8 +4397,7 @@ await Environment.set_global("sort_dependencies",async function() {
                                 return await namespace_order["splice"].call(namespace_order,after_idx,0,before)
                             }
                         }
-                    } ();
-                    return console.log("ensure_before: <- ",namespace_order)
+                    } ()
                 }
             }
         }
@@ -4479,16 +4477,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__309=async function(req) {
                                             {
-                                                let _expr_12804;
+                                                let _expr_54720;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_12804=await (async function(){
+                                                _expr_54720=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req,name) 
                                                 })();
-                                                req_sym=(_expr_12804 && _expr_12804["0"]);
-                                                req_ns=(_expr_12804 && _expr_12804["1"]);
-                                                explicit=(_expr_12804 && _expr_12804["2"]);
+                                                req_sym=(_expr_54720 && _expr_54720["0"]);
+                                                req_ns=(_expr_54720 && _expr_54720["1"]);
+                                                explicit=(_expr_54720 && _expr_54720["2"]);
                                                 if (check_true ((req_ns&& await (await Environment.get_global("not"))((req===symname))&& await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(req,invalids))))){
                                                     {
                                                         if (check_true (await (await Environment.get_global("not"))((req_ns===name)))){
@@ -4691,7 +4689,7 @@ await Environment.set_global("sort_dependencies",async function() {
     return {
         namespaces:namespace_order,symbols:ordered
     }
-},{ "name":"sort_dependencies","fn_args":"[]","description":["=:+","Returns an object containing two keys, `namespaces` and `symbols`, each ","being arrays that contains the needed load order to satisfy the dependencies ","for the current environment with all namespaces.  For symbols, the array is ","sorted in terms of dependencies: a symbol appearing with a higher index value ","will mean that it is dependent on symbols at a lower index value, with the ","first symbol having no dependencies, and the final element having the most ","dependencies.  For example, if the final symbol in the returned array is to be ","compiled, symbols at a lower index must be defined prior to compiling the final ","symbol.<br>The namespaces reflect the same rule: a lower indexed namespace must ","be loaded prior to a higher indexed namespace. "],"usage":[],"tags":["symbol","symbols","dependencies","requirements","order","compile"],"requires":["make_set","conj","to_array","compiler","common_symbols","not","index_of","log","push","contains?","decomp_symbol","pairs","namespaces"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},{ "name":"sort_dependencies","fn_args":"[]","description":["=:+","Returns an object containing two keys, `namespaces` and `symbols`, each ","being arrays that contains the needed load order to satisfy the dependencies ","for the current environment with all namespaces.  For symbols, the array is ","sorted in terms of dependencies: a symbol appearing with a higher index value ","will mean that it is dependent on symbols at a lower index value, with the ","first symbol having no dependencies, and the final element having the most ","dependencies.  For example, if the final symbol in the returned array is to be ","compiled, symbols at a lower index must be defined prior to compiling the final ","symbol.<br>The namespaces reflect the same rule: a lower indexed namespace must ","be loaded prior to a higher indexed namespace. "],"usage":[],"tags":["symbol","symbols","dependencies","requirements","order","compile"],"requires":["make_set","conj","to_array","compiler","common_symbols","not","index_of","push","contains?","decomp_symbol","pairs","namespaces","log"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 });
 await Environment.set_global("symbols_by_namespace",async function(options) {
     let ns_handle;

@@ -1,7 +1,7 @@
 // Source: environment.lisp  
-// Build Time: 2023-04-15 12:51:00
-// Version: 2023.04.15.12.51
-export const DLISP_ENV_VERSION='2023.04.15.12.51';
+// Build Time: 2023-04-16 08:29:27
+// Version: 2023.04.16.08.29
+export const DLISP_ENV_VERSION='2023.04.16.08.29';
 
 
 
@@ -5232,7 +5232,6 @@ export async function init_dlisp(Environment)  {
                             };
                             if (check_true ((rehydrated_children&& (included_globals["children"] instanceof Object)))){
                                 {
-                                    await console.log("env: child load order: ",included_globals.child_load_order);
                                     await (async function() {
                                         let __for_body__379=async function(childname) {
                                             if (check_true (included_globals.children[childname])){
