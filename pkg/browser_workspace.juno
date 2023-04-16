@@ -274,6 +274,8 @@
               (global http/send_files http/data_to_file))
      
      (log "save_image exporting: " script_ids)
+     (log "save_image: additional_embeds: " additional_embeds)
+     (log "save_image: additional_styles: " additional_styles)
      (log "namespaces: " (namespaces) (sort (http/symbols)))
      ;(try
       ; (log "http: " http/send_files)

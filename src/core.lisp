@@ -3499,7 +3499,7 @@
                          (let
                             ((before_idx (index_of before namespace_order ))
                              (after_idx (index_of after namespace_order)))
-                            (log "ensure_before: put: " before "(" before_idx ") prior to: " after "(" after_idx ")")
+                            ;(log "ensure_before: put: " before "(" before_idx ") prior to: " after "(" after_idx ")")
                             (cond
                                (== -2 (+ before_idx after_idx)) ;; they are both not found, so insert in order
                                (progn
@@ -3515,8 +3515,7 @@
                                (> before_idx after_idx)  ;; both are found, but inverted order
                                (progn
                                   (-> namespace_order `splice before_idx 1) ;; remove before
-                                  (-> namespace_order `splice after_idx 0 before)))
-                            (log "ensure_before: <- " namespace_order)))))
+                                  (-> namespace_order `splice after_idx 0 before)))))))
                                   
        (symname nil)
        (ns_marker (function (ns)
