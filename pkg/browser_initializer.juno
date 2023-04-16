@@ -18240,7 +18240,7 @@
        (= server_platform (-> remote_connection `evaluate (as_lisp `(operating_system))))
        (log "Build Environment is: " server_platform)
        (if (== server_platform "windows")
-           (= kickstart_result (-> remote_connection `evaluate (as_lisp `(sys/system "./scripts/build_browser_env.ps1"))))
+           (= kickstart_result (-> remote_connection `evaluate (as_lisp `(sys/system "powershell.exe ./scripts/build_browser_env.ps1"))))
            (= kickstart_result (-> remote_connection `evaluate (as_lisp `(sys/system "./scripts/build_browser_env.sh")))))
        (when kickstart_result.success
           (for_each (v (split_by "\n" kickstart_result.stdout))
@@ -18260,9 +18260,12 @@
     (let
        ((remote_connection nil)
         (remote_id nil)
+        (server_platform nil)
         (results (pre { }))
         (kickstart_result nil))
        (log "Building remote environment..This may take a few moments.")
+       (= server_platform (-> remote_connection `evaluate (as_lisp `(operating_system))))
+       (log "Build Environment is: " server_platform)
        (notify "Logging build messages to the System REPL")
        (sleep 0.1)
        (try
@@ -18280,8 +18283,9 @@
              (return nil)))
        
        ;; validate the environment..
-       
-       (= kickstart_result (-> remote_connection `evaluate (as_lisp `(sys/system "./scripts/rebuild_env.sh"))))
+       (if (== server_platform "windows")
+           (= kickstart_result (-> remote_connection `evaluate (as_lisp `(sys/system "powershell.exe ./scripts/rebuild_env.sh"))))
+           (= kickstart_result (-> remote_connection `evaluate (as_lisp `(sys/system "./scripts/rebuild_env.sh")))))
        (notify "Remote build completed - check System REPL output")
        (when kickstart_result.success
           (for_each (v (split_by "\n" kickstart_result.stdout))
