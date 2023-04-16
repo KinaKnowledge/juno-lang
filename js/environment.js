@@ -1,7 +1,7 @@
 // Source: environment.lisp  
-// Build Time: 2023-04-16 08:29:27
-// Version: 2023.04.16.08.29
-export const DLISP_ENV_VERSION='2023.04.16.08.29';
+// Build Time: 2023-04-16 09:22:48
+// Version: 2023.04.16.09.22
+export const DLISP_ENV_VERSION='2023.04.16.09.22';
 
 
 
@@ -2393,7 +2393,7 @@ export async function init_dlisp(Environment)  {
                                             })
                                         }
                                     })(),{
-                                        env:Environment,ctx:ctx,formatted_output:true,source_name:opts.source_name,throw_on_error:opts.throw_on_error,on_final_token_assembly:async function(val) {
+                                        env:Environment,ctx:ctx,throttle:opts.throttle,formatted_output:true,source_name:opts.source_name,throw_on_error:opts.throw_on_error,on_final_token_assembly:async function(val) {
                                             return precompiled_assembly=val
                                         },error_report:(opts.error_report|| null),quiet_mode:(opts.quiet_mode|| false)
                                     }) 

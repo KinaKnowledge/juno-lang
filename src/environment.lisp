@@ -1486,6 +1486,7 @@
                                                   {
                                                     `env: Environment
                                                     `ctx: ctx
+                                                    `throttle: opts.throttle
                                                     `formatted_output: true
                                                     `source_name: opts.source_name
                                                     `throw_on_error: opts.throw_on_error

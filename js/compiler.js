@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2023-04-16 08:29:27
-// Version: 2023.04.16.08.29
-export const DLISP_ENV_VERSION='2023.04.16.08.29';
+// Build Time: 2023-04-16 09:22:48
+// Version: 2023.04.16.09.22
+export const DLISP_ENV_VERSION='2023.04.16.09.22';
 
 
 
@@ -287,6 +287,7 @@ return await (async function() {
         let external_dependencies;
         let first_level_setup;
         let needs_first_level;
+        let throttle_level;
         let signal_error;
         let warnings;
         let blk_counter;
@@ -652,6 +653,7 @@ return await (async function() {
             external_dependencies=new Object();
             first_level_setup=[];
             needs_first_level=true;
+            throttle_level=(opts && opts["throttle"]);
             signal_error=async function(message) {
                 return new LispSyntaxError(message)
             };
@@ -8339,6 +8341,13 @@ return await (async function() {
                     refval=null;
                     ref=null;
                     ;
+                    if (check_true (throttle_level)){
+                        {
+                            if (check_true (await is_number_ques_(throttle_level))){
+                                await (await Environment.get_global("sleep"))((0.001* throttle_level))
+                            }
+                        }
+                    };
                     try {
                         if (check_true ((null==ctx))){
                             {
@@ -9359,5 +9368,5 @@ return await (async function() {
     }
 }
 },{
-    requires:["take","is_array?","is_string?","is_function?","get_object_path","is_object?","blank?","delete_prop","scan_str","keys","is_element?","chop","as_lisp","resolve_path","push","split_by","safe_access","expand_dot_accessor","pairs","pop","assert","rest","setf_ctx","prepend","ends_with?","range","join","path_to_js_syntax","get_outside_global","to_array","bind_function","each","read_lisp","warn","make_set","truncate"],externals:["clone","LispSyntaxError","console","Object","Set","Function","AsyncFunction","Array","Boolean","SyntaxError","TypeError","RegExp","Error","JSON","ReferenceError","EvalError","subtype","String","parseInt","isNaN","globalThis","Math","check_true"],source_name:"compiler.lisp"
+    requires:["take","is_array?","is_string?","is_function?","get_object_path","is_object?","blank?","delete_prop","scan_str","keys","is_element?","chop","as_lisp","resolve_path","push","split_by","safe_access","expand_dot_accessor","pairs","pop","assert","rest","setf_ctx","prepend","ends_with?","range","join","path_to_js_syntax","get_outside_global","to_array","bind_function","each","read_lisp","warn","make_set","truncate","sleep"],externals:["clone","LispSyntaxError","console","Object","Set","Function","AsyncFunction","Array","Boolean","SyntaxError","TypeError","RegExp","Error","JSON","ReferenceError","EvalError","subtype","String","parseInt","isNaN","globalThis","Math","check_true"],source_name:"compiler.lisp"
 })} 

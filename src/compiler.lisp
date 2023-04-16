@@ -102,6 +102,7 @@
              (external_dependencies {})
              (first_level_setup [])
              (needs_first_level true)
+             (throttle_level opts.throttle)
              (signal_error (fn (message)
                                (new LispSyntaxError message)))
              (warnings [])
@@ -4699,6 +4700,9 @@
                       (declare (array preamble)
                                (string preamble.0 preamble.1 preamble.2 tmp_name)
                                (function op))
+                      (when throttle_level
+                         (if (is_number? throttle_level)
+                             (sleep (* 0.001 throttle_level))))
                       (try
                          (if (eq nil ctx)
                              (do
