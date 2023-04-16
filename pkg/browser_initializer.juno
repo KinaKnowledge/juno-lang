@@ -18262,10 +18262,10 @@
         (remote_id nil)
         (server_platform nil)
         (results (pre { }))
+        
         (kickstart_result nil))
        (log "Building remote environment..This may take a few moments.")
-       (= server_platform (-> remote_connection `evaluate (as_lisp `(operating_system))))
-       (log "Build Environment is: " server_platform)
+       
        (notify "Logging build messages to the System REPL")
        (sleep 0.1)
        (try
@@ -18281,10 +18281,11 @@
              (alert_box (dtext "Error")
                         (dtext "Unable to establish a control connection: connection is closed."))
              (return nil)))
-       
+       (= server_platform (-> remote_connection `evaluate (as_lisp `(operating_system))))
+       (log "Build Environment is: " server_platform)
        ;; validate the environment..
        (if (== server_platform "windows")
-           (= kickstart_result (-> remote_connection `evaluate (as_lisp `(sys/system "powershell.exe ./scripts/rebuild_env.sh"))))
+           (= kickstart_result (-> remote_connection `evaluate (as_lisp `(sys/system "powershell.exe ./scripts/rebuild_env.ps1"))))
            (= kickstart_result (-> remote_connection `evaluate (as_lisp `(sys/system "./scripts/rebuild_env.sh")))))
        (notify "Remote build completed - check System REPL output")
        (when kickstart_result.success
