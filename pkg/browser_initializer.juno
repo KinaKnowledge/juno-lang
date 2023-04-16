@@ -19524,6 +19524,13 @@
                                                                                (== script_name "juno-core")
                                                                                (== script_name "lz_string"))
                                                                       script_name)))
+                                   `do_not_include_styles: (reduce (emset (pairs embedded_styles))
+                                                                (destructuring_bind (script_name is_wanted)
+                                                                   emset
+                                                                   (unless (or is_wanted
+                                                                               (== script_name "juno-core")
+                                                                               (== script_name "lz_string"))
+                                                                      script_name)))
                                   `initializer_symbol: `layout_initializer
                                   `save_prefix: options.application_name
                                   `keep_text_editor_content: options.keep_text_editor_content
