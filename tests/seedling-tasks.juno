@@ -1,5 +1,5 @@
 ;; Validations and Tests for the IDE - to be run after the build
-;; Seedling IDE 
+;; Seedling IDE 🌱
 
 ; Copyright (c) 2022-2023, Kina, LLC
 ; Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -23,6 +23,8 @@
 
 ;; When (load)ed, this file will auto start the validations in another
 ;; panel
+
+
 
 (if (contains? "seedling-tests" (namespaces))
     (progn
@@ -157,11 +159,11 @@
 
 
 
-(defun make_test_frame ()
+(defun make_test_frame (url)
    (progn
       (defvar v (div { } "Opening"))
       (place_control `right (panel "Test Frame" v))
-      (open_test_frame "/env/a1.html?tickle" v)))
+      (open_test_frame (or url (+ "/env/seedling.html?theme=" (encodeURIComponent *env_config*.application.global_theme))) v)))
          
 ;(make_test_frame)
 
@@ -857,6 +859,16 @@
                                           (if (== true vresult)
                                               (td { class: "juno-dtable" } "")
                                               (td { class: "juno-dtable" } (user/value_to_dom vresult)))]))))))))
+    (deploy_seedling (fn ()
+                        (try
+                           (rblock
+                              (sys/rename "./environments/seedling_build.html" "./environments/seedling.html"))
+                           (catch Error (e)
+                              (progn
+                                 (log "ERROR on rename: " e)
+                                 (set_prop header_elem
+                                    `innerHTML (+ "Unable to rename build_file seedling_build.html to seedling.html: " e.message)))))))
+    (load_timer nil)
     (on_initialize (fn ()
                       (progc
                          (html/attach_event_listener close_button
@@ -867,9 +879,16 @@
                                                            (user/remove_named_layout "Validations")
                                                            (user/destroy_control (user/get_control_by_name "System Validations")))))
                          (set_prop header_elem
-                            `innerHTML "Starting")
+                            `innerHTML "Starting Frame..")
                          (sleep 0.1)
-                         (open_test_frame "/env/seedling_build.html" test_frame_elem)
+                         (= load_timer (setTimeout (fn ()
+                                                      (progn
+                                                         (set_prop header_elem
+                                                            `innerHTML "Timeout Error: frame didn't signal load complete")
+                                                         (add_class "juno-test-fail" header_elem)))
+                                                   60000))
+                         (open_test_frame (or options.url "/env/seedling_build.html") test_frame_elem)
+                         (clearTimeout load_timer)
                          (set_prop header_elem
                             `innerHTML "Testing")
                          (= kcom
@@ -886,14 +905,8 @@
                             (add_class "juno-test-fail" header_elem)
                             (progn
                                (add_class "juno-test-pass" header_elem)
-                               (try
-                                  (rblock
-                                     (sys/rename "./environments/seedling_build.html" "./environments/seedling.html"))
-                                  (catch Error (e)
-                                     (progn
-                                        (log "ERROR on rename: " e)
-                                        (set_prop header_elem
-                                           `innerHTML (+ "Unable to rename build_file seedling_build.html to seedling.html: " e.message)))))))
+                               (when options.deploy
+                                  (deploy_seedling))))
                          ))))
    {
        `expose: [[`on_result on_result]]
@@ -919,9 +932,9 @@
 ;(save_of_symbol)
 ;(save_of_symbol_for_multiple_buffers)
 
-(make_named_layout "Validations"
-   (system_validations)
-   {
-     `unmounted_source: true
-     })
+; (make_named_layout "Validations"
+;   (system_validations { `deploy: true `url: (+ "/env/seedling_build.html?theme=" (encodeURIComponent *env_config*.application.global_theme)) } )
+;   {
+    ;  `unmounted_source: true
+    ;  })
 

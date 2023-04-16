@@ -1,6 +1,6 @@
 ; Seedling IDE Consolidated Source File
 ; Copyright (c) 2022-2023, Kina, LLC
-
+; 🌱
 
 ; Permission is hereby granted, free of charge, to any person obtaining a copy
 ; of this software and associated documentation files (the "Software"), to deal
@@ -5231,6 +5231,16 @@
                                        `keycode (prop it os))
                                     (set_prop menu_details
                                        `exec (prop it `exec)))))
+                         (is_element? struct)
+                         (progn
+                            (set_prop menu_details
+                               `text struct)
+                            (aif (resolve_path [ `global (to_key struct) ] *key_bindings*)
+                                 (progn
+                                    (set_prop menu_details
+                                       `keycode (prop it os))
+                                    (set_prop menu_details
+                                       `exec (prop it `exec)))))
                          (and (is_object? struct)
                               (is_array? struct.path))
                          (progn
@@ -5274,6 +5284,7 @@
                                  (set_prop menu_details
                                        `text (or struct.text
                                                 (+ "No Menu Text Found " idx)))))
+                         
                          else
                          (set_prop menu_details
                             `text (+ "No Menu Text Found " idx)))
@@ -18240,7 +18251,7 @@
           (-> remote_connection `close)
           (log "building starter environment")
           (= *build_window* 
-             (floating_div (iframe { width: 500 height: 500
+             (floating_div (iframe { width: 500 height: 300
                                      `style: "width: calc(100% - 5px); min-height: 500px; min-width: 500px; overflow: auto; height:calc(100% - 5px); border: 0px solid transparent;"
                                      src: (+ "/env/starter.html?theme=" (resolve_path [ `application `global_theme ] *env_config*))} )
                            { controls: true } ))))))
@@ -19360,7 +19371,19 @@
                                                     (-> *build_window* `close)
                                                     (= *build_window* nil))
                                                  (try
-                                                    (load "tests/seedling-tasks.juno")
+                                                    (progn 
+                                                       (log "Loading system validations..")
+                                                       (sleep 0.1)
+                                                       (load "tests/seedling-tasks.juno")
+                                                       (sleep 0.1)
+                                                       (if (contains? "seedling-tests" (namespaces))
+                                                          (eval `(seedling-tests/make_named_layout "Validations"
+                                                                                    (seedling-tests/system_validations { `deploy: true `url: (+ "/env/seedling_build.html?theme=" ,#(encodeURIComponent *env_config*.application.global_theme)) } )
+                                                                                    {
+                                                                                      `unmounted_source: true
+                                                                                      }))
+                                                          (log_error "Unable to load tests/seedling-tasks.juno - the seedling-tests namespace wasn't loaded.")))
+
                                                     (catch Error (e)
                                                        (log_error "ERROR on loading validations: " e)))))
                                             (= errors_encountered false)
@@ -19810,7 +19833,7 @@
       (if is_served?
          ["--" nil])
       (if is_served?
-        [(dtext "Generate Starter Application") build_starter_environment]
+        [(dtext "Generate Starter Application") (fn () (build_starter_environment))]
         [])]]
     (if is_served?
        [(dtext "Rebuild Host Juno Environment")
@@ -19951,7 +19974,7 @@
                                          (not (== holding_tank control))
                                          (not (-> holding_tank `has_control? control))))
               [(if (== *system_repl* control)
-                   (+" ⮕ " control.name)
+                   (span { class: "juno-selected-menu-item" } control.name) ;(+" ⮕ " control.name)  
                    (+ "   " (or control.name "Untitled")))
                (reduce (operation ["Show" "Focus" "Hide" "--" "Close Control"])
                        (cond
@@ -20643,7 +20666,12 @@
                                source: "document"
                                args: [ ] }))))
     
-    
+    (try 
+       (aif (-> (prop (new URL window.location) `searchParams) `get "theme")
+            (when (not (blank? it))
+               (set_global_theme it)))
+       (catch Error (e)
+          (console.log "user/*initializer*: no theme passed - using default")))
     
     (set_prop window `onmessage
        (fn (e)
