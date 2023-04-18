@@ -9124,6 +9124,64 @@
      usage: ["symbol:string" "namespace:?string"]
      })
 
+(defun init_mode_juno (control)
+   (if control.editor
+      (let
+         ((editor control.editor)
+          (identifier_regex (new RegExp "[A-Za-z*+0-9_\\$\\u00A2-\\uFFFF]+")))
+         (-> editor.session `setMode "ace/mode/juno")
+         (-> editor `setOptions 
+            {
+              `enableBasicAutocompletion:  [{ identifierRegexps: [ identifier_regex ]
+                                              getCompletions: (fn (editor session pos prefix callback)
+                                                                       (get_juno_autocompletions editor session pos prefix callback (-> editor `symbols))) }]
+              enableLiveAutocompletion: true
+              enableSnippets: true
+              })
+         true)
+      (progn
+         (log "init_mode_juno: invalid control provided - requires editor")
+         false)))
+
+(defun init_mode_javascript (control)
+    (if control.editor
+      (let
+         ((editor control.editor))
+         (-> editor `setOptions {
+                                  `enableLiveAutocompletion: true
+                                  `enableBasicAutocompletion: true })
+         (-> editor.session `setMode "ace/mode/javascript")
+         true)
+      (progn
+         (log "init_mode_javascript: invalid control provided - requires editor")
+         false)))
+
+(defun init_mode_css (control)
+    (if control.editor
+      (let
+         ((editor control.editor))
+         (-> editor.session `setMode "ace/mode/css")
+         (-> editor `setOptions {
+                                  `enableLiveAutocompletion: true
+                                  `enableBasicAutocompletion: true })
+         true)
+      (progn
+         (log "init_mode_css: invalid control provided - requires editor")
+         false)))
+
+(defun init_mode_sh (control)
+    (if control.editor
+      (let
+         ((editor control.editor))
+         (-> editor.session `setMode "ace/mode/sh")
+         (-> editor `setOptions {
+                                  `enableLiveAutocompletion: true
+                                  `enableBasicAutocompletion: true })
+         true)
+      (progn
+         (log "init_mode_sh: invalid control provided - requires editor")
+         false)))
+
 (defun text_editor (options)
    (aif (and (not options.clone_with_editor_id)
              (get_control_by_name options.name))
@@ -9261,40 +9319,10 @@
                                                  it)))))
             (set_mode (fn (mode_name)
                          (progn
-                            (defvar identifier_regex (new RegExp "[A-Za-z*+0-9_\\$\\u00A2-\\uFFFF]+"))
                             (set_prop options
                                `mode
                                mode_name)
                             (cond
-                               (== options.mode "juno")
-                               (progn
-                                  (console.log "mode to juno")
-                                  (-> editor.session `setMode "ace/mode/juno")
-                                  (-> editor `setOptions {
-                                                           `enableBasicAutocompletion:  [{ identifierRegexps: [ identifier_regex ]
-                                                                                                             getCompletions: (fn (editor session pos prefix callback)
-                                                                                                                                (get_juno_autocompletions editor session pos prefix callback sorted_symbols)) }]
-                                                           enableLiveAutocompletion: true
-                                                           enableSnippets: true
-                                                           }))
-                               (== options.mode "javascript")
-                               (progn
-                                  (-> editor `setOptions {
-                                                           `enableLiveAutocompletion: true
-                                                           `enableBasicAutocompletion: true })
-                                  (-> editor.session `setMode "ace/mode/javascript"))
-                               (== options.mode "css")
-                               (progn
-                                  (-> editor.session `setMode "ace/mode/css")
-                                  (-> editor `setOptions {
-                                                           `enableLiveAutocompletion: true
-                                                           `enableBasicAutocompletion: true }))
-                               (== options.mode "sh")
-                               (progn
-                                  (-> editor.session `setMode "ace/mode/sh")
-                                  (-> editor `setOptions {
-                                                           `enableLiveAutocompletion: true
-                                                           `enableBasicAutocompletion: true }))
                                options.mode
                                (progn
                                   (-> editor.session `setMode (+ "ace/mode/" options.mode))
@@ -10165,7 +10193,18 @@
             
             (menu_items (fn ()
                            (if (is_object? editor)
-                              [(if options.path
+                              [[{
+                                   text: (dtext "Select to root form")
+                                   path: [`editor `select_form_root ]
+                                   exec: (fn ()
+                                            (select_to_root_form editor))
+                                   }]
+                                [{
+                                   text: (dtext "Evaluate at position")
+                                   path: [`editor `evaluate_root_form ]
+                                   exec: evaluate_root_form
+                                   }]
+                               (if options.path
                                    [(+ (dtext "Save to") " " (last options.path))
                                     (fn (e) (request_save))]
                                    [])
@@ -10186,6 +10225,7 @@
                                    (fn (e)
                                       (rename_editor))
                                    ])
+                               
                                [(dtext "Increase Font Size") increase_font_size]
                                [(dtext "Decrease Font Size") decrease_font_size]
                                (if (== (-> editor `getOption `wrap) "off")
@@ -10705,7 +10745,8 @@
                 `cut_selection: cut_selection
                 `copy_selection: copy_selection
                 `paste_selection: paste_selection 
-                
+                `symbols: (fn ()
+                             sorted_symbols)
                 `group_name: (fn ()
                                 options.group_name)
                 `type: `text_editor
