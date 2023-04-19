@@ -116,6 +116,7 @@
                                  display: true
                                  default_display_time: 750
                                  }
+                on_ready: `seedling_ready
                }))
   
   

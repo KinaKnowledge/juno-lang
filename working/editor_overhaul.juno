@@ -1638,8 +1638,285 @@
    })
 
 
-   
+(defun init_mode_juno (control)
+   (if control.editor
+      (let
+         ((editor control.editor)
+          (symbol_map_dirty? true)
+          (cached_symbols nil)
+          (evaluate_root_form (fn ()
+                                 (progn
+                                    (if (== editor nil)
+                                        (notify "Invalid (nil) editor")
+                                        (progn
+                                           (select_to_root_form editor)
+                                           (-> control `evaluate_selection editor))))))
+          (evaluator_control nil)
+          (linked_editor (-> control `get_linked))
+          (symbol_map nil)
+          (intf {})
+          ;; the special operators used by the compiler
+          (comp_special_ops (compiler nil { `special_operators: true `env: Environment }))
+          (current_position (fn ()
+                               (-> editor `getCursorPosition)))
+          (on_change (fn (val)
+                        (progn
+                            (= symbol_map_dirty? true)
+                            (when (not linked_editor)
+                               (handle_lisp_format_event val editor)))))
+          (on_initialized (fn (control)
+                             (= linked_editor (-> control `get_linked))))
+          (on_destroy (fn ()
+                         true))
+          (identifier_regex (new RegExp "[A-Za-z*+0-9_\\$\\u00A2-\\uFFFF]+"))
+          (jump_to_local_definition  (fn (symbol)
+                                        (when (is_string? symbol)
+                                           (= evaluator_control (-> control `get_evaluator))
+                                           (when (or symbol_map_dirty?
+                                                     (eq nil symbol_map))
+                                              (= symbol_map (symbol_map_for_buffer (or control.options.filename control.options.path) (-> control `get)))
+                                              (= symbol_map_dirty? false))
+                                           (cond
+                                              (-> comp_special_ops `has symbol)
+                                              (notify (+ symbol " " (dtext "is a compiler operator")))
+                                              symbol_map
+                                              (let
+                                                 ((locations (resolve_path [`symbols symbol ] symbol_map))
+                                                  (def_locs [])
+                                                  (cpos (current_position))
+                                                  (root_form (select_root_form editor cpos)))
+                                                 (if locations
+                                                    (progn
+                                                       (= def_locs (find_symbol_definition symbol symbol_map cpos root_form)))
+                                                    (progn
+                                                       (notify (dtext "No symbol map is available"))))
+                                                 (when (> def_locs.length 1)
+                                                    (log "text_editor: jump_to_local_definition: def_locs: " def_locs))
+                                                 (cond
+                                                    (and (== def_locs.length 1)
+                                                         (not (eq nil def_locs.0.row)))
+                                                    (progn
+                                                       (-> control `move_to_position def_locs.0.row def_locs.0.col))
+                                                    (== def_locs.length 1)
+                                                    (progn
+                                                       ;(= in_dispatch true)
+                                                       (dispatch_event { command: "open_definition"
+                                                                         source: (control_id control)
+                                                                         args: [ symbol (-> evaluator_control `current_namespace) (control_id control) ] }))
+                                                    ;(setTimeout (fn () (= in_dispatch false)) 1000)
+                                                    
+                                                    (> def_locs.length 1)
+                                                    (progn
+                                                       (notify "Ambiguous: multiple positions found"))
+                                                    (== def_locs.length 0)
+                                                    (progn
+                                                       ;(= in_dispatch true)
+                                                       (dispatch_event { command: "open_definition"
+                                                                         source: (control_id control)
+                                                                         args: [ symbol (-> evaluator_control `current_namespace) (control_id control) ] })
+                                                       (notify (dtext "No local definition found"))))))))))
+         (-> editor.session `setMode "ace/mode/juno")
+         (-> editor `setOptions
+            {
+              `enableBasicAutocompletion:  [{ identifierRegexps: [ identifier_regex ]
+                                                                getCompletions: (fn (editor session pos prefix callback)
+                                                                                   (get_juno_autocompletions editor session pos prefix callback (-> editor `symbols))) }]
+              enableLiveAutocompletion: true
+              enableSnippets: true
+              })
+         (= intf
+            {
+              evaluate_root_form: evaluate_root_form
+              jump_to_local_definition: jump_to_local_definition
+              on_change: on_change
+              name: "Juno"   ;; display name with proper capitalization
+              mode: "juno"   ;; the proper system mode name
+              menu_items: (fn (ctoken)
+                             (conj
+                                (if (and ctoken
+                                         (or (== ctoken.type "identifier")
+                                             (== ctoken.type "asyncfunction")
+                                             (== ctoken.type "function")))
+                                    [[ {
+                                         text: (dtext "Go to buffer definition")
+                                         path: [`editor `jump_to_local_definition ]
+                                         exec: (fn ()
+                                                  (jump_to_local_definition ctoken.value))
+                                         } ]
+                                     [ {
+                                         text: (dtext "Go to current definition")
+                                         path: [`editor `jump_to_local_definition ]
+                                         exec: (fn ()
+                                                  (dispatch_event { command: "open_definition"
+                                                                    source: nil
+                                                                    args: [ ctoken.value ] }))
+                                         } ]
+                                     ["--" nil]]
+                                    [])
+                                
+                                [[{
+                                    text: (dtext "Select to root form")
+                                    path: [`editor `select_form_root ]
+                                    exec: (fn ()
+                                             (select_to_root_form editor))
+                                    }]
+                                 [{
+                                    text: (dtext "Evaluate root form")
+                                    path: [`editor `evaluate_root_form ]
+                                    exec: evaluate_root_form
+                                    }]
+                                 (if (is_clipboard_allowed?)
+                                     [{
+                                        text: (dtext "Copy root form")
+                                        path: [`editor `copy_root_form ]
+                                        exec:  (fn ()
+                                                  (let
+                                                     ((cpos (current_position)))
+                                                     (select_to_root_form editor)
+                                                     (-> navigator.clipboard `writeText (-> editor `getCopyText))
+                                                     (sleep 0.02)
+                                                     (-> editor.selection `clearSelection)
+                                                     (-> editor `navigateTo cpos.row cpos.column)))
+                                        }]
+                                     [])
+                                 ["--" nil]
+                                 [{
+                                    text: (dtext "Select current form")
+                                    path: [`editor `select_current_form ]
+                                    exec: (fn ()
+                                             (select_to_current_form editor))
+                                    }]
+                                 [{
+                                    text: (dtext "Evaluate selection")
+                                    path: [`editor `evaluate_selection ]
+                                    exec: (fn ()
+                                             (-> editor `evaluate_selection editor))
+                                    }]
+                                 ["--" nil]]))
+              })
+         intf)
+      (progn
+         {
+             `name: "Juno"
+             `mode: "juno"
+         })))
 
+(defun init_mode_javascript (control)
+    (if control.editor
+      (let
+         ((editor control.editor))
+         (-> editor `setOptions {
+                                  `enableLiveAutocompletion: true
+                                  `enableBasicAutocompletion: true })
+         (-> editor.session `setMode "ace/mode/javascript")
+         {
+             `name: "Javascript"
+             `mode: "javascript"
+         })
+      (progn
+         {
+             `name: "JavaScript"
+             `mode: "javascript"
+         })))
+
+(defun init_mode_css (control)
+    (if control.editor
+      (let
+         ((editor control.editor))
+         (-> editor.session `setMode "ace/mode/css")
+         (-> editor `setOptions {
+                                  `enableLiveAutocompletion: true
+                                  `enableBasicAutocompletion: true })
+         {
+           evaluate_root_form: (fn ()
+                                  (evaluate_css_rule editor))
+           name: "CSS"
+           mode: "css"
+           menu_items: (fn (current_token)   ;; current token is the word or text at the cursor position
+                          [[{
+                              text: (dtext "Select rule")
+                              path: [`editor `select_css_rule ]
+                              exec: (fn ()
+                                       (select_css_rule editor))
+                              }]
+                           [{
+                              text: (dtext "Evaluate rule")
+                              path: [`editor `evaluate_root_form ]
+                              exec: (fn ()
+                                       (evaluate_css_rule editor))
+                              }]
+                           [{
+                              text: (dtext "Copy rule")
+                              path: [`editor `copy_css_rule ]
+                              exec: (fn ()
+                                       (let
+                                          ((cpos (-> editor `getCursorPosition)))
+                                          (select_css_rule editor)
+                                          (-> navigator.clipboard `writeText (-> editor `getCopyText))
+                                          (sleep 0.02) ;; so that there is a brief selection flash to show something happened
+                                          (-> editor.selection `clearSelection)
+                                          (-> editor `navigateTo cpos.row cpos.column)))
+                              }]
+                           ["--" nil]])
+                             
+                         
+           })
+      (progn
+         {
+              name: "CSS"
+              mode: "css"
+         })))
+
+(defun init_mode_sh (control)
+    (if control.editor
+      (let
+         ((editor control.editor))
+         (-> editor.session `setMode "ace/mode/sh")
+         (-> editor `setOptions {
+                                  `enableLiveAutocompletion: true
+                                  `enableBasicAutocompletion: true })
+         {
+          name: "Shell"
+          mode: "sh"
+          })
+      (progn
+         {
+          name: "Shell"
+          mode: "sh"
+          })))
+
+(defun init_mode_markdown (control)
+    (if control.editor
+       (progn
+          (-> control.editor.session `setMode "ace/mode/markdown")
+          (set_word_wrap control true)
+          {
+            name: "Markdown"
+            mode: "markdown" 
+          })
+       (progn
+          {
+              name: "Markdown"
+              mode: "markdown"
+          })))
+      
+(defun available_editor_modes ()
+   (reduce (symbol (sort (symbols)))
+      (when (starts_with? "init_mode_" symbol)
+         (+ {
+              `use: symbol
+              }
+           (eval ((+ "=:" symbol))))))
+   {
+     `description: (+ "Returns an array of available modes for the `text_editor` control.  "
+                      "Each object in the array will have the keys:<br>name:string - The formal name "
+                      "of the mode<br>mode:string - The mode name itself which is used to reference "
+                      "resources that are used by the mode functionality such as behaviors and syntax "
+                      "highlighting.<br>use:string - The function name the text editor control will "
+                      "call to set up the mode.<br> ")
+     usage: ["editor:?control"]
+     tags: ["modes" "editor" "text_editor"]
+   })
 
 (defun show_editor_options (ctl)
    (let
@@ -2075,8 +2352,7 @@
    })
              
  
-(defun init_mode_markdown (control)
-      (set_word_wrap control true))
+
 
 (defun text_editor (options)
    (aif (and (not options.clone_with_editor_id)
@@ -2213,56 +2489,32 @@
                                               (set_prop evaluator_span
                                                  `innerText
                                                  it)))))
+            (mode_functions {})
             (set_mode (fn (mode_name)
                          (progn
-                            (defvar identifier_regex (new RegExp "[A-Za-z*+0-9_\\$\\u00A2-\\uFFFF]+"))
                             (set_prop options
                                `mode
                                mode_name)
                             (cond
-                               (== options.mode "juno")
-                               (progn
-                                  (console.log "mode to juno")
-                                  (-> editor.session `setMode "ace/mode/juno")
-                                  (-> editor `setOptions {
-                                                           `enableBasicAutocompletion:  [{ identifierRegexps: [ identifier_regex ]
-                                                                                                             getCompletions: (fn (editor session pos prefix callback)
-                                                                                                                                (get_juno_autocompletions editor session pos prefix callback sorted_symbols)) }]
-                                                           enableLiveAutocompletion: true
-                                                           enableSnippets: true
-                                                           }))
-                               (== options.mode "javascript")
-                               (progn
-                                  (-> editor `setOptions {
-                                                           `enableLiveAutocompletion: true
-                                                           `enableBasicAutocompletion: true })
-                                  (-> editor.session `setMode "ace/mode/javascript"))
-                               (== options.mode "css")
-                               (progn
-                                  (-> editor.session `setMode "ace/mode/css")
-                                  (-> editor `setOptions {
-                                                           `enableLiveAutocompletion: true
-                                                           `enableBasicAutocompletion: true }))
-                               (== options.mode "sh")
-                               (progn
-                                  (-> editor.session `setMode "ace/mode/sh")
-                                  (-> editor `setOptions {
-                                                           `enableLiveAutocompletion: true
-                                                           `enableBasicAutocompletion: true }))
                                options.mode
                                (progn
                                   (-> editor.session `setMode (+ "ace/mode/" options.mode))
                                   (-> editor `setOptions {
                                                            `enableLiveAutocompletion: true
                                                            `enableBasicAutocompletion: true })
-                                  (log "set_mode: looking for: " (+ "init_mode_" options.mode))
-                                  (aif (resolve_path [ `context `scope (+ "init_mode_" options.mode) ] Environment ) 
-                                       (it intf)))
+                                  ;(log "set_mode: looking for: " (+ "init_mode_" options.mode))
+                                  (= mode_functions 
+                                     (aif (resolve_path [ `context `scope (+ "init_mode_" options.mode) ] Environment ) 
+                                       (try 
+                                          (it intf)
+                                          (catch Error (e)
+                                             (notify (+ "Error on mode: " e.message)))))))
                                else
                                (progn
                                   (set_prop options
                                      `mode
                                      `text)
+                                  (= mode_functions {})
                                   (-> editor.session `setMode "ace/mode/text")
                                   (-> editor `setOptions {
                                                            `enableLiveAutocompletion: true
@@ -2469,22 +2721,16 @@
             (evaluate_root_form (fn ()
                                       (let
                                          ((cpos (current_position)))
-                                         (cond
-                                            (== options.mode "juno")
-                                            (progn
-                                               (select_form_root)
-                                               (evaluate_selection editor))
-                                            (== options.mode "css")
-                                            (progn
-                                               (evaluate_css_rule editor))
-                                            else
-                                            (display_context_message (+ "" options.mode ": " (dtext "No evaluation mechanism for mode" ))))
-                                                
+                                         (try 
+                                            (if (is_function? mode_functions.evaluate_root_form)
+                                                (-> mode_functions `evaluate_root_form editor)
+                                                (display_context_message (+ "" options.mode ": " (dtext "No evaluation mechanism for mode" ))))
+                                            (catch Error (e)
+                                               (display_context_message (+ "Mode Error:" options.mode ": " e.message))))
                                          (sleep 0.02)
                                          (-> editor.selection `clearSelection)
                                          (-> editor `navigateTo cpos.row cpos.column))))
                                        
-            
             (select_current_form (fn ()
                                     (select_to_current_form editor)))
             (get_selected_text (function ()
@@ -2945,61 +3191,16 @@
                                     (if want_metadata
                                        {}
                                        "identifier")))))
-            ;; the special operators used by the compiler
-            (comp_special_ops (compiler nil { `special_operators: true `env: Environment }))
+            
             (jump_to_local_definition (fn (symbol)
-                                         (when (is_string? symbol)
-                                            (when (or symbol_map_dirty?
-                                                    (eq nil symbol_map))
-                                               (= symbol_map (symbol_map_for_buffer (or options.filename options.path) (-> intf `get)))
-                                               (= symbol_map_dirty? false))
-                                            (cond 
-                                               (-> comp_special_ops `has symbol)
-                                               (notify (+ symbol " " (dtext "is a compiler operator")))
-                                               symbol_map
-                                               (let
-                                                  ((locations (resolve_path [`symbols symbol ] symbol_map))
-                                                   (def_locs [])
-                                                   (cpos (current_position))
-                                                   (root_form (select_root_form editor cpos)))
-                                                  (if locations
-                                                     (progn
-                                                        (= def_locs (find_symbol_definition symbol symbol_map cpos root_form)))
-                                                     (progn
-                                                        (notify (dtext "No symbol map is available"))))
-                                                  (when (> def_locs.length 1)
-                                                     (log "text_editor: jump_to_local_definition: def_locs: " def_locs))
-                                                  (cond
-                                                     (and (== def_locs.length 1)
-                                                          (not (eq nil def_locs.0.row)))
-                                                     (progn 
-                                                        (set_cursor_position { `row: def_locs.0.row `column: def_locs.0.col })
-                                                        (update_position true))
-                                                     (== def_locs.length 1)
-                                                     (progn
-                                                        ;(= in_dispatch true)
-                                                        (dispatch_event { command: "open_definition"
-                                                                          source: options.id
-                                                                          args: [ symbol (-> evaluator_control `current_namespace) options.id ] }))
-                                                        ;(setTimeout (fn () (= in_dispatch false)) 1000)
-                                                        
-                                                     (> def_locs.length 1)
-                                                     (progn
-                                                        (notify "Ambiguous: multiple positions found"))
-                                                     (== def_locs.length 0)
-                                                     (progn
-                                                        ;(= in_dispatch true)
-                                                        (dispatch_event { command: "open_definition"
-                                                                          source: options.id
-                                                                          args: [ symbol (-> evaluator_control `current_namespace) options.id ] })
-                                                        (notify (dtext "No local definition found")))))))))
+                                         (if (is_function? mode_functions.jump_to_local_definition)
+                                             (-> mode_functions `jump_to_local_definition symbol))))
             (jump_to_local_definition_command (fn (editor)
                                                  (let
                                                     ((token (get_current_token)))
                                                     (if token
                                                        (jump_to_local_definition token.value)))))
                                                     
-            (symbol_map_dirty? true)                                                 
             (cached_symbols nil)
             (symbol_map nil)
             (sorted_symbols [])
@@ -3140,6 +3341,7 @@
                                    (fn (e)
                                       (rename_editor))
                                    ])
+                               
                                [(dtext "Increase Font Size") increase_font_size]
                                [(dtext "Decrease Font Size") decrease_font_size]
                                (if (== (-> editor `getOption `wrap) "off")
@@ -3162,12 +3364,10 @@
                                    [ (dtext "Allow Editing" ) (fn () (-> intf `set_read_only false)) ]
                                    [ (dtext "Set Read-Only Mode") (fn () (-> intf `set_read_only true)) ])
                                [(dtext "Set Edit Mode")
-                                [["Juno" (fn () (-> intf `set_mode "juno"))]
-                                 ["Javascript" (fn () (-> intf `set_mode "javascript")) ]
-                                 ["Text" (fn () (-> intf `set_mode "text"))]
-                                 ["CSS" (fn () (-> intf `set_mode "css"))]
-                                 ["JSON" (fn () (-> intf `set_mode "json"))]
-                                 ["Shell" (fn () (-> intf `set_mode "sh"))]]]
+                                (for (mode_desc (conj [ { name: "Text" mode: "text" } ]
+                                                      (available_editor_modes)))
+                                    [ mode_desc.name
+                                      (eval `(fn () (-> (get_control_by_id ,#options.id) `set_mode ,#mode_desc.mode)))])]
                                [(dtext "Set Editor Theme")
                                 (for_each (theme (get_default [ `editor `themes ]))
                                    [theme  (fn () (-> intf `set_theme theme))])]
@@ -3189,95 +3389,9 @@
                               ((ctoken (get_current_token)))
                               ;(log "current token: " ctoken)
                               (conj
-                                 (cond
-                                    (== options.mode "juno")
-                                    (conj (if (and ctoken
-                                                   (or (== ctoken.type "identifier")
-                                                       (== ctoken.type "asyncfunction")
-                                                       (== ctoken.type "function")))
-                                              [[ {
-                                                  text: (dtext "Go to buffer definition")
-                                                  path: [`editor `jump_to_local_definition ]
-                                                  exec: (fn ()
-                                                           (jump_to_local_definition ctoken.value))
-                                                  } ]
-                                               [ {
-                                                   text: (dtext "Go to current definition")
-                                                   path: [`editor `jump_to_local_definition ]
-                                                   exec: (fn ()
-                                                            (dispatch_event { command: "open_definition"
-                                                                              source: nil
-                                                                              args: [ ctoken.value ] }))
-                                                   } ]
-                                               ["--" nil]]
-                                              [])
-                                     
-                                          [[{
-                                             text: (dtext "Select to root form")
-                                             path: [`editor `select_form_root ]
-                                             exec: (fn ()
-                                                      (select_to_root_form editor))
-                                             }]
-                                          [{
-                                             text: (dtext "Evaluate root form")
-                                             path: [`editor `evaluate_root_form ]
-                                             exec: evaluate_root_form
-                                             }]
-                                          (if (is_clipboard_allowed?)
-                                              [{
-                                                 text: (dtext "Copy root form")
-                                                 path: [`editor `copy_root_form ]
-                                                 exec:  (fn ()
-                                                           (let
-                                                              ((cpos (current_position)))
-                                                              (select_form_root)
-                                                              (-> navigator.clipboard `writeText (-> editor `getCopyText))
-                                                              (sleep 0.02)
-                                                              (-> editor.selection `clearSelection)
-                                                              (-> editor `navigateTo cpos.row cpos.column)))
-                                                 }]
-                                              [])
-                                          ["--" nil]
-                                          [{
-                                             text: (dtext "Select current form")
-                                             path: [`editor `select_current_form ]
-                                             exec: select_current_form
-                                             }]
-                                          [{
-                                             text: (dtext "Evaluate selection")
-                                             path: [`editor `evaluate_selection ]
-                                             exec: (fn ()
-                                                      (evaluate_selection editor))
-                                             }]
-                                          ["--" nil]])
-                                    (== options.mode "css")
-                                    [[{
-                                        text: (dtext "Select rule")
-                                        path: [`editor `select_css_rule ]
-                                        exec: (fn ()
-                                                 (select_css_rule editor))
-                                        }]
-                                     [{
-                                        text: (dtext "Evaluate rule")
-                                        path: [`editor `evaluate_root_form ]
-                                        exec: (fn ()
-                                                 (evaluate_root_form))
-                                        }]
-                                     [{
-                                        text: (dtext "Copy rule")
-                                        path: [`editor `copy_css_rule ]
-                                        exec: (fn ()
-                                                 (let
-                                                    ((cpos (current_position)))
-                                                    (select_css_rule editor)
-                                                    (-> navigator.clipboard `writeText (-> editor `getCopyText))
-                                                    (sleep 0.02)
-                                                    (-> editor.selection `clearSelection)
-                                                    (-> editor `navigateTo cpos.row cpos.column)))
-                                        }]
-                                     ["--" nil]]
-                                    else
-                                    [])
+                                 (if (is_function? mode_functions.menu_items)
+                                     (-> mode_functions `menu_items ctoken)
+                                     [])
                                  [[{
                                      `text: (dtext "Select All")
                                      `path: [ `global `select_all ]
@@ -3498,10 +3612,9 @@
                                                                         (log_error "text_editor: " name ": in on change for the editor and we are destroyed!"))
                                                                      (add_class "juno-needs-save" title_span)
                                                                      (= is_dirty? true)
-                                                                     (= symbol_map_dirty? true)
-                                                                     (when (== (prop (-> editor.session `getMode) `$id) "ace/mode/juno")
-                                                                        (when (not linked_editor)
-                                                                           (handle_lisp_format_event val editor)))
+                                                                     (when (is_function? mode_functions.on_change)
+                                                                        (-> mode_functions `on_change val))
+                                                                     
                                                                         ;(find_active_lisp_operator))
                                                                      (when (not linked_editor)
                                                                         (dispatch_event { command: "editor_change"
@@ -3629,6 +3742,8 @@
                                                                 (display_context_message (+ "Evaluator for this buffer is " (prop *system_repl* `name)))
                                                                 (set_evaluator_control *system_repl*))))))
                                                     100)
+                                        (when (is_function? mode_functions.on_initialized)
+                                           (-> mode_functions `on_initialized intf))
                                         (display_context_message "Ready")
                                         ;(log "initialize_editor: " (clone options.name) (+ ": (" (last_n_chars 5 options.id) "): initialization complete:") (clone options))
                                         intf)))))
@@ -3659,7 +3774,8 @@
                 `cut_selection: cut_selection
                 `copy_selection: copy_selection
                 `paste_selection: paste_selection 
-                
+                `symbols: (fn ()
+                             sorted_symbols)
                 `group_name: (fn ()
                                 options.group_name)
                 `type: `text_editor
@@ -3695,7 +3811,8 @@
                                          response))))
                 `destroy: (fn ()
                              (when editor
-                                
+                                (when (is_function? mode_functions.on_destroy)
+                                   (-> mode_functions `on_destroy))
                                 (defvar others_and_me (if options.path
                                                           (get_editors_for_path options.path)
                                                           []))
@@ -3729,12 +3846,16 @@
                 `set_evaluator_control: set_evaluator_control
                 `get_evaluator: (fn ()
                                    evaluator)
+                `evaluate_selection: (fn ()
+                                       (evaluate_selection editor))
                 `needs_save?: (fn ()
                                  (and (not options.repl_mode)
                                       is_dirty?))
                 `set_mode: set_mode
                 `get_mode: (fn ()
                               options.mode)
+                `mode_functions: (fn ()
+                                    mode_functions)
                 `set_theme: set_theme
                 `set_overscroll: set_overscroll
                 `split_vertical: (fn ()
@@ -3784,6 +3905,7 @@
                 `jump_to_local_definition: (fn (symbol)
                                               (if (is_string? symbol)
                                                  (jump_to_local_definition symbol)))
+                `get_current_token: get_current_token
                 `name: options.name
                 `set_name: set_name
                 `undo: (fn ()

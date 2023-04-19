@@ -1498,17 +1498,25 @@
                                  (set_prop options
                                     `read_only
                                     read_only?)
-                                 (if read_only?
+                                 (cond 
+                                    read_only?
                                     (progc
                                        (= saved_content (element_to_lisp root_elem))
-                                       (log (pretty_print saved_content))
+                                       ;(log (pretty_print saved_content))
                                        (remove_attribute root_elem `contenteditable)
                                        (set_prop locked_span
                                           `innerText
                                           (dtext "RO")))
+                                    options.reader_mode
+                                    (progn
+                                       (notify (dtext "This control is in reader mode, and cannot be edited."))
+                                       (set_prop options
+                                          `read_only
+                                           true))
+                                    else
                                     (progc
                                        (when saved_content
-                                          (log (pretty_print saved_content))
+                                          ;(log (pretty_print saved_content))
                                           (set_prop saved_content.1
                                              `contenteditable true)
                                           (-> root_elem `replaceWith (eval saved_content))
@@ -1709,6 +1717,7 @@
                                                              disable_object_toggle: true
                                                              on_change: (function (path new_value)
                                                                            (progn
+                                                                              (console.log "show_attributes: change: path: " path " new_value: " new_value)
                                                                               (handle_attribute_change element (first path) new_value)
                                                                               new_value))
                                                              })
@@ -2062,10 +2071,16 @@
                                   (when (get_attribute e.srcElement `dist)
                                      (go_to_tree_pos (get_attribute e.srcElement `dist)))))
                             
-                            (attach_event_listener show_attributes_button
-                               `click
-                               (fn (e)
-                                  (set_show_attributes (not (has_class? "juno-button-on" e.srcElement)))))
+                            (if options.reader_mode
+                               (progn 
+                                  (set_show_attributes false)
+                                  (set_read_only true)
+                                  (set_style [["display"  "none"]] show_attributes_button))
+                                  
+                               (attach_event_listener show_attributes_button
+                                  `click
+                                  (fn (e)
+                                     (set_show_attributes (not (has_class? "juno-button-on" e.srcElement))))))
                           
                             (attach_event_listener content_view
                                `paste
@@ -2092,7 +2107,7 @@
                                              (defvar target_elem displayed_element_for_attributes)
                                              (notify (+ "setting property: " it " " target_elem.tagName))
                                              (set_prop target_elem it (or (prop target_elem it) ""))
-                                             (log (pre (pretty_print (element_to_lisp target_elem))))
+                                             ;(log (pre (pretty_print (element_to_lisp target_elem))))
                                              (= displayed_element_for_attributes nil) ;; reset it so we will refresh
                                              (show_attributes target_elem))
                                           (progn
