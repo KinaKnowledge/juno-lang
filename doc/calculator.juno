@@ -1,0 +1,267 @@
+;; Calculator - Control Tutorial
+
+;; This is a tutorial which gives a step by step explanation for creating a 
+;; control and application in Seedling and Juno.  The application will be a 
+;; calculator, a simple application that allows for illustrating the process.  
+
+;; Step 1 - The initial panel in the interface
+
+(defcontrol calculator ()
+   ((render 
+       (fn () 
+          (div { style: "padding-top: 10px;max-width: 500px;margin:auto" }
+                    "Calculator"))))
+   {
+     `control_bar: true
+     })
+
+;; Step 2 - Setup the layout in the panel
+
+(defcontrol calculator ()
+   ((button_layout 
+       [["C" "+-" "%" "/"]
+        [7 8 9 "x"]
+        [4 5 6 "-"]
+        [1 2 3 "+"]
+        [0 "." "="]])
+    (display (div { class: "display" } `0))
+    (buttons (for_each (btext (flatten button_layout))
+                (button { class: (if (== btext "=") 
+                                     "equals"
+                                     "")
+                          key: btext }
+                        btext)))
+                          
+    (render 
+       (fn () 
+          (div {  style: "padding-top: 10px;max-width: 500px;margin:auto" }
+               display
+               (div { `class: "button-box" } 
+                    buttons)))))
+   {
+     `control_bar: true
+     })
+
+;; step 3 - Add events to the control
+
+(defcontrol calculator ()
+   ((button_layout 
+       [["C" "+-" "%" "/"]
+        [7 8 9 "x"]
+        [4 5 6 "-"]
+        [1 2 3 "+"]
+        [0 "." "="]])
+    (display (div { class: "display" `tabindex: 0 } `0))
+    (buttons (for_each (btext (flatten button_layout))
+                (button { class: (if (== btext "=") 
+                                     "equals"
+                                     "")
+                          key: btext }
+                        btext)))
+    (set_value (fn (val)
+                  (progn
+                     (set_prop display
+                        `innerText (if (blank? val)
+                                       "0"
+                                       val)))))
+    (keymap { 
+              "c":"C"
+              "Escape":"C"
+              "Clear":"C"
+              "Enter":"="
+              "*":"x"
+              "s":"+-"
+              })
+    (process_key (fn (key)
+                    (when key
+                       (set_value key)
+                       key)))
+    (handle_click (fn (event)
+                     (process_key (get_attribute event.srcElement `key))))
+    (render 
+       (fn () 
+          (div {  style: "padding-top: 10px;max-width: 500px;margin:auto" }
+               display
+               (div { `class: "button-box" } 
+                    buttons))))
+    (on_initialize (fn (self)
+                      (progn
+                         (attach_event_listener view
+                            `click
+                            handle_click)
+                         (attach_event_listener view
+                            `keyup
+                            (fn (event)
+                               (progn
+                                  (handle_event event)
+                                  (process_key (or (prop keymap event.key) event.key)))))))))
+   {
+     `control_bar: true
+     })
+
+;; step 4 - add the logic
+
+(defcontrol calculator ()
+   ((button_layout 
+       [["C" "+-" "%" "/"]
+        [7 8 9 "x"]
+        [4 5 6 "-"]
+        [1 2 3 "+"]
+        [0 "." "="]])
+    (display (div { class: "display" `tabindex: 0 } "0"))
+    (value (fn ()
+              (last stack)))
+    (stack [])
+    (set_value (fn (val)
+                  (progn
+                     (set_prop display
+                        `innerText (if (blank? val)
+                                       "0"
+                                       val))
+                     (pop stack)
+                     (push stack display.innerText))))
+    (clear_operator (fn ()
+                       (aif (-> content_view `querySelectorAll ".juno-button-on")
+                            (when (> it.length 0)
+                               (remove_class "juno-button-on" it)))))
+    (set_operator (fn (key)
+                     (aif (button_for_key key)
+                          (add_class "juno-button-on" it))))
+    (clear (fn ()
+              (progc
+                 (set_value 0)
+                 (= stack ["0"])
+                 (= operation equal_op)
+                 (= need_clear? true)
+                 (clear_operator)
+                 )))
+    (button_for_key (fn (key)
+                       (-> content_view `querySelectorAll (+ "[key=\"" key "\"]"))))
+    (buttons (for_each (btext (flatten button_layout))
+                (button { class: (if (== btext "=") 
+                                     "equals"
+                                     "")
+                          key: btext }
+                        btext)))
+    (need_clear? false)
+    (op_to_action {
+        "+":(function (x y)
+               (+ x y))
+        "-":(function (x y)
+               (- x y))
+        "x":(function (x y)
+               (* x y))
+        "/":(function (x y)
+               (/ x y))
+        "=":(function ()
+               0)
+        })
+    (equal_op (prop op_to_action "="))
+    (operation equal_op)
+    (keymap { 
+              "c":"C"
+              "Escape":"C"
+              "Clear":"C"
+              "Enter":"="
+              "*":"x"
+              "s":"+-"
+              })
+    (store_op (fn (key)
+                 (progn
+                    (cond
+                       (== stack.length 2)
+                       (progn
+                          (set_value
+                             (eval (operation (float (take stack)) (float (take stack)))))
+                          (clear_operator)
+                          (= operation (prop op_to_action key))
+                          (unless (== key "=")
+                             (push stack (last stack))
+                             (set_operator key))
+                          (= need_clear? true))
+                       
+                       (== stack.length 1)
+                       (progc
+                          (clear_operator)
+                          (= operation (prop op_to_action key))
+                          (= need_clear? true)
+                          (unless (== key "=")
+                             (push stack (last stack))
+                             (set_operator key)
+                             ))))))
+    (process_key (fn (key)
+                    (when key
+                       (cond
+                          
+                          (== key "Backspace")
+                          (set_value (chop (+ "" (float (value)))))
+                          (== key "C")
+                          (clear)
+                          (== key "+-")
+                          (set_value (* -1 (float (value))))
+                          (== key "%")
+                          (set_value (* (float (value)) 0.01))
+                          
+                          (contains? key ["=" "/" "x" "-" "+"  ])
+                          (progn
+                             (focus_to display)
+                             (store_op key))
+                          
+                          (or (contains? key [ "1" "2" "3" "4" "5" "6" "7" "8" "9"])
+                              (and (== key ".") 
+                                   (or need_clear?
+                                      (== (index_of "." (value)) -1)))
+                              (and (== key "0")
+                                   (not (== (value) "0"))))
+                          (if need_clear?
+                              (progn 
+                                 (= need_clear? false)
+                                 (if (== key ".")
+                                     (set_value "0.")
+                                     (set_value key)))
+                              (set_value (+ "" (or (value) "") key)))))))
+    (handle_click (fn (event)
+                     (process_key (get_attribute event.srcElement `key))))
+    (render 
+       (fn () 
+          (div {  style: "padding-top: 10px;max-width: 500px;margin:auto" }
+               display
+               (div { `class: "button-box" } 
+                    buttons))))
+    (on_initialize (fn (self)
+                      (progn
+                         (attach_event_listener view
+                            `click
+                            handle_click)
+                         (attach_event_listener view
+                            `keyup
+                            (fn (event)
+                               (progn
+                                  (handle_event event)
+                                  (process_key (or (prop keymap event.key) event.key)))))
+                         (clear)))))
+   {
+     `expose: [[ `clear clear]
+               [ `enter (fn (text) 
+                           (progn
+                              (for_each (k (split_by "" text))
+                                 (process_key (or (prop keymap (+ "" k)) (+ "" k))))
+                              (float display.innerText))) ]
+               [`get (fn () (float (value))) ]]
+     `control_bar: true
+     })
+
+;; let's use the control 
+
+(place_control `right (calculator))
+
+;; let's use the control programmatically 
+
+(let
+   ((calc (get_control_by_name "Calculator")))
+   (when calc
+      (-> calc `clear)
+      (-> calc `enter  "78*9+10=")
+      (-> calc `get)
+      ))
+

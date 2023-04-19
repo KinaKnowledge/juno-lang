@@ -1,0 +1,31 @@
+.display {
+    border: inset 2px #FFFFFF; 
+    height: 1.2em;
+    text-align: right;
+    font-size: 1.2em;
+    outline: none;
+    padding: 5px; 
+    font-family: var(--main-mono-space);
+    color: var(--control-text-input-color); 
+    background: var(--control-text-input-color-bg);
+}
+
+.button-box {
+  width: 100%;
+  display: grid;
+  margin-top: 10px;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(5, 1fr);
+  grid-gap: 10px;
+}
+
+
+.equals {
+  grid-column: 3 / 5;
+  background-color: var(--highlight-bg-color);
+  color: var(--highlight-color);
+}
+
+.equals:hover {
+  background-color: var(--highlight-bg-color);
+}
