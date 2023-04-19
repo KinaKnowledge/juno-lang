@@ -215,13 +215,20 @@
           
 
 (defun create_http_server (port_number options)
-   (if options.use_TLS
-      (-> Deno `listenTls (+ {}
-                             { port: port_number }
-                             (or options {})))
-      (-> Deno `listen (+ {}
-                          { port: port_number }
-                          (or options {}))))
+   (let
+      ((listener nil))
+      (if options.use_TLS
+         (= listener (-> Deno `listenTls (+ {}
+                                        { port: port_number }
+                                        (or options {}))))
+         (= listener (-> Deno `listen (+ {}
+                                     { port: port_number }
+                                     (or options {})))))
+      (console.log "Listening on " (+ (if options.use_TLS
+                                          "https://"
+                                          "http://")
+                                      listener.addr.hostname ":" listener.addr.port))
+      listener)
    {
        description: (+ "Creates an http server on the specified port number.  " 
                        "If use_TLS is set to true in options, then transport "
@@ -1213,7 +1220,8 @@
                                                           "text/html"))))
 
 (defun start (options)
-  (
+  (let
+     ((options (or options {})))
      (unless (or options.certFile options.cert options.key options.keyFile options.no_https)
         (if (and (not (blank? temp_cert))
                  (not (blank? temp_key)))
@@ -1222,11 +1230,15 @@
                   `use_TLS true
                   `certFile "./tls/cacert.pem"
                   `keyFile "./tls/tempkey")
-               (log "Starting server with a temporary certificate for initial usage. ")
-               (log "This certificates will not be immediately trusted by your browser.")
+               (log "")
+               (log " -- NOTICE ------------ ")
+               (log "Starting the server with a temporary certificate for initial usage. ")
+               (log "This certificate will not be immediately trusted by your browser.")
                (log "You should replace the temporary certificates with permanent")
                (log "certificates and use the `certFile` and `keyFile` options with ")
-               (log "(start) for long term https use."))))
+               (log "(http/start) for long term https use.")
+               (log ""))))
+               
        
    (env_bank (or options.port (resolve_path [ `http_services `port ] *env_config*))
              (or options.base_directory "./")
