@@ -265,6 +265,8 @@ In each expression above, the first element in the provided array is the operato
 
 In the first example, the `+` operator added together 2 and 2 and returned the numeric value 4.  In the second, we logged "Hello World" to console.  The `log` function returns nil.  In the third, we called the `contains?` function, which examines the contents of an array for a provided value.  If found, it returns true, otherwise it would return false.  
 
+As a rule, if the first value of an array is determined to be a function, special operator, or a macro, the array is treated as a form.  It is therefore evaluated and the result returned.  If the first element is not determined to be an operator, then the result is returned as an array structure.  Typically this is determined at compile time.  However, there are instances where this must be determined at runtime.  If you are sure that a specific form will always contain an operator at runtime in the first position, then it can be stated to the compiler via a `declare` directive.  
+
 Let's take that last example one step further by adding a conditional operator:
 ```
 [user] λ-> (if (contains? "Hello" ["Hello" "World"]) "Greetings" "Goodbye")
@@ -295,7 +297,7 @@ Nested S-expressions are very useful and allow us to express complicated logical
    ...
 ```
 
-#### Types
+#### Types and Values
 
 Types in Juno are aligned with types in JavaScript.  If you are familiar with JavaScript, that knowledge carries over into the Juno Lisp world. 
 
@@ -303,9 +305,9 @@ Types in Juno are aligned with types in JavaScript.  If you are familiar with Ja
 
 From [MDN](https://developer.mozilla.org/en-US/docs/Glossary/Truthy).  
 
-There is one difference that between Juno and Javascript and that is the number 0.  In Juno, the value 0 is considered to be `true` when evaluated with `if`, `and*` or `or*`.  However, using 0 in a regular `and` expression (which leverages the `&&` JavaScript operator) will resolve to false.  This is due to legacy compatibility needs.  In practice it is not something that causes heartache, but it is something to be aware of.  
+There is one difference between Juno and Javascript and that is the number 0.  In Juno, the value 0 is considered to be `true` when evaluated with `if`, `and*` or `or*`.  However, using 0 in a regular `and` or `or` expression (which leverages the `&&` and `||`` JavaScript operators respectively) will resolve to false.  This is due to legacy compatibility needs.  In practice it is not something that causes heartache, but it is something to be aware of.  
 
-In the following listing, the values on the left, and their respective type are all considered true.
+In the following listing, the values on the left, and their respective types are all considered true.
 
 ```
 {}         object true
@@ -329,7 +331,166 @@ NaN        Number    false
 ""         String    false
 ```
 
+In Juno, the term `nil` refers to the JavaScript `null` value.  Note that a *directly quoted* `nil` is not the same as an unquoted `nil` and therefore it doesn't resolve to itself. A quoted nil is not evaluated, and be returned as the string `"nil"`.  However, if prefixed with the binding sequence, `=:` as a directly quoted string:
+
+```
+`=:nil
+```
+
+will return the `null` value, and therefore the expression:
+
+```
+(== `=:nil nil)
+```
+
+will be true.  When the term `nil` appears in quoted forms, it will resolve to nil:
+
+```
+[user] λ-> `(list a b nil)
+[ "=:list", "=:a", "=:b", "=:nil" ]
+```
+
+The JavaScript `null` value is equal to `nil`:
+
+```
+[user] λ-> (== null nil)
+true
+```
+
+In Juno there is no proper `list` construct implemented as a linked list and cons cells.  Arrays are used instead, and serve as the principal building block of structures in Juno.  All programs will contain an array somewhere if there is going to be evaluation.  JavaScript Objects of {} are also used as a basic structure to hold values, but there is no 'operator' position innate to them.  They have keys and values, and the values follow the rules of evaluation.  However, the keys are not evaluated, and are taken as quoted literals.  
+
+Value types can be tested for with a functions called `predicates`, which are defined as functions that examine the value or values passed to them and returning a boolean `true` or `false` value.   In Juno they are typically post-fixed with a '?' mark.  In Juno the core language contains the following predicate functions:
+
+```
+blank?
+contains?
+ends_with?
+first_is_upper_case?
+has_items?
+has_the_keys?
+is_array?
+is_date?
+is_element?
+is_error?
+is_even?
+is_function?
+is_lower?
+is_nil?
+is_number?
+is_object_or_function?
+is_object?
+is_odd?
+is_reference?
+is_regex?
+is_served?
+is_set?
+is_string?
+is_symbol?
+is_upper?
+is_value?
+range_overlap?
+starts_with?
+```
+
+We used the predicate function `contains?` in one of the prior example.  We can use predicate functions to test for values:
+
+```
+[user] λ-> (is_array? [])
+true
+[user] λ-> (is_array? {})
+false
+```
+
+In the above the predicate `is_array?` returned `true` when testing against an array, and false when testing against an Object. What about the reverse?
+
+```
+[user] λ-> (is_object? {})
+true
+[user] λ-> (is_object? [])
+true
+```
+
+So arrays are considered objects, but objects are not arrays.  What about functions?  The `is_object?` is a predicate function, let's test it:
+
+```
+[user] λ-> (is_object? is_object?)
+true
+```
+
+So functions are objects as well.  What about atoms?
+
+```
+[user] λ-> (is_object? `atom)
+false
+```
+
+Atoms are not considered objects.  What happens when we try to test a special operator?
+
+```
+[user] λ-> (is_object? defglobal)
+Syntax Error:  {
+  error: "ReferenceError",
+  message: "defglobal is not defined",
+  expanded_source: "(is_object? defglobal)\n",
+  compiled: [AsyncFunction (anonymous)]
+}
+```
+
+Specials are unique in that they are not a traditional function, but are implemented by the compiler.  The special `defglobal` defines a global variable in the environment, but cannot be tested directly.  Let's look at what `is_object?` is doing internally.  
+
+```
+(new Function "x" "{ return x instanceof Object }")
+```
+
+It uses the `instanceof` JavaScript operator to perform the test.  For more on `instanceof` see the  [MDN](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/instanceof) documentation.
+
+Another way to test for types is to use `type` or `subtype` functions.  
+```
+[user] λ-> (type {})
+object
+[user] λ-> (type [])
+array
+[user] λ-> (type false)
+boolean
+[user] λ-> (type 123)
+number
+[user] λ-> (type "majordomo")
+string
+[user] λ-> (type is_object?)
+function
+[user] λ-> (type (new Date))
+object
+```
+
+Type gives a higher level indicator of the type of value something is.  It's useful for determining if something is of one of the basic types: array, object, a boolean, a number, a string or a function.  As you can see, even though we created a new Date object, it still returned `object`.  
+
+The `subtype` will go further and name the actual type.  Let's try date again:
+```
+[user] λ-> (subtype (new Date))
+Date
+```
+
+The subtype returned the specific type of thing it might be.  You can use subtype with the primitives as well and get the same answers as type, but you will get the formal types:
+
+```
+[user] λ-> (subtype "hello!")
+String
+[user] λ-> (subtype [])
+array
+[user] λ-> (subtype {})
+object
+[user] λ-> (subtype is_object?)
+Function
+[user] λ-> (subtype defun)
+AsyncFunction
+```
+Let's look at that last one with `type`, and we can see the distinction between `type` and `subtype`.  With `subtype` we can tell if a function is asynchronous or synchronous whereas type just tells us whether it is a function or not.
+```
+[user] λ-> (type defun)
+function
+```
+
 
 ### Going Further
 
-If you would like to learn more about Juno and Seedling, see m
+If you would like to learn more about Juno 
