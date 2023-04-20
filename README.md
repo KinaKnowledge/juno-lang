@@ -464,7 +464,7 @@ object
 
 Type gives a higher level indicator of the type of value something is.  It's useful for determining if something is of one of the basic types: array, object, a boolean, a number, a string or a function.  As you can see, even though we created a new Date object, it still returned `object`.  
 
-The `subtype` will go further and name the actual type.  Let's try date again:
+The `subtype` will go further and name the actual type.  Let's try the Date example again:
 ```
 [user] λ-> (subtype (new Date))
 Date
@@ -489,6 +489,109 @@ Let's look at that last one with `type`, and we can see the distinction between 
 [user] λ-> (type defun)
 function
 ```
+
+### Variables and Symbols
+
+Most programs will require some form of value storage, and then keeping a handle or reference to that stored value.  In Juno, the term *symbol* fulfills this role.
+
+Symbols are names that reference values within the environment.  Symbols are used to keep track of, access and manipulate values.  For example, a symbol named `birthdate` would reference a value of type `Date`.  Wherever `birthdate` is referenced, the value is used in place of the word `birthdate`.  We don't necessarily care about *what* the birthdate is.  We do care that it is a Date and can use the symbol in place of whatever specific Date it might be referring to.  Symbols are distinct from the thing that is being referenced, and can be repointed to other things.  They don't intrinsically have a type assignment, but point to values, which have a type assignment.  Symbols can also be defined as a name, but be unassigned to a value.  In this case the value is `undefined`.  Symbols can also be assigned the `nil` value, which means that they are defined but aren't assigned anything.  Note that this is distinct from `undefined` in a semantic sense.  Symbols must be explicitly set to `nil`, whereas if a symbol is `undefined`, it may be allocated, but not assigned anything explicit.  Typically, in Juno, if a symbol is `undefined` it may mean there in an issue somewhere.  Juno won't let a symbol be allocated without an initial value and the compiler will consider it an error if the assignment is missing it's value component. 
+
+Symbols have a distinct representation in JSON form.  In JSON, the binding marker `=:` is prefixed to a string, as in `"=:birthdate"`, whereas in Juno notation, the word `birthdate` without quotes around it signifies that it is a symbol.
+
+We can define symbols at the REPL by using the `defglobal` operator.
+
+```
+[user] λ-> (defglobal my_pi 3.1415927)
+3.1415927
+```
+
+We can retrieve this value by referencing the unquoted symbol name: 
+
+```
+[user] λ-> my_pi
+3.1415927
+```
+We can use our newly defined symbol in forms and S-expressions:
+```
+[user] λ-> (Math.pow (* my_pi 5) 2)
+246.74011731733225
+```
+We can use our symbol wherever we need to reference our value.
+```
+[user] λ-> (subtype my_pi)
+Number
+```
+Another item about symbols is that they contain metadata, which we can see when we use the `describe` function.  Notice that since we don't want the symbol evaluated, we quote it when providing it to `describe`.
+
+```
+[user] λ-> (describe `my_pi)
+{
+  namespace: "user",
+  name: "my_pi",
+  type: "Number",
+  requires: [],
+  externals: [],
+  source_name: "anonymous"
+}
+```
+Describe will return an object that *describes* properties of our defined symbol. This is called the symbol's *metadata*.
+
+We can use describe to find out *the what, where and why* of a symbol.  We can add our own metadata to our symbol when we define it as part of our system's documentation.  Lets make another symbol, π, and add a description to it.
+
+```
+[user] λ-> (defglobal π 3.1415927 { description: "The ratio of the circumference of any circle to the diameter of that circle." })
+3.1415927
+[user] λ-> (describe `π)
+{
+  namespace: "user",
+  name: "π",
+  type: "Number",
+  description: "The ratio of the circumference of any circle to the diameter of that circle.",
+  source_name: "anonymous"
+}
+[user] λ-> (Math.pow (* π 5) 2)
+246.74011731733225
+```
+
+Our description is now part of the symbol's metadata.
+
+The ability to store metadata as part of a symbol's definition provides a structured way of documenting what things are around for.  All global symbols will have metadata, and most global symbols have descriptive metadata.  Try ```(describe `let)```.  You will see the metadata for the symbol `let`.
+
+
+
+#### Scope
+
+When symbols are created, they are assigned a specific scope in which they can be referenced.  There are two main types of scopes in Juno, global and lexical.  Simply, global symbols can be referenced across the Environment in which they have been assigned.  Once a global symbol is defined in an Environment, it will be accessible in the Environment until it is either deleted by an `undefine` operation, the Environment is destroyed, or it is *shadowed* by a lexical symbol which has the same name as the global symbol.  Per unenforced convention, global variables in Juno are surrounded by a the `*` character, such as in `*env_config*`.
+
+In the following example, the symbol `*my_data*` is allocated and assigned a value at the global level:
+
+```
+(defglobal *my_data* [ 0 20 15 19 8 239 85 ])
+```
+
+The symbol `*my_data*` is now able to be referenced from anywhere in the local Environment.
+
+Global values can also be created as constants, using the `defconst` operator.  Like globals, they follow a naming convention where the name is wrapped in the `+` character, as in `+root_folder+`.  Here is an example of defining a global constant:
+
+```
+(defconst +root_folder+ "/home/hal/my_data")
+```
+
+When they are described they are marked as a constant:
+```
+{ namespace: "user"
+  name: "+root_folder+"
+  type: "String"
+  requires: []
+  source_name: "anonymous"
+  constant: true }
+```
+
+If an attempt is made to change the value a TypeError is thrown indicating that an attempt was made to change a constant.  This is an error:
+
+`(setq +root_folder+ "/new_folder")`
+
+A TypeError will be thrown.
 
 
 ### Going Further
