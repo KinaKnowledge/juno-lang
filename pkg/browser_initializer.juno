@@ -30,7 +30,10 @@
 (defglobal resource_loader_button nil)
 (defglobal juno_container nil)
 (defglobal repl_editor nil)
-(defglobal *scratch* ";; *scratch* buffer\n\n")
+(defglobal *scratch* (join "\n" 
+                           [ "; *scratch* buffer - Lisp code can be entered here and evaluated" 
+                             "; by using Alt-C to evaluate the current lisp form, or selecting a "
+                             "; specific form and pressing Shift-Enter.\n\n"]))
 (defvalue *key_bindings* {
                            repl:{}
                            editor:{}
@@ -18932,50 +18935,52 @@
        (target_env nil))
       
       
-      ;(when (resolve_path [ `options `is_locked? ] current_layout)
-       ;  (jump_to_frame_0)
-        ; (sleep 0.1))
-      
-      (= target_container (or (and (== starting_layout target_layout) 
-                                   options.control_to_replace  ;; first check easy thing
-                                   (== current_layout (get_current_layout_control)) ;; then the hard thing
-                                   options.control_to_replace) ;; then return the control to replace 
-                              (and target_layout.options.last_focus_id
-                                   (get_control_by_id target_layout.options.last_focus_id))
-                              *last_focus* 
-                              (default_focus)))
-                 
-      ;(log "new_buffer: target_container: " target_container.name (prop (get_current_layout_control) `name))
-      (when target_ns
-         (= target_env (-> Environment `get_namespace_handle symbol_data.namespace)))
-      (when (and target_env (eq nil (resolve_path symbol_data.path target_env.global_ctx.scope)))
-         (make_path symbol_data.path target_env.global_ctx.scope ""))
-      (= new_control
-         (if (== extension `dom)
-             (DOM_editor (+ { rules: [ `*markdown_rules* ]
-                                    hide_control_bar: false
-                                    debug: false }
-                            options))
-             (text_editor (+ { name: (if symbol_data.path
-                                         (last symbol_data.path)
-                                         nil)
-                                    namespace: target_ns
-                                    path_namespace: target_ns
-                                    path: symbol_data.path
-                                    mode: options.mode }
-                             options ))
-             ))
-      (cond
-         (is_top_control? target_container)
-         (container_view_operation "split_right"
-                                   (first (-> target_container `controls))
-                                   new_control)
-         else
-         (progn
-            (swap_control target_container
-                          new_control)))
-      (sleep 0.1)
-      (set_focus_to new_control))
+      (if (and (eq nil symbol_data)
+               (eq nil options.path)
+               (eq nil options.filename)
+               (eq nil options.content))
+          (console.log "Selection cancelled")
+          (progn
+             (= target_container (or (and (== starting_layout target_layout)
+                                          options.control_to_replace  ;; first check easy thing
+                                          (== current_layout (get_current_layout_control)) ;; then the hard thing
+                                          options.control_to_replace) ;; then return the control to replace
+                                     (and target_layout.options.last_focus_id
+                                        (get_control_by_id target_layout.options.last_focus_id))
+                                     *last_focus*
+                                     (default_focus)))
+             
+             ;(log "new_buffer: target_container: " target_container.name (prop (get_current_layout_control) `name))
+             (when target_ns
+                (= target_env (-> Environment `get_namespace_handle symbol_data.namespace)))
+             (when (and target_env (eq nil (resolve_path symbol_data.path target_env.global_ctx.scope)))
+                (make_path symbol_data.path target_env.global_ctx.scope ""))
+             (= new_control
+                (if (== extension `dom)
+                    (DOM_editor (+ { rules: [ `*markdown_rules* ]
+                                           hide_control_bar: false
+                                           debug: false }
+                                   options))
+                    (text_editor (+ { name: (if symbol_data.path
+                                                (last symbol_data.path)
+                                                nil)
+                                           namespace: target_ns
+                                           path_namespace: target_ns
+                                           path: symbol_data.path
+                                           mode: options.mode }
+                                    options ))
+                    ))
+             (cond
+                (is_top_control? target_container)
+                (container_view_operation "split_right"
+                                          (first (-> target_container `controls))
+                                          new_control)
+                else
+                (progn
+                   (swap_control target_container
+                                 new_control)))
+             (sleep 0.1)
+             (set_focus_to new_control))))
    {
      `description: (+ "Opens a new editor, if possible, in the currently focused control.  If necessary, it may "
                       "split the view to the right for the new editor.  If no options are provided, the user "
@@ -19965,6 +19970,8 @@
     (if is_served?
        ["Open File" edit_file ]
        [])
+    ["Open Symbol" (fn ()
+                      (new_buffer))]
     
     (if (resolve_path [ `get ] *last_focus*) 
         ["--" nil]

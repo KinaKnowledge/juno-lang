@@ -81,7 +81,7 @@ The Seedling IDE environment provides menu facilities to save the *full IDE envi
 
 ##### How to Save The Full State
 
-To initiate an full image export from the browser, visit the menu items under *File->Browser Environment*.  If your Seedling Environment is being hosted by a Juno server environment, you can select *Bundle Application To Host* and, after selecting a name, the current environment image will be saved to the remote system and accessible via the `/env/name-of-environment.html` path. To build and download the saved image as opposed to storing it on the server, click `Bundle Application and Download`.  This will download the application to the configured downloads folder of the browser you are running in.  If at a later time you want to run the saved image from a server, just copy the application to the `/environments` folder of the hosting Juno server environment.
+To initiate an full image export from the browser, visit the menu items under *File->Browser Environment*.  If your Seedling Environment is being hosted by a Juno server environment, you can select *Bundle And Save Current State* and, after selecting a name, the current environment image will be saved to the remote system and accessible via the `/env/name-of-environment.html` path. To build and download the saved image as opposed to storing it on the server, click `Bundle Application and Download`.  This will download the application to the configured downloads folder of the browser you are running in.  If at a later time you want to run the saved image from a server, just copy the application to the `/environments` folder of the hosting Juno server environment.
 
 ##### How to Save A Named Layout
 

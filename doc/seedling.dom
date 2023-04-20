@@ -65,9 +65,17 @@
   (pre { style: "min-height: 2.4ch" }
        "(http/start)")
   (div {} "This will start the listener and the services, which by default starts on port 56432.  ")
+  (div {} "Note that the listener will use a temporary certificate in order to setup an HTTPS connection and you will have to tell your browser that it is OK to connect. If you wish to start the listener without TLS and use plain HTTP, use: ")
+  (pre { style: "min-height: 2.4ch" }
+       "(http/start { use_TLS: false })")
+  (div {} "Starting without HTTPS has some disadvantages in terms of permissions allowed by the browser, so it is recommended to use HTTPS for the server if it is serving connections directly.")
   (div {} (br {})) (div {} (b {} "Step 3: Open the Application"))
-  (div {} "(http/open_browser)")
-  (div {} (br {})) (div {} (br {})) (div {} (h3 {} "Overview "))
+  (div {} "To open the application use your browser to connect to: https://localhost:56432/env/seedling.html. ")
+  (div {} "On Linux and macOS you can open a browser window directly from the Juno Server REPL by typing:")
+  (pre { style: "min-height: 2.4ch" }
+       "(http/open_browser)")
+  (div {} "This will open a new browser window with the Seedling IDE.")
+  (div {} (br {})) (div {} (h3 {} "Developing With Seedling"))
   (div {} "Developing with Seedling differs from the traditional bifurcated approach of coding a program distinct from the running of the program.   Instead, the development process is integrated within the running environment.  Starting at the \"top level\", or global environment, the programmer can create and manipulate various scopes and closures locally and remotely.  This is done within buffers, which can represent files, or memory locations accessed as symbols or paths into structures.  It can be done via the REPL, or with programmatic means.  The environment is live - and the programmer chisels and shapes it, all the while using it.  In this regard, Seedling is similar to other Lisp machine like environments such as Emacs, where program state and function can be manipulated via Emacs Lisp.  It is also similar to a spreadsheet, where the data and the formulas to manipulate that data intermingle.  Just like the spreadsheet saves its state, so does Seedling, as a single HTML file.  At the time of writing, the total Seedling IDE is a roughly 5.5MB HTML file in size at the initial build, uncompressed. ")
   (div {} "Seedling itself is developed in this way.   As a given feature, such as a function or control, is developed, evaluated, tested and used, eventually it is added to an initial image files, which constitutes the source code to this IDE. When the IDE is rebuilt from the sources, the new feature becomes part of the initial starting image.  If all works, then the rebuilt environment is committed to source control along with the source files used to construct it.")
   (div {} "The idea here is that there is less of a decoupling between the programmer and their program state.  The programmer is inside the program: building, inspecting and using.   From time to time, or as a direct objective, they can \"peel off\" a subset of the environment, as a stand alone program.  The \"peel-off\" may not contain any editors, or other non-requirements, and just be a stand alone application containing just HTML, JavaScript, CSS, and data structures, not the full IDE.  Or somewhere in between.  ")
@@ -198,15 +206,7 @@
          "env_bank")
        (span { style: "" }
              " function specifically.  "))
-  (div {} (span { style: "" }
-          (br {})))
-  (div {} (span { style: "" }
-          (br {})))
-  (div {} (br {})) (div {} (br {})) (div { class: "" }
-       (h3 { class: "" }
-           (br {}))
-       (h3 { class: "" }
-           (br {}))
+  (div {} (br {})) (div { class: "" }
        (h3 { class: "" }
            "Components and Architecture"))
   (div {} "Seedling is meant to be hacked on, modified, customized and changed to meet the goals of the user.  The entire code base is open source, and highly introspective.  The following diagram provides a high level map of the system, with each layer generally dependent on the layer below it.  ")
@@ -299,7 +299,7 @@
           " ")
        "The most common architectural component in the Seedling environment are controls, which encapsulate scope and function.  Controls are objects that follow a specific structure: they are typically plain objects, which expose functions and data structures that share a common scope.  Similar to a Class definition, they are simpler constructs and do not use inheritance.  They do adhere to a specific interface which provides a set of functions that are used by various facilities to manage them and the data they contain.  They can be serialized into a JSON representation, placed in storage, and then rehydrated later, reviving them.  Each major component in Seedling is a type of control.  In Figure 1, the major controls are listed in the row \"IDE Specific Controls\".   ")
   (div {} "Controls are instantiated by calling a constructor function, which sets up the initial instantiated closure that encapsulates a series of related functions and data structures.  The return value of the constructor function is an object that contains a series of key/values that expose or call into functions that are within the closure.  Here is an example of a simple control being constructed and then a tour of its interface. ")
-  (div {} (b {} "Step 1: Instantiation")
+  (div {} (br {})) (div {} (b {} "Step 1: Instantiation")
        " ")
   (div {} "To instantiate a control, we call the construction function.  In this example, we are going to use the "
        (code {} "panel")
@@ -505,7 +505,7 @@
          "defcontrol")
        (span {} " ")
        "macro.  ")
-  (div {} (b {} "Step 2: Placement"))
+  (div {} (br {})) (div {} (b {} "Step 2: Placement"))
   (div {} (span { style: "" }
           "Once a control is constructed it can be placed in the interface.  The typical way, if not using the exposed UI features in the File menu is to use the ")
        (code { spellcheck: "false"
@@ -538,7 +538,7 @@
        " "
        ".")
   (div {} "At this point the control should be accessible within the user interface.")
-  (div {} (b {} "Step 3: Initialization"))
+  (div {} (br {})) (div {} (b {} "Step 3: Initialization"))
   (div { class: "" }
        "Prior to use, the control\'s "
        (code { spellcheck: "false"
@@ -749,10 +749,10 @@
   (div {} (div {} (span {} "This is now in a quoted Lisp form ready for evaluation.  Thus completes the life cycles for the controls."))
        (div {} "For more information on serialization and building images see "
             (code { spellcheck: "false"
-                    class: ""
-                    style: "" }
+                    class: "juno-type-function"
+                    style: "cursor:pointer"
+                    onclick: (javascript "async function() {\n    return await (await Environment.get_global(\"edit_file\"))({\n        filename:\"doc/building_images.md\"\n    })\n}")}
               "building_images.md")
             (span { style: "" }
                   " .  "))
-       (div {} (br {})) (div {} (br {})) (p {} (p {} (div {} "Components and Architecture, Editor, REPL, Controls, Exporting, Importing, Documentation")
-               (div {} (br {}))))))
+       (p {} (p {} (div {} (br {})) (div {} (br {}))))))
