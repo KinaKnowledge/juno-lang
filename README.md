@@ -12,25 +12,36 @@ The language has a browser-based IDE called Seedling that brings the ability to 
 
 After cloning the repository, or downloading a release, to get started with the command line, make sure you have Deno installed, which is a dependency for running Juno at this point.
 
-From the project root directory run the init script:
-```
-lib/juno js/juno.js
-```
-
-Or, directly run it from Deno:
+From the project root directory the environment can be started by entering:
 ```
 deno run js/juno.js
 ```
+This will start the environment with minimal permissions.  For accessing restricted resources you will be prompted for access permissions.  To run the Juno IDE you will need read, write, net and run permissions:
+
+```
+deno run --allow-read --allow-write --allow-net --allow-run js/juno.js
+```
+
+Alternatively, you can use `--allow-all` for full access.
+
 The above will load into the REPL with a ready to go environment.
 
-The init script `lib/juno` can be invoked without an image, which will load an empty environment with only the core symbols and an empty `user` namespace:
+To use the Seedling IDE for the Juno language, start the Seedling services:
+
+```
+(http/start)
+```
+
+Point your preferred browser to the URL: [https://localhost:56432/env/seedling.html](https://localhost:56432/env/seedling.html).
+
+In Linux and macOS, the init script `lib/juno` can be invoked without an image, which will load an empty environment with only the core symbols and an empty `user` namespace:
 ```
 lib/juno 
 ```
 
-The `bin/` directory contains any compiled executables.  To make a compiled executable for you operating platform from the currently running image:
+The `bin/` directory contains any compiled executables.  To make a compiled executable for your operating platform from the currently running image:
 ```
-shell$ lib/juno js/juno.js
+shell$ deno run --allow-run js/juno.js
 
 Juno 2023.01.18.12.50  (c) 2022, Kina, LLC
 [user] λ-> (sys/compile_executable)
@@ -39,6 +50,7 @@ Juno 2023.01.18.12.50  (c) 2022, Kina, LLC
 
 shell$ bin/juno
 ```
+
 For more information on building images and compilation, see [Building Images](doc/building_images.md).
 
 For more information on how to use the language see [Language Tutorial](doc/tutorial.md).
