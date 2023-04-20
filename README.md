@@ -164,17 +164,17 @@ Saving "images" of the Lisp environment has been around for a while. Juno shares
 
 ### Getting Familiar with the Juno Language
 
-Juno is like other Lisps that use lexical scoping and follows the syntax of Common Lisp where possible and is oriented around functions and closures and is homoiconic in which code and data are represented in the same form.  These are called *S-Expressions*, short for symbolic expression.  S-Expressions can be in the form of a singular value, called an *atom*, defined as *x*, or a composite value defined as `(x . y)` where *x* and *y* are S-Expressions themselves.  
+Juno is like other Lisps that use lexical scoping and follows the syntax of Common Lisp where possible and is oriented around functions and closures and is homoiconic in which code and data are represented in the same form.  These are called *S-expressions*, short for symbolic expression.  S-expressions can be in the form of a singular value, called an *atom*, defined as *x*, or a composite value defined as `(x . y)` where *x* and *y* are S-expressions themselves.  
 
 Other types of programming languages have notions of *statements*, which act on the environment in some fashion, such as modifying values or evaluating a condition but don't have a return value, and *expressions*, which generally return a value.  The specific language syntax determines where expressions and statements can be used.  
 
-In Lisp, a most basic S-Expression is called an `atom`, which is any object that is not a composite type, such as an array or object.  Since Juno doesn't have the traditional cons-cells that traditional Lisps such as Common Lisp have, the distinction is not as crisp.  Nevertheless, they are analogous to the basic values in Juno, which mirror the JSON primitives:
+In Lisp, a most basic S-expression is called an `atom`, which is any object that is not a composite type, such as an array or object.  Since Juno doesn't have the traditional cons-cells that traditional Lisps such as Common Lisp have, the distinction is not as crisp.  Nevertheless, they are analogous to the basic values in Juno, which mirror the JSON primitives:
 
 ```
 true false 12345 "majordomo" `majordomo
 ```
 
-By themselves, atoms are only so useful, but provide the logical and semantic foundations for more complex S-Expressions. 
+By themselves, atoms are only so useful, but provide the logical and semantic foundations for more complex S-expressions. 
 
 #### Quoting
 
@@ -202,14 +202,14 @@ Function
 String
 ```
 
-We can also quote S-Expressions that are composite in form, where multiple S-Expressions are part of the same quoted form.  In this case, we can construct a data structure via a quoted S-Expression:
+We can also quote S-expressions that are composite in form, where multiple S-expressions are part of the same quoted form.  In this case, we can construct a data structure via a quoted S-expression:
 
 ```
 [user] λ-> `("Mary" "Jones" (123 "Main Street"))
 [ "Mary", "Jones", [ 123, "Main Street" ] ]
 ```
 
-The above quoted S-Expression resolved to a nested array structure.
+The above quoted S-expression resolved to a nested array structure.
 
 In Juno you can also quote object forms:
 
@@ -270,6 +270,8 @@ Let's take that last example one step further by adding a conditional operator:
 [user] λ-> (if (contains? "Hello" ["Hello" "World"]) "Greetings" "Goodbye")
 Greetings
 ```
+In the above, the conditional `if` expression returned the "Greetings" string since the `contains?` form returned true.  If it returned false, the "Goodbye" string would of been returned.
+
 Note that in Juno notation, it is idiomatic, but not required, to use brackets on arrays that don't contain operators, and parenthesis on arrays that do.  Therefore, we wrote the `contains?` form with parenthesis and the `["Hello" "World"]`` array with brackets.  Forms typically can take up multiple lines which make for easier reading.  The newline character is considered whitespace and is ignored.
 
 ```
@@ -278,9 +280,9 @@ Note that in Juno notation, it is idiomatic, but not required, to use brackets o
     "Goodbye")
 ```
 
-Programs are built out of S-Expressions.
+The above S-expression contains multiple S-expressions in a *nested* form.  The evaluation occurs depth first, left to right.  In the above, the `"Hello"` is first evaluated, and the `["Hello" "World"]` arguments are evaluated second.  Then, once the arguments have been evaluated, the `contains?` function is called with the two arguments, and returns true or false. Next, the `if` operator is called with the result of the `contains?` call.  The `if` operator is actually known as a `special` operator, because the forms that are dependedent on the true/false test aren't evaluated until the outcome of the test form is known.  Special operators are crucial to the language and each has a their own rules on how they behave and act on the Lisp environment.  If `if` was not a special form, then both the true and the false forms would be evaluated prior to calling the `if`, which would not be correct.  Therefore, the branching logic is evaluated only after the test logic and we gain conditional flow control.  
 
-S-Expressions can be very useful for allowing the concise notation of logic that isn't polluted by the constraints of a language syntax.  For example, in the following snippet from a function, the `if` S-Expression returns a value based on previously passed options to the function (which is not shown):
+Nested S-expressions are very useful and allow us to express complicated logical structures including conditional flows.  S-expressions can be very useful for allowing the concise notation of logic that isn't polluted by the constraints of a language syntax.  For example, in the following snippet from a function, the `if` S-expression returns a value based on previously passed options to the function (which is not shown):
 
 ```
 (let
@@ -292,8 +294,41 @@ S-Expressions can be very useful for allowing the concise notation of logic that
            ""))
    ...
 ```
-                   
-Types in Juno are aligned with types in JavaScript.  
+
+#### Types
+
+Types in Juno are aligned with types in JavaScript.  If you are familiar with JavaScript, that knowledge carries over into the Juno Lisp world. 
+
+> In JavaScript, a truthy value is a value that is considered true when encountered in a Boolean context. All values are truthy unless they are defined as falsy. 
+
+From [MDN](https://developer.mozilla.org/en-US/docs/Glossary/Truthy).  
+
+There is one difference that between Juno and Javascript and that is the number 0.  In Juno, the value 0 is considered to be `true` when evaluated with `if`, `and*` or `or*`.  However, using 0 in a regular `and` expression (which leverages the `&&` JavaScript operator) will resolve to false.  This is due to legacy compatibility needs.  In practice it is not something that causes heartache, but it is something to be aware of.  
+
+In the following listing, the values on the left, and their respective type are all considered true.
+
+```
+{}         object true
+[]         array  true
+0          Number true
+"0"        String true
+"false"    String true
+Infinity   Number true
+3.14       Number true
+-0.0       Number true
+(new Date) Date   true
+```
+
+False (or falsy) values are as as follows:
+
+```
+false      Boolean   false
+nil        null      false
+undefined  undefined false
+NaN        Number    false
+""         String    false
+```
+
 
 ### Going Further
 
