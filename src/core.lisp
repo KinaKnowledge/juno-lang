@@ -988,7 +988,7 @@
    })
 
 
-(defun type (x)
+(defun_sync type (x)
     (cond
         (== nil x) "null"
         (== undefined x) "undefined"
