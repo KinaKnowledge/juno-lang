@@ -582,9 +582,15 @@ The `defconst` macro uses `defglobal` under the hood, and you'll see that there 
 
 If an attempt is made to change the value a TypeError is thrown indicating that an attempt was made to change a constant.  We can use `setq` to try and change the value.  This will result in an error:
 
-`(setq +root_folder+ "/new_folder")`
-
-A TypeError will be thrown.
+```
+[user] λ-> (setq +root_folder+ "/new_folder")
+[ERROR]:  {
+  error: "TypeError",
+  message: "Assignment to constant variable +root_folder+",
+  expanded_source: '(setq +root_folder+ "/new_folder")\n',
+  compiled: [AsyncFunction (anonymous)]
+}
+```
 
 The ability to store metadata as part of a symbol's definition provides a structured way of documenting what things are around for.  All global symbols will have metadata, and most global symbols have descriptive metadata.  Try ```(describe `let)```.  You will see the metadata for the symbol `let`.
 

@@ -1,7 +1,7 @@
 // Source: environment.lisp  
-// Build Time: 2023-04-21 07:09:26
-// Version: 2023.04.21.07.09
-export const DLISP_ENV_VERSION='2023.04.21.07.09';
+// Build Time: 2023-04-21 07:55:31
+// Version: 2023.04.21.07.55
+export const DLISP_ENV_VERSION='2023.04.21.07.55';
 
 
 
@@ -2690,7 +2690,6 @@ export async function init_dlisp(Environment)  {
                                                                 })()),compiled:compiled['1']
                                                             };
                                                             ;
-                                                            console.log("Syntax Error: ",details);
                                                             await async function(){
                                                                 e["details"]=details;
                                                                 return e;

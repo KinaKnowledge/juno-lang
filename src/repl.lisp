@@ -69,7 +69,7 @@
       (defglobal $$ nil)
       (defglobal $$$ nil)
       (if (== outstream Deno.stdout)
-          (console.log "\nJuno" Environment.build_version " (c) 2022, Kina, LLC"))
+          (console.log "\nJuno" Environment.build_version " (c) 2023, Kina, LLC"))
       (try
          (Deno.addSignalListener `SIGINT sigint_handler)
          (catch Error (e)
