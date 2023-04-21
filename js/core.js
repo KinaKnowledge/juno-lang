@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2023-04-19 16:32:37
-// Version: 2023.04.19.16.32
-export const DLISP_ENV_VERSION='2023.04.19.16.32';
+// Build Time: 2023-04-21 07:09:26
+// Version: 2023.04.21.07.09
+export const DLISP_ENV_VERSION='2023.04.21.07.09';
 
 
 
@@ -753,20 +753,22 @@ await Environment.set_global("define_env",async function(...args) {
 },{ "eval_when":{ "compile_time":true
 },"name":"define_env","macro":true,"fn_args":"[\"&\" defs]","description":["=:+","define_env is a macro used to provide a dual definition on the top level: it creates a symbol via defvar in the ","constructed scope as well as placing a reference to the defined symbol in the scope object."],"usage":["definitions:array"],"tags":["environment","core","build"],"requires":["slice","push","as_lisp","is_object?","add"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 });
-await Environment.set_global("type",async function(x) {
-    return await async function(){
-        if (check_true ((null===x))) {
-            return "null"
-        } else if (check_true ((undefined===x))) {
-            return "undefined"
-        } else if (check_true ((x instanceof Array))) {
-            return "array"
-        } else {
-            return typeof x
-        }
-    } ()
-},{ "name":"type","fn_args":"(x)","usage":["value:*"],"description":"returns the type of value that has been passed.  Deprecated, and the sub_type function should be used.","tags":["types","value","what"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
-});
+await (async function(){
+    return  Environment.set_global("type",function(x) {
+        return   (function(){
+            if (check_true ((null===x))) {
+                return "null"
+            } else if (check_true ((undefined===x))) {
+                return "undefined"
+            } else if (check_true ((x instanceof Array))) {
+                return "array"
+            } else {
+                return typeof x
+            }
+        } )()
+    },{ "name":"type","fn_args":"(x)","usage":["value:*"],"description":"returns the type of value that has been passed.  Deprecated, and the sub_type function should be used.","tags":["types","value","what"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+})
+})();
 await (async function(){
     return  Environment.set_global("destructure_list",function(elems) {
         let idx;
@@ -4477,16 +4479,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__309=async function(req) {
                                             {
-                                                let _expr_49707;
+                                                let _expr_30756;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_49707=await (async function(){
+                                                _expr_30756=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req,name) 
                                                 })();
-                                                req_sym=(_expr_49707 && _expr_49707["0"]);
-                                                req_ns=(_expr_49707 && _expr_49707["1"]);
-                                                explicit=(_expr_49707 && _expr_49707["2"]);
+                                                req_sym=(_expr_30756 && _expr_30756["0"]);
+                                                req_ns=(_expr_30756 && _expr_30756["1"]);
+                                                explicit=(_expr_30756 && _expr_30756["2"]);
                                                 if (check_true ((req_ns&& await (await Environment.get_global("not"))((req===symname))&& await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(req,invalids))))){
                                                     {
                                                         if (check_true (await (await Environment.get_global("not"))((req_ns===name)))){

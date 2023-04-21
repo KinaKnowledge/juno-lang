@@ -162,7 +162,9 @@ Saving "images" of the Lisp environment has been around for a while. Juno shares
   - Perhaps you just have a browser.  Build your data structure, save it off from time to time as an HTML file.  When you are ready to work on it again, open the HTML file again.
   - Save your browser based environment image to javascript
 
-### Getting Familiar with the Juno Language
+## Getting Familiar with the Juno Language
+
+*☞ For the following section, the Juno REPL is used to illustrate the examples.  You can also use the Seedling IDE as well.  If you are using Seedling, use `Shift-Enter` to evaluate the examples in the REPL.*
 
 Juno is like other Lisps that use lexical scoping and follows the syntax of Common Lisp where possible and is oriented around functions and closures and is homoiconic in which code and data are represented in the same form.  These are called *S-expressions*, short for symbolic expression.  S-expressions can be in the form of a singular value, called an *atom*, defined as *x*, or a composite value defined as `(x . y)` where *x* and *y* are S-expressions themselves.  
 
@@ -498,78 +500,63 @@ Symbols are names that reference values within the environment.  Symbols are use
 
 Symbols have a distinct representation in JSON form.  In JSON, the binding marker `=:` is prefixed to a string, as in `"=:birthdate"`, whereas in Juno notation, the word `birthdate` without quotes around it signifies that it is a symbol.
 
-We can define symbols at the REPL by using the `defglobal` operator.
-
+Symbols are defined by using the `defglobal` operator.  The naming convention for global symbols follows the Common Lisp convention, where if you are defining a global *value*, the symbol is surrounded by asterisks, such as `*my_pi*`.  This isn't a hard rule, just a means 
+to conveniently identify by sight the scope of the symbol.  If the global symbol refers to an operation of some sort, don't use asterisks.
 ```
-[user] λ-> (defglobal my_pi 3.1415927)
+[user] λ-> (defglobal *my_pi* 3.1415927)
 3.1415927
 ```
 
-We can retrieve this value by referencing the unquoted symbol name: 
+Values are retreived by referencing the unquoted symbol name: 
 
 ```
-[user] λ-> my_pi
+[user] λ-> *my_pi*
 3.1415927
 ```
 We can use our newly defined symbol in forms and S-expressions:
 ```
-[user] λ-> (Math.pow (* my_pi 5) 2)
-246.74011731733225
+[user] λ-> (* *my_pi* (Math.pow 5 2))
+78.5398175
 ```
-We can use our symbol wherever we need to reference our value.
+Our defined symbol can be used wherever we need to reference our value.
 ```
-[user] λ-> (subtype my_pi)
+[user] λ-> (subtype *my_pi*)
 Number
 ```
 Another item about symbols is that they contain metadata, which we can see when we use the `describe` function.  Notice that since we don't want the symbol evaluated, we quote it when providing it to `describe`.
 
 ```
-[user] λ-> (describe `my_pi)
+[user] λ-> (describe `*my_pi*)
 {
   namespace: "user",
-  name: "my_pi",
+  name: "*my_pi*",
   type: "Number",
   requires: [],
   externals: [],
   source_name: "anonymous"
 }
 ```
+
 Describe will return an object that *describes* properties of our defined symbol. This is called the symbol's *metadata*.
 
-We can use describe to find out *the what, where and why* of a symbol.  We can add our own metadata to our symbol when we define it as part of our system's documentation.  Lets make another symbol, π, and add a description to it.
+We can use describe to find out *the what, where and why* of a symbol.  We can add our own metadata to our symbol when we define it as part of our system's documentation.  Lets redo our symbol, `*my_pi*`, and add a description to it.
 
 ```
-[user] λ-> (defglobal π 3.1415927 { description: "The ratio of the circumference of any circle to the diameter of that circle." })
+[user] λ-> (defglobal *my_pi* 3.1415927 { description: "The ratio of the circumference of any circle to the diameter of that circle." })
 3.1415927
-[user] λ-> (describe `π)
+[user] λ-> (describe `*my_pi*)
 {
   namespace: "user",
-  name: "π",
+  name: "*my_pi*",
   type: "Number",
   description: "The ratio of the circumference of any circle to the diameter of that circle.",
   source_name: "anonymous"
 }
-[user] λ-> (Math.pow (* π 5) 2)
-246.74011731733225
 ```
 
-Our description is now part of the symbol's metadata.
+Our description is now part of the symbol's metadata.  
 
-The ability to store metadata as part of a symbol's definition provides a structured way of documenting what things are around for.  All global symbols will have metadata, and most global symbols have descriptive metadata.  Try ```(describe `let)```.  You will see the metadata for the symbol `let`.
-
-
-
-#### Scope
-
-When symbols are created, they are assigned a specific scope in which they can be referenced.  There are two main types of scopes in Juno, global and lexical.  Simply, global symbols can be referenced across the Environment in which they have been assigned.  Once a global symbol is defined in an Environment, it will be accessible in the Environment until it is either deleted by an `undefine` operation, the Environment is destroyed, or it is *shadowed* by a lexical symbol which has the same name as the global symbol.  Per unenforced convention, global variables in Juno are surrounded by a the `*` character, such as in `*env_config*`.
-
-In the following example, the symbol `*my_data*` is allocated and assigned a value at the global level:
-
-```
-(defglobal *my_data* [ 0 20 15 19 8 239 85 ])
-```
-
-The symbol `*my_data*` is now able to be referenced from anywhere in the local Environment.
+*☞ If you are in the IDE, you can also use the `?` macro on a symbol for a formatted display of a symbol's metadata.  With the `?` macro, you don't have to quote the symbol. E.g. (? let)*
 
 Global values can also be created as constants, using the `defconst` operator.  Like globals, they follow a naming convention where the name is wrapped in the `+` character, as in `+root_folder+`.  Here is an example of defining a global constant:
 
@@ -579,19 +566,41 @@ Global values can also be created as constants, using the `defconst` operator.  
 
 When they are described they are marked as a constant:
 ```
-{ namespace: "user"
-  name: "+root_folder+"
-  type: "String"
-  requires: []
-  source_name: "anonymous"
-  constant: true }
+[user] λ-> (describe `+root_folder+)
+{
+  namespace: "user",
+  name: "+root_folder+",
+  type: "String",
+  requires: [],
+  externals: [],
+  source_name: "anonymous",
+  constant: true
+}
 ```
 
-If an attempt is made to change the value a TypeError is thrown indicating that an attempt was made to change a constant.  This is an error:
+The `defconst` macro uses `defglobal` under the hood, and you'll see that there is a key called `constant` which is set to true.  This indicates to the system that the symbol is a constant.
+
+If an attempt is made to change the value a TypeError is thrown indicating that an attempt was made to change a constant.  We can use `setq` to try and change the value.  This will result in an error:
 
 `(setq +root_folder+ "/new_folder")`
 
 A TypeError will be thrown.
+
+The ability to store metadata as part of a symbol's definition provides a structured way of documenting what things are around for.  All global symbols will have metadata, and most global symbols have descriptive metadata.  Try ```(describe `let)```.  You will see the metadata for the symbol `let`.
+
+#### Scope
+
+When symbols are created, they are assigned a specific scope in which they can be referenced.  There are two main types of scopes in Juno, global and lexical.  Simply, global symbols can be referenced across the Environment in which they exist.  Once a global symbol is defined in an Environment, it will be accessible in the Environment until it is either deleted by an `undefine` operation, the Environment is destroyed, or it is *shadowed* by a lexical symbol which has the same name as the global symbol.  Per unenforced convention, global variables in Juno are surrounded by a the `*` character, such as in `*env_config*`.
+
+In the following example, the symbol `*my_data*` is allocated and assigned a value at the global level:
+
+```
+(defglobal *my_data* [ 0 20 15 19 8 239 85 ])
+```
+
+The symbol `*my_data*` is now able to be referenced from anywhere in the local Environment.
+
+
 
 
 ### Going Further
