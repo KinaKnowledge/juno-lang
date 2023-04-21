@@ -500,8 +500,7 @@ Symbols are names that reference values within the environment.  Symbols are use
 
 Symbols have a distinct representation in JSON form.  In JSON, the binding marker `=:` is prefixed to a string, as in `"=:birthdate"`, whereas in Juno notation, the word `birthdate` without quotes around it signifies that it is a symbol.
 
-Symbols are defined by using the `defglobal` operator.  The naming convention for global symbols follows the Common Lisp convention, where if you are defining a global *value*, the symbol is surrounded by asterisks, such as `*my_pi*`.  This isn't a hard rule, just a means 
-to conveniently identify by sight the scope of the symbol.  If the global symbol refers to an operation of some sort, don't use asterisks.
+Symbols are defined by using the `defglobal` operator.  The naming convention for global symbols follows the Common Lisp convention, where if you are defining a global *value*, the symbol is surrounded by asterisks, such as `*my_pi*`.  This isn't a hard rule, just a means to conveniently identify by sight the scope of the symbol.  If the global symbol refers to an operation of some sort, don't use asterisks.
 ```
 [user] λ-> (defglobal *my_pi* 3.1415927)
 3.1415927
@@ -596,7 +595,7 @@ The ability to store metadata as part of a symbol's definition provides a struct
 
 #### Scope
 
-When symbols are created, they are assigned a specific scope in which they can be referenced.  There are two main types of scopes in Juno, global and lexical.  Simply, global symbols can be referenced across the Environment in which they exist.  Once a global symbol is defined in an Environment, it will be accessible in the Environment until it is either deleted by an `undefine` operation, the Environment is destroyed, or it is *shadowed* by a lexical symbol which has the same name as the global symbol.  Per unenforced convention, global variables in Juno are surrounded by a the `*` character, such as in `*env_config*`.
+When symbols are created, they are assigned a specific scope in which they can be referenced.  There are two main types of scopes in Juno, *global* and *lexical*.  Simply, global symbols can be referenced from any context within the Environment in which they exist.  Once a global symbol is defined in an Environment, it will be accessible in the Environment until it is either deleted by an `undefine` operation, the Environment is destroyed, or it is *shadowed* by a lexical symbol which has the same name as the global symbol.  Per unenforced convention, values that are non-operators in Juno are surrounded by a the `*` character, such as in `*env_config*`.  Global functions, macros and special operators should not be surrounded with asterisks.
 
 In the following example, the symbol `*my_data*` is allocated and assigned a value at the global level:
 
@@ -604,10 +603,60 @@ In the following example, the symbol `*my_data*` is allocated and assigned a val
 (defglobal *my_data* [ 0 20 15 19 8 239 85 ])
 ```
 
-The symbol `*my_data*` is now able to be referenced from anywhere in the local Environment.
+The symbol `*my_data*` is now able to be referenced from anywhere in the local Environment for as long as it is defined.  
 
+However, this is not always what we want.  In fact, if we stuffed everything into global scope, we would run into trouble, because as our program or model became larger, we would have collisions in terms of values and there would be no way to manage information and names to a particular execution context.  
 
+To solve this, *lexical* scope is used.  Lexical scope allows symbols to be only available and have meaning in a particular code block they are defined in, plus any sub-blocks contained by the block in which they are defined.  A code block is a section of code that both aggregates and limits logic and memory visibility.  If you are familiar with JavaScript, this is accomplished by placing expressions and statements between an opening bracket, `{`, and a closing bracket, `}`.  So for example: 
 
+```javascript
+{
+    let a=5;    // outer block
+    {
+        let b=10;     // inner block
+        console.log(a,b)
+    }
+}
+5 10
+```
+In the above `a` is accessible to both the outer and inner blocks, and `b` is only accessible in the inner block.  If you tried to access `b` in the outer block, you would encounter an error, because `b` is only visible within the inner block.  Unlike a global symbol, once execution passes outside of their respective blocks, the symbols `a` and `b` are no longer available.  
+
+Juno works the same.  We can define a `block`, define symbols within that block, *and as long as we are evaluating code within that block, those symbols will be able to be referenced.*  This is key: outside of the block the symbols and their values are inaccessible.  However, execution can *also return* to that block and those symbols are accesible again with whatever values they last were assigned.  Lexical scoping as a feature is very useful, and vital for functions, where values can be passed to them as arguments, those values can be used by the function during evaluation, along with any internal values needed by the function.  We can be sure that, if we defined those internal values lexically, that they will be the values that we assigned to them.
+
+Here is an example of a lexically bound value in Juno:
+
+```
+(progn
+   (defvar abc 123)
+   (+ abc 456))
+```
+The value `579` is returned.
+
+The `progn` special operator defines a new scoped block, executes the contained S-expressions sequentially and returns the value of the last S-expression to the caller.  The `defvar` special operator allocates a new symbol called `abc`, and assigns it the value `123`.  The symbol `abc` is then used in an operation and the value is returned from the `progn` block.  We could have another nested `progn` block after the `defvar` form as a sub-block, *but contained within the parent `progn`*, and the symbol `abc` will be available in that sub-block.
+
+While the above form can be used to define symbols lexically, it is much more common to use the `let` special operator, which is the primary way to create new *lexical* bindings.  Using let, we will redo our above example:
+
+```
+(let
+   ((abc 123))
+   (+ abc 456))
+```
+This will return the value of `579` like above.  Outside of the `let` block, the symbol abc is undefined, inside it is equal 123.  The syntax of `let` is important to understand.  If you are in the IDE, you can see reference information for let by typing `(? let)`.  
+
+The syntax for let can look complicated if you are unfamiliar with lisp syntax generally, but it really isn't.  There are *two* mandatory sections to `let`.  After the operator symbol `let`, the first argument is an array, which is used to define the initial symbol names and their values.  We associate the symbols and their values in an array format as well, so we have a nested array as a first argument to let:
+
+```
+[[symbol1_name symbol1_value]
+ [symbol2_name symbol2_value]
+ ...
+ [symbolN_name symbolN_value]]
+```
+
+In the above, the `((abc 123))` is the first argument to let and is called the *allocation form*. Symbols are defined and allocated values.  
+
+The second section is the *evaluation block*, which acts like the `progn` section above. The remaining arguments given to the `let` are in this section.  All symbols defined in the allocation form are available and initialized and ready to use. S-expressions are evaluated sequentially and, just like `progn`, the final value is returned to the caller.  
+
+We can nest `let`s inside of `let`s and we can even put them in the allocation section.  
 
 ### Going Further
 
