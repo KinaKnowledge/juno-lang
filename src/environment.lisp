@@ -1816,7 +1816,16 @@
                                `include_source: false }
                     `features: []
                     `build: (javascript DLISP_ENV_VERSION)
-                    `imports: {} }))
+                    `imports: {} })
+               (set_prop Environment.definitions
+                  `*env_config*
+                  {
+                    `description: (+ "The *env_config* symbol provides a central place to store "
+                                     "metadata and settings relating to the configuration and " 
+                                     "contents of the Juno environment.  There should be one "
+                                     "`*env_config*` per instance and it should be in the "
+                                     "`core` namespace.")
+                    }))
             
             ;; returns the current namespace
             
