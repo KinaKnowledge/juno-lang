@@ -1653,7 +1653,7 @@
                                                       `expanded_source: (pretty_print (detokenize precompiled_assembly))
                                                       `compiled: compiled.1
                                                       })
-                                                 (log "Syntax Error: " details)
+                                                 ;(log "Syntax Error: " details)
                                                  (set_prop e
                                                     `details
                                                     details))
