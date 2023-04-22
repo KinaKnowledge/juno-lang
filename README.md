@@ -58,11 +58,11 @@ For more information on how to use the language see [Language Tutorial](doc/tuto
 
 ## About Juno
 
-Juno as a Lisp straddles two worlds.  It is built to easily leverage JavaScript environments and libraries with the composability and expressiveness of Lisp.  JavaScript is preserved in terms of logical operators, the native types, exceptions, asynchronous functions, arrow functions, Promises, import/export, generators and the like.  Juno doesn't have different language constructs, and this makes it easy to access and work with JavaScript libraries and functions.  In fact you can inline javascript code as part of your Lisp forms.
+Juno as a Lisp straddles two worlds.  It is built to easily leverage JavaScript environments and libraries with the composability and expressiveness of Lisp.  JavaScript is preserved in terms of logical operators, the native types, exceptions, asynchronous functions, arrow functions, Promises, import/export, generators and the like.  Juno doesn't have different language constructs, and this makes it easy to access and work with JavaScript libraries and functions.  In fact you can inline JavaScript code as part of your Lisp forms.
 
 As a Lisp, where possible, Juno follows Common Lisp naming conventions such as `defun` or `defmacro`.  There are some exceptions, such as the predicate names, which by convention end with a question mark (?).  Ultimately the code being produced is JavaScript, and so certain design decisions have been made in order to better fit into the JavaScript world.  For example, there are no `CONS` cells and therefore no classical list traversal.  However, the lack of these structures doesn't meaningfully impact the user or design experience.  Instead, arrays act as the primary sequence container.  The `push` function appends to an array, vs. prepending to a list.  The operators `first` and `rest` take the place of `CAR` and `CDR`.  Juno is case sensitive and uses `snake_case` idiomatically.  You can use hyphenated names, but these will be sanitized for JavaScript language rules with underscores replacing the hyphens.  Here is an example of Juno:
 
-```clojure
+```
 ;; Define the factorial function
 (defun factorial (n)
   (cond
@@ -81,7 +81,7 @@ As a Lisp, where possible, Juno follows Common Lisp naming conventions such as `
 
 Juno is both a Lisp dialect and environment.  The lisp engine works on JSON as an input and manipulates the tree as a JSON representation, and returns a JSON structure as output.  This means the Object { } structure is a first class citizen.  Therefore this is completely legal out of the box:
 
-```clojure
+```
 (setq record
       { name: (name user)
         date: (new Date)
@@ -160,27 +160,60 @@ Saving "images" of the Lisp environment has been around for a while. Juno shares
   - Add a Domain Specific Language that makes working with the model or information easier
   - Deliver the model and information via HTML and/or JSON services.
   - Perhaps you just have a browser.  Build your data structure, save it off from time to time as an HTML file.  When you are ready to work on it again, open the HTML file again.
-  - Save your browser based environment image to javascript
+  - Save your browser based environment image to JavaScript
 
 ## Getting Familiar with the Juno Language
 
-*☞ For the following section, the Juno REPL is used to illustrate the examples.  You can also use the Seedling IDE as well.  If you are using Seedling, use `Shift-Enter` to evaluate the examples in the REPL.*
+*☞ For the following section, the Juno REPL is used to illustrate the examples. You can also use the Seedling IDE as well. If you are using Seedling, use `Shift-Enter` to evaluate the examples in the REPL.*
 
-Juno is like other Lisps that use lexical scoping and follows the syntax of Common Lisp where possible and is oriented around functions and closures and is homoiconic in which code and data are represented in the same form.  These are called *S-expressions*, short for symbolic expression.  S-expressions can be in the form of a singular value, called an *atom*, defined as *x*, or a composite value defined as `(x . y)` where *x* and *y* are S-expressions themselves.  
+### Syntax of Juno
+
+The syntax of Lisp, and Juno, is very minimalistic. There aren't many rules. The syntax is `prefix` notation, where the operator comes first.  Here is an example:
+
+```
+(+ 1 2 3)
+```
+
+The above example expresses that we want to add together the numbers 1, 2 and 3 and return the result. The parenthesis indicate that we wish to perform an operation. The `+` is called the *operator*, which indicates the action we want to take, and the numbers 1, 2 and 3 are the values to be passed to the operator, which are called the *arguments*.  There can be any number of arguments, or no arguments provided to the operator at all.  
+
+So translating the above to the JavaScript form we get:
+
+```javascript
+1+2+3
+```
+So the evaluation rule is:
+```
+(operator argument argument ... argument)
+```
+where the `...` above indicates that there can be any number of arguments.  
+
+The combination of a parenthesis combined with an operator and arguments is called a *form* in Lisp languages.  
+
+Each argument itself could be another form:
+
+```
+(* 2 (+ 3 4))
+```
+
+In this example, the `(+ 3 4)` is evaluated to `7` which then is multiplied by `2` to yield `14` as the result.  
+
+That's the syntax.  The simplistic syntax results in an amazing flexibility of expression and composability.  To the Lisp beginner, this may not be immediately apparent (it wasn't to me!).  After practice and more understanding, the beauty of expressing logic in this manner will become increasingly clear.
+
+Juno, like other Lisps, is *homoiconic*.  This means code and data are represented in the same form.  These are called *S-expressions*, short for symbolic expression.  S-expressions can be in the form of a singular value, called an *atom*, defined as *x*, or a composite value defined as `(x . y)` where *x* and *y* are S-expressions themselves.  
 
 Other types of programming languages have notions of *statements*, which act on the environment in some fashion, such as modifying values or evaluating a condition but don't have a return value, and *expressions*, which generally return a value.  The specific language syntax determines where expressions and statements can be used.  
 
-In Lisp, a most basic S-expression is called an `atom`, which is any object that is not a composite type, such as an array or object.  Since Juno doesn't have the traditional cons-cells that traditional Lisps such as Common Lisp have, the distinction is not as crisp.  Nevertheless, they are analogous to the basic values in Juno, which mirror the JSON primitives:
+In Lisp, a most basic S-expression is called an `atom`, which is any object that is not a composite type, such as an array or object.  Since Juno doesn't have the traditional cons cells that traditional Lisps such as Common Lisp have, the distinction is not as crisp.  Nevertheless, they are analogous to the basic values in Juno, which mirror the JSON primitives.  The following are examples of atoms:
 
 ```
 true false 12345 "majordomo" `majordomo
 ```
 
-By themselves, atoms are only so useful, but provide the logical and semantic foundations for more complex S-expressions. 
+By themselves, atoms are only so useful, but provide the logical and semantic foundations for more complex S-expressions.   Atoms, and the structures they are present in, are evaluated by operators to perform computation.  
 
 #### Quoting
 
-Note the last example above has a back-tick mark, which is considered *quoting*.  Quoting  turns off evaluation and returns the value as a literal.  In Juno, as data is represented in JSON, the is returned as a string.   Atoms, when quoted, return themselves.  We can test this by evaluating them using the `==` operator in the Juno REPL:
+Note the last example above has a back-tick mark, which is called *quoting*.  Quoting  turns off evaluation and returns the value as a literal.  Atoms, when quoted, return themselves.  We can test this by evaluating them using the `==` operator in the Juno REPL. In the below example we are testing if two values are equal to each other.  
 
 ```
 [user] λ-> (== `1234 1234)
@@ -195,23 +228,23 @@ true
 false
 ```
 
-As you can see, the final example above isn't an atom.  This is because a quoted Date resolves to the literal "Date" and the symbol Date resolves to the JavaScript `Date` function.  This can be shown by:
+As you can see, the final example returned false, because it's quoted value is *not* equal to the unquoted value.  So `Date` isn't an atom.  This is because a quoted Date resolves to the literal "Date" and the symbol Date resolves to the JavaScript `Date` function.  This can be shown:
 
 ```
-[user] λ-> (subtype Date)
-Function
-[user] λ-> (subtype `Date)
-String
+[user] λ-> (type Date)
+function
+[user] λ-> (type `Date)
+string
 ```
 
-We can also quote S-expressions that are composite in form, where multiple S-expressions are part of the same quoted form.  In this case, we can construct a data structure via a quoted S-expression:
+We can also quote S-expressions that are complex in form, where multiple S-expressions are part of the same quoted form.  In this case, we can construct a data structure via a quoted S-expression:
 
 ```
 [user] λ-> `("Mary" "Jones" (123 "Main Street"))
 [ "Mary", "Jones", [ 123, "Main Street" ] ]
 ```
 
-The above quoted S-expression resolved to a nested array structure.
+The above quoted S-expression evaluated to a nested array structure.
 
 In Juno you can also quote object forms:
 
@@ -234,7 +267,7 @@ What happens in the above cases when the above two examples are not quoted?
 
 It's the same output.  However there is a difference in what happened in under the hood.  In the latter cases, we submitted the input for evaluation, which means that the code was compiled and evaluated.  However, since the constructions were full of atoms, the result was the same.  
 
-Note that the back-tick form is shorthand for:
+The back-tick form is actually shorthand for the notation:
 
 ```
 (quote ...)
@@ -246,6 +279,15 @@ so our first expression could be re-written to be:
 [user] λ-> (quote ("Mary" "Jones" (123 "Main Street")))
 [ "Mary", "Jones", [ 123, "Main Street" ] ]
 ```
+
+Let's test this:
+
+```
+[user] λ-> (== `4 (quote 4))
+true
+```
+
+When writing source code, the back-tick is used most often, but there are reasons for using `quote`.  
 
 #### Operators
 
@@ -412,7 +454,7 @@ true
 true
 ```
 
-So arrays are considered objects, but objects are not arrays.  What about functions?  The `is_object?` is a predicate function, let's test it:
+So arrays are considered objects, but objects are not necessarily arrays.  What about functions?  The `is_object?` is a predicate function, let's test it:
 
 ```
 [user] λ-> (is_object? is_object?)
@@ -557,6 +599,8 @@ Our description is now part of the symbol's metadata.
 
 *☞ If you are in the IDE, you can also use the `?` macro on a symbol for a formatted display of a symbol's metadata.  With the `?` macro, you don't have to quote the symbol. E.g. (? let)*
 
+*☞ If you are unfamiliar with Lisp macros, don't worry.  Macros are similar to functions in the sense that they act as operators in a form, but they have some key differences which will be discussed later.  For now, think of them as operations that act on their arguments, just like a regular function does.*
+
 Global values can also be created as constants, using the `defconst` operator.  Like globals, they follow a naming convention where the name is wrapped in the `+` character, as in `+root_folder+`.  Here is an example of defining a global constant:
 
 ```
@@ -593,7 +637,9 @@ If an attempt is made to change the value a TypeError is thrown indicating that 
 
 The ability to store metadata as part of a symbol's definition provides a structured way of documenting what things are around for.  All global symbols will have metadata, and most global symbols have descriptive metadata.  Try ```(describe `let)```.  You will see the metadata for the symbol `let`.
 
-#### Scope
+*In the next section, it is recommended to use the Seedling IDE REPL if you are doing the examples, since the input will start to cover multiple lines.  It's easier to use multi-line input in the Seedling REPL.*
+
+### Scope
 
 When symbols are created, they are assigned a specific scope in which they can be referenced.  There are two main types of scopes in Juno, *global* and *lexical*.  Simply, global symbols can be referenced from any context within the Environment in which they exist.  Once a global symbol is defined in an Environment, it will be accessible in the Environment until it is either deleted by an `undefine` operation, the Environment is destroyed, or it is *shadowed* by a lexical symbol which has the same name as the global symbol.  Per unenforced convention, values that are non-operators in Juno are surrounded by a the `*` character, such as in `*env_config*`.  Global functions, macros and special operators should not be surrounded with asterisks.
 
@@ -643,7 +689,7 @@ While the above form can be used to define symbols lexically, it is much more co
 ```
 This will return the value of `579` like above.  Outside of the `let` block, the symbol abc is undefined, inside it is equal 123.  The syntax of `let` is important to understand.  If you are in the IDE, you can see reference information for let by typing `(? let)`.  
 
-The syntax for let can look complicated if you are unfamiliar with lisp syntax generally, but it really isn't.  There are *two* mandatory sections to `let`.  After the operator symbol `let`, the first argument is an array, which is used to define the initial symbol names and their values.  We associate the symbols and their values in an array format as well, so we have a nested array as a first argument to let:
+The syntax for let can look complicated if you are unfamiliar with lisp syntax generally, but it really isn't.  There are *two* mandatory sections to `let`.  After the operator symbol `let`, the first argument is an array, which is used to define the initial symbol names and their values.  We associate the symbols and their values in an array format as well, so we have a nested array as a first argument to `let`:
 
 ```
 [[symbol1_name symbol1_value]
@@ -652,12 +698,203 @@ The syntax for let can look complicated if you are unfamiliar with lisp syntax g
  [symbolN_name symbolN_value]]
 ```
 
-In the above, the `((abc 123))` is the first argument to let and is called the *allocation form*. Symbols are defined and allocated values.  
+In the above, the `((abc 123))` is the first argument to `let` and is called the *allocation form*. Symbols are defined and allocated values in the allocation form.    
 
-The second section is the *evaluation block*, which acts like the `progn` section above. The remaining arguments given to the `let` are in this section.  All symbols defined in the allocation form are available and initialized and ready to use. S-expressions are evaluated sequentially and, just like `progn`, the final value is returned to the caller.  
+The second section is the *evaluation block*, which acts like the `progn` section above. The remaining arguments given to the `let` are in this section.  All symbols defined in the allocation form are available and initialized and ready to use. S-expressions are evaluated sequentially and, just like `progn`, the final value is returned to the caller.  So in our example above, the `(+ abc 456)` form is in the evaluation block.  
 
-We can nest `let`s inside of `let`s and we can even put them in the allocation section.  
+Another `let` example that mirrors the initial JavaScript example above:
+
+```
+(let
+   ((a 5)) ; outer block allocation form
+   (let       ; start of outer evaluation block
+      ((b 10)) ; inner block allocation block
+      (console.log a b))) ; inner evaluation block
+```
+
+We don't need to just allocate static values in our allocation block, we can create functions as well with the `fn` operator:
+
+```
+(let
+  ((double_it (fn (x)   ; return twice the value of x
+                 (* x 2))))
+  (double_it 2)
+  (double_it 4)
+  (double_it 8))
+```
+
+If we evaluate the above, we get 16 back.  The values 4 and 8 are discarded.    This is because the calls to `double_it` are in the evaluation_block, which, like `progn`, only returns the last form's return value.  The evaluation_block is known to be an *implicit progn*, since it behaves just like we put a `progn` after the allocation block and put the calls to `double_it` inside that block.  
+
+If we wanted *all* our values back we could instead return an array, which would contain all our values:
+
+```
+(let
+  ((double_it (fn (x)   ; return twice the value of x
+                 (* x 2))))
+  [ (double_it 2)
+    (double_it 4)
+    (double_it 8) ])
+```
+
+Notice that the return value of the `let` evaluation block is now an array, because we have enclosed the block with brackets.  So we get back:
+
+```
+[ 4 8 16 ]
+```
+
+Remember that due to lexical scoping, our `double_it` function is only available in the `let`.  If we tried to access the `double_it` function from the REPL, we would get a ReferenceError, because the symbol woudn't be found.  The compiler will throw an error:
+```
+{ error: "ReferenceError"
+  source_name: "anonymous"
+  message: "compile: unknown/not found reference: double_it"
+  form: "double_it"
+  parent_forms: ["(double_it 2)"]
+  invalid: true }
+```
+
+We want to be able to access our function from anywhere, so we need a function defined in global scope.  Based on what we have learned so far, we could use `defglobal` in conjunction with `fn`:
+
+```
+(defglobal double_it (fn (x)
+                        (* x 2)))
+```
+
+Now at the REPL, we can access our function:
+
+```
+(double_it 10)
+20
+```
+
+The above definition of `double_it` is perfectly legal. But there is a more idiomatic way to do this using the `defun` macro, which is as follows:
+
+```
+(defun double_it (x)
+   (* x 2))
+```
+
+This method is the standard manner in which global functions are created.  Our function is missing a description, so let's add some metadata.
+
+```
+(defun double_it (x)
+   (* x 2)
+   {
+       description: "Given a value x, double it"
+       usage: ["x:number"]
+   })
+```
+
+In our `defun` call above, we've added an additional argument, which describes the use and purpose of the function.  When we describe our function we have:
+
+```
+{ namespace: "user"
+  name: "double_it"
+  type: "AsyncFunction"
+  fn_args: "(x)"
+  description: "Given a value x, double it"
+  usage: ["x:number"]
+  requires: []
+  externals: []
+  source_name: "anonymous" }
+```
+
+The `defun` call has actually transformed our code from the `defun` form into something very similar to our original global definition of `double_it`.  What was actually compiled was:
+
+```
+(defglobal double_it (fn (x)
+                        (* x 2))
+   (quote { name: "double_it"
+            fn_args: "(x)"
+            description: "Given a value x, double it"
+            usage: ["x:number"]}))
+```
+
+In Juno, and with other Lisp dialects as well, *macros* are merely functions that act on code *prior to compilation*.  They generally take un-evaluated lisp forms (or tree structures) as their arguments (in our case the `defun` form), and produce another piece of code as output.  That code is then compiled.  This is a very powerful tool that we can use to extend and enhance the features of the base language. 
+
+Another aspect of lexical scoping is that if the execution context *re-enters* a particular block, the available symbols in that block are available again.  This is a very useful property, and allows us to control and manage scope.  An example:
+
+```
+(defun running_average (max_size)
+   (let
+      ((accumulator []) ; where we will store our numbers
+       (average (fn (val)
+                   (progn
+                      (when (is_number? val)
+                         (push accumulator
+                            val)
+                         ;; if our accumulator has grown beyond size
+                         ;; remove the first value.
+                         (when (> (length accumulator) max_size)
+                            (take accumulator)))
+                      ;; return the average if we have values in our accumulator
+                      ;; otherwise return 0
+                      (if (> (length accumulator) 0)
+                          (/ (sum accumulator)
+                             (length accumulator))
+                          0)))))
+      ;; return the function
+      average))
+```
+
+Here, we defined a global function called `running_average`, which takes a single argument designating the maximum amount of values to store.  The function establishes a lexical scope via `let`, and defines an accumulator, which initially is an empty `array`, and a `function`, called `average`.  This function, when passed a numeric value, adds the value to the accumulator, calls the `sum` function to add up the values inside the array, and then divides by the length of the accumulator.  
+
+This function is different from our `double_it` function, because instead of returning a value such as the average, it instead *returns a function*, which is then subsequently called to maintain and return a running average.  If you are familiar with object oriented programming, `running_average` functions like a *constructor* and returns an instantiated object. Let's try it out.
+
+First we need to call our `running_average` function to dimension and create a specific running average 
+
+```
+(defglobal avg5 (running_average 5))
+```
+
+At this point we have created a new function called avg5 with an empty accumulator and limit of 5 values.  Let's see what happens when we call it:
+
+```
+(avg5 10)
+```
+The value `10` is returned.  This makes sense since we only have one value to average.  Let's call it again.
+
+```
+(avg5 0)
+```
+The value `5` is returned.  The value `0` was added to our accumulator, which already contained `10`. The average of `10` and `0` is `5`.  So, by calling into `avg5` we are accessing the previously established lexical scope of the `let`.  With lexical scope, we can return to previously established scope *by passing handles and accessors to that scope*.
+
+Let's add another item to our `avg5` scope:
+```
+(avg5 8)
+```
+We get `6` back, which is the average of the values `10`,`0`, and `8`.
+
+What happens when we don't pass anything to `avg5`?  What if our argument is effectively `undefined`?
+```
+(avg5)
+```
+We get `6` back, which is our current average.  
+
+So `avg5` provides a means to access various aspects of our scope, allowing us to modify and change values - effectively return back into the `let` scope.  The let has established a *closure*, which both the `accumulator` value and the `average` function are a part of.  
+
+You might be wondering what happens if we called running_average again.  Will we clobber our `avg5` closure?  
+
+```
+(defglobal avg2 (running_average 2))
+```
+Let's call our new `avg2` function:
+```
+(avg2 100)
+```
+We get 100 back.  Let's call `avg5` again:
+
+```
+(avg5)
+```
+We get `6` back.  So our `avg5` closure remains.  A new lexical scope was established when we called out `running_average` function.  
+
+Juno, and functional languages in general, leverage this feature a lot in order to provide a convenient means of representing state, and managing state in a controlled fashion.
+
+-------
 
 ### Going Further
 
-If you would like to learn more about Juno 
+At this point, we have covered the essentials of the language.  We can create and reference values via symbols and quoting, manage scope via closures and create functions.  With this foundation, you can create programs and access the resources of the language and the development environment.  
+
+If you would like to learn more about Juno, continue on to [Part 2](doc/tutorial_part_2.md).
+
