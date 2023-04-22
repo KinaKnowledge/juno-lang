@@ -185,6 +185,11 @@
 ;; placeholder - will be filled in by the control
 (defparameter kcom {})
 
+(defun populate_kcom ()
+   (= kcom
+      (to_object
+         (ev `(for (key (keys (prop *key_bindings* `global)))
+                   [key (first (split_by "|" (resolve_path [ `global key (user/get_operating_platform) ] *key_bindings*)))])))))
 
 (defun kcode (op)
    (aif (prop kcom op)
@@ -374,7 +379,7 @@
       (ev `(-> (get_control_by_name `*scratch*) `set ""))
       (split_horizontally)
       (ev `(-> (get_control_by_name `*scratch*) `set ";;This is a comment.\n\n(defun tester (a b)\n  ( + a b))\n\n(tester a b)\n"))
-      (ev `(send_keydown "Command-S"))
+      (kcode `save_file)
       (defvar s1opts (options_for_name "*scratch*"))
       (defvar s2opts (options_for_name "*scratch* - 2"))
       { `focused: (== (name_of (focused_control)) "*scratch* - 2")
@@ -943,7 +948,7 @@
 ;(save_of_symbol_for_multiple_buffers)
 
 ; (make_named_layout "Validations"
-;   (system_validations { `deploy: true `url: (+ "/env/seedling_build.html?theme=" (encodeURIComponent *env_config*.application.global_theme)) } )
+;   (system_validations {  `url: (+ "/env/seedling_build.html?theme=" (encodeURIComponent *env_config*.application.global_theme)) } )
 ;   {
     ;  `unmounted_source: true
     ;  })
