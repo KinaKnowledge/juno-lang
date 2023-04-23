@@ -507,6 +507,33 @@
           tags: [`iteration `generator `loop `flow `control ]
       }
       {
+          name: "create_namespace"
+          description: (+ "Given a name and an optional options object, creates a new namespace "
+                          "with the given name.<br><br>#### Options  <br><br>contained:boolean - If set to "
+                          "true, the newly defined namespace will not have visibility to other namespaces "
+                          "beyond \'core\' and itself.  Any fully qualified symbols that reference other "
+                          "non-core namespaces will fail.<br>serialize_with_image:boolean-If set to false, "
+                          "if the environment is saved, the namespace will not be included in the saved "
+                          "image file.  Default is true. ")
+          usage: ["name:string" "options:object"]
+          tags: [`namespace `scope `symbol `symbols `environment]
+      }
+      {
+          name: "delete_namespace"
+          description: (+ "Given a namespace name as a string, removes the designated namespace. "
+                          "If the namespace to be deleted is the active namespace, an EvalError "
+                          "will be thrown.")
+          usage: ["name:string"]
+          tags: [`namespace `scope `symbol `symbols `environment]
+      }
+      {
+          name: "set_namespace"
+          description: (+ "Sets the current namespace to the given namespace.  If the namespace "
+                          "given doesn't exist, an error will be thrown.")
+          usage: ["name:string"]
+          tags: [`namespace `scope `symbol `symbols `environment]
+      }
+      {
           name: "Environment"
           usage: []
           license:  (join "\n" 
@@ -3080,18 +3107,19 @@
      name   ;; just return
      (create_namespace name options)) ;; try and make it 
   {
-    usage: ["name:string" "options:object"]
     description: (+ "Given a name and an optional options object, creates a new namespace "
-                    "identified by the name argument.  If the options object is provided, the following keys are available:"
-                    "<br>"
-                    "ignore_if_exists:boolean:If set to true, if the namespace is already defined, do not return an error "
-                    "and instead just return with the name of the requested namespace. Any other options are ignored and "
-                    "the existing namespace isn't altered."
-                    "contained:boolean:If set to true, the newly defined namespace will not have visibility to other namespaces "
-                    "beyond 'core' and itself.  Any fully qualified symbols that reference other non-core namespaces will "
-                    "fail."
-                    "serialize_with_image:boolean:If set to false, if the environment is saved, the namespace will not be "
-                    "included in the saved image file.  Default is true.")
+                    "identified by the name argument.  If the options object is provided, the "
+                    "following keys are available:<br><br>#### Options "
+                    "<br><br>ignore_if_exists:boolean - If set to true, if the namespace is already "
+                    "defined, do not return an error and instead just return with the name of the "
+                    "requested namespace. Any other options are ignored and the existing namespace "
+                    "isn\'t altered.<br>contained:boolean - If set to true, the newly defined "
+                    "namespace will not have visibility to other namespaces beyond \'core\' and "
+                    "itself.  Any fully qualified symbols that reference other non-core namespaces "
+                    "will fail.<br>serialize_with_image:boolean-If set to false, if the environment "
+                    "is saved, the namespace will not be included in the saved image file.  Default "
+                    "is true. ")
+    usage: ["name:string" "options:object"]
     tags: ["namespace" "environment" "define" "scope" "context"]
    })
 
@@ -3408,14 +3436,19 @@
         `tags: ["hostname" "server" "environment"]
         }))
 
-(defmacro use_symbols (namespace symbol_list target_namespace)
+(defmacro core/use_symbols (namespace symbol_list target_namespace)
   (let
       ((acc [(quote progn)])       
        (nspace (if namespace
                  (deref namespace))
                (throw "nill namespace provided to use_symbols"))
        (nspace_handle nil)
+       (target_ns (if target_namespace
+                   (deref target_namespace)))
        (decs nil))
+      (when target_ns
+         (push acc
+            (quote (declare (namespace ,#target_ns)))))
     ;(assert (is_string? nspace))
     ;(assert (is_array? symbol_list) "invalid symbol list provided to use_symbols")
     (setq nspace_handle
@@ -3427,7 +3460,7 @@
                 (push acc `(defglobal ,#(deref sym)
                            ,#(+ "=:" nspace "/" (deref sym))
                           
-                           (to_object [[ `initializer `(pend_load ,#nspace ,#(or target_namespace (current_namespace)) ,#(deref sym) ,#(+ "=:" nspace "/" (deref sym)))]
+                           (to_object [[ `initializer `(pend_load ,#nspace ,#(or target_ns (current_namespace)) ,#(deref sym) ,#(+ "=:" nspace "/" (deref sym)))]
 				       `[ `require_ns  ,#nspace ]
                                        `[ `requires [,#(+ "" nspace "/" (deref sym)) ]]
                                        [ `eval_when ,#(or (and decs (prop decs `eval_when)) {}) ]]                       
@@ -3436,8 +3469,10 @@
   {
    `description: (+ "Given a namespace and an array of symbols (quoted or unquoted), "
                     "the macro will faciltate the binding of the symbols into the "
-                    "current namespace.")
-   `usage: [ "namespace:string|symbol" "symbol_list:array" "target_namespace?:string"]
+                    "current namespace. An optional target namespace can be provided "
+                    "as a third argument, otherwise the value in (current_namespace) "
+                    "is used.")
+   `usage: [ "namespace:string|symbol" "symbol_list:array" "target_namespace:?string|symbol"]
    `tags: [ `namespace `binding `import `use `symbols ]
    })
   
