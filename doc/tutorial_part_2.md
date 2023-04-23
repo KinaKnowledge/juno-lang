@@ -139,8 +139,27 @@ Symbols can be written as *fully-qualified* by using a `/` to indicate that the 
 
 A namespace can be defined with the `contained` options set to `true`, in which case the defined namespace will not be able to reference any other namespaces accept for itself and `core`, even if the symbol is fully-qualified.  This helps to ensure that boundaries are maintained between dependencies.
 
-When working with Juno via the REPL, there always is a currently active namespace, whose identifier can be accessed by calling the function `current_namespace`.   By default, the currently active namespace is `user`, which is a child of `core`.  The `user` namespace is unconstrained, and so can access symbols in other namespaces by fully qualifying the namespace of the desired symbol.  When a form is compiled, it is assigned to a namespace, which is typically the value of `current_namespace`.  If there is a toplevel declaration to the compiler that the form or expression is to be assigned a specific namespace, the compiler will target the specified namespace instead.  In each namespace, there is a value `*namespace*`, which reflects where the code has been compiled in.  Often this is different from the value returned from `current_namespace`.  Functions and scopes can determine what namespace they are assigned by referencing the value global namespace value `*namespace*`. 
+Within a running *Juno image*, which is defined as the `core` namespace plus all child namespaces, there is always a designated namespace that serves as a starting point for resolution of non-qualified symbols, called the current namespace.  This namespace represents the point at which symbol resolution should occur for certain activities, and for defining any new non-qualified symbols.  This starting namespace can be accessed by the function `current_namespace`.  By default, the current namespace on start up is `user`, which is a child of `core`.  The `user` namespace is uncontained, and so can access symbols in other namespaces by fully qualifying the namespace of the desired symbol.  
 
+Specifically, the `(current_namespace)` value is referenced by specific functions in core that need to operate on or reference non-qualified symbols in a child namespace:
+
+1. Imports of Lisp files that have not yet declared a namespace declaration.
+2. Macro expansion
+3. Dependency analysis 
+
+When a symbol or form is compiled, it is assigned to a namespace, which is typically the value of `current_namespace` if the symbols are non-qualified.  If there is a toplevel declaration to the compiler that the form or expression is to be assigned a specific namespace, the compiler will target the specified namespace instead.  In each namespace, there is a value `*namespace*`, which reflects what namespace the function has been installed to.  Often this is different from the value returned from `current_namespace`.  Functions and scopes can determine what namespace they are assigned by referencing the value global namespace value `*namespace*`.   
+
+The command line Juno REPL is tied to the `current_namespace` value.  If the namespace is changed via `set_namespace` command, or `use_ns` macro, the current target namespace will be changed, and this will be reflected in the name before the input prompt.  In this situation, there is only one connection to the system via the console.  
+
+There are also situations where there will be multiple connections to the running Juno image.  In this case, each connection will have its own context, and may be connected to different namespaces. In the Seedling IDE, and with remote REPL-like connections, there is a designated namespace for the connection, which may be different from the image-wide `current_namespace` value.  The IDE will display the namespace to which it is currently connected to via the title line of the specific control.  Requests for compilation will be presented to the connected namespace, and symbol resolution will be from the child namespace, and secondarily, from  `core`.  
+
+However, when a function bound within core must resolve non-qualfied symbols from a child namespace, the value from `current_namespace` will be consulted.  
+
+#### The Compilation/Evaluation Cycle
+
+When a Juno S-expression is to be evaluated, the text or JSON is presented to an `Environment` object.  Each `Environment` facilitates a namespace, either the `core` or a child.  The `Environment` object is the entry point for evaluation and interaction with Juno resources.  As mentioned above, each REPL connection can talk to a different Environment.  The symbol, `Environment` resolves to the current Environment that the REPL is connected to.  The `Environment` method `evaluate_local` is passed the S-expression and passes the S-expression and a reference to itself to the compiler, which will perform the translation from Juno to JavaScript and perform symbol resolution as required.  In most cases, global symbol references are compiled to dynamically resolve at runtime, such that if the dependency were to change, the changes would be reflected in the compiled code.  Once the S-expression has been turned into a JavaScript text, it is returned to the calling `Environment` object (or namespace), and a new JavaScript `Function` or `AsyncFunction` is created.  If the S-expression is determined to require global dependencies, the `Environment` object will be passed to the new JavaScript function and the function called, and the results returned.  The S-expression is always eventually evaluated within a JavaScript `Function` or `AsyncFunction` object. 
+
+#### Using Namespaces
 
 To get a list of all symbols in your current namespace, use the following:
 
@@ -150,7 +169,6 @@ This function will return an array of all global symbols in the namespace you ar
 
 `(core/symbols)`
 
-### Using Namespaces
 
 The function `defns` can be used to create a new namespace. 
 ```
@@ -208,7 +226,6 @@ If we don't wish to bind all missing symbols from a source namespace to our targ
 ```
 (use_symbols html [ button label ] )
 ```
-
 
 
 #### Symbol Initializers
