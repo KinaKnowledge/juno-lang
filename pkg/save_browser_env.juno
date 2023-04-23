@@ -5,10 +5,8 @@
 
 ;; Go to core since this is a branch-off...
 (declare (namespace "core"))
-       
-
-(set_namespace "core")
-
+ 
+;(set_namespace "core")      
 ;; Remove any namespaces we don't want to include 
 (when (contains? "tests" (namespaces))
   (delete_namespace "tests"))
@@ -133,7 +131,7 @@
   
    ;(console.log "NOT INCLUDING: ")
    ;(console.table (sort no_includes))
-
+  
   ;; save the image 
   (try
      (core/save_env { save_as: "js/juno_browser.js"
@@ -145,7 +143,7 @@
            (console.log "ERROR received from save_env the environment:" e)
            (throw e))))
      
-  (console.log "building standalone starter.html file..")
+  (console.log "building standalone starter.html file.." (current_namespace))
   
   (defglobal env {})
 

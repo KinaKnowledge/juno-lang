@@ -1150,7 +1150,11 @@
 (defglobal defmacro
    (fn (name lambda_list `& forms)
         (let ;; capture the arguments
-            ((macro_name name)
+            ((symdetails (decomp_symbol (if (starts_with? "=:" name)
+                                            (-> name `substr 2)
+                                            name)))
+             (macro_name symdetails.0)  ;; actual symbol name
+             (target_ns symdetails.1)
              (macro_args lambda_list)
              (macro_body forms)
              (final_form (last forms))
@@ -1164,9 +1168,7 @@
              (source_details 
                          (+ {
                                 `eval_when: { `compile_time: true  }
-                                `name: (if (starts_with? "=:" name)
-                                           (-> name `substr 2)
-                                           name)
+                                `name: macro_name
                                 `macro: true
                                 `fn_args: (as_lisp macro_args)
                                 ;`fn_body: (as_lisp macro_body)
@@ -1182,14 +1184,14 @@
          ;; add a destructuring_bind if we have a complex lambda list
          
          (if complex_lambda_list
-          `(defglobal ,#macro_name 
+          `(defglobal ,#name 
                   (fn (`& args)
                       (destructuring_bind ,#macro_args 
                                           args
                                           ,@macro_body))
                   (quote ,#source_details))
               
-          `(defglobal ,#macro_name 
+          `(defglobal ,#name 
                   (fn ,#macro_args
                       ,@macro_body)
                   (quote ,#source_details)))))
@@ -3650,8 +3652,8 @@
       (for (ns (namespaces))
          (unless (contains? ns namespace_order)
             (push namespace_order ns )))
-      (log "sort_dependencies: namespace order: " namespace_order)
-      (log "sort_dependencies: all namespaces: " (namespaces))
+      (log "sort_dependencies: namespace dependency order: " namespace_order)
+      ;(log "sort_dependencies: all namespaces: " (namespaces))
       
       { namespaces: namespace_order
                    symbols: ordered })

@@ -1322,7 +1322,7 @@
                         (and parent_environment
                            (> namespace_identity.length 1)
                            (not (== namespace_identity.0 namespace)))
-                        ;; pass it up...note that is we are a contained environment, our request will turn contained to true
+                        ;; pass it up...note that if we are a contained environment, our request will turn contained to true
                         (-> parent_environment `get_global namespace_identity.1 value_if_not_found suppress_check_external_env namespace_identity.0 comps (or contained
                                                                                                                                                               contained_req))
                         
@@ -1336,7 +1336,9 @@
                                    `get_global
                                    namespace_identity.1 value_if_not_found suppress_check_external_env namespace_identity.0 comps)
                                (do
-                                  (throw EvalError (+ "namespace " namespace_identity.0 " doesn't exist")))))
+                                  (if contained_req
+                                     (throw EvalError "calling non-core namespace from a contained namespace")
+                                     (throw EvalError (+ "namespace " namespace_identity.0 " doesn't exist"))))))
                         else
                         (do
                            
@@ -1455,7 +1457,7 @@
               `tags:["macro" "quote" "quotes" "desym" "compiler"]
               })
          
-         (env_log (defclog { `prefix: (+ "env" id) `background: "#B0F0C0" })
+         (env_log (defclog { `prefix: (+ namespace ":") `background: "#B0F0C0" })
                   {
                     `description: "The environment logging function used by the environment."
                     `usage: ["arg0:*" "argN:*"]
@@ -1688,6 +1690,8 @@
          (evaluate (fn (expression ctx opts)
                       (progn
                          (cond
+                            ;true
+                            ;(evaluate_local expression ctx opts)
                             (== namespace active_namespace)
                             (evaluate_local expression ctx opts)  ;; we by default use evaluate local
                             ;parent_environment
@@ -1830,7 +1834,8 @@
             ;; returns the current namespace
             
             (defvar current_namespace (function ()
-                                         active_namespace))
+                                         (progn
+                                            active_namespace)))
             
             (defvar create_namespace (fn (name options defer_initialization)
                                         (cond
@@ -1877,6 +1882,7 @@
                                         (throw EvalError (+ "namespace " name " doesn't exist"))
                                         else
                                         (do
+                                           (console.log "set_namespace: " name)
                                            (if (== name "core")
                                                (do
                                                   (= active_namespace "core"))
@@ -2123,7 +2129,7 @@
                             (reader (read_text_file  "./src/environment.lisp"))))
                    (target_insertion_path nil)  ;; where we inject our context into the source tree
                    (output_path nil))
-                  
+                  ;(env_log "sorted_dependencies: " sorted_dependencies)
                   (when (prop Environment.global_ctx.scope "*env_skeleton*")
                      (register_feature "*env_skeleton*"))
                   ;; construct our form by doing surgery on ourselves..
@@ -2139,14 +2145,14 @@
                   (when options.include_source
                      (= include_source true))
                   
-                  (env_log namespace "cloning: # children: " (length children))
-                  (env_log namespace "preserve_imports: " preserve_imports)
+                  (env_log  "cloning: # children: " (length children))
+                  (env_log  "preserve_imports: " preserve_imports)
                   (= exports (export_symbol_set (if options.do_not_include
                                                     { do_not_include: options.do_not_include })))
                   (= child_export_order (reduce (cname sorted_dependencies.namespaces)
                                            (unless (== cname "core")
                                               [cname (prop children cname)])))
-                  (console.log "save_env: child_export_order: " (each child_export_order `0))
+                  (env_log "save_env: child_export_order: " (each child_export_order `0))
                   
                   (= my_children
                      (to_object
@@ -2480,6 +2486,7 @@
             ;; and evaluate the child
             (when (and rehydrated_children
                        (is_object? (prop included_globals `children)))
+               (debug)
                ;(console.log "env: child load order: " included_globals.child_load_order)
                (for_each (childname (or included_globals.child_load_order []))
                   (when (prop included_globals.children childname)

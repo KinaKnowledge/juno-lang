@@ -1,7 +1,7 @@
 // Source: environment.lisp  
-// Build Time: 2023-04-21 07:55:31
-// Version: 2023.04.21.07.55
-export const DLISP_ENV_VERSION='2023.04.21.07.55';
+// Build Time: 2023-04-23 17:17:47
+// Version: 2023.04.23.17.17
+export const DLISP_ENV_VERSION='2023.04.23.17.17';
 
 
 
@@ -2166,8 +2166,13 @@ export async function init_dlisp(Environment)  {
                                                     })()
                                                 } else {
                                                     {
-                                                        throw new EvalError(("namespace "+ namespace_identity['0']+ " doesn't exist"));
-                                                        
+                                                        if (check_true (contained_req)){
+                                                            throw new EvalError("calling non-core namespace from a contained namespace");
+                                                            
+                                                        } else {
+                                                            throw new EvalError(("namespace "+ namespace_identity['0']+ " doesn't exist"));
+                                                            
+                                                        }
                                                     }
                                                 }
                                             }
@@ -2351,7 +2356,7 @@ export async function init_dlisp(Environment)  {
                     }()];
                     let env_log=await (async function(){
                          return await defclog({
-                            prefix:("env"+ id),background:"#B0F0C0"
+                            prefix:await add(namespace,":"),background:"#B0F0C0"
                         }) 
                     })();
                     ;
@@ -2999,6 +3004,7 @@ export async function init_dlisp(Environment)  {
                                         
                                     } else {
                                         {
+                                            await console.log("set_namespace: ",name);
                                             if (check_true ((name==="core"))){
                                                 {
                                                     active_namespace="core"
@@ -3572,8 +3578,8 @@ export async function init_dlisp(Environment)  {
                                 include_source=true
                             }
                         };
-                        await env_log(namespace,"cloning: # children: ",await length(children));
-                        await env_log(namespace,"preserve_imports: ",preserve_imports);
+                        await env_log("cloning: # children: ",await length(children));
+                        await env_log("preserve_imports: ",preserve_imports);
                         exports=await export_symbol_set(await (async function(){
                             if (check_true (options.do_not_include)){
                                 return {
@@ -3623,7 +3629,7 @@ export async function init_dlisp(Environment)  {
                             })();
                             return __collector
                         })();
-                        await console.log("save_env: child_export_order: ",await (async function(){
+                        await env_log("save_env: child_export_order: ",await (async function(){
                              return await (await get_global("each"))(child_export_order,0) 
                         })());
                         my_children=await to_object(await (async function(){
@@ -5238,6 +5244,8 @@ export async function init_dlisp(Environment)  {
                             };
                             if (check_true ((rehydrated_children&& (included_globals["children"] instanceof Object)))){
                                 {
+                                    debugger;
+                                    ;
                                     await (async function() {
                                         let __for_body__380=async function(childname) {
                                             if (check_true (included_globals.children[childname])){

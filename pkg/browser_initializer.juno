@@ -226,7 +226,7 @@
             
             (-> (get_by_id "lower_right_corner") `appendChild view)
             (-> view `animate [{ `easing: `ease-in }
-                               { `opacity: 1    `easing: `ease-out  `offset: 0.1 }
+                               { `opacity: 1 `easing: `ease-out `offset: 0.1 }
                                { `opacity: 1 `easing: `ease-out } ] 
                            { `duration: 3000 })
             
@@ -9852,7 +9852,8 @@
                                                          (dispatch_event { `command: "display_usage" `source: options.id `args: [active_lisp_operator] }))
                                                       (when options.on_new_lisp_operator
                                                          (options.on_new_lisp_operator active_lisp_operator))
-                                                      (console.log "find_active_lisp_operator: eval time: " (- (time_in_millis) stime) "ms")))
+                                                      (when (> __VERBOSITY__ 0)
+                                                         (console.log "find_active_lisp_operator: eval time: " (- (time_in_millis) stime) "ms"))))
                                                 (progn
                                                    (= active_lisp_operator nil)
                                                    (-> help_context_elem
