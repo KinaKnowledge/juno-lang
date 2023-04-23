@@ -727,3 +727,5 @@ We get 100 back.  Let's call `avg5` again:
 We get `6` back.  So our `avg5` closure remains.  A new lexical scope was established when we called out `running_average` function.  
 
 Juno, and functional languages in general, leverage this feature a lot in order to provide a convenient means of representing state, and managing state in a controlled fashion.
+
+Next: [Part 2 - Accessing JavaScript, Imports, Namespaces and Macros](tutorial_part_2.md)

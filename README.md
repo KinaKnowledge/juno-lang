@@ -896,5 +896,5 @@ Juno, and functional languages in general, leverage this feature a lot in order 
 
 At this point, we have covered the essentials of the language.  We can create and reference values via symbols and quoting, manage scope via closures and create functions.  With this foundation, you can create programs and access the resources of the language and the development environment.  
 
-If you would like to learn more about Juno, continue on to [Part 2](doc/tutorial_part_2.md).
+If you would like to learn more about Juno, continue on to [Part 2](doc/tutorial_part_2.md), Accessing JavaScript, Imports, Namespaces and Macros.
 
