@@ -590,6 +590,8 @@ Remember that due to lexical scoping, our `double_it` function is only available
   invalid: true }
 ```
 
+### Functions
+
 We want to be able to access our function from anywhere, so we need a function defined in global scope.  Based on what we have learned so far, we could use `defglobal` in conjunction with `fn`:
 
 ```
@@ -728,4 +730,4 @@ We get `6` back.  So our `avg5` closure remains.  A new lexical scope was establ
 
 Juno, and functional languages in general, leverage this feature a lot in order to provide a convenient means of representing state, and managing state in a controlled fashion.
 
-Next: [Part 2 - Accessing JavaScript, Imports, Namespaces and Macros](tutorial_part_2.md)
+Next: [Part 2 - Accessing JavaScript, Imports, Namespaces, Initializers, and Macros](tutorial_part_2.md)
