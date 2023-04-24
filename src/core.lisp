@@ -780,15 +780,21 @@
    `tags: ["define" "function" "synchronous" "toplevel" ]
    })
   
-(defun macroexpand (quoted_form)
+(defun core/macroexpand (quoted_form)
     (let
         ((macro_name (try
                         (-> quoted_form.0 `substr 2)
                         (catch Error (e)
                            (throw "macroexpand: unable to determine macro: is the form quoted?"))))
-         (working_env (-> Environment `get_namespace_handle (current_namespace)))
-         (meta (first (meta_for_symbol macro_name true))) ;; get the first namespace we find it in (should be either us or core))
-         (macro_func (-> working_env `get_global (+ meta.namespace "/" macro_name))))
+         (working_env nil)
+         (meta nil) 
+         (macro_func nil))
+        (= working_env (-> Environment `get_namespace_handle (current_namespace)))
+        (= meta (-> working_env `eval `(first (meta_for_symbol ,#macro_name true))))
+        (= macro_func (if meta.namespace 
+                          (-> working_env `get_global (+ meta.namespace "/" macro_name))
+                          (-> working_env `get_global macro_name)))
+        ;; get the first namespace we find it in (should be either us or core)))
         (if (and (is_function? macro_func)
                  (resolve_path [ `eval_when `compile_time ] meta))
             (progn
@@ -1876,57 +1882,59 @@
      })
 
 (defmacro use_quoted_initializer (`& forms)
-  (let
-      ((insert_initializer (fn (form)
-			       ;; the final form must be in the form of a (defglobal name value) or (defglobal name value { }) (defglobal name value (quote { } ))
-			       ;; the def- macros should all expand out into this architypal form..
-			       ;; if the meta isn't provided the metadata will be appended in.
-			       (progn
-				 (defvar meta (prop form 3))
-				 (if (eq nil (prop form 3))
-				     (= meta
-					(set_prop form
-						  3
-						  {})))
-				 				  
-				 (cond
-				  (and (is_array? meta)
-				       (is_object? (resolve_path [ 3 1 ] form)))
-				  (do
-				   (set_path [ 3 1 `initializer ] form [(quote quotel) `(try ,#form.2 (catch Error (e) e))])
-				   form)
-				  (is_object? meta)				  
-				  (do
-				      (set_prop form.3					   
-						`initializer [(quote quotel) `(try ,#form.2  (catch Error (e) e))])
-				      form)
-				  else
-				  (do
-				      (warn "use_quoted_initializer: cannot quote " (if (is_string? form.2) form.2 form " - cannot find meta form. Check calling syntax."))
-				      form)
-				     )))))
-   
-    (for_each (form forms)
-	      (do
-	       ;; make sure we are working with the form in it's expanded state.
-	       ;; this macro should be the calling form to defun, etc..
-	       (= form (macroexpand form))
-               (if (and (is_array? form)
-			(== form.0 (quote defglobal)))
-		   (do		    
-		    (insert_initializer form))
-		 form))))
-  {
-    `description: (+ "The macro `use_quoted_initializer` preserves the source form in the "
-                     "symbol definition object.  When the environment is saved, any source forms that "
-                     "wish to be preserved through the serialization process should be in the body of "
-                     "this macro.  This is a necessity for global objects that hold callable "
-                     "functions, or functions or structures that require initializers, such as things "
-                     "that connect or use environmental resources.  ")
-    `usage: ["forms:array"]
-    `tags: [`compilation `save_env `export `source `use `compiler `compile ]
-
-  })
+   (let
+      ((insert_initializer
+          (fn (form)
+             ;; the final form must be in the form of a (defglobal name value) or (defglobal name value { }) or (defglobal name value (quote { } ))
+             ;; the def- macros should all expand out into this architypal form..
+             ;; if the meta isn't provided the metadata will be appended in.
+             (progn
+                (defvar meta (prop form 3))
+                ;(console.log "insert_initializer: form: " (clone form))
+                ;(console.log "insert_initializer: meta: " (clone meta))
+                (if (eq nil (prop form 3))
+                    (= meta
+                       (set_prop form
+                          3
+                          {})))
+                (cond
+                   (and (is_array? meta)
+                        (is_object? (resolve_path [ 3 1 ] form)))
+                   (progn
+                      (set_path [ 3 1 `initializer ] form [(quote quotel) `(try (progn ,#form.2) (catch Error (e) e))])
+                      form)
+                   (is_object? meta)
+                   (progn
+                      ;(console.log "insert_initializer: setting initializer on " form.3)
+                      (set_prop form.3
+                         `initializer [(quote quotel) `(try (progn ,#form.2)  (catch Error (e) e))])
+                      form)
+                   else
+                   (progn
+                      (warn "use_quoted_initializer: cannot quote " (if (is_string? form.2) form.2 form " - cannot find meta form. Check calling syntax."))
+                      form)
+                   )))))
+      (for_each (form forms)
+         (progn
+            ;; make sure we are working with the form in it's expanded state.
+            ;; this macro should be the calling form to defun, etc..
+            (= form (macroexpand form))
+            (if (and (is_array? form)
+                     (== form.0 (quote defglobal)))
+                (progn
+                   (insert_initializer form))
+                form))))
+   {
+     `description: (+ "The macro `use_quoted_initializer` preserves the source form in the "
+                      "symbol definition object.  When the environment is saved, any source forms that "
+                      "wish to be preserved through the serialization process should be in the body of "
+                      "this macro.  This is a necessity for global objects that hold callable "
+                      "functions, or functions or structures that require initializers, such as things "
+                      "that connect or use environmental resources.  ")
+     `usage: ["forms:array"]
+     `tags: [`compilation `save_env `export `source `use `compiler `compile ]
+     
+     })
 	 
 	 
 	   
@@ -3438,61 +3446,67 @@
         `tags: ["hostname" "server" "environment"]
         }))
 
-(defmacro core/use_symbols (namespace symbol_list target_namespace)
-  (let
-      ((acc [(quote progn)])       
+(defmacro use_symbols (namespace symbol_list target_namespace)
+   (let
+      ((acc [(quote progn)])
        (nspace (if namespace
-                 (deref namespace))
+                   (deref namespace))
                (throw "nill namespace provided to use_symbols"))
        (nspace_handle nil)
        (target_ns (if target_namespace
-                   (deref target_namespace)))
+                      (deref target_namespace)))
        (decs nil))
       (when target_ns
          (push acc
             (quote (declare (namespace ,#target_ns)))))
-    ;(assert (is_string? nspace))
-    ;(assert (is_array? symbol_list) "invalid symbol list provided to use_symbols")
-    (setq nspace_handle
-          (-> Environment `get_namespace_handle nspace))
-    
-    (for_each (sym symbol_list)
-              (do
-                (= decs (prop nspace_handle.definitions (deref sym)))                
-                (push acc `(defglobal ,#(deref sym)
-                           ,#(+ "=:" nspace "/" (deref sym))
+      ;(assert (is_string? nspace))
+      ;(assert (is_array? symbol_list) "invalid symbol list provided to use_symbols")
+      (setq nspace_handle
+         (-> Environment `get_namespace_handle nspace))
+      
+      (for_each (sym symbol_list)
+         (progn
+            (= decs (prop nspace_handle.definitions (deref sym)))
+            (push acc `(defglobal ,#(deref sym)
+                          ,#(+ "=:" nspace "/" (deref sym))
                           
-                           (to_object [[ `initializer `(pend_load ,#nspace ,#(or target_ns (current_namespace)) ,#(deref sym) ,#(+ "=:" nspace "/" (deref sym)))]
-				       `[ `require_ns  ,#nspace ]
-                                       `[ `requires [,#(+ "" nspace "/" (deref sym)) ]]
-                                       [ `eval_when ,#(or (and decs (prop decs `eval_when)) {}) ]]                       
-                                 )))))
-    acc)
-  {
-   `description: (+ "Given a namespace and an array of symbols (quoted or unquoted), "
-                    "the macro will faciltate the binding of the symbols into the "
-                    "current namespace. An optional target namespace can be provided "
-                    "as a third argument, otherwise the value in (current_namespace) "
-                    "is used.")
-   `usage: [ "namespace:string|symbol" "symbol_list:array" "target_namespace:?string|symbol"]
-   `tags: [ `namespace `binding `import `use `symbols ]
-   })
+                          (to_object [[ `initializer `(pend_load ,#nspace ,#(or target_ns (current_namespace)) ,#(deref sym) ,#(+ "=:" nspace "/" (deref sym)))]
+                                      `[ `require_ns  ,#nspace ]
+                                      `[ `requires [,#(+ "" nspace "/" (deref sym)) ]]
+                                      [ `eval_when ,#(or (and decs (prop decs `eval_when)) {}) ]])))))
+      (push acc (length symbol_list))
+      acc)
+   {
+     `description: (+ "Given a namespace and an array of symbols (quoted or unquoted), "
+                      "the macro will faciltate the binding of the symbols into the "
+                      "current namespace. An optional target namespace can be provided "
+                      "as a third argument, otherwise the value in (current_namespace) "
+                      "is used.")
+     `usage: [ "namespace:string|symbol" "symbol_list:array" "target_namespace:?string|symbol"]
+     `tags: [ `namespace `binding `import `use `symbols ]
+     })
   
-(defun use_unique_symbols (namespace)
- (if (is_string? namespace)
-   (let
-       ((symlist (-> Environment `evaluate (+ "(" namespace "/symbols { `unique: true })"))))
-     (eval `(use_symbols ,#namespace ,#symlist))
-     (length symlist))
-   (throw EvalError "provided namespace must be a string"))
-  {
-   `description: (+ "This function binds all symbols unique to the provided "
-                    "namespace identifier into the current namespace. Returns "
-                    "the amount of symbol bound.")
-                    
-   `usage: ["namespace:string"]
-   `tags: [ `namespace `binding `import `use `symbols ]
-   })
+(defun use_unique_symbols (source_namespace target_namespace)
+   (if (is_string? source_namespace)
+       (let
+          ((symlist (-> Environment `evaluate (+ "(" source_namespace "/symbols { `unique: true })"))))
+          (if target_namespace
+             (unless (is_string? target_namespace)
+                (throw TypeError "use_unique_symbols: provided target_namespace must be a string")))
+          (console.log "target_namespace: " target_namespace)
+          (if (is_string? source_namespace)
+              (eval `(use_symbols ,#source_namespace ,#symlist ,#target_namespace))
+              (eval `(use_symbols ,#source_namespace ,#symlist)))
+          (length symlist))
+       (throw TypeError "provided source_namespace must be a string"))
+   {
+     `description: (+ "This function binds all symbols unique to the provided "
+                      "source_namespace identifier into the target_namespace "
+                      "if provided, otherwise places the symbols into the "
+                      "current namespace. Returns the amount of symbols bound.")
+     `usage: ["source_namespace:string" "target_namespace:?string"]
+     `tags: [ `namespace `binding `import `use `symbols ]
+     })
 
 
 (defun common_symbols ()
