@@ -16114,7 +16114,7 @@
             (push acc quoted_dom)))
       acc))
 
-(defparameter *markdown_rules*
+(defglobal *markdown_rules*
    {
      meta: {
          name: "markdown"
@@ -16234,6 +16234,7 @@
                       (selection nil)
                       (classes nil)
                       (id (gen_id "ins"))
+                      (quoted_display (quotel (fn (e) (display_documentation))))
                       (text nil)
                       (elem nil))
                      (if (and (starts_with? "`" last_word)
@@ -16259,9 +16260,9 @@
                             (= elem (get_by_id id))
                             (select_element elem)
                             (set_prop elem `style "")
+                            (push (last quoted_display) text)
                             (set_prop elem `onclick
-                                      (eval `(fn (e)
-                                                (display_documentation  ,#text))))
+                               (eval quoted_display))
                             ;(doc_exec `removeFormat)
                             (select_element (get_by_id (+ id "_post")))
                             (doc_exec `removeFormat)

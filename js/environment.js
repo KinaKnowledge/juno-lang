@@ -1,7 +1,7 @@
 // Source: environment.lisp  
-// Build Time: 2023-04-23 17:17:47
-// Version: 2023.04.23.17.17
-export const DLISP_ENV_VERSION='2023.04.23.17.17';
+// Build Time: 2023-04-24 15:48:35
+// Version: 2023.04.24.15.48
+export const DLISP_ENV_VERSION='2023.04.24.15.48';
 
 
 
@@ -3004,7 +3004,6 @@ export async function init_dlisp(Environment)  {
                                         
                                     } else {
                                         {
-                                            await console.log("set_namespace: ",name);
                                             if (check_true ((name==="core"))){
                                                 {
                                                     active_namespace="core"

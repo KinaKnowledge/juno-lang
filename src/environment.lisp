@@ -1317,6 +1317,7 @@
                       (`check_external_env (if suppress_check_external_env
                                                false
                                                check_external_env_default)))
+                     
                      (cond
                         ;; given a fully qualified name, if not us, pass it up
                         (and parent_environment
@@ -1882,7 +1883,6 @@
                                         (throw EvalError (+ "namespace " name " doesn't exist"))
                                         else
                                         (do
-                                           (console.log "set_namespace: " name)
                                            (if (== name "core")
                                                (do
                                                   (= active_namespace "core"))

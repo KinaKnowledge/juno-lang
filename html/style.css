@@ -1852,6 +1852,13 @@ li.juno-namespace {
   font-weight: bold;  
 }
 
+span.juno-current-system-namespace {
+  font-family: var(--main-mono-space);
+  color: var(--namespace-color);
+  border: 1px solid var(--namespace-color);
+  border-radius: 3px;
+}
+
 div.juno-symbol-browser {
   display: flex;
   align-content: flex-start;

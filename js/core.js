@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2023-04-23 17:17:47
-// Version: 2023.04.23.17.17
-export const DLISP_ENV_VERSION='2023.04.23.17.17';
+// Build Time: 2023-04-24 15:48:35
+// Version: 2023.04.24.15.48
+export const DLISP_ENV_VERSION='2023.04.24.15.48';
 
 
 
@@ -386,7 +386,7 @@ await Environment.set_global("defun_sync",async function(name,args,body,meta) {
 },{ "eval_when":{ "compile_time":true
 },"name":"defun_sync","macro":true,"fn_args":"(name args body meta)","description":["=:+","Creates a top level synchronous function as opposed to the default via defun, which creates an asynchronous top level function.","Doesn't support destructuring bind in the lambda list (args). ","Given a name, an argument list, a body and symbol metadata, will establish a top level synchronous function.  If the name is ","fully qualified, the function will be compiled in the current namespace (and it's lexical environment) and placed in the ","specified namespace."],"usage":["name:string","args:array","body:*","meta:object"],"tags":["define","function","synchronous","toplevel"],"requires":["add","unquotify","as_lisp"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 });
-await Environment.set_global("macroexpand",async function(quoted_form) {
+await Environment.set_global("core/macroexpand",async function(quoted_form) {
     let macro_name;
     let working_env;
     let meta;
@@ -403,9 +403,20 @@ await Environment.set_global("macroexpand",async function(quoted_form) {
         }
     }
 })();
+working_env=null;
+meta=null;
+macro_func=null;
 working_env=await Environment["get_namespace_handle"].call(Environment,await (await Environment.get_global("current_namespace"))());
-meta=await (await Environment.get_global("first"))(await (await Environment.get_global("meta_for_symbol"))(macro_name,true));
-macro_func=await working_env["get_global"].call(working_env,((meta && meta["namespace"])+ "/"+ macro_name));
+meta=await working_env["eval"].call(working_env,await (async function(){
+     return ["=:first",["=:meta_for_symbol",macro_name,true]] 
+})());
+macro_func=await (async function(){
+    if (check_true ((meta && meta["namespace"]))){
+        return await working_env["get_global"].call(working_env,((meta && meta["namespace"])+ "/"+ macro_name))
+    } else {
+        return await working_env["get_global"].call(working_env,macro_name)
+    }
+})();
 if (check_true ((macro_func instanceof Function&& await (await Environment.get_global("resolve_path"))(["eval_when","compile_time"],meta)))){
     {
         return await (async function(){
@@ -418,7 +429,7 @@ if (check_true ((macro_func instanceof Function&& await (await Environment.get_g
 } else {
     return quoted_form
 }
-},{ "name":"macroexpand","fn_args":"(quoted_form)","description":"Given a quoted form, will perform the macro expansion and return the expanded form.","usage":["quoted_form:*"],"tags":["macro","expansion","debug","compile","compilation"],"requires":["current_namespace","first","meta_for_symbol","is_function?","resolve_path"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},{ "name":"macroexpand","fn_args":"(quoted_form)","description":"Given a quoted form, will perform the macro expansion and return the expanded form.","usage":["quoted_form:*"],"tags":["macro","expansion","debug","compile","compilation"],"requires":["current_namespace","is_function?","resolve_path"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 });
 await Environment.set_global("macroexpand_all",async function(quoted_form) {
     return await (await Environment.get_global("detokenize"))(await (async function(){
@@ -1883,7 +1894,7 @@ await Environment.set_global("use_quoted_initializer",async function(...args) {
                     {
                         await (await Environment.get_global("set_path"))([3,1,"initializer"],form,await (async function(){
                              return ["=:quotel",await (async function(){
-                                 return ["=:try",(form && form["2"]),["=:catch","=:Error",["=:e"],"=:e"]] 
+                                 return ["=:try",["=:progn",(form && form["2"])],["=:catch","=:Error",["=:e"],"=:e"]] 
                             })()] 
                         })());
                         return form
@@ -1894,7 +1905,7 @@ await Environment.set_global("use_quoted_initializer",async function(...args) {
                             let __target_obj__121=(form && form["3"]);
                             __target_obj__121["initializer"]=await (async function(){
                                  return ["=:quotel",await (async function(){
-                                     return ["=:try",(form && form["2"]),["=:catch","=:Error",["=:e"],"=:e"]] 
+                                     return ["=:try",["=:progn",(form && form["2"])],["=:catch","=:Error",["=:e"],"=:e"]] 
                                 })()] 
                             })();
                             return __target_obj__121;
@@ -4135,7 +4146,7 @@ await Environment.set_global("hostname",async function() {
     return await Deno.hostname()
 },{ "name":"hostname","fn_args":"[]","description":"Returns the hostname of the system the environment is running on.","usage":[],"tags":["hostname","server","environment"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 });
-await Environment.set_global("core/use_symbols",async function(namespace,symbol_list,target_namespace) {
+await Environment.set_global("use_symbols",async function(namespace,symbol_list,target_namespace) {
     let acc;
     let nspace;
     let nspace_handle;
@@ -4262,25 +4273,41 @@ await Environment.set_global("core/use_symbols",async function(namespace,symbol_
         }return __array__281;
          
     })();
+    (acc).push(await (await Environment.get_global("length"))(symbol_list));
     return acc
 },{ "eval_when":{ "compile_time":true
-},"name":"use_symbols","macro":true,"fn_args":"(namespace symbol_list target_namespace)","description":["=:+","Given a namespace and an array of symbols (quoted or unquoted), ","the macro will faciltate the binding of the symbols into the ","current namespace. An optional target namespace can be provided ","as a third argument, otherwise the value in (current_namespace) ","is used."],"usage":["namespace:string|symbol","symbol_list:array","target_namespace:?string|symbol"],"tags":["namespace","binding","import","use","symbols"],"requires":["is_string?","starts_with?","push","current_namespace"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},"name":"use_symbols","macro":true,"fn_args":"(namespace symbol_list target_namespace)","description":["=:+","Given a namespace and an array of symbols (quoted or unquoted), ","the macro will faciltate the binding of the symbols into the ","current namespace. An optional target namespace can be provided ","as a third argument, otherwise the value in (current_namespace) ","is used."],"usage":["namespace:string|symbol","symbol_list:array","target_namespace:?string|symbol"],"tags":["namespace","binding","import","use","symbols"],"requires":["is_string?","starts_with?","push","current_namespace","length"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 });
-await Environment.set_global("use_unique_symbols",async function(namespace) {
-    if (check_true ((namespace instanceof String || typeof namespace==='string'))){
+await Environment.set_global("use_unique_symbols",async function(source_namespace,target_namespace) {
+    if (check_true ((source_namespace instanceof String || typeof source_namespace==='string'))){
         {
             let symlist;
-            symlist=await Environment["evaluate"].call(Environment,("("+ namespace+ "/symbols { `unique: true })"));
-            (await Environment.eval(await async function(){
-                return ["=:use_symbols",namespace,symlist]
-            }(),null));
+            symlist=await Environment["evaluate"].call(Environment,("("+ source_namespace+ "/symbols { `unique: true })"));
+            if (check_true (target_namespace)){
+                if (check_true (await (await Environment.get_global("not"))((target_namespace instanceof String || typeof target_namespace==='string')))){
+                    {
+                        throw new TypeError("use_unique_symbols: provided target_namespace must be a string");
+                        
+                    }
+                }
+            };
+            await console.log("target_namespace: ",target_namespace);
+            if (check_true ((source_namespace instanceof String || typeof source_namespace==='string'))){
+                (await Environment.eval(await async function(){
+                    return ["=:use_symbols",source_namespace,symlist,target_namespace]
+                }(),null))
+            } else {
+                (await Environment.eval(await async function(){
+                    return ["=:use_symbols",source_namespace,symlist]
+                }(),null))
+            };
             return await (await Environment.get_global("length"))(symlist)
         }
     } else {
-        throw new EvalError("provided namespace must be a string");
+        throw new TypeError("provided source_namespace must be a string");
         
     }
-},{ "name":"use_unique_symbols","fn_args":"(namespace)","description":["=:+","This function binds all symbols unique to the provided ","namespace identifier into the current namespace. Returns ","the amount of symbol bound."],"usage":["namespace:string"],"tags":["namespace","binding","import","use","symbols"],"requires":["is_string?","length"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+},{ "name":"use_unique_symbols","fn_args":"(source_namespace target_namespace)","description":["=:+","This function binds all symbols unique to the provided ","source_namespace identifier into the target_namespace ","if provided, otherwise places the symbols into the ","current namespace. Returns the amount of symbols bound."],"usage":["source_namespace:string","target_namespace:?string"],"tags":["namespace","binding","import","use","symbols"],"requires":["is_string?","not","length"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 });
 await Environment.set_global("common_symbols",async function() {
     let acc;
@@ -4512,16 +4539,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__309=async function(req) {
                                             {
-                                                let _expr_78750;
+                                                let _expr_38456;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_78750=await (async function(){
+                                                _expr_38456=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req,name) 
                                                 })();
-                                                req_sym=(_expr_78750 && _expr_78750["0"]);
-                                                req_ns=(_expr_78750 && _expr_78750["1"]);
-                                                explicit=(_expr_78750 && _expr_78750["2"]);
+                                                req_sym=(_expr_38456 && _expr_38456["0"]);
+                                                req_ns=(_expr_38456 && _expr_38456["1"]);
+                                                explicit=(_expr_38456 && _expr_38456["2"]);
                                                 if (check_true ((req_ns&& await (await Environment.get_global("not"))((req===symname))&& await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(req,invalids))))){
                                                     {
                                                         if (check_true (await (await Environment.get_global("not"))((req_ns===name)))){

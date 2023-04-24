@@ -754,5 +754,8 @@
                     onclick: (javascript "async function() {\n    return await (await Environment.get_global(\"edit_file\"))({\n        filename:\"doc/building_images.md\"\n    })\n}")}
               "building_images.md")
             (span { style: "" }
-                  " .  "))
-       (p {} (p {} (div {} (br {})) (div {} (br {}))))))
+                  " .  ")))
+  (div {} (span { style: "" }
+          (br {})))
+  (div {} (span { style: "" }
+          (br {}))))
