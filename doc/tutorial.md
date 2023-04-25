@@ -730,4 +730,11 @@ We get `6` back.  So our `avg5` closure remains.  A new lexical scope was establ
 
 Juno, and functional languages in general, leverage this feature a lot in order to provide a convenient means of representing state, and managing state in a controlled fashion.
 
+### Going Further
+
+At this point, we have covered the essentials of the language.  We can create and reference values via symbols and quoting, manage scope via closures and create functions.  With this foundation, you can create programs and access the resources of the language and the development environment.  
+
+If you would like to learn more about Juno, continue on to [Part 2](doc/tutorial_part_2.md), Accessing JavaScript, Imports, Namespaces, Initializers, and Macros.
+
+
 Next: [Part 2 - Accessing JavaScript, Imports, Namespaces, Initializers, and Macros](tutorial_part_2.md)
