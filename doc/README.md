@@ -1,5 +1,4 @@
 ## Juno Documentation
-----
 
 This is the documentation folder for the Juno language.  
 
