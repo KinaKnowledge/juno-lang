@@ -3324,12 +3324,6 @@
                                    [(+ (dtext "Save to") " " (last options.path))
                                     (fn (e) (request_save))]
                                    [])
-                               [(dtext "Split Vertically")
-                                (fn (e)
-                                   (split_editor `vertical)) ]
-                               [(dtext "Split Horizontally")
-                                (fn (e)
-                                   (split_editor `horizontal))]
                                [(dtext "Select Evaluator")
                                 user_select_evaluator]
                                (cond

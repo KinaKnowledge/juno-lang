@@ -885,6 +885,7 @@
                                                      `click
                                                      (fn ()
                                                         (progn
+                                                           (set_namespace "user")  ;; set the current namespace to user
                                                            (user/switch_to_new_layout "Frame 0")
                                                            (user/remove_named_layout "Validations")
                                                            (user/destroy_control (user/get_control_by_name "System Validations")))))

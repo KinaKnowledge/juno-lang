@@ -1807,7 +1807,7 @@
                                                 (-> it `remove)))))
                          
                          (declare (function resolver))
-                         (log "renaming editor" bbox)
+                         ;(log "renaming editor" bbox)
                          (cmenu_remove)
                          (sleep 0.01)
                          (-> (get_by_id "body")
