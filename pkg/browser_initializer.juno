@@ -46,8 +46,6 @@
                            active: {}
                            })
 
-
-
 (defvalue *main_menu* [])
 (defvalue *serialized_controls* [])
 (defparameter *tags_to_meta* {})
@@ -3881,7 +3879,7 @@
       (not (is_control? target_control))
       (progn
          (notify "set_focus_to: non-control as argument - error")
-         (log "set_focus_to: non-control as argument - error" (sub_type target_control))
+         ;(log "set_focus_to: non-control as argument - error" (sub_type target_control))
          (debug)
          false)
       (and (is_control? target_control )
@@ -6249,7 +6247,8 @@
                                           (== rval.rval "OK"))
                                      (progn
                                         (= rval rval.results)
-                                        (log "save_event_handler: saved remote file OK: " (clone rval))
+                                        (when (> __VERBOSITY__ 0)
+                                           (log "save_event_handler: saved remote file OK: " (clone rval)))
                                         (if (== rval.length 1)
                                             (publish_results (+ { `target: rval.0.filename `type: "filename" } rval.0 ))
                                             (progn
@@ -6267,7 +6266,8 @@
                                       (log "ERROR: save_event_handler: couldn't save path: values not matching: namespace: " control.options.namespace "path:" pathname )
                                       (throw TypeError "couldn't save to the local path - values not matching for path/namespace"))
                                    (progn
-                                      (log "save_event_handler: saved local path OK: " control.options.path_namespace pathname)
+                                      (when (> __VERBOSITY__ 0)
+                                         (log "save_event_handler: saved local path OK: " control.options.path_namespace pathname))
                                       (publish_results { `target: pathname `type: "path" `namespace: control.options.path_namespace }))))))
                                    
                                
@@ -6292,7 +6292,7 @@
                     (do_remote_save)
                     (throw ReferenceError "http_client is not a registered feature.")))
              (is_string? control.options.filename)
-             (throw Error "Not connected to a server - cannot save the remove file")
+             (throw Error "Not connected to a server - cannot save the remote file")
              
              control.options.path
              (progn
@@ -9941,7 +9941,7 @@
                                                                          (join "~" event_obj.args.0.target)
                                                                          (== event_obj.args.0.type "filename")
                                                                          event_obj.args.0.target)))
-                                 (log "editor: save_complete: " (clone event_obj))
+                                 ;(log "editor: save_complete: " (clone event_obj))
                                  (remove_class "juno-needs-save" title_span)
                                  (delete_prop options `create_mode)
                                  (= is_dirty? false)
@@ -10154,13 +10154,14 @@
                                          (-> editor `setValue (LZString.decompressFromBase64 options.content_compressed -1))
                                          (-> editor `setValue options.content -1))
                                      (= content options.content)
-                                     (alert_box "Warning: Using cached content"
-                                                (div { `style: "" }
-                                                     (dtext "The application isn't online, so the specified content cannot be fetched.")
-                                                     (dtext "The last stored value is being used, but this may not match the remote content.")
-                                                     (br)
-                                                     (dtext "Information loss could occur if this editor's contents are subsequently saved to the server.")
-                                                     (dtext "Be careful!")))
+                                     (if (get_default [ `application `offline_content_warning] )
+                                         (alert_box "Warning: Using cached content"
+                                                    (div { `style: "" }
+                                                         (dtext "The application isn't online, so the specified content cannot be fetched.")
+                                                         (dtext "The last stored value is being used, but this may not match the remote content.")
+                                                         (br)
+                                                         (dtext "Information loss could occur if this editor's contents are subsequently saved to the server.")
+                                                         (dtext "Be careful!"))))
                                      (set_prop options
                                         `path
                                         (conj [ `filesystem ] (split_by "/" options.filename)))
@@ -10375,7 +10376,7 @@
                                   ((text (if (search_focused?)
                                              (= text (prop (search_box_handle) `value))
                                              (= text (-> editor `getCopyText)))))
-                                  (log "copy: "(search_focused?) (prop (search_box_handle) `value))
+                                  ;(log "copy: "(search_focused?) (prop (search_box_handle) `value))
                                   (when (not (blank? text))
                                      (-> navigator.clipboard `writeText text)))))
                               
@@ -10872,7 +10873,6 @@
                                       (and options.path
                                          (> (length (get_editors_for_path options.path)) 1))
                                       (progn
-                                         (log "text_editor: " (control_name intf) "on_destroy_called and I am in an editor group: " options.group_name)
                                          true)  ;; in this case we are a linked editor so we are only really removing a view, not the primary editor control
                                       (not is_dirty?)
                                       true
@@ -18711,7 +18711,6 @@
                       (progn
                          (when (and (is_object? val)
                                     (prop val "content_compressed"))
-                            (log "serialize_controls: removing content_compressed: " path)
                             (delete_prop val "content_compressed"))))))
      serialized_layout)
   {
@@ -18810,7 +18809,7 @@
            
            (defvar results nil)
            (= *serialized_controls* (serialize_controls root options))
-           (log "save_control_image: " *serialized_controls*)
+           ;(log "save_control_image: " *serialized_controls*)
            
            (for_each (ctl root)
               (log "save_control_image: serializing: " (or (control_name ctl) ctl.type)))
@@ -20290,8 +20289,7 @@
 
 (defun seedling_ready ()
   (progn
-      (notify (+ "Hello " *namespace* ))
-      ))
+      (notify (+ "Hello " *namespace* ))))
 
 
 (defun user/*initializer* ()
