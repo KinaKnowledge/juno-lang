@@ -80,7 +80,7 @@
     --editor-string-color: #006b1e;
     --editor-constant-color: #CF6A4C;
     --editor-variable-color: #009ACD;
-    --editor-comment-color: rgba(148,148,148, 0.91);
+    --editor-comment-color: rgb(108 81 81 / 91%);
     --editor-storage-color: #A52A2A;
     --editor-illegal-color: #FD1224;
     --editor-illegal-bg-color: rgba(255, 6, 0, 0.15);
@@ -92,3 +92,4 @@
     --editor-heading-bg-color: rgba(191,97,51,0.051);
     --editor-list-color: #8F5B26;
 }
+

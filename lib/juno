@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+# Utility script for starting Juno
 # For the command line REPL we use rlwrap..not required, but
 # it certainly adds a lot of convenience
 
@@ -17,10 +18,10 @@ if [ -z `which rlwrap` ]; then
 fi
 
 if [ -z "$RLWRAP_EDITOR" ]; then
-  export RLWRAP_EDITOR=/opt/local/bin/emacs
+  export RLWRAP_EDITOR=$EDITOR
 fi
 
-
+ 
 
 # Default JS engine is Deno 
 PLATFORM=deno
@@ -71,7 +72,7 @@ elif [ "$MAIN_MODE" == "compile" ]; then
 elif [ "$MAIN_SWITCH" = "-?" ] || [ "$MAIN_SWITCH" = "--help" ]; then 
     cat <<EOF
 
-Juno (c) 2022 Kina LLC - Command Line Utility
+Juno (c) 2022, 2023 Kina LLC - Command Line Utility
 usage: [ --help | -? ]
        [ --compile output-file [ path ] ]
        [ --inspect | --inspect-brk [ip:port] ] [ path ]
@@ -102,14 +103,14 @@ elif [ -n "$MAIN_SWITCH" ]; then
 	   rlwrap -c -r -m -q'"' -M .clj deno run $MAIN_SWITCH --unstable --allow-all "$STARTUP"
 	 fi
     elif [ "$PLATFORM" == "node" ]; then
-	rlwrap -c -r -m -q'"' -M .clj node $MAIN_SWITCH "$STARTUP"
+	  rlwrap -c -r -m -q'"' -M .clj node $MAIN_SWITCH "$STARTUP"
     else
-	if [ -z "$STARTUP" ]; then
-	    echo "$MYNAME: missing $STARTUP script for platform $PLATFORM" >&2
-	    exit 2
-	else
-	    rlwrap -c -r -m -q'"' -M .clj $PLATFORM $MAIN_SWITCH "$STARTUP"
-	fi	
+	  if [ -z "$STARTUP" ]; then
+	      echo "$MYNAME: missing $STARTUP script for platform $PLATFORM" >&2
+	      exit 2
+	  else
+	      rlwrap -c -r -m -q'"' -M .clj $PLATFORM $MAIN_SWITCH "$STARTUP"
+	  fi	
     fi    	    
 else
     echo "juno: unknown option,  use -? for more information" 
