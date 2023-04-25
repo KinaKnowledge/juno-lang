@@ -35,6 +35,10 @@
                            [ "; *scratch* buffer - Lisp code can be entered here and evaluated" 
                              "; by using Alt-C to evaluate the current lisp form, or selecting a "
                              "; specific form and pressing Shift-Enter.\n\n"]))
+
+;; Repo for this application
+(defglobal *public_repo* "https://github.com/KinaKnowledge/juno-lang")
+
 (defvalue *key_bindings* {
                            repl:{}
                            editor:{}
@@ -15295,12 +15299,55 @@
       (log "Inproper args to search_documentation_index: " search_text)))
 
 
+
+(defun online_learning_resource_elems ()
+   (progn
+      (declare (function DOM_editor)
+               (global DOM_editor))
+      (conj
+         [ (button { onclick: (fn ()
+                                 (progn
+                                    (-> window `open *public_repo*))) } "GitHub") ]
+         (if is_served?
+            [(button { onclick: (fn ()
+                                   (progn
+                                      (switch_to_new_layout (control_name (frame_0))) ;; switch to unlocked
+                                      (place_control `right (DOM_editor { reader_mode: true filename: "doc/seedling.dom" }))))  }
+                     "Seedling Overview")
+             (button { onclick: (fn ()
+                                   (progn
+                                      (switch_to_new_layout (control_name (frame_0)))
+                                      (hide_control *system_repl*)
+                                      (make_named_layout "Control Tutorial"
+                                         (split_view_vertical
+                                            (split_view_horizontal
+                                               (text_editor { `filename: "doc/calculator.juno" })
+                                               (text_editor { `filename: "doc/calculator.css" })
+                                               {
+                                                 ratio: 0.7
+                                                 })
+                                            *system_repl*)
+                                         { unmounted_source: true }))) }
+                     "Building an Application" )]
+            []))))
+
 ;; place holder for the control reference by juno_documentation_control
 (defun toggle_help_panel ()
    true)
 
+
 (defcontrol juno_documentation_control ()
-   ((definition_view (div { `class: "juno-log-output" `style: "margin-top: 15px; padding: 5px; overflow: scroll; width: calc(100% - 20px);" } "Help Introduction"))
+   ((definition_view (div { `class: "juno-log-output" `style: "margin-top: 15px; padding: 5px; overflow: scroll; width: calc(100% - 20px);" } 
+                          (div { `style: "padding: 5px; line-height: 1.5em;"} 
+                               "This is the Help Panel.  You can search for symbols and tags via the input above. You can open it via the "
+                               "Shift-Escape, or Alt-H key sequences."
+                               (if is_served?
+                                  [ "To familiarize yourself with "
+                                   "Seedling and the Juno language you can visit the following resources:"
+                                   (br)
+                                   (br)
+                                   (online_learning_resource_elems)]
+                                  []))))
     (search_input (input { `type: "search" `list: "documentation_datalist" `placeholder: (dtext "Search Documentation") `style: "font-weight: bold; display: inline-block; padding: 10px; width: calc(100% - 10px); border: 0px; background: var(--editor-bg-color); color: var(--main-color);" } ))
     (search_bar_elem (div { `style: "display: inline-block; width: calc(100% - 0px);height: 20px;" }
                           search_input))
@@ -15688,7 +15735,7 @@
      `tags: ["help" "show" "documentation" ]
      `usage: []
      })
-        
+
 (defun about_seedling (switch_to_repl?)
    (progn
       (declare (function DOM_editor)
@@ -15702,10 +15749,7 @@
                 (div { `style: "margin-bottom: 10px;" } "For license details see Help->Licenses")
                 (div { `style: "padding-top: 5px; padding-bottom: 5px;" }
                      
-                     (if is_served?
-                        (button { onclick: (fn () (progn
-                                                  (switch_to_new_layout (control_name (frame_0))) ;; switch to unlocked
-                                                  (place_control `right (DOM_editor { reader_mode: true filename: "doc/seedling.dom" }))))  } "IDE Tutorial")))))))
+                     (online_learning_resource_elems))))))
                 
                 
 
@@ -15818,7 +15862,7 @@
   [ "--" nil]
   [(dtext "About Seedling")
    (fn (e)
-      (about_seedling))]
+      (about_seedling true))]
   [(dtext "Licenses")
    (fn (e)
       (display_license_info))]])
