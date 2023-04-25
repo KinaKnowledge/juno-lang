@@ -8,6 +8,8 @@ This is the documentation folder for the Juno language.
 Getting started with Juno and general Lisp concepts
 * [Using Juno Tutorial - Part 1](tutorial.md)
 * [Tutorial - Part 2](tutorial_part_2.md)
+* [Building Binaries and Images](building_images.md)
+
 
 API
 * [Core Language](symbols_core.html)
