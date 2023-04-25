@@ -6,7 +6,7 @@ Juno is a self-hosted Lisp dialect that compiles to JavaScript.  It combines fas
 The language has a browser-based IDE called Seedling that brings the ability to save the running state (the Lisp "image") locally or remotely, build applications within it, bundle and export those applications as standalone HTML documents, and interact with the local environment and remote Juno environments.  It is recommended to use the IDE to get familiar with the language, and what it can do.  The IDE itself is written in Juno, and similar to Emacs, provides a fully hackable environment, described in itself, that you can shape to your own needs.
 
 ### Links
-[Example Workspace](https://juno.kinaknowledge.com/seedling.html) | [Documentation/API](doc/)
+[Example Workspace](https://kinadata.com/welcome.html) | [Documentation/API](doc/)
 
 ### Quick Start Instructions
 
