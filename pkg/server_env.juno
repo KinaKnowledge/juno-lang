@@ -1221,7 +1221,9 @@
 
 (defun start (options)
   (let
-     ((options (or options {})))
+     ((options (or options {
+         hostname: `localhost
+     })))
      (unless (or options.certFile options.cert options.key options.keyFile options.no_https)
         (if (and (not (blank? temp_cert))
                  (not (blank? temp_key)))
