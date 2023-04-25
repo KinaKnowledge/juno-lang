@@ -2,9 +2,19 @@
 
 ;; This is a tutorial which gives a step by step explanation for creating a 
 ;; control and application in Seedling and Juno.  The application will be a 
-;; calculator, a simple application that allows for illustrating the process.  
+;; calculator, a simple application that allows for illustrating the process.
+;; 
+;; HOW TO EVALUATE 
+;; To evaluate and compile a Lisp form, or to install a CSS rule, press
+;; Alt-c on Linux/Windows or Option-C on macOS when your cursor in the Lisp
+;; form or CSS rule, or directly behind the end of it.
 
-;; Step 1 - The initial panel in the interface
+
+;; Step 1 - Create an initial basic control in the Seedling interface.
+
+;; The defcontrol macro will handle the underlying creation of a 
+;; basic control, which can be placed in a panel in the interface.
+
 
 (defcontrol calculator ()
    ((render 
@@ -15,7 +25,44 @@
      `control_bar: true
      })
 
-;; Step 2 - Setup the layout in the panel
+;; To see the fruits of our labor, evaluate the above to create the 
+;; initial control, and then you can place your cursor in the below
+;; form or type this into the REPL.
+
+;; The render function provides the layout when needed by the UI controls.
+
+;; To make an instance of our new control, just call the calculator function
+;; as (calculator).  That will return a contorl instance.  But we really need
+;; to place the control into the UI, so we use the place_control function to
+;; do so:
+
+(place_control `right (calculator))
+
+;; To close the control, click the button in the upper left corner of the 
+;; calculator panel, signified by (...) and click the final item,
+;; Close Panel and Destroy Control
+
+;; Now that we have our control base, let's create a CSS panel
+;; If you have cloned the repository, the CSS for this tutorial 
+;; is in the file `doc/calculator.css`.
+
+;; If the CSS file isn't already open, perform the following steps.
+;; Before we open it, let's split this panel in two pieces
+;; In the upper left hand corner of the editor panel, there is a
+;; button with an elipsis (...).  You can split the control either
+;; horizontally or vertically, depending on your preference.
+;; Toward the bottom of the menu, you will see the menu items
+;; to split this panel.
+
+;; Once the panel is split, open the CSS file via File->Open File
+;; or Command-O (Mac) or Control-O (Linux/Windows)
+
+
+;; Step 2 - Setup the internal layout of the control
+
+;; Next lets setup the basic layout of the calculator.  Modifying our
+;; control again, we are going to add the output display and the
+;; buttons.
 
 (defcontrol calculator ()
    ((button_layout 
@@ -42,7 +89,25 @@
      `control_bar: true
      })
 
-;; step 3 - Add events to the control
+;; Well the elements are there, but it doesn't look right.  In the CSS Panel,
+;; evaluate the CSS in the same way you did to create and place the control.
+
+;; If you haven't removed the calculator prototype yet, you will see as you
+;; evaluate the CSS that the calculator starts to look more like an actual
+;; calculator layout.
+
+;; But the buttons don't do anything yet and so it doesn't really work yet.
+;; Close the panel and destroy the control again
+
+;; Step 3 - Adding actions to the control
+
+;; The next part adds several functions to the control, a keymap for 
+;; using the keyboard, and attaches event listeners to react to UI events.
+
+;; The on_initialize function is called when the control first is started
+;; which allows us to handle setup chores.  
+;; If control bar is false, the panel of the calculator will not have a top
+;; bar showing the title and the actions button.
 
 (defcontrol calculator ()
    ((button_layout 
@@ -76,7 +141,7 @@
                     (when key
                        (set_value key)
                        key)))
-    (handle_click (fn (event)
+    (handle_click (fn (event) ;; when view is clicked we simulate the key press
                      (process_key (get_attribute event.srcElement `key))))
     (render 
        (fn () 
@@ -84,8 +149,8 @@
                display
                (div { `class: "button-box" } 
                     buttons))))
-    (on_initialize (fn (self)
-                      (progn
+    (on_initialize (fn (self)  ;; called when the control is first initialized
+                      (progn   ;; we are adding event listeners to our view
                          (attach_event_listener view
                             `click
                             handle_click)
@@ -96,10 +161,10 @@
                                   (handle_event event)
                                   (process_key (or (prop keymap event.key) event.key)))))))))
    {
-     `control_bar: true
+     `control_bar: true ;; show the panel
      })
 
-;; step 4 - add the logic
+;; Step 4 - Add the logic for calculations. 
 
 (defcontrol calculator ()
    ((button_layout 
@@ -190,15 +255,17 @@
                              (set_operator key)
                              ))))))
     (process_key (fn (key)
-                    (when key
+                    (when key ;; when we have key we map that to actions:
                        (cond
-                          
                           (== key "Backspace")
                           (set_value (chop (+ "" (float (value)))))
+                          
                           (== key "C")
                           (clear)
+                          
                           (== key "+-")
                           (set_value (* -1 (float (value))))
+                          
                           (== key "%")
                           (set_value (* (float (value)) 0.01))
                           
@@ -240,8 +307,10 @@
                                   (handle_event event)
                                   (process_key (or (prop keymap event.key) event.key)))))
                          (clear)))))
+   ;; the expose directive in our control options indicates what functions we want to
+   ;; expose from the controls closure:
    {
-     `expose: [[ `clear clear]
+     `expose: [[ `clear clear]    
                [ `enter (fn (text) 
                            (progn
                               (for_each (k (split_by "" text))
@@ -251,7 +320,7 @@
      `control_bar: true
      })
 
-;; let's use the control 
+;; Placing the control 
 
 (place_control `right (calculator))
 
@@ -264,4 +333,53 @@
       (-> calc `enter  "78*9+10=")
       (-> calc `get)
       ))
+
+;; Step 5: Making a standalone calculator HTML app
+
+;; Let's export our calculator application as a singular HTML
+;; file. 
+
+;; The Layout menu is used to move between different layouts, 
+;; which are akin to "screens".
+
+;; Make sure the calculator is displaying in a panel by starting 
+;; it if it already isn't running.
+
+;; Click the Layout menu to note which layout you are in now. 
+;; The name is highlighted in the menu bar.  To get back to this
+;; view after performing the below, click on this Layout's name.
+
+;; You can use the calculator's command menu to move the control to the new
+;; layout by selecting Move Control To New Layout, and then returning
+;; to this layout.  
+;; Or evaluating the below Lisp form will automate the movement
+;; of the control to another layout and you return you to this point:
+
+(let 
+   ((lname (control_name (get_current_layout_control))))
+   (move_control_to_new_layout (get_control_by_name `Calculator))
+   (switch_to_new_layout lname))
+   
+;; Once you have moved the calculator to the new layout, 
+;; the next step is to export that layout as an application.
+;; Review the following instructions prior to performing them, 
+;; or keep them handy since this editor will not be visible.  
+
+;; 1.  Select the Calculator Layout in the Layout Menu
+;; 2.  Next in the Layout menuy, select the "Export Layout - Calculator Layout"
+;; 3.  Once the Export dialog appears, you can keep all the defaults, however
+;;     you will end up including more then is needed in your emitted 
+;;     HTML file.  So you can deselect all the scripts and CSS.  However,
+;;     if you don't keep the CSS relevant for the calculator, the emitted 
+;;     application will not look right.  So RESELECT in Styles:
+;;     Juno-css-.button-box
+;;     Juno-css-.display
+;;     Juno-css-.equals
+;;     Juno-css..equals:hover
+;;  4. Then click Export.
+
+;; Your application will then be saved to the server.  If you wish to save locally,
+;; select Local to this Computer in the Save Location selector.
+
+
 
