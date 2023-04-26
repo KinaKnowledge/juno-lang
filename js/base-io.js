@@ -1,7 +1,7 @@
 // Source: base-io.lisp  
-// Build Time: 2023-04-25 13:14:11
-// Version: 2023.04.25.13.14
-export const DLISP_ENV_VERSION='2023.04.25.13.14';
+// Build Time: 2023-04-26 09:02:14
+// Version: 2023.04.26.09.02
+export const DLISP_ENV_VERSION='2023.04.26.09.02';
 
 
 

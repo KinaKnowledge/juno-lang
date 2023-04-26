@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2023-04-25 13:14:11
-// Version: 2023.04.25.13.14
-export const DLISP_ENV_VERSION='2023.04.25.13.14';
+// Build Time: 2023-04-26 09:02:14
+// Version: 2023.04.26.09.02
+export const DLISP_ENV_VERSION='2023.04.26.09.02';
 
 
 
@@ -4539,16 +4539,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__309=async function(req) {
                                             {
-                                                let _expr_26375;
+                                                let _expr_45016;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_26375=await (async function(){
+                                                _expr_45016=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req,name) 
                                                 })();
-                                                req_sym=(_expr_26375 && _expr_26375["0"]);
-                                                req_ns=(_expr_26375 && _expr_26375["1"]);
-                                                explicit=(_expr_26375 && _expr_26375["2"]);
+                                                req_sym=(_expr_45016 && _expr_45016["0"]);
+                                                req_ns=(_expr_45016 && _expr_45016["1"]);
+                                                explicit=(_expr_45016 && _expr_45016["2"]);
                                                 if (check_true ((req_ns&& await (await Environment.get_global("not"))((req===symname))&& await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(req,invalids))))){
                                                     {
                                                         if (check_true (await (await Environment.get_global("not"))((req_ns===name)))){
@@ -6778,6 +6778,13 @@ await Environment.set_global("get_dependencies",async function(global_symbol,_de
     }
 },{ "name":"get_dependencies","fn_args":"(global_symbol _deps _req_ns _externs)","description":["=:+","<br><br>Given a symbol in string form, returns the global dependencies that the ","symbol is dependent on in the runtime environment.  The return structure is in ","the form:```{\n  dependencies: []\n  namespaces: []   \n  externals: ","[]\n}```<br><br>The return structure will contain all the qualified and ","non-qualified symbols referenced by the provided target symbol, plus the ","dependencies of the required symbols.  <br>The needed namespace environments ","are also returned in the `namespaces` value.\n<br>References to external global ","Javascript values are listed in the `externals` result.  These values are ","defined as dependencies for the provided symbol, but are not defined in a Juno ","Environment.<br> "],"usage":["quoted_symbol:string"],"tags":["dependencies","tree","required","dependency"],"requires":["split_by","second","first","current_namespace","not","get_dependencies","to_array"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 });
+await (async function(){
+    return  Environment.set_global("uuid",function() {
+        return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
+     (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16));
+    },{ "name":"uuid","fn_args":"[]","description":"Returns a UUID","usage":[],"tags":["uuid","id","generate"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+})
+})();
 await (async function(){
     return  Environment.set_global("pad_left",function(value,pad_amount,padchar) {
         return  ( function() {
