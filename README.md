@@ -10,6 +10,10 @@ The language has a browser-based IDE called Seedling that brings the ability to 
 
 ### Quick Start Instructions
 
+There are no real dependencies to get started, except a browser.  You can run any of the HTML files in the `environments` as a standalone Lisp file.  The system is self-contained.  You can go through the whole language tutorial without a server side container.
+
+You can also run in conjunction with a server, which allows for more functionality to be enabled.  To do this, you should have `Deno` installed, located at [https://deno.com/runtime](https://deno.com/runtime).  You do not need Deno to run through the language tutorial or to use Seedling or Juno.  
+
 After cloning the repository, or downloading a release, to get started with the command line, make sure you have Deno installed, which is a dependency for running Juno at this point.
 
 From the project root directory the environment can be started by entering:
@@ -165,6 +169,16 @@ Saving "images" of the Lisp environment has been around for a while. Juno shares
 
 
 -------
+
+If you are a Lisper, and use Emacs, you are most likely familar with how the development process can work for languages like Common Lisp, where you develop your source code to your program inside the process itself. The objective of this project is to bring an Emacs-like experience into the browser. By Emacs, I mean, the ability to work within a live Lisp image that is built in itself, yet natively use the resources available in the browser: information presentation, computation, graphical libraries, sound engines, etc, and be able to unify via s-exprs, real time. Browsers also run most everywhere, so it's easy to distribute and update, and eliminates a lot of the tasks associated with certifying a system in a customer or user environment.
+
+The browser is also an environment that has a mirror on the server, Deno. I wanted something native to that environment, of that environment. Containers are the future in this cloud world, and the browser is the most practical method to deliver software without concern for whatever operating system is underneath it. So having a common platform between browser and server, that you can write HTML as s-expr as well as your logic seems like a nice win in a lot of ways.
+
+If HTML and JavaScript were instead implemented in a local CL that ran in the browser in a real way, this project wouldn't exist. Because then we would have a modern Lisp Machine. So this gets us closer to that idea: use the browser world to deliver Lisp documents and all that implies.
+
+It would be *great* to get Emacs key-bindings into Seedling. The development system is implemented in Juno Lisp, and so is completely malleable, in the same way that Emacs is. 
+
+Feel free to contribute and get involved.  I am happy to answer questions and respond to issues.  Pull requests are welcome!
 
 ### Next Steps
 
