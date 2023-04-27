@@ -36,7 +36,7 @@ To use the Seedling IDE for the Juno language, start the Seedling services:
 (http/start)
 ```
 
-Point your preferred browser to the URL: [https://localhost:56432/env/seedling.html](https://localhost:56432/env/seedling.html).
+Point your preferred browser to the URL: [https://localhost:56432/env/seedling.html](https://localhost:56432/env/seedling.html).  Since the system uses HTTPS by default, and uses a self-signed cert under `tls/`, you will receive a browser complaint about the cert being not valid.  You will need to accept the warning in order to load the system.  This warning doesn't appear when using certificates that are signed by authorities recognized by the browser. 
 
 In Linux and macOS, the init script `lib/juno` can be invoked without an image, which will load an empty environment with only the core symbols and an empty `user` namespace:
 ```
@@ -172,13 +172,15 @@ Saving "images" of the Lisp environment has been around for a while. Juno shares
 
 If you are a Lisper, and use Emacs, you are most likely familar with how the development process can work for languages like Common Lisp, where you develop your source code to your program inside the process itself. The objective of this project is to bring an Emacs-like experience into the browser. By Emacs, I mean, the ability to work within a live Lisp image that is built in itself, yet natively use the resources available in the browser: information presentation, computation, graphical libraries, sound engines, etc, and be able to unify via s-exprs, real time. Browsers also run most everywhere, so it's easy to distribute and update, and eliminates a lot of the tasks associated with certifying a system in a customer or user environment.
 
-The browser is also an environment that has a mirror on the server, Deno. I wanted something native to that environment, of that environment. Containers are the future in this cloud world, and the browser is the most practical method to deliver software without concern for whatever operating system is underneath it. So having a common platform between browser and server, that you can write HTML as s-expr as well as your logic seems like a nice win in a lot of ways.
+The browser is also an environment that has a mirror on the server, [Deno](https://deno.com/runtime). Juno and Seedling are native to this contained environment, and of that environment. Containers are the future in this cloud world, and the browser is the most practical method to deliver software without concern for whatever operating system is underneath it. So having a common platform between browser and server, that you can write HTML as s-expr as well as your logic seems like a nice win in a lot of ways.
 
 If HTML and JavaScript were instead implemented in a local CL that ran in the browser in a real way, this project wouldn't exist. Because then we would have a modern Lisp Machine. So this gets us closer to that idea: use the browser world to deliver Lisp documents and all that implies.
 
 It would be *great* to get Emacs key-bindings into Seedling. The development system is implemented in Juno Lisp, and so is completely malleable, in the same way that Emacs is. 
 
-Feel free to contribute and get involved.  I am happy to answer questions and respond to issues.  Pull requests are welcome!
+### Contributions and Involvement
+
+Feel free to contribute and get involved.  I am happy to answer questions and respond to issues.  Pull requests are welcome! :)
 
 ### Next Steps
 
