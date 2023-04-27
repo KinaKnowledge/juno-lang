@@ -6,7 +6,7 @@ Juno is a self-hosted Lisp dialect that compiles to JavaScript.  It combines fas
 The language has a browser-based IDE called Seedling that brings the ability to save the running state (the Lisp "image") locally or remotely, build applications within it, bundle and export those applications as standalone HTML documents, and interact with the local environment and remote Juno environments.  It is recommended to use the IDE to get familiar with the language, and what it can do.  The IDE itself is written in Juno, and similar to Emacs, provides a fully hackable environment, described in itself, that you can shape to your own needs.
 
 ### Links
-[Example Workspace](https://kinadata.com/welcome.html) | [Documentation/API](doc/)
+[Example Workspace](https://kinadata.com/welcome.html) | [Tutorial](doc/tutorial.md) | [Documentation/API](doc/)
 
 ### Quick Start Instructions
 
@@ -14,7 +14,7 @@ There are no real dependencies to get started, except a browser.  You can run an
 
 You can also run in conjunction with a server, which allows for more functionality to be enabled.  To do this, you should have `Deno` installed, located at [https://deno.com/runtime](https://deno.com/runtime).  You do not need Deno to run through the language tutorial or to use Seedling or Juno.  
 
-After cloning the repository, or downloading a release, to get started with the command line, make sure you have Deno installed, which is a dependency for running Juno at this point.
+After cloning the repository, or downloading a release, to get started with the command line, make sure you have Deno installed, which is a dependency for running Juno outside of the browser at this point.
 
 From the project root directory the environment can be started by entering:
 ```
