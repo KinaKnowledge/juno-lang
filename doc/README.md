@@ -11,7 +11,5 @@ This is the documentation folder for the Juno language.
 
 
 #### API
-* [Core](symbols_core.html)
-* [HTTP](symbols_http.html)
-* [HTML](symbols_html.html)
+The API is online within Seedling.  You can access and search definitions, view the source code, see examples and usage instructions. 
 
