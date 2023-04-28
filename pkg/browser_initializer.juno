@@ -10151,7 +10151,7 @@
                                   (progn
                                      (if (and (is_symbol? `LZString)
                                               options.content_compressed)
-                                         (-> editor `setValue (LZString.decompressFromBase64 options.content_compressed -1))
+                                         (-> editor `setValue (LZString.decompressFromBase64 options.content_compressed) -1)
                                          (-> editor `setValue options.content -1))
                                      (= content options.content)
                                      (if (get_default [ `application `offline_content_warning] )
@@ -10177,10 +10177,10 @@
                                         (make_path options.path nseval.global_ctx.scope content)
                                         (display_context_message (+ "New path: " (join "~" options.path) " with content type " (sub_type content))))
                                      (if (not (== "String" (sub_type content)))
-                                         (-> editor `setValue (pretty_print content))
+                                         (-> editor `setValue (pretty_print content) -1)
                                          (-> editor `setValue content -1)))
                                   (is_string? options.content_compressed)
-                                  (-> editor `setValue (LZString.decompressFromBase64 options.content_compressed -1) -1)
+                                  (-> editor `setValue (LZString.decompressFromBase64 options.content_compressed) -1)
                                   (is_string? options.content)
                                   (progn
                                      (= content options.content)
@@ -10189,7 +10189,7 @@
                                       (is_array? options.content))
                                   (progn
                                      (= content options.content)
-                                     (-> editor `setValue (pretty_print content))))
+                                     (-> editor `setValue (pretty_print content) -1)))
                                (assert (is_value? content) "assertion failure: content is not set in set_content")
                                (= data_type
                                   (sub_type content))
