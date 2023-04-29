@@ -1191,9 +1191,9 @@
    (defun open_browser (options)
       (let
          ((os (operating_system))
+          (process_handle nil)
           (paths_by_os {
-                         darwin: [ "/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome" 
-                                   "/Applications/" ]
+                         darwin: [ "/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome" ]
                          })
           (browser (or options.path_to_browser
                        (cond
@@ -1203,7 +1203,11 @@
                           "/usr/bin/google-chrome"
                           (== os "windows")
                           (throw EvalError "Please provide the path_to_browser option.")))))
-         (Deno.run { `cmd: [browser "--new-window" (+ "--app=https://localhost:" (or options.port 56432) "/env/" (or options.instance "seedling.html")) ] }))))
+         ;; API change into Deno v2 from Deno.run, which is to be deprecated, to Deno.Command
+         (= process_handle
+            (new Deno.Command browser {  args:["--new-window"
+                                               (+ "--app=https://localhost:" (or options.port 56432) "/env/" (or options.instance "seedling.html"))] }))
+         (-> process_handle `spawn))))
                        
 
 (defun enable_ui ()
