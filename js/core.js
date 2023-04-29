@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2023-04-26 09:02:14
-// Version: 2023.04.26.09.02
-export const DLISP_ENV_VERSION='2023.04.26.09.02';
+// Build Time: 2023-04-29 08:50:33
+// Version: 2023.04.29.08.50
+export const DLISP_ENV_VERSION='2023.04.29.08.50';
 
 
 
@@ -4539,16 +4539,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__309=async function(req) {
                                             {
-                                                let _expr_45016;
+                                                let _expr_90090;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_45016=await (async function(){
+                                                _expr_90090=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req,name) 
                                                 })();
-                                                req_sym=(_expr_45016 && _expr_45016["0"]);
-                                                req_ns=(_expr_45016 && _expr_45016["1"]);
-                                                explicit=(_expr_45016 && _expr_45016["2"]);
+                                                req_sym=(_expr_90090 && _expr_90090["0"]);
+                                                req_ns=(_expr_90090 && _expr_90090["1"]);
+                                                explicit=(_expr_90090 && _expr_90090["2"]);
                                                 if (check_true ((req_ns&& await (await Environment.get_global("not"))((req===symname))&& await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(req,invalids))))){
                                                     {
                                                         if (check_true (await (await Environment.get_global("not"))((req_ns===name)))){

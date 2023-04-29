@@ -1,7 +1,7 @@
 // Source: core-ext.lisp  
-// Build Time: 2023-04-26 09:02:14
-// Version: 2023.04.26.09.02
-export const DLISP_ENV_VERSION='2023.04.26.09.02';
+// Build Time: 2023-04-29 08:50:33
+// Version: 2023.04.29.08.50
+export const DLISP_ENV_VERSION='2023.04.29.08.50';
 
 
 
@@ -809,6 +809,50 @@ await Environment.set_global("words_and_quotes",async function(text) {
         return []
     }
 },{ "name":"words_and_quotes","fn_args":"(text)","description":"Given a text string, separates the words and quoted words, returning quoted words as their isolated string.","tags":["text","string","split","separate","parse"],"usage":["text:string"],"requires":["not","map","join","no_empties","split_by","trim"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"core-ext.lisp"
+});
+await Environment.set_global("split_into_words",async function(text) {
+    if (check_true ((text instanceof String || typeof text==='string'))){
+        {
+            let words;
+            let word_acc;
+            let escaped;
+            let in_quotes;
+            words=[];
+            word_acc=[];
+            escaped=0;
+            in_quotes=false;
+            await (await Environment.get_global("map"))(async function(x,i) {
+                let ccode;
+                ccode=await x["charCodeAt"]();
+                await async function(){
+                    if (check_true (((escaped===0)&& ((ccode===34)|| (ccode===39))))) {
+                        return in_quotes=await (await Environment.get_global("not"))(in_quotes)
+                    } else if (check_true (((ccode===92)&& (escaped===0)))) {
+                        {
+                            escaped=2
+                        }
+                    } else if (check_true (((ccode===32)&& await (await Environment.get_global("not"))(in_quotes)))) {
+                        {
+                            if (check_true (((word_acc && word_acc.length)>0))){
+                                (words).push((word_acc).join(""))
+                            };
+                            word_acc=[]
+                        }
+                    } else {
+                        (word_acc).push(x)
+                    }
+                } ();
+                return escaped=await Math.max(0,(escaped- 1))
+            },(text).split(""));
+            if (check_true (((word_acc && word_acc.length)>0))){
+                (words).push((word_acc).join(""))
+            };
+            return words
+        }
+    } else {
+        return []
+    }
+},{ "name":"split_into_words","fn_args":"(text)","description":["=:+","Given a text string, returns an array with each ","word as an element.  Groups of words surrounded by ","a quote or tick mark are returned as a single string."],"tags":["text","string","split","separate","parse"],"usage":["text:string"],"requires":["is_string?","map","not","push","join","split_by"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","Intl","parseInt","console","Promise","FileReader","Blob"],"source_name":"core-ext.lisp"
 });
 await Environment.set_global("split_words",async function(text_string) {
     return await (await Environment.get_global("no_empties"))(await (async function(){
