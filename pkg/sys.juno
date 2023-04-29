@@ -144,7 +144,7 @@
                                    emit_file
                                    (if (and (is_string? options.target)
                                             (not (blank? options.target)))
-                                       ["-t" options.target]
+                                       ["--target" options.target]
                                        [])
                                    (cond
                                       (is_string? options.source)
