@@ -4,6 +4,8 @@ The system can serialize its current state to JSON or Javascript which can then 
 
 There are some considerations to keep in mind when performing this process.  There likely are certain objects that need to be re-initialized to a starting value when the deserialization process is performed.  To implement this, when each namespace is restarted, a namespace local function named `*initializer*` is called once the namespace environment has initialized.  In this function, the correct values can be reestablished and objects instantiated. Note that namespaces are deserialized according to their symbolic dependencies to other namespaces.  Once all namespaces have been rebuilt, then the core environment calls the `core/on_environment_ready` function, which can be used to start your application.  By default, if nothing is specified, the REPL is started.
 
+To access server environments from the Seedling IDE, it must be running in a hosted mode, and being served from a server.  The value `is_served?` will be set to true when this is the case.  To start a REPL connected to the server instance, use `File` -> `New...` -> `Juno Remote REPL` or the corresponding keyboard shortcut.
+
 #### Server Environments and the REPL process
 
 To export Lisp images to a consolidated javascript file which contains the current global state and assets:
@@ -17,10 +19,10 @@ To export Lisp images to a consolidated javascript file which contains the curre
   include_source:false
 }
 ```
-2. Import the save_env package which makes sure any needed dependencies are in place and installs a helper function called `save_environment`:
+2. Import the `save_env` package which makes sure any needed dependencies are in place and installs a helper function called `save_environment`:
 `(import "pkg/save_env.juno")`
 
-3. To save the current state to the save_path listed in `*env_config*` above, enter: `(save_environment)`.  This will initiate the export process with the defaults. 
+3. To save the current state to the `save_path` listed in `*env_config*` above, enter: `(save_environment)`.  This will initiate the export process with the defaults. 
 4. The consolidated JS file will be written, which can be started up by calling from the command line:
 ```
 lib/juno js/juno.js`
