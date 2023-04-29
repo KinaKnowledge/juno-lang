@@ -620,7 +620,49 @@
          `tags: ["text" "string" "split" "separate" "parse"]
          `usage: ["text:string"]
          })
-     
+    
+    (defun split_into_words (text)
+        (if (is_string? text)
+            (let
+               ((words [])
+                (word_acc [])
+                (escaped 0)
+                (in_quotes false))
+               (map (fn (x i)
+                       (let
+                          ((ccode (-> x `charCodeAt)))
+                          (cond 
+                             (and (== escaped 0)
+                                  (or (== ccode 34)
+                                      (== ccode 39)))
+                             (= in_quotes (not in_quotes))
+                             (and (== ccode 92)
+                                  (== escaped 0))
+                             (progn
+                                (= escaped 2))
+                             (and (== ccode 32)
+                                  (not in_quotes))
+                             (progn
+                                (if (> word_acc.length 0)
+                                    (push words (join "" word_acc)))
+                                (= word_acc []))
+                             else
+                             (push word_acc
+                                x))
+                          (= escaped (Math.max 0 (- escaped 1)))))
+                    (split_by "" text))
+               ;; get the last word
+               (if (> word_acc.length 0)
+                   (push words (join "" word_acc)))
+               words)
+            [])
+        {
+         `description: (+ "Given a text string, returns an array with each " 
+                          "word as an element.  Groups of words surrounded by " 
+                          "a quote or tick mark are returned as a single string.")
+         `tags: ["text" "string" "split" "separate" "parse"]
+         `usage: ["text:string"]
+         })
     (defun split_words (text_string)
          (no_empties
            (map (fn (x i)

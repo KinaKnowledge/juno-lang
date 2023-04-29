@@ -15,36 +15,59 @@
       
       (defun exec (command options)
          (let
-            ((arg_set (cond
-                         (is_string? command)
-                         (split_by " " command)
-                         (is_array? command)
-                         command
-                         else
-                         (throw TypeError "system: invalid command format: must be string or array")))
-             (options (cond
+            ((options (cond
                          (is_object? options)
                          options
                          (eq nil options)
                          {}
                          else
                          (throw TypeError "system: options must be an object if provided")))
-             (process_info nil))
-            (= process_info (Deno.run (+ {
-                                           cmd: arg_set
-                                           stdout: "piped"
-                                           stderr: "piped"
-                                           }
-                                        options)))
-            process_info)
+             (arg_set (if (is_array? options.args)
+                          options.args
+                          []))
+             (command_output nil))
+            ;; Note: Need to change to Deno.Command
+            (= command_output (new Deno.Command command
+                                          (+ {
+                                               args: arg_set
+                                               }
+                                            options)))
+            
+            command_output)
          {
-           `description: (+ "The exec function spawns a subprocess using the `Deno.run` facility.  "
-                            "The command and the arguments to execute is provided as a string or an array of "
-                            "strings (which form the command), and returns a `Process` object which contains "
-                            "details about the spawned process, including process id, resource id, `stdout`, "
-                            "`stderr` and `stdin` streams.  <br>For more details on this command see the "
-                            "documentation for Deno.run and Deno.Process.<br>Example:```(text_decode (-> "
-                            "(sys/exec \"uptime\") `output))```<br><br> ")
+           `description: (+ "The exec function creates a `Command` object using the `Deno.Command` "
+                            "facility.  The name of the command to run is provided as the first argument, "
+                            "and an `options` object can be provided to control how output ( `stdout` ), "
+                            "input ( `stdin` ) and error ( `stderr` ) output are handled. <br>The "
+                            "returned `Command` object should be considered a staged command, and will not "
+                            "actually spawn a new process until one of the following methods are "
+                            "called:<br>output:function - Will execute a process based on the parameters of "
+                            "the `Command` object asynchronously, but will collect all of its output.  Since "
+                            "a promise is initially returned, the call to `output` in Juno will return once "
+                            "the process is completed.   This option cannot be used with `stdin` set "
+                            "to `piped.  `<br>outputSync:function - Will execute a process synchronously, "
+                            "and therefore the event loop will be blocked until the function "
+                            "returns.  <br>spawn:function - create a streamable subprocess, which will "
+                            "return a `ChildProcess` object.<br><br>#### Options <br><br>args:array - These "
+                            "should be the arguments passed to the command.  Each element in the array "
+                            "corresponds to an argument passed to the command.<br>cwd:string - The working "
+                            "directory of the process to be created<br>clearEnv:boolean - If true clears "
+                            "environment variables that are passed to the parent process.  The Deno runtime "
+                            "states that this doesn\'t guarantee all environmental variables will be removed, "
+                            "as the operating system may set variables for the child process.<br>uid:number "
+                            "- The system will attempt to set the child\'s user id for the spawned process.  "
+                            "If it fails, the spawn will fail.<br>gid:number - The system will attempt to "
+                            "set the group ID of the child process.<br>The following options determine how "
+                            "stdin, stdout and stderr should be handled in the child "
+                            "process.<br>stdin:string - There are three options: \"piped\", \"inherit\", or "
+                            "\"null\".  Defaults to \"piped\" for `output` and `outputSync` , and \"inherit\" for "
+                            "`spawn`.  <br>stdout:string - There are three options: \"piped\",\"inherit\", or "
+                            "\"null\".<br>stderr:string - There are three options: \"piped\",\"inherit\", or "
+                            "\"null\"<br>windowsRawArguments:boolean - Skips quoting and escaping of the "
+                            "argument on windows, but it is ignored on non-Windows operating systems.<br>For "
+                            "more details on this command see the Deno documentation for Deno.Command and "
+                            "Deno.CommandOptions.<br>Example for use in Deno server:```(decode_text (prop "
+                            "(-> (sys/exec \"uptime\") `output) `stdout))\n```<br> ")
            `usage: ["command:string|array" "options:object"]
            `tags: ["exec" "run" "process" "subprocess" "command"]
            
@@ -52,19 +75,19 @@
       
       (defun system (command)
          (let
-            ((result (exec command))
-             (status (-> result `status))
+            ((comps (split_into_words command))
+             (result (-> (exec (first comps) { args: (rest comps) }) `output))
              (rval nil))
             (= rval
-               (+ {
-                    stdout: (aif (-> result `output)
+               {
+                    stdout: (aif result.stdout
                                  (decode_text it)
                                  nil)
-                    stderr: (aif (-> result `stderrOutput)
+                    stderr: (aif result.stderr
                                  (decode_text it))
-                    }
-                 status))
-            (-> result `close)
+                    success: result.success
+                    code: result.code
+                    })                
             rval)
          {
            `description: (+ "Given a command string or an array with the command and arguments, the "
@@ -74,7 +97,7 @@
                             "to further operations.  The returned simple object contains:<br>stdout:string - "
                             "The standard output that the evaluated command returned. <br>stderr:string - "
                             "Any error output that was produced by the executed command.<br>success:boolean "
-                            "- If the command returned 0, then success will be 0.  <br>code:integer - The "
+                            "- If the command returned 0, then success will be true.  <br>code:integer - The "
                             "return code of the process.<br>")
            `usage: ["command:string|array"]
            `tags: ["exec" "run" "process" "subprocess" "command"]
