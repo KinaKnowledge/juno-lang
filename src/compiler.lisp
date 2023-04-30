@@ -2115,7 +2115,7 @@
                                                (prop shadowed_globals alloc_set.0.name))
                                           
                                           (do
-                                             (= assignment_value [{`ctype: ctx_details.value } "await" " " env_ref  "get_global" "(" "\"" alloc_set.0.name "\"" ")" ]))
+                                             (= assignment_value [{`ctype: ctx_details.value } "await" " " env_ref  "get_global" "(" "\"" alloc_set.1.name "\"" ")" ]))
                                           else
                                           (do
                                              (set_ctx ctx
