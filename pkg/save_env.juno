@@ -84,7 +84,7 @@
            `tags: ["state" "save" "image" "export" "environment" "dehydrate" "serialize" ]
          })
       (log "The function save_environment has been installed in the core namespace.")
-      (if (is_symbol? `core/compile_executable)
+      (if (is_symbol? `sys/compile_executable)
           (log "The compile_executable is available")
           (log "Note that the compile_executable function is not available due to the sys package not being loaded."))
       (log "To save the current environment call (save_environment) with the default options.")

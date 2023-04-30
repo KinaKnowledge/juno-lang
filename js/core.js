@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2023-04-29 08:50:33
-// Version: 2023.04.29.08.50
-export const DLISP_ENV_VERSION='2023.04.29.08.50';
+// Build Time: 2023-04-30 07:53:38
+// Version: 2023.04.30.07.53
+export const DLISP_ENV_VERSION='2023.04.30.07.53';
 
 
 
@@ -4539,16 +4539,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__309=async function(req) {
                                             {
-                                                let _expr_90090;
+                                                let _expr_19261;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_90090=await (async function(){
+                                                _expr_19261=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req,name) 
                                                 })();
-                                                req_sym=(_expr_90090 && _expr_90090["0"]);
-                                                req_ns=(_expr_90090 && _expr_90090["1"]);
-                                                explicit=(_expr_90090 && _expr_90090["2"]);
+                                                req_sym=(_expr_19261 && _expr_19261["0"]);
+                                                req_ns=(_expr_19261 && _expr_19261["1"]);
+                                                explicit=(_expr_19261 && _expr_19261["2"]);
                                                 if (check_true ((req_ns&& await (await Environment.get_global("not"))((req===symname))&& await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(req,invalids))))){
                                                     {
                                                         if (check_true (await (await Environment.get_global("not"))((req_ns===name)))){
@@ -6874,8 +6874,28 @@ await (async function(){
 })();
 await (async function(){
     return  Environment.set_global("platform",function() {
-        return Deno["build"]
-    },{ "name":"platform","fn_args":"[]","description":"Returns an object with keys for 'target', 'arch', 'os' and 'vendor'.  ","usage":[],"tags":["os","platform","architecture","hardware","type","build"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+        return  ( Environment.get_global("add"))(new Object(),Deno.version,Deno["build"],{
+            env: Deno.env["toObject"]()
+        })
+    },{ "name":"platform","fn_args":"[]","description":["=:+","Returns an object describing the operating environment that the system ","is running on, if possible.  A object is returned with key value pairs that ","describes the runtime environment.  Currently the supported runtime is Deno, ","but if a different runtime is used the output of this command may vary due to ","the underlying information being returned.<br>architecture:string - The ","underlying instruction set architecture of the machine.<br>deno:string - The ","version of the Deno runtime<br>env:object - The current environment variables ","the runtime is using.<br>os:string - The operating system name or ","identifier<br>target:string - The binary type of the ","runtime.<br>typescript:string - The version of Typescript supported in the ","runtime.<br>v8:string - The version of the V8 Javascript ","runtime.<br>vendor:string - The operating system vendor. "],"usage":[],"tags":["os","platform","architecture","hardware","type","build","environment"],"requires":["add"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+})
+})();
+await (async function(){
+    return  Environment.set_global("env",function() {
+        return  Deno.env["toObject"]()
+    },{ "name":"env","fn_args":"[]","description":"Returns an object representing the current environment variables of the runtime process.","usage":[],"tags":["environment","variable","variables","system","os","platform"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+})
+})();
+await (async function(){
+    return  Environment.set_global("get_env",function(key) {
+        return  Deno.env["get"].call(Deno.env,key)
+    },{ "name":"get_env","fn_args":"(key)","description":"Given a key returns the environment variable value for the key if it exists.","usage":[],"tags":["os","environment","variables","system"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+})
+})();
+await (async function(){
+    return  Environment.set_global("set_env",function(key,value) {
+        return  Deno.env["set"].call(Deno.env,key,value)
+    },{ "name":"set_env","fn_args":"(key value)","description":"Given a key and a value sets the environment variable value for the key.","usage":[],"tags":["os","environment","variables","system"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 })
 })();
 await (async function(){
