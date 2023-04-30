@@ -545,7 +545,16 @@
            usage: ["tmp_path:symbol" "body_forms:*"]
            tags: ["temp" "directory" "filesystem" "tmp"]
          })
-               
+         
+      (defun cwd ()
+         (-> Deno `cwd)
+         {
+             description: "Returns the current working directory of the system"
+             usage: []
+             tags: ["working" "dir" "base" "environment" "current"]
+         })
+      
+      
       
    
       (unless (resolve_path [ `export `save_executable ] *env_config*)
