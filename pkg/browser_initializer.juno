@@ -12346,7 +12346,8 @@
                                           (== quoted_lisp.0 (quote new))
                                           (contains? quoted_lisp.1 [(quote RegExp)]))
                                      (try
-                                        (eval quoted_lisp)
+                                        (progn
+                                           (eval quoted_lisp))
                                         (catch Error (e)
                                            quoted_lisp))
                                      (is_array? quoted_lisp)
@@ -12356,12 +12357,19 @@
                                      (to_object
                                         (for_each (val (pairs quoted_lisp))
                                            [val.0 (process_tree val.1)]))
+                                     (and (== display_mode `tree)
+                                          (is_string? quoted_lisp)
+                                          (or (== quoted_lisp (quote "=:null"))
+                                              (== quoted_lisp (quote "=:nil"))
+                                              (== quoted_lisp (quote "=:undefined"))))
+                                     (eval quoted_lisp)
                                      else
                                      quoted_lisp)
                                   (catch Error (e)
                                      (progn
                                         (log "ERROR: " e)
                                         e.message)))))))
+             
             (if (and is_system_error?
                      result.stack)
                (= error_results (process_stack_trace result)))
@@ -19946,6 +19954,199 @@
      
       result)) 
   
+(defun export_remote_system (layout_name options)
+   (if is_served?
+      (let
+         ((env_config (rblock *env_config*))
+          (remote_os (rblock (operating_system)))
+          (cancel_button (button { `style: "float: right" }  (dtext "Close")))
+          (export_button (button (dtext "Build")))
+          (array_to_keyed_booleans (fn (items init_state)
+                                      (if (is_array? items)
+                                          (to_object
+                                             (for_each (item items)
+                                                [item (or init_state false)])))))
+          (export_options nil)
+          (arch (if (== remote_os "darwin")
+                    (chop (rblock (prop (sys/system "uname -p") `stdout)))
+                    nil))
+          (selected_target
+             (cond
+                (and arch
+                   (== arch "arm")
+                   (== remote_os "darwin"))
+                `aarch64-apple-darwin
+                (== remote_os "darwin")
+                `x86_64-apple-darwin
+                (== remote_os "linux")
+                `x86_64-unknown-linux-gnu
+                else
+                `x86_64-pc-windows-msvc))
+          (perms (rblock (permissions)))
+          (perms_set (to_object
+                                (for ((perm_name state) (pairs perms))
+                                     [ perm_name (if (== state "granted") true false) ])))
+          (target_architectures [`x86_64-unknown-linux-gnu `x86_64-pc-windows-msvc,
+                                 `x86_64-apple-darwin `aarch64-apple-darwin])
+          (status_elem (div { `style: "border: 2px inset #FFFFFF; padding: 8px; background: #FFFFFF20; font-weight: bold; margin-bottom: 20px;margin-top: 10px;" } (dtext "Ready")))
+          (options (+ {}
+                      {
+                        emit_as: (or env_config.export.save_executable "Unknown")
+                        save_location: (if is_served?
+                                          "Server"
+                                          "Downloads Folder")
+                        target_architecture: selected_target }
+                      options))  ;; if supplied options, use them as defaults
+          (set_busy (fn (message)
+                       (if (is_string? message)
+                           (progn
+                              (set_prop status_elem
+                                 `innerHTML
+                                 message)
+                              (set_disabled cancel_button export_button ))
+                           (progn
+                              (set_prop status_elem
+                                 `innerHTML
+                                 (dtext "Ready"))
+                              (set_enabled cancel_button export_button )))))
+          (set_message (fn (message)
+                          (if (is_string? message)
+                              (progn
+                                 (log "export_system: " message)
+                                 (set_prop status_elem
+                                    `innerHTML
+                                    message)))))
+          (save_system
+             (fn ()
+                (let
+                   ((save_opts (+ {} 
+                                  (clone options)
+                                  {
+                                      `permissions: (reduce (pset (pairs perms_set))
+                                                       (if pset.1
+                                                          pset.0))
+                                  }
+                                  { `target: options.target_architecture }
+                                  ))
+                    (result nil))
+                   (if (blank? save_opts.emit_as)
+                       (alert_box "Invalid Name" "The emitted executable must have a name.")
+                       (progn
+                          (set_disabled export_button cancel_button)
+                          (when (== options.save_location "Downloads Folder")
+                             (set_prop save_opts
+                                `emit_as (+ "working/" (last (split_by "/" save_opts.emit_as))))
+                             (if (and (== save_opts.target_architecture "x86_64-pc-windows-msvc")
+                                      (not (ends_with? ".exe" save_opts.emit_as)))
+                                 (set_prop save_opts
+                                    `emit_as (+ save_opts.emit_as ".exe"))))
+                          (log "Save Options: " save_opts)
+                          (set_message (+"Saving System into " save_opts.save_location))
+                          (= result (rblock
+                                       (eval `(sys/compile_executable ,#save_opts))))
+                          
+                          (if (== options.save_location "Downloads Folder")
+                              (progn
+                                 (-> window `open (+ "/files/" save_opts.emit_as))
+                                 (set_message (+ "Completed: check downloads"))
+                                 (setTimeout (fn ()
+                                                (progn
+                                                   (log "removing "save_opts.emit_as)
+                                                   (rblock (eval `(sys/delete_file ,#save_opts.emit_as)))))
+                                             10000))
+                              (progn
+                                 (set_message (+ "Saved as: " result.emitted))))
+                          (set_enabled export_button cancel_button)
+                          (log "results: " result))))))
+          
+          (resolver nil)
+          (handle_event (fn (e)
+                           (let
+                              ((src e.srcElement))
+                              (declare (function resolver))
+                              (cond
+                                 (== src cancel_button)
+                                 (progn
+                                    (-> frame `close)
+                                    (resolver nil))
+                                 (== src export_button)
+                                 (progn
+                                    (save_system))))))
+          (view nil)
+          (frame nil)
+          (result nil))
+         (= view
+            (div { `class: "juno-form" `style: "flex-grow: 1; "}
+                 
+                 (p { `style: "line-height: 1.3em; max-width: 600px;" }
+                    (dtext "Construct an executable with the current server image.") " "
+                    (dtext "Select the target architecture and platform, the required system permissions, and click 'Export' to create the executable."))
+                 
+                 (div { `class: "juno-form-data" `style: "flex-grow: 1; "}
+                      (div { `style: "flex-grow: 0;"  }
+                           (value_to_dom options
+                                         { editable: true
+                                           disable_object_toggle: true
+                                           pretty_keys: true
+                                           expand_all: true
+                                           paths: {
+                                                    target_architecture: {
+                                                                           values: target_architectures}
+                                                    save_location: {
+                                                                     values: (if is_served?
+                                                                                [ "Server" "Downloads Folder"]
+                                                                                ["Downloads Folder"])
+                                                                     }
+                                                    }
+                                           })))
+                 (hr { `style: "width: 100%" } )
+                 (h4 { `style: "flex-grow: 0;" } "Permissions for the Executable")
+                 (value_to_dom perms_set
+                               { editable: true
+                                 disable_object_toggle: true
+                                 pretty_keys: false
+                                 expand_all: true
+                                 })
+                 status_elem
+                 (div
+                    export_button
+                    cancel_button)))
+         (attach_event_listener view
+            `click
+            handle_event)
+         
+         
+         ;; now wait for the user to confirm/select choices
+         (= result
+            (new Promise
+               (fn (resolve reject)
+                  (progn
+                     (declare (function resolve reject))
+                     (= resolver resolve)
+                     
+                     (= frame
+                        (floating_div view {
+                                             title: "Export System Image"
+                                             on_close: (fn ()
+                                                          (resolver nil))
+                                             controls: true
+                                             position: {
+                                                         left: 10
+                                                         top: 10
+                                                         }
+                                             }))
+                     (attach_event_listener frame.view
+                        `keydown
+                        (fn (e)
+                           (progn
+                              (if (== e.key "Escape")
+                                  (progn
+                                     (-> frame `close)
+                                     (resolver nil)))
+                              )))
+                     (focus_to (first (-> view `querySelectorAll "input")))))))
+         result)))
+
 ;; the global keyword_mapper routes to the currently focused
 ;; editor for the local keyword_mapper to that editor and the
 ;; environment it might be connected to
@@ -20096,9 +20297,12 @@
         [(dtext "Rebuild Seedling IDE") (fn () (build_starter_environment))]
         [])]]
     (if is_served?
-       [(dtext "Rebuild Host Juno Environment")
-        (fn (e) (rebuild_remote_environment))]
-       [])
+         [(+ (dtext "Server Environment") "...")
+          [[(dtext "Save Server State as an Executable")
+            (fn (e) (export_remote_system))]
+           [(dtext "Rebuild Host Juno Environment")
+                    (fn (e) (rebuild_remote_environment))]]]
+         [])
     (if *global_themes*
        ["--" nil]
        [])
