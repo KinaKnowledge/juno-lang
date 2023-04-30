@@ -5022,7 +5022,7 @@
            `tags: ["os" "platform" "architecture" "hardware" "type" "build" "environment"]
            })
       
-      (defun_sync env ()
+      (defun_sync os_env ()
          (-> Deno.env `toObject)
          {
              description: "Returns an object representing the current environment variables of the runtime process."

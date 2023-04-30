@@ -1,20 +1,20 @@
 
 (defun run_tests (test_numbers opts)
    (let
-      ((`results nil)
-       (`clog nil)
-       (`test_function nil)
-       (`tests compiler_tests)  ;; shadow if we slice a certain subset
-       (`test_output nil)
-       (`tester compiler)
-       (`env Environment)
-       (`quiet_mode (if (eq nil opts.quiet_mode)
+      ((results nil)
+       (clog nil)
+       (test_function nil)
+       (tests compiler_tests)  ;; shadow if we slice a certain subset
+       (test_output nil)
+       (tester compiler)
+       (env Environment)
+       (quiet_mode (if (eq nil opts.quiet_mode)
                         true
                         opts.quiet_mode))
-       (`pass_count 0)
-       (`fail_count 0)
-       (`idx -1)
-       (`andf (fn (args)
+       (pass_count 0)
+       (fail_count 0)
+       (idx -1)
+       (andf (fn (args)
                  (let
                     ((`rval true))
                     (for_each (`a (or args []))
@@ -44,7 +44,11 @@
          (= clog (fn ()
                     true))
          (= clog (defclog {  `color: "blue" } )))
-      
+      (if (not (is_function? env.id))
+          (progn 
+             (console.error "Environment doesn't have a id function: " env)
+             (throw EvalError "Invalid Environment")))
+          
       (clog "run_tests" "STARTING TESTS" (-> env `id))
       
       

@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2023-04-30 07:53:38
-// Version: 2023.04.30.07.53
-export const DLISP_ENV_VERSION='2023.04.30.07.53';
+// Build Time: 2023-04-30 10:34:25
+// Version: 2023.04.30.10.34
+export const DLISP_ENV_VERSION='2023.04.30.10.34';
 
 
 
@@ -4539,16 +4539,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__309=async function(req) {
                                             {
-                                                let _expr_19261;
+                                                let _expr_76257;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_19261=await (async function(){
+                                                _expr_76257=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req,name) 
                                                 })();
-                                                req_sym=(_expr_19261 && _expr_19261["0"]);
-                                                req_ns=(_expr_19261 && _expr_19261["1"]);
-                                                explicit=(_expr_19261 && _expr_19261["2"]);
+                                                req_sym=(_expr_76257 && _expr_76257["0"]);
+                                                req_ns=(_expr_76257 && _expr_76257["1"]);
+                                                explicit=(_expr_76257 && _expr_76257["2"]);
                                                 if (check_true ((req_ns&& await (await Environment.get_global("not"))((req===symname))&& await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(req,invalids))))){
                                                     {
                                                         if (check_true (await (await Environment.get_global("not"))((req_ns===name)))){
@@ -6881,9 +6881,9 @@ await (async function(){
 })
 })();
 await (async function(){
-    return  Environment.set_global("env",function() {
+    return  Environment.set_global("os_env",function() {
         return  Deno.env["toObject"]()
-    },{ "name":"env","fn_args":"[]","description":"Returns an object representing the current environment variables of the runtime process.","usage":[],"tags":["environment","variable","variables","system","os","platform"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+    },{ "name":"os_env","fn_args":"[]","description":"Returns an object representing the current environment variables of the runtime process.","usage":[],"tags":["environment","variable","variables","system","os","platform"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 })
 })();
 await (async function(){

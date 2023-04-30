@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2023-04-30 07:53:38
-// Version: 2023.04.30.07.53
-export const DLISP_ENV_VERSION='2023.04.30.07.53';
+// Build Time: 2023-04-30 10:34:25
+// Version: 2023.04.30.10.34
+export const DLISP_ENV_VERSION='2023.04.30.10.34';
 
 
 
@@ -294,7 +294,7 @@ return await (async function() {
         let ctx;
         let output;
         let __log__1= async function(){
-            return await Environment.get_global("log")
+            return await Environment.get_global("console.log")
         };
         let __defclog__2= async function(){
             return async function(opts) {
@@ -3427,7 +3427,7 @@ return await (async function() {
                                     assignment_value=await (async function(){
                                          return [{
                                             ctype:(ctx_details && ctx_details["value"])
-                                        },"await"," ",env_ref,"get_global","(","\"",(alloc_set && alloc_set["0"] && alloc_set["0"]["name"]),"\"",")"] 
+                                        },"await"," ",env_ref,"get_global","(","\"",(alloc_set && alloc_set["1"] && alloc_set["1"]["name"]),"\"",")"] 
                                     })()
                                 }
                             } else {
