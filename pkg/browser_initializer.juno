@@ -20165,7 +20165,8 @@
                                      (resolver nil)))
                               )))
                      (focus_to (first (-> view `querySelectorAll "input")))))))
-         result)))
+         result)
+      (alert_box  (dtext "This function is only available when connected to a server environment."))))
 
 ;; the global keyword_mapper routes to the currently focused
 ;; editor for the local keyword_mapper to that editor and the
