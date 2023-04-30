@@ -5001,12 +5001,51 @@
            })
       
       (defun_sync platform ()
-         (prop Deno `build)
+         (+ {} 
+            Deno.version
+            (prop Deno `build)
+            { `env: (-> Deno.env `toObject) })
          {
-           `description: "Returns an object with keys for 'target', 'arch', 'os' and 'vendor'.  "
+           `description: (+ "Returns an object describing the operating environment that the system "
+                            "is running on, if possible.  A object is returned with key value pairs that "
+                            "describes the runtime environment.  Currently the supported runtime is Deno, "
+                            "but if a different runtime is used the output of this command may vary due to "
+                            "the underlying information being returned.<br>architecture:string - The "
+                            "underlying instruction set architecture of the machine.<br>deno:string - The "
+                            "version of the Deno runtime<br>env:object - The current environment variables "
+                            "the runtime is using.<br>os:string - The operating system name or "
+                            "identifier<br>target:string - The binary type of the "
+                            "runtime.<br>typescript:string - The version of Typescript supported in the "
+                            "runtime.<br>v8:string - The version of the V8 Javascript "
+                            "runtime.<br>vendor:string - The operating system vendor. ")
            `usage: []
-           `tags: ["os" "platform" "architecture" "hardware" "type" "build"]
+           `tags: ["os" "platform" "architecture" "hardware" "type" "build" "environment"]
            })
+      
+      (defun_sync env ()
+         (-> Deno.env `toObject)
+         {
+             description: "Returns an object representing the current environment variables of the runtime process."
+             usage: []
+             tags: ["environment" "variable" "variables" "system" "os" "platform"]
+         })
+      
+      (defun_sync get_env (key)
+         (-> Deno.env `get key)
+         {
+             description: "Given a key returns the environment variable value for the key if it exists."
+             usage: []
+             tags: ["os" "environment" "variables" "system"]
+         })
+      
+      (defun_sync set_env (key value)
+         (-> Deno.env `set key value)
+         {
+             description: "Given a key and a value sets the environment variable value for the key."
+             usage: []
+             tags: ["os" "environment" "variables" "system"]
+         })
+      
       (defun_sync exit (return_code)
          (Deno.exit return_code)
          {
