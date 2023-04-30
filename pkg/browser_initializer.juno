@@ -19954,7 +19954,7 @@
      
       result)) 
   
-(defun export_remote_system (layout_name options)
+(defun export_remote_system (options)
    (if is_served?
       (let
          ((env_config (rblock *env_config*))
@@ -19995,6 +19995,7 @@
                         save_location: (if is_served?
                                           "Server"
                                           "Downloads Folder")
+                        default_namespace: (or env_config.export.default_namespace "user")
                         target_architecture: selected_target }
                       options))  ;; if supplied options, use them as defaults
           (set_busy (fn (message)
@@ -20026,8 +20027,10 @@
                                                        (if pset.1
                                                           pset.0))
                                   }
-                                  { `target: options.target_architecture }
+                                  { `target: options.target_architecture 
+                                    `source: "working/image.js" }
                                   ))
+                    (js_image_result nil)
                     (result nil))
                    (if (blank? save_opts.emit_as)
                        (alert_box "Invalid Name" "The emitted executable must have a name.")
@@ -20042,22 +20045,40 @@
                                     `emit_as (+ save_opts.emit_as ".exe"))))
                           (log "Save Options: " save_opts)
                           (set_message (+"Saving System into " save_opts.save_location))
-                          (= result (rblock
-                                       (eval `(sys/compile_executable ,#save_opts))))
-                          
-                          (if (== options.save_location "Downloads Folder")
+                          (try
+                             (progn
+                                (= js_image_result (rblock
+                                                      (eval `(set_default export.default_namespace ,#save_opts.default_namespace))
+                                                      (import "pkg/save_env.juno")
+                                                      (save_environment { `save_as: "working/image.js" })))
+                                
+                                (log "js_image_result: " js_image_result)
+                                (if (is_string? js_image_result.js)
+                                    (= result (rblock
+                                                 (eval `(sys/compile_executable ,#save_opts))))
+                                    (throw EvalError "Unable to construct the JS image")))
+                             (catch Error (e)
+                                (progn
+                                   (set_message (+ "Error: " e.message))
+                                   (log "Error: " e))))
+                          (if (and (is_object? result)
+                                   result.success)
                               (progn
-                                 (-> window `open (+ "/files/" save_opts.emit_as))
-                                 (set_message (+ "Completed: check downloads"))
-                                 (setTimeout (fn ()
-                                                (progn
-                                                   (log "removing "save_opts.emit_as)
-                                                   (rblock (eval `(sys/delete_file ,#save_opts.emit_as)))))
-                                             10000))
-                              (progn
-                                 (set_message (+ "Saved as: " result.emitted))))
+                                 (rblock
+                                    (sys/delete_file "working/image.js"))
+                                 (if (== options.save_location "Downloads Folder")
+                                     (progn
+                                        (-> window `open (+ "/files/" save_opts.emit_as))
+                                        (set_message (+ "Completed: check downloads"))
+                                        (setTimeout (fn ()
+                                                       (progn
+                                                          (log "removing "save_opts.emit_as)
+                                                          (rblock (eval `(sys/delete_file ,#save_opts.emit_as)))))
+                                                    10000))
+                                     (progn
+                                        (set_message (+ "Saved as: " result.emitted))))))
                           (set_enabled export_button cancel_button)
-                          (log "results: " result))))))
+                          (log "compilation results: " result))))))
           
           (resolver nil)
           (handle_event (fn (e)
@@ -20079,8 +20100,7 @@
             (div { `class: "juno-form" `style: "flex-grow: 1; "}
                  
                  (p { `style: "line-height: 1.3em; max-width: 600px;" }
-                    (dtext "Construct an executable with the current server image.") " "
-                    (dtext "Select the target architecture and platform, the required system permissions, and click 'Export' to create the executable."))
+                    (dtext "To create an executable with the current server image, select the target architecture and platform, the required system permissions, and click 'Export' to create the executable."))
                  
                  (div { `class: "juno-form-data" `style: "flex-grow: 1; "}
                       (div { `style: "flex-grow: 0;"  }
