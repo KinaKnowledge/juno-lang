@@ -36,7 +36,12 @@ To use the Seedling IDE for the Juno language, start the Seedling services:
 (http/start)
 ```
 
-Point your preferred browser to the URL: [https://localhost:56432/env/seedling.html](https://localhost:56432/env/seedling.html).  Since the system uses HTTPS by default, and uses a self-signed cert under `tls/`, you will receive a browser complaint about the cert being not valid.  You will need to accept the warning in order to load the system.  This warning doesn't appear when using certificates that are signed by authorities recognized by the browser. 
+Point your preferred browser to the URL: [http://localhost:56432/env/seedling.html](http://localhost:56432/env/seedling.html).  
+
+The system doesn't use HTTPS by default at the moment due to issues in maintaining websockets with self-signed certificates in Deno and its underlying Rust based websocket implementation.  
+
+Note: If you are using Deno (< version 1.32 ) self-signed HTTPS certificates can be used and should not encounter ping timeout errors.  
+
 
 In Linux and macOS, the init script `lib/juno` can be invoked without an image, which will load an empty environment with only the core symbols and an empty `user` namespace:
 ```
