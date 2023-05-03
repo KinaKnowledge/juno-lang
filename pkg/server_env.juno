@@ -473,7 +473,7 @@
               (progn               
                   (= parameters (get_parameters_for_match matched_handler request_event url))
                   ;(console.log "http_request_router: parameters: " parameters)
-                  (= response (-> matched_handler `handler request_event parameters )) ;; AAC
+                  (= response (-> matched_handler `handler request_event parameters )) 
                   (if (not (instanceof response Response))
                       (throw TypeError "Invalid Response object from handler")))
                (catch Error (e)
@@ -560,7 +560,7 @@
                  
 
 (defmacro file_spooler (base_directory)
-   `(fn (request_event request_parameters) ;; AAC
+   `(fn (request_event request_parameters) 
        (let
           ((filepath request_parameters.path)
            (file nil)
@@ -606,13 +606,13 @@
    })
 
 (defmacro content_spooler_with_type (content_function content_type)
-   `(fn (request_event request_parameters) ;; AAC
+   `(fn (request_event request_parameters) 
        (let
           ((content_function ,#content_function)
            (content_type ,#content_type))
           (try
             (progn
-               (new Response (new Blob [(content_function request_event request_parameters)] ;; AAC
+               (new Response (new Blob [(content_function request_event request_parameters)] 
                                            { `type: content_type })))
                    
              (catch Error (e)
@@ -630,12 +630,12 @@
    })
 
 (defmacro content_spooler (content_function)
-   `(fn (request_event request_parameters) ;; AAC
+   `(fn (request_event request_parameters) 
        (let
           ((content_function ,#content_function))
           (try
             (progn
-               (defvar rsp (content_function request_event request_parameters))  ;; AAC
+               (defvar rsp (content_function request_event request_parameters))  
                (console.log "content_spooler: received: " (sub_type rsp))
                (cond
                   (and (is_object? rsp)
@@ -726,7 +726,7 @@
        `base_directory: nil
    })
 
-(defun echo_params (request_event parameters)   ;; AAC
+(defun echo_params (request_event parameters)   
    (progn
       (console.log "set_global_value: parameters: " parameters)
       (console.log "set_global_value: request_event: " request_event)
@@ -737,7 +737,7 @@
             })))
 
 (defun save_file_handler (base_directory)
-  (fn (request_event parameters)   ;; AAC
+  (fn (request_event parameters)   
     (let
         ((buffer nil)
          (bytes_written 0)
@@ -842,24 +842,17 @@
 
 
 
-(defun websocket_handler (options)
-   (let
-      ((options (clone options)))
-      (assert (and (is_object? options)
-                   options.on_open
-                   options.on_close
-                   options.on_message
-                   options.on_error)
-              "Invalid options provided to the websocket_handler: options must be an object with on_open, on_close, on_message and on_error functions.")
-      ;(console.log "websocket_handler: options: " options)
-      (fn (request_event parameters) ;; AAC
+(defmacro websocket_handler (options)
+   `(let
+       ((options ,#options))
+       (fn (request_event parameters) 
          (let
             ((returned_response nil)
              (upgrade_result nil))
             (try
                (progn
                   (vlog "websocket_handler: initializing websocket")
-                  (= upgrade_result (-> Deno `upgradeWebSocket request_event.request))
+                  (= upgrade_result (-> Deno `upgradeWebSocket request_event.request { }))
                   (= returned_response upgrade_result.response)
                   (vlog "websocket_handler: upgraded to websocket: " upgrade_result)
                   (set_prop upgrade_result.socket
@@ -1240,7 +1233,7 @@
          ;; API change into Deno v2 from Deno.run, which is to be deprecated, to Deno.Command
          (= process_handle
             (new Deno.Command browser {  args:["--new-window"
-                                               (+ "--app=https://localhost:" (or options.port 56432) "/env/" (or options.instance "seedling.html"))] }))
+                                               (+ "--app=http://localhost:" (or options.port 56432) "/env/" (or options.instance "seedling.html"))] }))
          (-> process_handle `spawn))))
                        
 
@@ -1262,7 +1255,8 @@
      ((options (or options {
          hostname: `localhost
      })))
-     (unless (or options.certFile options.cert options.key options.keyFile options.no_https)
+     (if (and (or options.certFile options.cert)  
+              (or options.key options.keyFile))
         (if (and (not (blank? temp_cert))
                  (not (blank? temp_key)))
             (progn
