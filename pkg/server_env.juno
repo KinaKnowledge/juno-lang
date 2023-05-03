@@ -473,7 +473,7 @@
               (progn               
                   (= parameters (get_parameters_for_match matched_handler request_event url))
                   ;(console.log "http_request_router: parameters: " parameters)
-                  (= response (-> matched_handler `handler parameters request_event))
+                  (= response (-> matched_handler `handler request_event parameters )) ;; AAC
                   (if (not (instanceof response Response))
                       (throw TypeError "Invalid Response object from handler")))
                (catch Error (e)
@@ -560,7 +560,7 @@
                  
 
 (defmacro file_spooler (base_directory)
-   `(fn (request_parameters request_event)
+   `(fn (request_event request_parameters) ;; AAC
        (let
           ((filepath request_parameters.path)
            (file nil)
@@ -606,13 +606,13 @@
    })
 
 (defmacro content_spooler_with_type (content_function content_type)
-   `(fn (request_parameters request_event)
+   `(fn (request_event request_parameters) ;; AAC
        (let
           ((content_function ,#content_function)
            (content_type ,#content_type))
           (try
             (progn
-               (new Response (new Blob [(content_function request_parameters request_event)]
+               (new Response (new Blob [(content_function request_event request_parameters)] ;; AAC
                                            { `type: content_type })))
                    
              (catch Error (e)
@@ -630,12 +630,12 @@
    })
 
 (defmacro content_spooler (content_function)
-   `(fn (request_parameters request_event)
+   `(fn (request_event request_parameters) ;; AAC
        (let
           ((content_function ,#content_function))
           (try
             (progn
-               (defvar rsp (content_function request_parameters request_event))
+               (defvar rsp (content_function request_event request_parameters))  ;; AAC
                (console.log "content_spooler: received: " (sub_type rsp))
                (cond
                   (and (is_object? rsp)
@@ -726,7 +726,7 @@
        `base_directory: nil
    })
 
-(defun echo_params (parameters request_event)
+(defun echo_params (request_event parameters)   ;; AAC
    (progn
       (console.log "set_global_value: parameters: " parameters)
       (console.log "set_global_value: request_event: " request_event)
@@ -737,7 +737,7 @@
             })))
 
 (defun save_file_handler (base_directory)
-  (fn (parameters request_event)
+  (fn (request_event parameters)   ;; AAC
     (let
         ((buffer nil)
          (bytes_written 0)
@@ -844,7 +844,7 @@
 
 (defun websocket_handler (options)
    (let
-      ((options options))
+      ((options (clone options)))
       (assert (and (is_object? options)
                    options.on_open
                    options.on_close
@@ -852,32 +852,33 @@
                    options.on_error)
               "Invalid options provided to the websocket_handler: options must be an object with on_open, on_close, on_message and on_error functions.")
       ;(console.log "websocket_handler: options: " options)
-      (fn (parameters request_event)
+      (fn (request_event parameters) ;; AAC
          (let
             ((returned_response nil)
-             (options options))
-            (declare (local socket response)
-                     (object socket response))
+             (upgrade_result nil))
             (try
                (progn
                   (vlog "websocket_handler: initializing websocket")
-                  ;; embed js since the compiler doesn't have a construct for multiple return values.
-                  (javascript | let { socket, response } = Deno.upgradeWebSocket(request_event.request) | )
-                  (= returned_response response)
-                  (vlog "websocket_handler: upgraded to websocket: " returned_response)
-                  (set_prop socket
+                  (= upgrade_result (-> Deno `upgradeWebSocket request_event.request))
+                  (= returned_response upgrade_result.response)
+                  (vlog "websocket_handler: upgraded to websocket: " upgrade_result)
+                  (set_prop upgrade_result.socket
                      `onopen
                      (fn (event)
-                        (-> options `on_open socket event parameters))
+                        (-> options `on_open upgrade_result.socket event parameters))
                      `onmessage
                      (fn (event)
-                        (-> options `on_message socket event))
+                        (try 
+                           (progn
+                              (-> options `on_message upgrade_result.socket event))
+                              (catch Error (e)
+                                 (console.error "ERROR: caught error from onmessage"))))
                      `onclose
                      (fn (event)
-                        (-> options `on_close socket event))
+                        (-> options `on_close upgrade_result.socket event))
                      `onerror
                      (fn (event)
-                        (-> options `on_error socket event))))
+                        (-> options `on_error upgrade_result.socket event))))
                (catch Error (e)
                   (progn
                      (console.error "websocket_handler: error on constructing socket: " e.message)
@@ -988,6 +989,16 @@
    {})
 
 
+(defun get_wrapper_for_ws (ws)
+   (let
+      ((the_wrapper nil))
+      (for (wrapper (values *active_websockets*))
+           (when (== wrapper.ws ws)
+              (= the_wrapper wrapper)
+              (break)))
+      the_wrapper))
+
+
 (defun create_ws_repl_handler (options)
    (let
       ((namespace nil)
@@ -1003,8 +1014,11 @@
       (websocket_handler {
                            `on_open: (fn (ws event parameters)
                                         (try
-                                           (progn
-                                              (set_prop ws
+                                           (let
+                                              ((ws_wrapper {}))
+                                              
+                                              (set_prop ws_wrapper
+                                                 `ws ws
                                                  `ws_id (inc *ws_counter*)
                                                  `namespace (or options.namespace "user")
                                                  `log (fn (args)
@@ -1019,14 +1033,15 @@
                                                                `is_log: true
                                                              })))
                                               (set_prop *active_websockets*
-                                                 ws.ws_id
-                                                 ws)
+                                                    ws_wrapper.ws_id
+                                                    ws_wrapper)
+                                              (console.log "on_open: event: " event)
                                               (vlog "ws_repl_handler: new open request: default namespace: " (or options.namespace "user"))
                                               
                                               (vlog "ws_repl_handler: sending namespace information packet")
                                               (send_to_ws ws
-                                                 { ws_id: ws.ws_id
-                                                   namespace: ws.namespace }))
+                                                 { ws_id: ws_wrapper.ws_id
+                                                   namespace: ws_wrapper.namespace }))
                                                                     
                                            (catch Error (e)
                                               (progn
@@ -1037,6 +1052,7 @@
                                                  ((data (JSON.parse event.data))
                                                   (command (prop data `command))
                                                   (args (prop data `args))
+                                                  (ws_wrapper (get_wrapper_for_ws ws))
                                                   (cmd_opts (or args.1 {}))
                                                   (request_id (prop data `req_id))
                                                   (compiled_metadata nil)
@@ -1047,12 +1063,15 @@
                                                                         (= compiled_source compilation_results.1))))
                                                   
                                                   (result_type nil)
-                                                  (evaluator (get_evaluator_for_ns ws.namespace))
+                                                  (evaluator (if ws_wrapper 
+                                                                 (get_evaluator_for_ns ws_wrapper.namespace)))
                                                   (result nil))
                                                  (= compiled_source nil)
                                                  (= compiled_metadata nil)
                                                  (vlog "ws_repl_handler: -> " data cmd_opts)
                                                  (cond
+                                                    (eq nil ws_wrapper)
+                                                    (console.error "ERROR: cannot find wrapper for websocket")
                                                     (and (== command "eval")
                                                          (is_array? args)
                                                          (starts_with? "(use_ns " (trim args.0)))
@@ -1064,27 +1083,37 @@
                                                           (if (is_reference? cmd.1)
                                                               (progn
                                                                  (= evaluator (get_evaluator_for_ns (desym_ref cmd.1)))
+                                                                 (if (is_object? evaluator)
+                                                                     (console.log "found evaluator: " evaluator.namespace)
+                                                                     (console.log "no evaluator yet"))
                                                                  (when evaluator
-                                                                    (set_prop ws
+                                                                    (set_prop ws_wrapper
                                                                        `namespace
                                                                        (desym_ref cmd.1)))
                                                                  (send_to_ws ws
-                                                                    (encode_remote_result request_id ws.namespace evaluator.namespace { ws_id: ws.ws_id } )))
+                                                                    (encode_remote_result request_id ws_wrapper.namespace evaluator.namespace { ws_id: ws_wrapper.ws_id } )))
                                                               (send_to_ws ws
-                                                                 (encode_remote_result request_id "Malformed namespace change request. See use_ns syntax" evaluator.namespace { ws_id: ws.ws_id }))))
+                                                                 (encode_remote_result request_id "Malformed namespace change request. See use_ns syntax" evaluator.namespace { ws_id: ws_wrapper.ws_id }))))
                                                        (catch Error (e)
                                                           (send_to_ws ws
-                                                             (encode_remote_result request_id e evaluator.namespace { ws_id: ws.ws_id }))))
+                                                             (encode_remote_result request_id e evaluator.namespace { ws_id: ws_wrapper.ws_id }))))
                                                     
                                                     
                                                     (and (== command "eval")
                                                          (is_array? args))
                                                     (try
                                                        (progn
-                                                          (= result (-> evaluator `evaluate_local args.0 { scope: { ws_id: ws.ws_id}}  (+ {} cmd_opts { on_compilation_complete: compl_complete })))
-                                                          (vlog "ws_repl_handler: " namespace " <- " result)
-                                                          (send_to_ws ws
-                                                             (encode_remote_result request_id result evaluator.namespace { ws_id: ws.ws_id })))
+                                                          (if evaluator
+                                                             (progn
+                                                                (= result (-> evaluator `evaluate_local args.0 { scope: { ws_id: ws_wrapper.ws_id}}  (+ {} cmd_opts { on_compilation_complete: compl_complete })))
+                                                                (vlog "ws_repl_handler: " namespace " <- " result)
+                                                                (send_to_ws ws
+                                                                   (encode_remote_result request_id result evaluator.namespace { ws_id: ws_wrapper.ws_id })))
+                                                             (progn
+                                                                (console.log "ws: on_message: no evaluator": args)
+                                                                (send_to_ws ws
+                                                                   (encode_remote_result request_id { "ERROR:" "No Evaluator" } evaluator.namespace { ws_id: ws_wrapper.ws_id })))))
+                                                          
                                                        (catch Error (e)
                                                           (progn
                                                              
@@ -1102,7 +1131,7 @@
                                                                 (progn
                                                                    (console.error "ws_repl_handler: error on eval: " e.message e.details)
                                                                    (send_to_ws ws
-                                                                      (encode_remote_result request_id e evaluator.namespace { ws_id: ws.ws_id })))
+                                                                      (encode_remote_result request_id e evaluator.namespace { ws_id: ws_wrapper.ws_id })))
                                                                 (catch Error (send_error)
                                                                    (console.error "Unable to send to web socket: " send_error))))))
                                                     (== command "close")
@@ -1118,11 +1147,12 @@
                                             (console.error "ws_repl_handler: on_error: " error ws)
                                             (log "error on websocket: " error)))
                            `on_close: (fn (ws event)
-                                         (progn
+                                         (let
+                                            ((ws_wrapper (get_wrapper_for_ws ws)))
                                             (vlog "ws_repl_handler: close event: closing remote connection")
-                                            (when ws.ws_id
+                                            (when ws_wrapper.ws_id
                                                (remove_prop *active_websockets*
-                                                  ws.ws_id))))
+                                                  ws_wrapper.ws_id))))
                            })))
 
 
@@ -1282,7 +1312,7 @@
           (eval
              `(fn (`& args)
                  (let
-                    ((ws (prop http/*active_websockets* ,#websocket_id)))
+                    ((ws (prop (prop http/*active_websockets* ,#websocket_id) `ws)))
                     (if ws
                        (http/send_to_ws ws
                                         (http/encode_remote_result 0 args (current_namespace)
