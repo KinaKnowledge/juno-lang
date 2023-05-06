@@ -15,7 +15,7 @@
 
 (import "pkg/base-io.lisp")
 (import "pkg/lz-string.juno")
-
+(import "pkg/sys.juno")
 ;; A list of routes to be checked
 ;; they are of the form [regex_match route_handler_function]
 
@@ -736,6 +736,14 @@
              `status: 200
             })))
 
+(defun base_directory_handler (request_event parameters)   
+   (progn
+      (new Response (new Blob [(JSON.stringify { "rval":"OK" "base": (get_default [ `http_services `base_directory ]) "cwd": (sys/cwd) })]
+                         { `type: "application/json" })
+           {
+             `status: 200
+            })))
+
 (defun save_file_handler (base_directory)
   (fn (request_event parameters)   
     (let
@@ -1165,8 +1173,24 @@
    (set_path [ `http_services `base_directory ] *env_config* "./"))
    
 
-
-
+(defun set_file_system_root (path_to_base_dir)
+   (if (sys/is_dir? path_to_base_dir)
+       (progn
+          (http/remove_http_route "GET" "/files")
+          (http/add_http_route "GET" "/files" (file_spooler path_to_base_dir))
+          (http/remove_http_route "POST" "/save_file")
+          (http/add_http_route "POST" "/save_file" (file_spooler path_to_base_dir))
+          (set_default ( `http_services `base_directory ) path_to_base_dir)
+          path_to_base_dir)
+       (throw EvalError "set_file_system_root: invalid base directory"))
+   {
+       description: "Sets the base directory for the /files service and /save_file service."
+       usage: []
+       tags: ["files" "file_system" "service" "base_directory" "root" "base"]
+   })
+          
+         
+         
    
 (defun env_bank (port base_directory options)
    (let
@@ -1191,6 +1215,7 @@
       
      (add_http_route "GET" "/env" (file_spooler (+ base_directory "/environments")))
      (add_http_route "GET" "/files" (file_spooler base_directory))
+     (add_http_route "GET" "/base_directory" base_directory_handler)
      (add_http_route "POST" "/echo_params"
                      echo_params)
      (add_http_route "POST" "/save_file"
@@ -1274,8 +1299,8 @@
                (log ""))))
                
        
-   (env_bank (or options.port (resolve_path [ `http_services `port ] *env_config*))
-             (or options.base_directory "./")
+   (env_bank (or options.port (get_default [ `http_services `port ]))
+             (or options.base_directory (get_default [ `http_services `base_directory ] *env_config*) "./")
              options)))
 
 
@@ -1354,8 +1379,6 @@
 
 (register_feature "http_server")
 (import "pkg/http_client.juno")
-
-
 
 
 true
