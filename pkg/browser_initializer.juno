@@ -193,6 +193,17 @@
      `tags: ["DOM" "ui" "serialize" "serialization" "view" "element" ]
    })
 
+(defun dimensions (elem)
+   (if (is_element? elem)
+      (-> elem `getBoundingClientRect)
+      (throw TypeError "dimensions requires a DOM element object"))
+   {
+     description: (+ "Given a DOM element, returns the current geometry of the provided "
+                     "element as an object.  <br>If nil or a non-Element is provided, " 
+                     "a `TypeError` will be thrown. ")
+     usage: ["element:Element"]
+     tags: ["bounding" "boundaries" "geometry" "element" "DOM" "element" "dimension"]
+     })
 
 (defun file_picker_button (button_text on_selection)
   (let
@@ -1612,9 +1623,83 @@
                          "will return mac, otherwise it will return win")
         `tags: ["os" "system" "platform" "architecture" "host" "navigator" ]
     })
+   
+
+(defun normalize_file_path (target_path _provided_env)
+   (let
+      ((env_details (if (is_object? _provided_env)
+                        _provided_env
+                        (aif (http/get "/base_directory")
+                         (and it.rval
+                            (== it.rval "OK")
+                            (prop it `data)))))
+       (server_base_directory env_details.base)
+       (server_cwd env_details.cwd)
+       (is_absolute? (fn (val)
+                        (starts_with? "/" val)))
+       (is_relative? (fn (val)
+                        (not (is_absolute? val))))
+       (clean (fn (val)
+                 (reduce (v val)
+                    (unless (or (blank? v)
+                                (== v ".")
+                                (== v ".."))
+                       v))))
+       (target_path (if (blank? target_path)
+                        env_details.cwd
+                        target_path))
+       (target_comps (clean (split_by "/" target_path)))
+       (base_comps (clean (split_by "/" env_details.base)))
+       (cwd_comps (clean (split_by "/" env_details.cwd)))
+       (common_root []))
       
+      (cond
+         (and (is_absolute? env_details.base)
+              (is_absolute? target_path))
+         (progn
+            (for ((p1 p2) (pairs_from_list (interlace base_comps target_comps)))
+                 (if (== p1 p2)
+                     (push common_root p1)))
+            (if (== common_root.length base_comps.length)
+                (+ "/" (join "/" (conj common_root
+                                       (slice target_comps common_root.length))))
+                nil))
+         (is_absolute? env_details.base)
+         (progn
+            (for ((p1 p2) (pairs_from_list (interlace base_comps cwd_comps)))
+                 (if (== p1 p2)
+                     (push common_root p1)))
+            (if (== common_root.length base_comps.length)
+                (+ "/" (join "/" (conj cwd_comps
+                                       target_comps)))
+                nil))
+         (is_relative? env_details.base)
+         (progn
+            (+ "/" (join "/" target_comps)))
+         else
+         nil)))
+   
 (defun load (fname)
-   (evaluate (-> (fetch (+ "/files/" fname)) `text)))
+   (let
+      ((path_details (normalize_file_path fname))
+       (load_data nil))
+      (declare (function normalize_file_path)
+               (global normalize_file_path))
+      (if path_details
+         (progn
+            (= load_data (fetch (+ "/files" path_details)))
+            (if (== load_data.status 200)
+                (evaluate (-> load_data `text))
+                (throw EvalError "load: resource not found")))
+         (throw Error "load: not able to connect to server")))
+   {
+     description: (+ "Given a string representing a path to a server resource will read the "
+                     "file and evaluate it in the calling environment.  Note that the file path must "
+                     "be expressed relative to the base directory of the server\'s /file service.  "
+                     "The `load` function will prefix the `/files` service name to the given path. ")
+     usage: ["pathname:string"]
+     tags: ["read" "eval" "load" "import"]
+   })
 
 (defun message (text)
   (div { `style: "border-left: 5px solid darkblue; padding: 5px;" } text))
@@ -5955,6 +6040,36 @@
        `tags: ["alert" "popup" "catch" "errors" "ui" "DOM"]
    })
 
+(defmacro set_file_system_root (path no_warn)
+   `(when is_served?
+       (let
+          ((ctls (reduce (ctl (all_editor_controls))
+                          (if (and (prop ctl `save)
+                                   (prop ctl.options `filename))
+                              ctl))))
+          (declare (function dispatch_event)
+                   (global dispatch_event))
+          (if (> (length ctls)
+                 0)
+              (alert_box (dtext "Set System Root")
+                         (div { } (dtext "The following controls must be closed prior to proceeding with this operation.")
+                              (ol
+                                 (for_each (ctl ctls)
+                                    (li ctl.options.name))))))
+          (rblock
+             (http/set_file_system_root ,#path))
+          (dispatch_event { `command: "change_file_system_root" source: nil args:(list ,#path) } )))
+   {
+     description: (+ "If the browser environment is hosted (as determined "
+                     "by `is_served?` being `true` ), then the provided `path` argument will be set "
+                     "as the base path for the `/files` and `/save_file` services on the server.  An "
+                     "event is then transmitted, via `dispatch_event` with a command value of "
+                     "\"change_file_system_root\" and a `nil` source, with a single argument of the "
+                     "new `path`. ")
+     usage: ["path:string"]
+     tags: ["path" "server" "root" "base_directory"]
+   })
+
 ;; -- Control Events --------
 ;; event routing is handled by a map that combines the command value and the source value.
 ;; if an array is found at the value, it will call each function in the array in sequence
@@ -6137,16 +6252,27 @@
       true)
    {
      
-     `description: (+ "<br><br>Dispatches received event objects from controls using the "
-                      "*event_routes* table.  Routes are determined via compute_handler_key.  If a "
-                      "route key resolves to an array, each handler function in the found array in the "
-                      "*event_routes* table is called in sequence.  Routes are collected by first "
-                      "looking for handlers that act on the source+command, then source, then "
+     `description: (+ "Given an `event_obj` will route the object to interested handler "
+                      "functions as defined in the `*event_routes*` table.  An event object can "
+                      "contain both or either keys `command` and `source`, which serve as a selector "
+                      "for handler functions, along with an `args` array containing 0 or more element "
+                      "values as data to be passed to a matching event handler.  More than one event "
+                      "handler can be subscribed to a specific event selector.<br>If a route key "
+                      "resolves to an array, each handler function in the found array in "
+                      "the `*event_routes*` table is called in sequence.  Routes are collected by "
+                      "first looking for handlers that act on the source+command, then source, then "
                       "command.<br>The event handler functions are called with the `event_object` as a "
-                      "single argument, such as `(my_handler_function event_object)`.<br>Use "
-                      "register_event_handler to add event handlers and remove_event_handler remove "
-                      "handlers. The function return value shouldn\'t be used. ")
-
+                      "single argument, such as `(my_handler_function "
+                      "event_object)`.<br>Use `register_event_handler`  to add event handlers and "
+                      "remove_event_handler remove handlers. The function return value shouldn\'t be "
+                      "used. <br>An example event passed to `dispatch_event` :```{ command: \"focus\" \n "
+                      "source: self.id\n  args: [] }```<br><br>In the above event, the \"focus\" command "
+                      "is dispatched, along with the event source, which in the above is the `id` of "
+                      "the control.  No arguments are passed.  A matching event handler would be "
+                      "registered for the command string \"focus\" and for the specific id.  Another "
+                      "matching event handler could be registered with a `nil` source, but for the "
+                      "\"focus\" command, and thus would receive all focus events, regardless of "
+                      "source.<br> ")
      `usage: ["event_obj:object"]
      `tags: ["events" "controls" "key" "handlers" "dispatch" "routes" "create" ]
      })
@@ -9087,6 +9213,8 @@
             (= text (-> editor `getCopyText))
             (evaluate_css_rule_text text)))))
 
+
+
 (defun open_symbol_definition (symbol namespace initiating_control_id)
    (let 
       ((env (if (is_string? namespace)  ;; if given a namespace, get the symbol from the perspective of the namespace, otherwise just use the current
@@ -9105,6 +9233,7 @@
                  else
                  nil))
        (source_file nil)
+       (path_details nil)
        (is_buffer? false)
        (src_files [ "base-io.lisp" "repl.lisp" "io.lisp" "core.lisp" "compiler.lisp" "reader.lisp" "environment.lisp" "build-tools.lisp" "core-ext.lisp" ])
        (ctl nil))
@@ -9139,6 +9268,8 @@
                           (-> it `jump_to_local_definition symbol))))
                source_file
                (progn
+                  (= source_file (normalize_file_path source_file))
+                  (log "jumping to source symbol: " source_file)   
                   (edit_file { `filename: source_file })
                   (aif (get_control_by_name (last (split_by "/" source_file)))
                        (when (not (== it.options.id initiating_control_id))
@@ -12816,6 +12947,30 @@
      `tags: ["websocket" "remote" "server" "rblock" "eval" "evaluate" "create_remote_evaluator"]
      })
 
+(defun cwd ()
+   (if is_served?
+      (rblock (sys/cwd))
+      nil)
+   {
+     `description: (+ "If the browser environment is hosted ( `is_served?` is `true` ), "
+                      "returns the current working directory of the server process the browser "
+                      "environment is attached to, otherwise `nil` is returned. ")
+     `usage: []
+     `tags: ["system" "server" "current" "directory" "working" "folder"]
+   })
+
+(defmacro stat_file (path)
+   `(if is_served?
+       (rblock (sys/stat ,#path))
+       "Remote evaluator not available")
+   {
+     `description: (+ "Given a string based path that is accessible to the server process, "
+                      "returns an object representing the path\'s target characteristics.  Note this "
+                      "function must be evaluated when the client environment is able to use "
+                      "the `rblock` macro, which requires WebSocket support enabled in the server. ")
+     `usage: ["path:string"]
+     `tags: ["file" "files" "fs" "filesystem" "stat" "properties"]
+   })
 
 (defun set_system_repl (repl_control)
    (cond
@@ -12853,6 +13008,7 @@
      `tags: ["repl" "system" "log" "messages" "errors" "display"]
      `usage: ["repl_control:object"]
    })
+
 (defparameter *repl_counter* 0)
 
 (defun visual_repl (options)
@@ -14353,7 +14509,7 @@
    ((options (or (and (is_object? options)
                           options)
                      (throw SyntaxError "options object is required for tree_browser")))
-    (stack [])
+    (stack (or options.stack []))
     (initial_render false)
     (title_span (span { spellcheck: false `contenteditable: true `tabindex: 0 `style: "caret-color: red; outline: none; display: inline-block; font-size: 1.1em; font-weight: bold; font-family: var(--main-mono-space); min-width: 10px; border: 1px dotted goldenrod; padding-left: 5px; padding-right: 5px" } ""))
     (caps_lock_span (span { `class: "juno-display-none" `style: "margin-left: 20px; padding-top: 2px; padding-left: 5px; padding-right: 5px; padding-bottom: 2px; border-radius: 3px; border: 1px solid var(--main-color); " } (dtext "caps lock")))
@@ -14363,7 +14519,7 @@
                      (options.on_destroy self))
                    true)))
     (current_pos 0)
-    (content_view (div { `style: "" `class: "juno-symbol-browser" }))
+    (content_view (div { `style: "overflow-x: auto" `class: "juno-symbol-browser" }))
     (get_current_stack (fn ()
                            (clone stack)))
     (select_text (dtext (or options.select_text
@@ -14379,7 +14535,11 @@
                         (for_each (child ol_elem.children)
                            (if (and (is_element? child)
                                     (== (get_attribute child "path_value") selected_child_text))
-                               (add_class "juno-selected" child)
+                               (progn 
+                                  (add_class "juno-selected" child)
+                                  ;(set_prop ol_elem `scrollTop (prop (dimensions child) `top))
+                                  (-> child `scrollIntoView false)
+                                  )
                                (remove_class "juno-selected" child))))))
     (path_sep (fn ()
                  (or options.path_separator "/")))
@@ -14899,9 +15059,16 @@
                                        (= new_ol_elem (create_ol_at_pos pos))
                                        (if new_ol_elem
                                           (-> content_view `append
-                                             (create_ol_at_pos pos)))))))
+                                             new_ol_elem))
+                                       (if (prop stack pos)
+                                           (select_child new_ol_elem (prop stack pos)))
+                                       ))))
                            (catch Error (e)
                               (log "Error on: stack render p2: " e.message)))
+                        (set_prop content_view
+                           `scrollLeft (prop (dimensions content_view) `width))
+                        (set_prop view
+                           `scrollTop 0)
                         (try
                            (render_title prefix)
                            (catch Error (e)
@@ -14929,64 +15096,93 @@
 
 
 (defun file_tree_browser(options)
-    (let
-       ((create_mode options.create_mode)
-        (render_entry (fn (entry)
+   (let
+      ((create_mode options.create_mode)
+       (env_details (aif (http/get "/base_directory")
+                         (and it.rval
+                            (== it.rval "OK")
+                            (prop it `data))))
+       (render_entry (fn (entry)
+                        (let
+                           ((etype (fn (entry)
+                                      (cond
+                                         entry.isDirectory "directory"
+                                         entry.isFile "file"
+                                         entry.isSymlink "symlink")))
+                            (rval nil))
+                           (= rval
+                              {
+                                `has_children?: entry.isDirectory
+                                `path_value: entry.name
+                                `class: (etype entry)
+                                `ctype: "sym"
+                                `view: (div { `style: "display: inline-block; width: 100%;"
+                                              `class: (+ "juno-type-file-entry " (etype entry)) }
+                                         entry.name
+                                         (if entry.isDirectory
+                                            (span { `style: "display: inline-block; float: right" } "▸")
+                                            "")) })
+                           ;(log "render_entry: entry rval: " rval rval.view.outerHTML)
+                           rval)))
+       
+       (get_possibles (fn (pos control)
                          (let
-                              ((etype (fn (entry)
-                                         (cond
-                                                entry.isDirectory "directory"
-                                                entry.isFile "file"
-                                                entry.isSymlink "symlink")))
-                               (rval nil))
-                              (= rval
+                            ((cpath (join "/" (slice (-> control `get_current_stack) 0 pos)))
+                             (next_values (if (== pos 0)
+                                              (http/list_files "/")
+                                              (http/list_files cpath))))
+                            (when (is_array? next_values)
+                               (sort next_values { `key:`name }))
+                            (= next_values (clone next_values))
+                            (cond
+                               (is_array? next_values)
+                               (for_each (entry next_values)
+                                  (render_entry entry))
+                               (instanceof next_values Blob)
                                {
-                                 `has_children?: entry.isDirectory
-                                 `path_value: entry.name
-                                 `class: (etype entry)
-                                 `ctype: "sym"
-                                 `view: (div { `style: "display: inline-block; width: 100%;"
-                                               `class: (+ "juno-type-file-entry " (etype entry)) }
-                                               entry.name
-                                               (if entry.isDirectory
-                                                    (span { `style: "display: inline-block; float: right" } "▸")
-                                                      "")) })
-                              ;(log "render_entry: entry rval: " rval rval.view.outerHTML)
-                              rval)))
-        
-        (get_possibles (fn (pos control)
-                           (let
-                              ((next_values (if (== pos 0)
-                                                (http/list_files "/")
-                                                (http/list_files (join "/" (-> control `get_current_stack))))))
-                              (when (is_array? next_values)
-                                 (sort next_values { `key:`name }))
-                              (= next_values (clone next_values))
-                              (cond
-                                 (is_array? next_values)
-                                 (for_each (entry next_values)
-                                    (render_entry entry))
-                                 (instanceof next_values Blob)
-                                 {
-                                   `has_children?: false
-                                   `ctype: "file"
-                                   `style: "width: calc(100% - 10px) !important;"
-                                   `view: (div { `style: "display: inline-block; width: calc(100% - 50px); height: 100%; overflow: hidden" }
-                                               (div { `style: "height: calc(100% - 30px); overflow: scroll;" }
-                                                    (pre {} (-> next_values `text)))
-                                               (div { `style: "padding: 10px;" }
-                                                    []))  ;; placeholder for any additional information about the file
-                                   }
-                                 else
-                                 {
-                                   `has_children?: false
-                                   `ctype: "file"
-                                   `view: (pre {} (sub_type next_values))
-                                   }))))
-        
-        (control (tree_browser (+ { `path_separator: "/"
-                                    `render_entry: render_entry
-                                    `get_possibles: get_possibles
+                                 `has_children?: false
+                                 `ctype: "file"
+                                 `style: "width: calc(100% - 10px) !important;"
+                                 `view: (div { `style: "display: inline-block; width: calc(100% - 15px); height: calc(100% - 10px); overflow: hidden" }
+                                             (div { `style: "height: calc(100% - 0px); overflow: auto;" }
+                                                  (try
+                                                     (dtable (let
+                                                                ((details (eval `(stat_file ,#(+ env_details.base cpath)))))
+                                                                [["Size" details.size]
+                                                                 ["Last Accessed" details.atime]
+                                                                 ["Last Modified" details.mtime]
+                                                                 ["Created At" details.birthtime]]))
+                                                     
+                                                     (catch Error (e)
+                                                        "Unable to remote stat the file")))
+                                             (div { `style: "padding: 10px;" }
+                                                  []))  ;; placeholder for any additional information about the file
+                                 }
+                               else
+                               {
+                                 `has_children?: false
+                                 `ctype: "file"
+                                 `view: (pre {} (sub_type next_values))
+                                 }))))
+       (path_details nil)
+       (control nil))
+      (declare (object control))
+      
+      
+      ;; set the path for the system
+      
+      (if options.base_directory (log "file_tree_browser: starting with: " options.base_directory))
+      (= path_details (if (starts_with? "." env_details.base)
+                          nil
+                          (normalize_file_path options.base_directory env_details)))
+      (if path_details
+         (set_prop options
+            `stack (if (starts_with? "/" path_details)
+                       (rest (split_by "/" path_details))
+                       (split_by "/" path_details))))
+      (= control (tree_browser (+ { path_separator: "/"
+                                    render_entry: render_entry
+                                    get_possibles: get_possibles
                                     allow_non_matches: (if create_mode true false)
                                     select_text: (if create_mode
                                                     "Press Enter To Create"
@@ -15017,11 +15213,14 @@
                                                                     (log "Error: " e.message)
                                                                     false))))
                                     }
-                                    (if (is_object? options)
-                                        options
-                                        {})))))
-       
-       control))
+                                 (if (is_object? options)
+                                     options
+                                     {}))))
+      control)
+   (progn
+      (alert_box "Connection Issue"
+                 "The service required for file browsing isn't available.")
+      nil))
 
 
 
@@ -19138,12 +19337,25 @@
                         ;; then we can switch back to where they were..
                         (current_layout (get_current_layout_control))
                         (current_control  *last_focus*)
+                        (env_details (aif (http/get "/base_directory")
+                                          (and it.rval
+                                             (== it.rval "OK")
+                                             (prop it `data))))
+                        (base_directory (cond 
+                                           (and current_control.options.path
+                                                (== (first current_control.options.path) "filesystem")
+                                                env_details.base
+                                                (== env_details.base "/"))
+                                           (+ "/" (join "/" (chop (rest current_control.options.path))))
+                                           else
+                                           nil))
                         (locked_state (layout_locked? current_layout))
                         (f0 (frame_0))
                         (target_layout  f0)
                         (target_control (or (get_control_by_id target_layout.options.last_focus_id) *last_focus* (default_focus)))
                         (control (file_tree_browser { 
-                                                      create_mode: create_mode                          
+                                                      create_mode: create_mode 
+                                                      base_directory: base_directory
                                                       on_select: (fn (stack)
                                                                     (progn
                                                                      (= selection (join "/" stack))
