@@ -738,7 +738,7 @@
 
 (defun base_directory_handler (request_event parameters)   
    (progn
-      (new Response (new Blob [(JSON.stringify { "rval":"OK" "base": (get_default [ `http_services `base_directory ]) "cwd": (sys/cwd) })]
+      (new Response (new Blob [(JSON.stringify { rval:"OK" data: { base: (get_default [ `http_services `base_directory ]) cwd: (sys/cwd) } })]
                          { `type: "application/json" })
            {
              `status: 200
@@ -763,7 +763,7 @@
                                          (= outfile (-> Deno `open (+ base_directory (or path "") "/" value.name) { truncate: true create: true write: true }))
                                          (while (< bytes_written buffer.length)
                                            (inc bytes_written
-                                                (-> outfile `write (-> buffer `subarray bytes_written))))                                         
+                                              (-> outfile `write (-> buffer `subarray bytes_written))))
                                          (push results
                                                { filename: (+ path "/" value.name)
                                                  length: bytes_written }))))))
@@ -1176,11 +1176,11 @@
 (defun set_file_system_root (path_to_base_dir)
    (if (sys/is_dir? path_to_base_dir)
        (progn
+          (set_default ( `http_services `base_directory ) path_to_base_dir)
           (http/remove_http_route "GET" "/files")
           (http/add_http_route "GET" "/files" (file_spooler path_to_base_dir))
           (http/remove_http_route "POST" "/save_file")
-          (http/add_http_route "POST" "/save_file" (file_spooler path_to_base_dir))
-          (set_default ( `http_services `base_directory ) path_to_base_dir)
+          (http/add_http_route "POST" "/save_file" (save_file_handler path_to_base_dir))
           path_to_base_dir)
        (throw EvalError "set_file_system_root: invalid base directory"))
    {

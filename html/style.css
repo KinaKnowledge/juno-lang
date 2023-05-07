@@ -1862,7 +1862,7 @@ span.juno-current-system-namespace {
 div.juno-symbol-browser {
   display: flex;
   align-content: flex-start;
-  height: 100%;
+  height: calc(100% - 20px);
   overflow-y: hidden;
   overflow-x: scroll;
 }

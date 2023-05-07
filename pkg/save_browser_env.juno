@@ -52,7 +52,59 @@
 
  ;; import the http client package into the image..
 (import "pkg/http_client.juno")
-
+(defun core/normalize_file_path (target_path _provided_env)
+   (let
+      ((env_details (if (is_object? _provided_env)
+                        _provided_env
+                        (aif (http/get "/base_directory")
+                             (and it.rval
+                                (== it.rval "OK")
+                                (prop it `data)))))
+       (server_base_directory env_details.base)
+       (server_cwd env_details.cwd)
+       (is_absolute? (fn (val)
+                        (starts_with? "/" val)))
+       (is_relative? (fn (val)
+                        (not (is_absolute? val))))
+       (clean (fn (val)
+                 (reduce (v val)
+                    (unless (or (blank? v)
+                                (== v ".")
+                                (== v ".."))
+                       v))))
+       (target_path (if (blank? target_path)
+                        env_details.cwd
+                        target_path))
+       (target_comps (clean (split_by "/" target_path)))
+       (base_comps (clean (split_by "/" env_details.base)))
+       (cwd_comps (clean (split_by "/" env_details.cwd)))
+       (common_root []))
+      
+      (cond
+         (and (is_absolute? env_details.base)
+              (is_absolute? target_path))
+         (progn
+            (for ((p1 p2) (pairs_from_list (interlace base_comps target_comps)))
+                 (if (== p1 p2)
+                     (push common_root p1)))
+            (if (== common_root.length base_comps.length)
+                (+ "/" (join "/" (conj common_root
+                                       (slice target_comps common_root.length))))
+                nil))
+         (is_absolute? env_details.base)
+         (progn
+            (for ((p1 p2) (pairs_from_list (interlace base_comps cwd_comps)))
+                 (if (== p1 p2)
+                     (push common_root p1)))
+            (if (== common_root.length base_comps.length)
+                (+ "/" (join "/" (conj cwd_comps
+                                       target_comps)))
+                nil))
+         (is_relative? env_details.base)
+         (progn
+            (+ "/" (join "/" target_comps)))
+         else
+         nil)))
 (defglobal core/*env_template* (LZString.compressToBase64 (read_text_file  "./src/environment.lisp")))
 
 ;; everything loaded above this line is what will be preserved...

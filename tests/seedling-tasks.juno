@@ -39,7 +39,7 @@
    [ place_control panel eval_in_iframe register_event_handler notify remove_event_handler quick_alert alert_box alert_on_error set_focus_to *last_focus*
      table tr td div span h4 th tbody thead dtable `
      defcontrol generate_id commands_button set_style 
-     control_frame focus_to compute_name_for_control get_control_by_name rblock 
+     control_frame focus_to compute_name_for_control get_control_by_name rblock normalize_file_path
      add_class remove_class make_named_layout split_view_vertical get_remote_sys_evaluator])
 
 (defparameter seedling_booted false)
@@ -170,7 +170,7 @@
       (place_control `right (panel "Test Frame" v))
       (open_test_frame (or url (+ "/env/seedling.html?theme=" (encodeURIComponent *env_config*.application.global_theme))) v)))
          
-;(make_test_frame)
+;(make_test_frame "/env/seedling_build.html")
 
 (defun validate_result (result)
    (progn
@@ -636,7 +636,7 @@
 (defun remote_file_access_reading ()
    (progn
       (reset_and_home_state)
-      (ev `(edit_file { `filename: "/src/core.lisp" }))
+      (ev `(edit_file { `filename: (normalize_file_path "./src/core.lisp") }))
       (defvar acc
          {
            name_correct: (== (name_of (last_focus)) "core.lisp")
@@ -670,7 +670,7 @@
       (rblock
          (if (sys/is_file? "./working/test-validation-file.juno")
              (sys/delete_file "./working/test-validation-file.juno")))
-      (ev `(new_file "working/test-validation-file.juno"))
+      (ev `(new_file (normalize_file_path "working/test-validation-file.juno")))
       (defvar acc {
           `new_buffer_visible: (and (== "test-validation-file.juno" (first (controls_visible)))
                                     (== (name_of (focused_control)) "test-validation-file.juno"))
@@ -703,7 +703,7 @@
          (if (sys/is_file? "./working/test-validation-file.css")
              (sys/delete_file "./working/test-validation-file.css")))
       
-      (ev `(edit_file { `filename: "./working/test-validation-file.css" `create_mode: true }))
+      (ev `(edit_file { `filename: (normalize_file_path "./working/test-validation-file.css") `create_mode: true }))
       (defvar acc {
                     `mode_correct: (ev `(== "css" (-> (get_control_by_name "test-validation-file.css") `get_mode)))
                     `name_correct: (and (== (name_of (last_focus)) "test-validation-file.css")
