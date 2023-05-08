@@ -15171,7 +15171,6 @@
       
       ;; set the path for the system
       
-      (if options.base_directory (log "file_tree_browser: starting with: " options.base_directory))
       (= path_details (if (starts_with? "." env_details.base)
                           nil
                           (normalize_file_path options.base_directory env_details)))
