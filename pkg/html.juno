@@ -117,7 +117,7 @@
    })
 
 (defmacro set_attribute (elem attrib value)
-   `(-> ,#elem `getAttribute ,#attrib ,#value)
+   `(-> ,#elem `setAttribute ,#attrib ,#value)
    {
      description: (+ "Given a DOM Element, attribute text and value, sets "
                      "the provided attribute to the value on the element. "
