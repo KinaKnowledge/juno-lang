@@ -1,7 +1,7 @@
 // Source: undefined  
-// Build Time: 2023-05-24 09:42:56
-// Version: 2023.05.24.09.42
-export const DLISP_ENV_VERSION='2023.05.24.09.42';
+// Build Time: 2023-05-25 11:32:11
+// Version: 2023.05.25.11.32
+export const DLISP_ENV_VERSION='2023.05.25.11.32';
 
 
 
@@ -3737,7 +3737,7 @@ export async function init_dlisp(Environment)  {
 },config:{
     export:{
         save_path:"js/juno.js",default_namespace:"user",include_source:false,save_executable:"bin/juno"
-    },features:["compiler","repl","core-ext","html","build-tools","browser","http_client"],build:"2023.05.06.09.35",imports:new Object(),repl:new Object(),editor:{
+    },features:["compiler","repl","core-ext","html","build-tools","browser","http_client"],build:"2023.05.25.11.31",imports:new Object(),repl:new Object(),editor:{
         default_theme:"juno_light",font_size:14,themes:["chrome","cobalt","crimson_editor","dracula","earth_tones","gruvbox","ice","idle_fingers","juno_light","katzenmilch","kuroir","solarized_dark","solarized_light"]
     },application:{
         menu_timeout:2500,global_theme:"juno_light",max_log_lines:100,name:"Seedling",quick_alerts:{
@@ -5484,7 +5484,7 @@ export async function init_dlisp(Environment)  {
                             } else {
                                 return await clone(val,0,Environment)
                             }
-                        };__obj__1["*env_config*"]={export:{save_path:"js/juno.js",default_namespace:"user",include_source:false,save_executable:"bin/juno"},features:["compiler","repl","core-ext","io","Deno","build-tools","system","http_client"],build:"2023.05.06.09.35",imports:await ( async function(){let __obj__2=new Object();__obj__2["core/readline_mod"]={symbol:"readline_mod",namespace:"core",location:"https://deno.land/x/readline/mod.ts"};__obj__2["core/streams"]={symbol:"streams",namespace:"core",location:"https://deno.land/std@0.170.0/streams/conversion.ts"};__obj__2["user/path"]={symbol:"path",namespace:"user",location:"https://deno.land/std@0.110.0/path/mod.ts"};return __obj__2;})(),repl:new Object(),editor:{default_theme:"juno_light",font_size:14,themes:["chrome","cobalt","crimson_editor","dracula","earth_tones","gruvbox","ice","idle_fingers","juno_light","katzenmilch","kuroir","solarized_dark","solarized_light"]},application:{menu_timeout:2500,global_theme:"juno_light",max_log_lines:100,name:"Seedling",quick_alerts:{display:true,default_display_time:750},on_ready:"seedling_ready"}};__obj__1["create_namespace"]=async function(name,options,defer_initialization) {
+                        };__obj__1["*env_config*"]={export:{save_path:"js/juno.js",default_namespace:"user",include_source:false,save_executable:"bin/juno"},features:["compiler","repl","core-ext","io","Deno","build-tools","system","http_client"],build:"2023.05.25.11.31",imports:await ( async function(){let __obj__2=new Object();__obj__2["core/readline_mod"]={symbol:"readline_mod",namespace:"core",location:"https://deno.land/x/readline/mod.ts"};__obj__2["core/streams"]={symbol:"streams",namespace:"core",location:"https://deno.land/std@0.170.0/streams/conversion.ts"};__obj__2["user/path"]={symbol:"path",namespace:"user",location:"https://deno.land/std@0.110.0/path/mod.ts"};return __obj__2;})(),repl:new Object(),editor:{default_theme:"juno_light",font_size:14,themes:["chrome","cobalt","crimson_editor","dracula","earth_tones","gruvbox","ice","idle_fingers","juno_light","katzenmilch","kuroir","solarized_dark","solarized_light"]},application:{menu_timeout:2500,global_theme:"juno_light",max_log_lines:100,name:"Seedling",quick_alerts:{display:true,default_display_time:750},on_ready:"seedling_ready"}};__obj__1["create_namespace"]=async function(name,options,defer_initialization) {
                                 return await async function(){
                                     if (check_true (await not((name instanceof String || typeof name==='string')))) {
                                         throw new TypeError("namespace name must be a string");
@@ -11774,16 +11774,16 @@ return await (async function() {
                                     return await (async function() {
                                         let __for_body__309=async function(req) {
                                             {
-                                                let _expr_37502;
+                                                let _expr_71055;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_37502=await (async function(){
+                                                _expr_71055=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req,name) 
                                                 })();
-                                                req_sym=(_expr_37502 && _expr_37502["0"]);
-                                                req_ns=(_expr_37502 && _expr_37502["1"]);
-                                                explicit=(_expr_37502 && _expr_37502["2"]);
+                                                req_sym=(_expr_71055 && _expr_71055["0"]);
+                                                req_ns=(_expr_71055 && _expr_71055["1"]);
+                                                explicit=(_expr_71055 && _expr_71055["2"]);
                                                 if (check_true ((req_ns&& await (await Environment.get_global("not"))((req===symname))&& await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(req,invalids))))){
                                                     {
                                                         if (check_true (await (await Environment.get_global("not"))((req_ns===name)))){
