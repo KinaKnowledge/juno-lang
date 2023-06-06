@@ -466,6 +466,16 @@
    `tags: ["html" "css" "ui" "convert"]
    } )
 
+(defun get_css_var (varname)
+   (-> (getComputedStyle document.documentElement)
+       `getPropertyValue varname)
+   {
+     `description: (+ "Given a CSS variable name, such as `--main-bg-color`, returns the "
+                      "current value of the requested variable. ")
+     `usage: ["varname:string"]
+     `tags: ["CSS" "html" "variable" "UI"]
+   })
+   
 (defun_sync handle_event (e)
   (progn
    (-> e `preventDefault)
@@ -479,6 +489,7 @@
 
 (defmacro blur_to (elem)
     `(aif ,#elem (-> it `blur)))
+
 
 
 ;(set_prop (get_by_id "juno-css")
