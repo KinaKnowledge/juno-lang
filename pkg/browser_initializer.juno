@@ -8508,7 +8508,7 @@
                       "implement any command functionality for the menu.<br>on_destroy:function -When "
                       "the control receives a destroy call, this user provided function will be called "
                       "with the self object.<br>on_initialize:function -Upon initialization, this "
-                      "function will be called with the self function. It should be expected that the "
+                      "function will be called with the self object. It should be expected that the "
                       "initialization should be called only once for a control "
                       "lifespan.<br>to_json:function -This synchronous function call can be used to "
                       "provide a customization hook for the control.  The return value must be a "
