@@ -6120,7 +6120,7 @@
                (if (== handler.fid function_id)
                    (setq exists true)))
             (if exists
-               (throw ReferenceError "register_event_handler: function already registered for key")
+               (throw ReferenceError (+ "register_event_handler: function already registered for fid key for source " source ", command: " command))
                (push handlers { fid: function_id f: handler_function }))))
       handler_key)
    {
@@ -21349,20 +21349,23 @@
                                                                                              message: result.message
                                                                                              })))
                                                                         })))))
-                (register_event_handler "executor" "result" "executor_result"
-                   (fn (event)
-                      (let
-                         ((resolver nil)
-                          (pid nil))
-                         (declare (function resolver))
-                         ;(log "event.args: " event)
-                         (when event.args
-                            (= pid (first event.args))
-                            (when (prop *ipc_promise_ids* pid)
-                               (clearTimeout (second (prop *ipc_promise_ids* pid)))
-                               (= resolver (first (prop *ipc_promise_ids* pid)))
-                               (delete_prop *ipc_promise_ids* pid)
-                               (resolver (second event.args)))))))))
+                (try
+                   (register_event_handler "executor" "result" "executor_result"
+                      (fn (event)
+                         (let
+                            ((resolver nil)
+                             (pid nil))
+                            (declare (function resolver))
+                            ;(log "event.args: " event)
+                            (when event.args
+                               (= pid (first event.args))
+                               (when (prop *ipc_promise_ids* pid)
+                                  (clearTimeout (second (prop *ipc_promise_ids* pid)))
+                                  (= resolver (first (prop *ipc_promise_ids* pid)))
+                                  (delete_prop *ipc_promise_ids* pid)
+                                  (resolver (second event.args)))))))
+                   (catch Error (e)
+                      (console.log "executor/result is already registered: " e.message)))))
          (catch Error (e)
             (progn
                (console.error "Unable to initialize: " e)
