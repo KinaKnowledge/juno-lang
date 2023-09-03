@@ -10301,13 +10301,18 @@
                                   (is_array? options.path)
                                   (progn
                                      (= content (resolve_path options.path nseval.global_ctx.scope))
-                                     (when (eq nil content)
-                                        (= content (or options.content
-                                                       (and options.data_type
-                                                          (prop data_type_defaults options.data_type))
-                                                       ""))
-                                        (make_path options.path nseval.global_ctx.scope content)
-                                        (display_context_message (+ "New path: " (join "~" options.path) " with content type " (sub_type content))))
+                                     (cond
+                                        (eq nil content)
+                                        (progn
+                                           (= content (or options.content
+                                                          (and options.data_type
+                                                             (prop data_type_defaults options.data_type))
+                                                          ""))
+                                           (make_path options.path nseval.global_ctx.scope content)
+                                           (display_context_message (+ "New path: " (join "~" options.path) " with content type " (sub_type content))))
+                                        (is_string? content)
+                                        (progn
+                                           (= content (eval content))))
                                      (if (not (== "String" (sub_type content)))
                                          (-> editor `setValue (pretty_print content) -1)
                                          (-> editor `setValue content -1)))
