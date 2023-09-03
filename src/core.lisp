@@ -2260,22 +2260,22 @@
 
 
 (defun env_encode_string (text)
-  (let
+   (let
       ((te (new TextEncoder))
        (enc (-> te `encode text))
        (decl [])
        (de (new TextDecoder))
        (bl nil))
-   (for_each (`b enc)
-     (progn
-       (if (== b 92)           
-           (progn     
-             (push decl 92)
-             (push decl 92)
-             (push decl 92)
-	     (push decl 92))            
-           (progn
-             (push decl b)))))             
+      (for_each (`b enc)
+         (progn
+            (if (== b 92)
+                (progn
+                   (push decl 92)
+                   (push decl 92)
+                   (push decl 92)
+                   (push decl 92))
+                (progn
+                   (push decl b)))))
       (-> de `decode (new Uint8Array decl))))
   
 
