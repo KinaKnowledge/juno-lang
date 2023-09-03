@@ -2463,6 +2463,15 @@ div.juno-tab-active {
     font-weight: bold;
 }
 
+.juno-show-on-hover {
+    opacity: 0.1;
+    transition: all .1s ease-in-out;
+}
+
+.juno-show-on-hover:hover {
+    opacity: 1;
+}
+
 .juno-pointer {
     cursor: pointer;
     transition: all .1s ease-in-out;
