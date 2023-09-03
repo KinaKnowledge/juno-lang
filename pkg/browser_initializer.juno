@@ -10309,10 +10309,10 @@
                                                              (prop data_type_defaults options.data_type))
                                                           ""))
                                            (make_path options.path nseval.global_ctx.scope content)
-                                           (display_context_message (+ "New path: " (join "~" options.path) " with content type " (sub_type content))))
-                                        (is_string? content)
-                                        (progn
-                                           (= content (eval content))))
+                                           (display_context_message (+ "New path: " (join "~" options.path) " with content type " (sub_type content)))))
+                                        ;(is_string? content)
+                                        ;(progn
+                                         ;  (= content (eval content))))
                                      (if (not (== "String" (sub_type content)))
                                          (-> editor `setValue (pretty_print content) -1)
                                          (-> editor `setValue content -1)))
@@ -18701,6 +18701,7 @@
           (log "Wrote the generator..starting build")
           (log "Removing temporary environment: " (-> remote_connection `evaluate "(undefine `*export_env*)"))
           (-> remote_connection `close)
+          (log "Closed remote connection")
           (log "building starter environment")
           (= *build_window* 
              (floating_div (iframe { width: 500 height: 300
