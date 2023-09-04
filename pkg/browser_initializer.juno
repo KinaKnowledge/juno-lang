@@ -10058,6 +10058,10 @@
                                             `path
                                             symbol_data.path)
                                          (set_name (last symbol_data.path) false)
+                                         (if (not options.clone_with_editor_id)
+                                             (set_prop options
+                                                `group_name
+                                                options.name))
                                          )))
                                 (if options.path
                                    (save_event_handler { command: "save_request" source: options.id args: [{ path: options.path }] })))))
