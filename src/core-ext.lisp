@@ -760,7 +760,15 @@
         { `usage: ["values:list"]
           `description: "Given an array of numbers, returns the smallest value found.  Any non-numbers in the array are ignored.  If there are no numbers in the list, 0 is returned."  } )
     
-    
+    (defun add_hours (date_obj num_hours)
+        (do
+           (-> date_obj `setTime (+ (-> date_obj `getTime) (* 1000 60 60 num_hours)))
+           date_obj)
+       {
+            `usage: ["date_obj:Date" "num_days:number"]
+            `description: "Given a date object and the number of hours (either positive or negative) modifies the given date object by the number of hours, and returns the date object."  
+            `tags: ["date" "time" "duration" "days" "add" "hour" "hours"]
+       })
          
     (defun add_days (date_obj num_days)
         (do
@@ -768,10 +776,11 @@
            date_obj)
        {
             `usage: ["date_obj:Date" "num_days:number"]
-            `description: "Given a date object and the number of days (either positive or negative) modifies the given date object to the appropriate date value, and returns the date object."  
+            `description: "Given a date object and the number of days (either positive or negative) modifies the given date object by the number of days, and returns the date object."  
             `tags: ["date" "time" "duration" "days" "add"]
        })
            
+    
     (defun day_of_week (dval)
         (-> dval `getDay)
         {
@@ -780,14 +789,18 @@
          `tags: ["time","week" "date" "day"]
          })
     
-    (defun add_hours (date_obj hours)
+    (defun set_hours (date_obj hours)
         (do (-> date_obj `setHours hours)
             date_obj)
         {
+          `description: (+ "Given a date object and the number of hours (either positive or "
+                           "negative) sets the hours in the given date object with the hours value, and "
+                           "returns the date object. ")
+
             `usage: ["date_obj:Date" "hours:number"]
-            `description: "Given a date object and the number of hours (either positive or negative) modifies the given date object to the appropriate date value, and returns the date object."  
             `tags: ["date" "time" "duration" "hours" "add"]
        })
+    
     
     (defun clear_time (date_obj)
         (do (-> date_obj `setHours 0 0 0 0)
@@ -803,7 +816,7 @@
                 ((`d1 (new Date))
                  (`d2 (new Date)))
                 [ (clear_time (add_days d1 -1))
-                  (add_hours (clear_time (add_days d2 -1)) 24)])
+                  (set_hours (clear_time (add_days d2 -1)) 24)])
         {
          `description: "This function returns an array with two Date values.  The first, in index 0, is the start of the prior day (yesterday midnight), and the second is 24 hours later, i.e. midnight from last night."
          `usage: []
@@ -868,7 +881,7 @@
             ((`d1 (clear_time (new Date dval)))
              (`d2 (clear_time (new Date dval))))
             [ d1
-              (add_hours d2 24)])
+              (set_hours d2 24)])
    {
     `description: "This function returns an array with two Date values.  The first, in index 0, is the start of the prior day (yesterday midnight), and the second is 24 hours later, i.e. midnight from last night."
     `usage: ["val:Date"]
