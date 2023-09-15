@@ -1,7 +1,7 @@
 // Source: environment.lisp  
-// Build Time: 2023-05-25 11:31:46
-// Version: 2023.05.25.11.31
-export const DLISP_ENV_VERSION='2023.05.25.11.31';
+// Build Time: 2023-09-15 12:30:38
+// Version: 2023.09.15.12.30
+export const DLISP_ENV_VERSION='2023.09.15.12.30';
 
 
 
@@ -1887,7 +1887,7 @@ export async function init_dlisp(Environment)  {
                                     }return __array__208;
                                      
                                 })();
-                                await console.log("load_pends: ",from_namespace,"->",acc);
+                                await (await get_global("console.log"))("load_pends: ",from_namespace,"->",acc);
                                 (await Environment.eval(await async function(){
                                     return acc
                                 }(),null));
@@ -2078,7 +2078,7 @@ export async function init_dlisp(Environment)  {
                                             {
                                                 let message=("Error: set_global: "+ _star_namespace_star_+ "symbol name: "+ refname+ ": "+ e.message);
                                                 ;
-                                                 console.error(message,[]);
+                                                 ( get_global("console.error"))(message,[]);
                                                   (function(){
                                                     e["message"]=message;
                                                     return e;
@@ -2218,7 +2218,7 @@ export async function init_dlisp(Environment)  {
                                                                 }
                                                             } else {
                                                                 {
-                                                                     console.warn("get_global: condition fall through: ",comps);
+                                                                     ( get_global("console.warn"))("get_global: condition fall through: ",comps);
                                                                     return NOT_FOUND
                                                                 }
                                                             }
@@ -2452,7 +2452,7 @@ export async function init_dlisp(Environment)  {
                                                     }
                                                 })()
                                             } else {
-                                                await console.error("Compilation Error: ",error_data)
+                                                await (await get_global("console.error"))("Compilation Error: ",error_data)
                                             };
                                             compiled=await (async function(){
                                                  return [{
@@ -2712,7 +2712,7 @@ export async function init_dlisp(Environment)  {
                                                         }
                                                     };
                                                     if (check_true ((false&& (await sub_type(e)==="SyntaxError")&& (opts.log_errors|| (Environment.context.scope.__VERBOSITY__>4))))){
-                                                        await console.log(compiled['1'])
+                                                        await (await get_global("console.log"))(compiled['1'])
                                                     };
                                                     if (check_true (opts.error_report)){
                                                         {
@@ -2866,7 +2866,7 @@ export async function init_dlisp(Environment)  {
                             }
                         } else {
                             {
-                                await console.error("Invalid compiler function: invalid operators returned. Not installing.");
+                                await (await get_global("console.error"))("Invalid compiler function: invalid operators returned. Not installing.");
                                 throw new EvalError("Invalid compiler function");
                                 
                             }
@@ -2984,7 +2984,7 @@ export async function init_dlisp(Environment)  {
                                                 }
                                             } else {
                                                 {
-                                                    await console.error("ENV: couldn't create the child environment. Received: ",child_env);
+                                                    await (await get_global("console.error"))("ENV: couldn't create the child environment. Received: ",child_env);
                                                     throw new EvalError(("unable to create namespace "+ name));
                                                     
                                                 }
@@ -3113,7 +3113,7 @@ export async function init_dlisp(Environment)  {
                                 if (__exception__287 instanceof Error) {
                                     let e=__exception__287;
                                     {
-                                        await console.error("ERROR: ",e)
+                                        await (await get_global("console.error"))("ERROR: ",e)
                                     }
                                 }
                             };
@@ -4334,7 +4334,7 @@ export async function init_dlisp(Environment)  {
                     word_as_number=await Number(word);
                     if (check_true (debugmode)){
                         {
-                            await console.log("process_word: ",word,word_as_number,backtick_mode)
+                            await (await Environment.get_global("console.log"))("process_word: ",word,word_as_number,backtick_mode)
                         }
                     };
                     return await async function(){
@@ -4458,7 +4458,7 @@ export async function init_dlisp(Environment)  {
                             };
                             if (check_true (debugmode)){
                                 {
-                                    await console.log(_depth,"  ",c," ",next_c," ",mode,"",escape_mode," ",await (await Environment.get_global("as_lisp"))(acc),await (await Environment.get_global("as_lisp"))(word_acc),(acc && acc.length),(cpath).join("."))
+                                    await (await Environment.get_global("console.log"))(_depth,"  ",c," ",next_c," ",mode,"",escape_mode," ",await (await Environment.get_global("as_lisp"))(acc),await (await Environment.get_global("as_lisp"))(word_acc),(acc && acc.length),(cpath).join("."))
                                 }
                             };
                             await async function(){
@@ -4763,14 +4763,14 @@ export async function init_dlisp(Environment)  {
                 };
                 if (check_true (debugmode)){
                     {
-                        await console.log("read->",in_buffer);
-                        await console.log("D  CHAR NC "," M","ESC","ACC","WORDACC","ACCL")
+                        await (await Environment.get_global("console.log"))("read->",in_buffer);
+                        await (await Environment.get_global("console.log"))("D  CHAR NC "," M","ESC","ACC","WORDACC","ACCL")
                     }
                 };
                 output_structure=await read_block(0,ctx);
                 if (check_true (debugmode)){
                     {
-                        await console.log("read<-",await (async function(){
+                        await (await Environment.get_global("console.log"))("read<-",await (async function(){
                              return await clone(output_structure) 
                         })())
                     }
@@ -5211,7 +5211,7 @@ export async function init_dlisp(Environment)  {
                                                         let e=__exception__376;
                                                         {
                                                             {
-                                                                return await console.error("core environment cannot initialize: ",symname,"error:",e)
+                                                                return await (await get_global("console.error"))("core environment cannot initialize: ",symname,"error:",e)
                                                             }
                                                         }
                                                     }
@@ -5347,20 +5347,33 @@ export async function init_dlisp(Environment)  {
                                                                                         if (__exception__396 instanceof Error) {
                                                                                             let e=__exception__396;
                                                                                             {
-                                                                                                return await console.error("env: unable to evaluate: symbol: ",symset['0'],e)
+                                                                                                return await (await get_global("console.error"))("env: unable to evaluate: symbol: ",symset['0'],e)
                                                                                             }
                                                                                         }
                                                                                     }
                                                                                 }
                                                                             } else {
-                                                                                return await (await get_global("set_path"))(await (async function(){
-                                                                                    let __array_op_rval__398=childset['0'];
-                                                                                     if (__array_op_rval__398 instanceof Function){
-                                                                                        return await __array_op_rval__398("context","scope",symset['0']) 
-                                                                                    } else {
-                                                                                        return [__array_op_rval__398,"context","scope",symset['0']]
-                                                                                    }
-                                                                                })(),children,symset['1'])
+                                                                                if (check_true ((symset['1'] instanceof String || typeof symset['1']==='string'))){
+                                                                                    return await (await get_global("set_path"))(await (async function(){
+                                                                                        let __array_op_rval__398=childset['0'];
+                                                                                         if (__array_op_rval__398 instanceof Function){
+                                                                                            return await __array_op_rval__398("context","scope",symset['0']) 
+                                                                                        } else {
+                                                                                            return [__array_op_rval__398,"context","scope",symset['0']]
+                                                                                        }
+                                                                                    })(),children,(await Environment.eval(await async function(){
+                                                                                        return symset['1']
+                                                                                    }(),null)))
+                                                                                } else {
+                                                                                    return await (await get_global("set_path"))(await (async function(){
+                                                                                        let __array_op_rval__399=childset['0'];
+                                                                                         if (__array_op_rval__399 instanceof Function){
+                                                                                            return await __array_op_rval__399("context","scope",symset['0']) 
+                                                                                        } else {
+                                                                                            return [__array_op_rval__399,"context","scope",symset['0']]
+                                                                                        }
+                                                                                    })(),children,symset['1'])
+                                                                                }
                                                                             }
                                                                         }
                                                                     }
@@ -5382,7 +5395,7 @@ export async function init_dlisp(Environment)  {
                                                         if (__exception__387 instanceof Error) {
                                                             let e=__exception__387;
                                                             {
-                                                                return await console.error("env: unable to load namespace: ",await (async function(){
+                                                                return await (await get_global("console.error"))("env: unable to load namespace: ",await (async function(){
                                                                      return await clone(childset) 
                                                                 })())
                                                             }
@@ -5415,21 +5428,21 @@ export async function init_dlisp(Environment)  {
                             debugger;
                             ;
                             await (async function() {
-                                let __for_body__401=async function(child) {
+                                let __for_body__402=async function(child) {
                                     return await child["evaluate_local"].call(child,("(try (progn (debug) (if (prop Environment.global_ctx.scope `*system_initializer*) (eval (prop Environment.global_ctx.scope `*system_initializer*))) (if (prop Environment.global_ctx.scope `*initializer*) (eval  (prop Environment.global_ctx.scope `*initializer*)))) (catch Error (e) (progn (console.error *namespace* \"ERROR on initialization:\" e))))"),null,{
                                         log_errors:true
                                     })
                                 };
-                                let __array__402=[],__elements__400=await values(children);
+                                let __array__403=[],__elements__401=await values(children);
                                 let __BREAK__FLAG__=false;
-                                for(let __iter__399 in __elements__400) {
-                                    __array__402.push(await __for_body__401(__elements__400[__iter__399]));
+                                for(let __iter__400 in __elements__401) {
+                                    __array__403.push(await __for_body__402(__elements__401[__iter__400]));
                                     if(__BREAK__FLAG__) {
-                                         __array__402.pop();
+                                         __array__403.pop();
                                         break;
                                         
                                     }
-                                }return __array__402;
+                                }return __array__403;
                                  
                             })();
                             if (check_true (await not(opts.no_start_on_ready))){

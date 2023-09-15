@@ -2509,7 +2509,7 @@
                            (set_prop childset.1
                               1
                               (-> childenv `eval childset.1.1 { `throw_on_error: true }))
-                           (console.log "env: child symbols rehydrated: " childset)
+                           ;(console.log "env: child symbols rehydrated: " childset)
                            (for_each (symset childset.1.1)
                               (when (eq nil (resolve_path [ childset.0 `context `scope symset.0 ] children))
                                  ;; the child env is already compiled at this point

@@ -1,7 +1,7 @@
 // Source: reader.lisp  
-// Build Time: 2023-05-25 11:31:46
-// Version: 2023.05.25.11.31
-export const DLISP_ENV_VERSION='2023.05.25.11.31';
+// Build Time: 2023-09-15 12:30:38
+// Version: 2023.09.15.12.30
+export const DLISP_ENV_VERSION='2023.09.15.12.30';
 
 
 
@@ -394,7 +394,7 @@ export async function initializer(Environment) {
                     word_as_number=await Number(word);
                     if (check_true (debugmode)){
                         {
-                            await console.log("process_word: ",word,word_as_number,backtick_mode)
+                            await (await Environment.get_global("console.log"))("process_word: ",word,word_as_number,backtick_mode)
                         }
                     };
                     return await async function(){
@@ -518,7 +518,7 @@ export async function initializer(Environment) {
                             };
                             if (check_true (debugmode)){
                                 {
-                                    await console.log(_depth,"  ",c," ",next_c," ",mode,"",escape_mode," ",await (await Environment.get_global("as_lisp"))(acc),await (await Environment.get_global("as_lisp"))(word_acc),(acc && acc.length),(cpath).join("."))
+                                    await (await Environment.get_global("console.log"))(_depth,"  ",c," ",next_c," ",mode,"",escape_mode," ",await (await Environment.get_global("as_lisp"))(acc),await (await Environment.get_global("as_lisp"))(word_acc),(acc && acc.length),(cpath).join("."))
                                 }
                             };
                             await async function(){
@@ -823,14 +823,14 @@ export async function initializer(Environment) {
                 };
                 if (check_true (debugmode)){
                     {
-                        await console.log("read->",in_buffer);
-                        await console.log("D  CHAR NC "," M","ESC","ACC","WORDACC","ACCL")
+                        await (await Environment.get_global("console.log"))("read->",in_buffer);
+                        await (await Environment.get_global("console.log"))("D  CHAR NC "," M","ESC","ACC","WORDACC","ACCL")
                     }
                 };
                 output_structure=await read_block(0,ctx);
                 if (check_true (debugmode)){
                     {
-                        await console.log("read<-",await (async function(){
+                        await (await Environment.get_global("console.log"))("read<-",await (async function(){
                              return await clone(output_structure) 
                         })())
                     }
@@ -872,5 +872,5 @@ export async function initializer(Environment) {
         }
     } ()
 },{
-    description:("<br><br>The reader function is responsible for reading text based input in Juno "+ "notation form or serialized JSON and producing a JSON output structure that can "+ "be read by the compiler.  <br>Text, provided as a string, is parsed by the "+ "reader.  It can contain one or more valid lisp forms or expressions.  If there "+ "are multiple expressions at the top level, the entire series of expressions "+ "are wrapped in an implicit `progn` (`iprogn`) structure in the returned JSON "+ "form.\n<br>Binding symbols are signified in the emitted JSON structure as "+ "strings, indicated by a `=:` prefix.  Comments within the Juno notation are "+ "removed and do not appear in the JSON output structure.<br><br>#### Options and "+ "Environmental Settings    <br><br>If the global `__VERBOSITY__` setting is set "+ "to 7 or above, the reader will log to the console a character by character "+ "representation of the internal read state.  <br>The first argument to the "+ "reader is expected to be a string, containing the text to be read and "+ "processed.  The second argument is an optional object that contains parameters "+ "for modifying the behavior of the reader.<br><br>#### Options "+ "<br><br>source_name:string - a string that represents the source location (file "+ "path, uri) of the text buffer being passed.  Otherwise the text buffer is "+ "considered anonymous.  This provided value is included in any errors thrown "+ "during the process of reading the file.<br>symbol_receiver:function -a "+ "provided function that if present will be called with a single argument "+ "containing an object with symbol locations within it.  The provided function "+ "will be called prior to the reader returning the processed structure which will "+ "contain an object with symbol information within it.   <br>The function will "+ "receive a single argument with the following structure:```{ \n  source_name: "+ "options.source_name\n  symbols: {\n    symbol_a:[[line_offset column_offset]\n    "+ "         [line_offset column_offset]]\n    symbol_b:[[line_offset "+ "column_offset]] \n}```<br><br>suppress_throw_on_error:boolean -If true, when an "+ "error is encountered an exception will not be thrown, as is the default "+ "behavior.  The reader will try to slog onward, however parsing may be impacted "+ "depending on the error encountered.<br>on_error:function -If "+ "suppress_throw_on_error is true, this function can be provided as a callback, "+ "which will receive a single argument with the error information as an object "+ "containing the details of the problem.  <br>The object will be contain the "+ "following structure:```{\n  message: \"Error message text\"\n  position: \"line: ### "+ "column: ###\"\n  pos: { line: line_number column: column_number }\n  depth: depth "+ "in tree\n  local_text: \"The text immediately surrounding the error\"\n "+ "source_name: options.source_name\n  type: \"Error Type\"\n}```<br> "),usage:["text:string","options:?object"],tags:["reader","juno","read","lisp","input","eval","evaluate","parse"],requires:["not","is_string?","sub_type","length","__VERBOSITY__","split_by","is_number?","is_function?","ends_with?","first","getf_ctx","but_last","push","join","slice","add","is_array?","starts_with?","blank?","contains?","chop","log","sleep","as_lisp","last","new_ctx","pop","conj","prepend"],requires:["EvalError","Math","Object","LispSyntaxError","String","Number","console","isNaN","Date","clone"],source_name:"reader.lisp"
+    description:("<br><br>The reader function is responsible for reading text based input in Juno "+ "notation form or serialized JSON and producing a JSON output structure that can "+ "be read by the compiler.  <br>Text, provided as a string, is parsed by the "+ "reader.  It can contain one or more valid lisp forms or expressions.  If there "+ "are multiple expressions at the top level, the entire series of expressions "+ "are wrapped in an implicit `progn` (`iprogn`) structure in the returned JSON "+ "form.\n<br>Binding symbols are signified in the emitted JSON structure as "+ "strings, indicated by a `=:` prefix.  Comments within the Juno notation are "+ "removed and do not appear in the JSON output structure.<br><br>#### Options and "+ "Environmental Settings    <br><br>If the global `__VERBOSITY__` setting is set "+ "to 7 or above, the reader will log to the console a character by character "+ "representation of the internal read state.  <br>The first argument to the "+ "reader is expected to be a string, containing the text to be read and "+ "processed.  The second argument is an optional object that contains parameters "+ "for modifying the behavior of the reader.<br><br>#### Options "+ "<br><br>source_name:string - a string that represents the source location (file "+ "path, uri) of the text buffer being passed.  Otherwise the text buffer is "+ "considered anonymous.  This provided value is included in any errors thrown "+ "during the process of reading the file.<br>symbol_receiver:function -a "+ "provided function that if present will be called with a single argument "+ "containing an object with symbol locations within it.  The provided function "+ "will be called prior to the reader returning the processed structure which will "+ "contain an object with symbol information within it.   <br>The function will "+ "receive a single argument with the following structure:```{ \n  source_name: "+ "options.source_name\n  symbols: {\n    symbol_a:[[line_offset column_offset]\n    "+ "         [line_offset column_offset]]\n    symbol_b:[[line_offset "+ "column_offset]] \n}```<br><br>suppress_throw_on_error:boolean -If true, when an "+ "error is encountered an exception will not be thrown, as is the default "+ "behavior.  The reader will try to slog onward, however parsing may be impacted "+ "depending on the error encountered.<br>on_error:function -If "+ "suppress_throw_on_error is true, this function can be provided as a callback, "+ "which will receive a single argument with the error information as an object "+ "containing the details of the problem.  <br>The object will be contain the "+ "following structure:```{\n  message: \"Error message text\"\n  position: \"line: ### "+ "column: ###\"\n  pos: { line: line_number column: column_number }\n  depth: depth "+ "in tree\n  local_text: \"The text immediately surrounding the error\"\n "+ "source_name: options.source_name\n  type: \"Error Type\"\n}```<br> "),usage:["text:string","options:?object"],tags:["reader","juno","read","lisp","input","eval","evaluate","parse"],requires:["not","is_string?","sub_type","length","__VERBOSITY__","split_by","is_number?","is_function?","ends_with?","first","getf_ctx","but_last","push","join","slice","add","is_array?","starts_with?","blank?","contains?","chop","console","log","sleep","as_lisp","last","new_ctx","pop","conj","prepend"],requires:["EvalError","Math","Object","LispSyntaxError","String","Number","isNaN","Date","clone"],source_name:"reader.lisp"
 })} 
