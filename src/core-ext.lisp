@@ -888,6 +888,41 @@
     `tags: ["time" "date" "range" "prior" "hours" "24"]
     })
 
+    (defun_sync to_date (value)
+       (cond
+          (is_string? value)
+          (let
+             ((dval (new Date value)))
+             (if (== (-> dval `toString) "Invalid Date")
+                 (throw RangeError "to_date: invalid format"))
+             dval)
+          (is_number? value)
+          (new Date value)
+          (is_date? value)
+          value
+          else
+          (throw TypeError (+ "to_date:invalid value type: " (sub_type value))))
+       {
+         description: (+ "<br><br>Given an input value that is of type string, Number or Date, returns a "
+                         "Date object.<br>When providing a numeric input, the number will be considered "
+                         "to be the milliseconds from the epoch, defined as the midnight at the beginning "
+                         "of January 1, 1970, UTC.<br>If given a string object, the value is assumed to "
+                         "be in the date time string format, which is a simplification of the ISO 8601  "
+                         "calendar date extended format.   The format "
+                         "is:```YYYY-MM-DDTHH:mm:ss.sssZ```<br><br>Where:<br>`YYYY`  is a four digit "
+                         "year<br>`MM`  is a two digit month `(01-12)` <br>`DD`  is the day of the "
+                         "month `(01-31)` <br>`T`  is a literal character, separating the date from the "
+                         "time segment.<br>`HH`  is a two difit hour `(00-23)` <br>`mm`  is the two digit "
+                         "minute `(00-59)` <br>`ss`  is the two digit second `(00-59)` <br>`sss` is the "
+                         "three digit millisecond `(000-999)` <br>`Z` is the literal timezone separator, "
+                         "which is followed by a positive or negative offset, with a `+` or `-` followed "
+                         "by `HH:mm` indicating the offset time from UTC.<br>The provided date can be "
+                         "specified in various increasing granularities.  All are "
+                         "valid:<br>`YYYY` <br>`YYYY-MM` <br>`YYYY-MM-DD`<br><br> ")
+         
+         tags: [`date `time `conversion `string `number `milliseconds `convert ]
+         usage: ["value:string|number|Date"]
+         })
     
  (defun date_to_string (date_val str_layout)
     (let
