@@ -476,13 +476,28 @@
      `tags: ["CSS" "html" "variable" "UI"]
    })
    
+(defun_sync is_node_list? (item)
+   (instanceof item NodeList)
+   {
+     description: (+ "For the provided item value, returns `true` if the value is an instance "
+                     "of a `NodeList` , otherwise `false`. ")
+
+     usage: ["item:*"]
+     tags: ["elements" "ui" "element" "node" "NodeList" "node_list" "DOM" "ui"]
+   })
+
 (defun_sync handle_event (e)
-  (progn
-   (-> e `preventDefault)
-   (-> e `stopPropagation)))
+   (progn
+      (-> e `preventDefault)
+      (-> e `stopPropagation))
+   {
+     description: (+ "Calls `preventDefault` and `stopPropagation` on the provided "
+                     "DOM `Event` object then and returns the provided object.  ")
+     usage: ["event:Event"]
+     tags: ["events" "event" "DOM" "element" "ui" "prevent" "default" "propagation"]
+     })
 
 (defun_sync focus_to (elem)
-   
     (aif elem
        (-> it `focus)))
     
