@@ -499,11 +499,21 @@
 
 (defun_sync focus_to (elem)
     (aif elem
-       (-> it `focus)))
+       (-> it `focus))
+    {
+      `description: (+ "For the provided `Element` (or object) calls the `focus` method.  ")
+      `usage: ["elem:Element"]
+      `tags: ["focus" "element" "DOM" "ui" "blur"]
+    })
     
 
 (defmacro blur_to (elem)
-    `(aif ,#elem (-> it `blur)))
+    `(aif ,#elem (-> it `blur))
+    {
+      `description: (+ "For the provided `Element` (or object) calls the `blur` method.  ")
+      `usage: ["elem:Element"]
+      `tags: ["focus" "element" "DOM" "ui" "blur"]
+    })
 
 
 
