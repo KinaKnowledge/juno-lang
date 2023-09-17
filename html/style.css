@@ -42,6 +42,7 @@
   --link-bg-color: inherit;
   --link-visited-bg-color: inherit;
   --type-number-color: green;
+  --type-date-color: #1b889b;
   --type-boolean-color: orange;
   --type-string-color: darkblue;
   --type-function-color: #2e3eb4;

@@ -35,6 +35,7 @@
   --log-result-bg-color: hsl(44deg 26% 83%);  /* hsl(44deg 26% 83%); */
   --type-number-color: #015415;
   --type-boolean-color: #d35600;
+  --type-date-color: #257886;
   --type-string-color: darkblue;
   --type-function-color: #2e3eb4;
   --type-asyncfunction-color: #3f5b71;
