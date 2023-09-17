@@ -5827,14 +5827,14 @@
                                         (cond
                                            (is_array? choice)
                                            (option (+ { `value: choice.1 } 
-                                                      (if (and options.default_value
+                                                      (if (and (not (blank? options.default_value))
                                                                (== choice.1 options.default_value))
                                                          { `selected: true }
                                                          {}))
                                                    choice.0)
                                            else
                                            (option (+ {} 
-                                                      (if (and options.default_value
+                                                      (if (and (not (blank? options.default_value))
                                                                (== choice options.default_value))
                                                          { `selected: true }
                                                          {}))
