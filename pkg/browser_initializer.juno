@@ -2264,7 +2264,9 @@
                   { `lpath: (lpath) 
                     `tabindex: 0  
                     `class: (+ classes "regexp") }) 
-               (-> val `toISOString))
+               (try (-> val `toISOString)
+                  (catch RangeError (e)
+                     (-> val `toString))))
          (and (is_string? val)
               (not options.editable))
          (if (starts_with? "=:" val)
