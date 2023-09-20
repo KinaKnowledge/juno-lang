@@ -1555,12 +1555,13 @@ button.juno-button-on:hover {
 select,input {
   border: 1px solid var(--main-accent-line);
   background: var(--control-text-input-color-bg);
-  color: var(--main-color);
+  color: var(--control-text-input-color);
   padding: 3px;
 }
 
 select:focus,input:focus {
   color: var(--control-text-input-color);
+  background: var(--control-text-input-color-bg);
   border-top: 1px solid var(--main-accent-line);
   border-left: 1px solid var(--main-accent-line);
   border-right: 1px solid var(--main-accent-line);
@@ -2066,6 +2067,11 @@ span.juno-value {
   color: var(--type-string-color)
 }
 
+.juno-type-date {
+  color: var(--type-date-color);
+  font-style: italic;
+}
+
 .juno-type-regexp {
   color: var(--type-regexp-color);
   font-style: italic;
@@ -2493,4 +2499,7 @@ div.juno-tab-active {
     background: var(--matching-paren-color);
 }
 
-
+input.ace_search_field:focus {
+    background: white;
+    color: black;
+}

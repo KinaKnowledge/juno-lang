@@ -7,7 +7,8 @@
     --selected-color: #FFFFFF;
     --control-bg-color: #323232;
     --control-color: #f0f0f0;
-    --control-text-input-color-bg: #FFFFFF50;
+    --control-text-input-color-bg: #000000A0;
+    --control-text-input-color: #FFFFFF;
     --control-focused: #efe5e540;
     --control-unfocused-color: darkgray;
     --control-disabled-bg-color: #eaeded;
