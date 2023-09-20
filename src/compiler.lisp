@@ -1431,7 +1431,7 @@
                                      (push acc (compile right ctx))
                                      (push acc ")")
                                      acc)))
-             
+             (assignment_log (defclog { color: "red" background: "black" prefix: "compile_assignment" }))
              (compile_assignment
                 (fn (tokens ctx)
                    (let
@@ -1481,11 +1481,16 @@
                          (throw SyntaxError "cannot assign result of the allocation operator defvar"))
                       
                       (unset_ambiguous ctx target)
-                      
+                     
                       (set_prop ctx
                          `in_assignment true)
+                      (when (verbosity ctx)
+                         (assignment_log "identifier: " sanitized " where:" target_details
+                                         "ctx: " ctx)
+                         (assignment_log "value tokens: " tokens.2))
                       (= assignment_value (compile_wrapper_fn tokens.2 ctx))
-                      
+                      (when (verbosity ctx)
+                         (assignment_log "assignment value: " assignment_value))
                       (if (and (is_array? assignment_value)
                                (is_object? assignment_value.0)
                                assignment_value.0.ctype)
@@ -4151,7 +4156,9 @@
                                                  (if (not (isNaN verbosity_level))
                                                      (do
                                                         (if (> verbosity_level 0)
-                                                            (set_ctx ctx "__VERBOSITY__" verbosity_level)
+                                                            (do
+                                                               (set_ctx ctx "__VERBOSITY__" verbosity_level)
+                                                               (declare_log "compiler: verbosity set: " (get_ctx ctx "__VERBOSITY__")))
                                                             (do
                                                                (declare_log "verbosity: turned off")
                                                                (= verbosity silence)
@@ -4351,6 +4358,8 @@
                                  (not (== ref_type ArgumentType))
                                  (is_array? tokens))
                             (do
+                               (when (verbosity ctx)
+                                  (sr_log "<- local, get_ctx_val returns: " (get_ctx_val ctx tokens.0.name) "local: " (get_ctx ctx tokens.0.name) "ctx: " (clone ctx)))
                                (= val (get_ctx_val ctx tokens.0.name))
                                ;(sr_log "<- local scope: val is: " val)
                                (push acc val)
@@ -4703,6 +4712,8 @@
                       (when throttle_level
                          (if (is_number? throttle_level)
                              (sleep (* 0.001 throttle_level))))
+                      (when (verbosity ctx)
+                         (comp_log (+ "compile: " _cdepth "->") (clone tokens) (clone ctx)))
                       (try
                          (if (eq nil ctx)
                              (do
@@ -4720,14 +4731,14 @@
                                          (== Function (get_ctx_val ctx tokens.0.name))
                                          (== AsyncFunction (get_ctx_val ctx tokens.0.name))
                                          (== "function" (typeof (prop root_ctx.defined_lisp_globals tokens.0.name)))
-                                         (is_function? (get_lisp_ctx ctx tokens.0.name))))
+                                         (and (is_function? (get_lisp_ctx ctx tokens.0.name))
+                                              (not (get_ctx_val ctx tokens.0.name)))))
                                 (do
                                    (= op_token (first tokens))
                                    (= operator (prop op_token `name))
                                    (= operator_type (prop op_token `val))
                                    (= ref (prop op_token `ref))
                                    (= op (prop op_lookup operator))
-                                   
                                    (cond
                                       op
                                       (op tokens ctx)
@@ -4954,7 +4965,11 @@
                                    (set_prop ctx
                                       `source
                                       tokens.source)
+                                   (when (verbosity ctx)
+                                      (comp_log (+ "compile: " _cdepth ": ") "tokens.val is array type: calling compile with: " tokens.val "ctx:" (clone ctx)))
                                    (= rcv (compile tokens.val ctx (+ _cdepth 1)))
+                                   (when (verbosity ctx)
+                                      (comp_log (+ "compile: " _cdepth ": ") "<-" rcv))
                                    rcv)
                                 
                                 ;; Simple compilations --------
@@ -4968,7 +4983,8 @@
                                 (do
                                    (defvar `snt_name nil)
                                    (defvar `snt_value nil)
-                                   
+                                   (when (verbosity ctx)
+                                      (comp_log (+ "compile: " _cdepth ":" ) "simple value compile: " (clone tokens)))
                                    (cond
                                       (and (not tokens.ref)
                                            (== tokens.type "arr"))
