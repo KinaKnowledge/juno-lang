@@ -2263,7 +2263,7 @@
                          {})
                   { `lpath: (lpath) 
                     `tabindex: 0  
-                    `class: (+ classes "regexp") }) 
+                    `class: (+ classes "date") }) 
                (try (-> val `toISOString)
                   (catch RangeError (e)
                      (-> val `toString))))
