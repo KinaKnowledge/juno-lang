@@ -1040,8 +1040,9 @@
           ((idx 0)
            (acc [])
            (passed_rest 0)
+           
            (structure elems)
-           (follow_tree (fn (elems _path_prefix)
+           (follow_tree (function (elems _path_prefix)
                             (cond
                                 (> passed_rest 0)
                                 (progn
@@ -1049,9 +1050,12 @@
                                        (push acc _path_prefix))
                                    (inc passed_rest))
                                 (is_array? elems)
-                                (map (fn (elem idx)
-                                        (follow_tree elem (+ _path_prefix idx)))
-                                     elems)
+                                (progn
+                                   (defvar path_idx -1)
+                                   (for_each (elem elems)
+                                      (progn
+                                         (inc path_idx)
+                                         (follow_tree elem (+ _path_prefix path_idx)))))
                                 (is_object? elems)
                                 (for_each (`pset (pairs elems))
                                     (follow_tree pset.1 (+ _path_prefix pset.0)))
@@ -1089,7 +1093,7 @@
                                expression))                                            
            (acc [(quote let)]))
         
-          (assert (and (is_array? bind_vars)
+          (assert (and (is_array? binding_vars)
                        (is_value? expression)
                        (is_value? forms))
                   "destructuring_bind: requires 3 arguments")
