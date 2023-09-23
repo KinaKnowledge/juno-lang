@@ -915,8 +915,8 @@
          (range (function (`& args)
                    (let
                       ((`from_to (if args.1
-                                     [ (int args.0) (int args.1) ]
-                                     [ 0 (int args.0) ]))
+                                     [ (float args.0) (float args.1) ]
+                                     [ 0 (float args.0) ]))
                        (`step (if args.2
                                   (float args.2)
                                   1))
@@ -938,7 +938,6 @@
                                    "at the start value and up to, but not including the bounding value. If given a third value, the "
                                    "value will be interpreted as the step value, and the returned array will contain values that "
                                    "increment by the step amount.  Range will throw an error if a negative range is specified. "
-                                   "For negative ranges see neg_range."
                                    "<br><br>Examples:<br>"
                                    "(range 5) -> [ 0 1 2 3 4 ]<br>"
                                    "(range 10 15) -> [ 10 11 12 13 14 ]<br>"
