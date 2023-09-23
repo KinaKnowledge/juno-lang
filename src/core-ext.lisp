@@ -1782,6 +1782,25 @@
      tags: [`encode `base64 `b64 `ArrayBuffer `array `convert `conversion]
      })
  
+ (defun_sync prune_push (place max_size thing)
+   (progn
+      (assert (and (is_array? place)
+                   (and (is_number? max_size)
+                        (> max_size 0))))
+      (push place thing)
+      (if (> place.length max_size)
+          (take place)
+          nil))
+   {
+     description: (+ "Given a place array, a maximum size to enforce, and a value "
+                     "to `push` into the end of the array, the given value will be pushed onto the "
+                     "array.  If, after the push, the array\'s length is greater than the "
+                     "provided `max_size` the first item will be removed via `take` and returned.  "
+                     " Otherwise, if the array hasn\'t reached capacity, nil is returned.  ")
+     usage: ["place:array" "max_size:number" "thing:*"]
+     tags: ["array" "push" "take" "prune" "max" "size" ]
+   })
+ 
  (defun unload_core_ext ()
    (let
       ((count 0)
