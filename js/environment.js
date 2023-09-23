@@ -1,7 +1,7 @@
 // Source: environment.lisp  
-// Build Time: 2023-09-22 07:27:34
-// Version: 2023.09.22.07.27
-export const DLISP_ENV_VERSION='2023.09.22.07.27';
+// Build Time: 2023-09-23 07:40:21
+// Version: 2023.09.23.07.40
+export const DLISP_ENV_VERSION='2023.09.23.07.40';
 
 
 
@@ -1446,14 +1446,14 @@ export async function init_dlisp(Environment)  {
                         from_to= ( function(){
                             if (check_true (args['1'])){
                                 return [ ( function(){
-                                    let __array_op_rval__151=int;
+                                    let __array_op_rval__151=float;
                                      if (__array_op_rval__151 instanceof Function){
                                         return  __array_op_rval__151(args['0']) 
                                     } else {
                                         return [__array_op_rval__151,args['0']]
                                     }
                                 })(), ( function(){
-                                    let __array_op_rval__152=int;
+                                    let __array_op_rval__152=float;
                                      if (__array_op_rval__152 instanceof Function){
                                         return  __array_op_rval__152(args['1']) 
                                     } else {
@@ -1462,7 +1462,7 @@ export async function init_dlisp(Environment)  {
                                 })()]
                             } else {
                                 return [0, ( function(){
-                                    let __array_op_rval__153=int;
+                                    let __array_op_rval__153=float;
                                      if (__array_op_rval__153 instanceof Function){
                                         return  __array_op_rval__153(args['0']) 
                                     } else {
@@ -1517,7 +1517,7 @@ export async function init_dlisp(Environment)  {
                     }();
                     [await async function(){
                         Environment.definitions["range"]={
-                            core_lang:true,usage:["start_or_end:number","end:number","step:number"],description:("Range has a variable form depending on the amount of arguments provided to the function when "+ "calling it. If provided one argument, range will produce an array from 0 up to, but not including "+ "the provided value. If given two arguments, the first argument will be the starging value and "+ "the last value will be used as the upper bounding value, returning an array with elements starting "+ "at the start value and up to, but not including the bounding value. If given a third value, the "+ "value will be interpreted as the step value, and the returned array will contain values that "+ "increment by the step amount.  Range will throw an error if a negative range is specified. "+ "For negative ranges see neg_range."+ "<br><br>Examples:<br>"+ "(range 5) -> [ 0 1 2 3 4 ]<br>"+ "(range 10 15) -> [ 10 11 12 13 14 ]<br>"+ "(range 10 20) -> [ 10 12 14 16 18 ]<br>"+ "(range -5 0) -> [ -5 -4 -3 -2 -1 ]<br>"+ "(range -3 3) -> [ -3, -2, -1, 0, 1, 2 ]<br>")
+                            core_lang:true,usage:["start_or_end:number","end:number","step:number"],description:("Range has a variable form depending on the amount of arguments provided to the function when "+ "calling it. If provided one argument, range will produce an array from 0 up to, but not including "+ "the provided value. If given two arguments, the first argument will be the starging value and "+ "the last value will be used as the upper bounding value, returning an array with elements starting "+ "at the start value and up to, but not including the bounding value. If given a third value, the "+ "value will be interpreted as the step value, and the returned array will contain values that "+ "increment by the step amount.  Range will throw an error if a negative range is specified. "+ "<br><br>Examples:<br>"+ "(range 5) -> [ 0 1 2 3 4 ]<br>"+ "(range 10 15) -> [ 10 11 12 13 14 ]<br>"+ "(range 10 20) -> [ 10 12 14 16 18 ]<br>"+ "(range -5 0) -> [ -5 -4 -3 -2 -1 ]<br>"+ "(range -3 3) -> [ -3, -2, -1, 0, 1, 2 ]<br>")
                         };
                         return Environment.definitions;
                         
@@ -5154,29 +5154,29 @@ export async function init_dlisp(Environment)  {
         {
             await async function(){
                 comps[0]=await (async function(){
-                    let __array_op_rval__211=sanitizer_fn;
-                     if (__array_op_rval__211 instanceof Function){
-                        return await __array_op_rval__211((comps && comps["0"])) 
+                    let __array_op_rval__215=sanitizer_fn;
+                     if (__array_op_rval__215 instanceof Function){
+                        return await __array_op_rval__215((comps && comps["0"])) 
                     } else {
-                        return [__array_op_rval__211,(comps && comps["0"])]
+                        return [__array_op_rval__215,(comps && comps["0"])]
                     }
                 })();
                 return comps;
                 
             }();
             await (async function(){
-                 let __test_condition__212=async function() {
+                 let __test_condition__216=async function() {
                     return ((comps && comps.length)>0)
                 };
-                let __body_ref__213=async function() {
+                let __body_ref__217=async function() {
                     (acc).push((comps).shift());
                     return (acc_full).push(await (async function(){
                          return await (await Environment.get_global("expand_dot_accessor"))((acc).join("."),ctx) 
                     })())
                 };
                 let __BREAK__FLAG__=false;
-                while(await __test_condition__212()) {
-                     await __body_ref__213();
+                while(await __test_condition__216()) {
+                     await __body_ref__217();
                      if(__BREAK__FLAG__) {
                          break;
                         

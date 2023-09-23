@@ -1,7 +1,7 @@
 // Source: core-ext.lisp  
-// Build Time: 2023-09-22 07:27:34
-// Version: 2023.09.22.07.27
-export const DLISP_ENV_VERSION='2023.09.22.07.27';
+// Build Time: 2023-09-23 07:40:21
+// Version: 2023.09.23.07.40
+export const DLISP_ENV_VERSION='2023.09.23.07.40';
 
 
 
@@ -2248,6 +2248,18 @@ await Environment.set_global("encode_to_base64",async function(array_buffer_data
     })
 },{ "name":"encode_to_base64","fn_args":"(array_buffer_data)","description":["=:+","Given a value of type `ArrayBuffer` as input, returns a base64 encoded ","string, suitable for use in image URLs or serialized storage.<br>#### Example ","<br>```(defun file_to_img (file)\n   (img { src: (+ \"data:\" file.type \";base64,\" ","\n        (encode_to_base64 (read_file file { `read_as: \"binary\" }))) ","}))```<br>"],"usage":["array_buffer_data:ArrayBuffer"],"tags":["encode","base64","b64","ArrayBuffer","array","convert","conversion"],"requires":["second","split_by"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","RangeError","Intl","parseInt","Promise","FileReader","Blob"],"source_name":"core-ext.lisp"
 });
+await (async function(){
+    return  Environment.set_global("prune_push",function(place,max_size,thing) {
+         ( Environment.get_global("assert"))(((place instanceof Array)&& ( ( Environment.get_global("is_number?"))(max_size)&& (max_size>0))));
+        (place).push(thing);
+        if (check_true (((place && place.length)>max_size))){
+            return (place).shift()
+        } else {
+            return null
+        }
+    },{ "name":"prune_push","fn_args":"(place max_size thing)","description":["=:+","Given a place array, a maximum size to enforce, and a value ","to `push` into the end of the array, the given value will be pushed onto the ","array.  If, after the push, the array's length is greater than the ","provided `max_size` the first item will be removed via `take` and returned.  "," Otherwise, if the array hasn't reached capacity, nil is returned.  "],"usage":["place:array","max_size:number","thing:*"],"tags":["array","push","take","prune","max","size"],"requires":["assert","is_array?","is_number?","push","take"],"externals":["ReferenceError","Object","Date","Math","Error","RegExp","Function","parseFloat","clone","TextEncoder","crypto","DataView","TypeError","subtype","isNaN","RangeError","Intl","parseInt","Promise","FileReader","Blob"],"source_name":"core-ext.lisp"
+})
+})();
 await Environment.set_global("unload_core_ext",async function() {
     let count;
     let core_handle;
