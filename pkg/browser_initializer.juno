@@ -79,7 +79,7 @@
 (defparameter core/*evaluators* {})  ;; remote evaluators
 
 (defparameter *build_window* nil) ;; handle to the build window
-
+(defparameter *system_requires_export* false)
 
 (defvalue *ace_option_description*
    { editor: {
@@ -14247,19 +14247,31 @@
                                                        (clearInterval dirty_controls_interval))
                                                     (log_error "dirty_controls_interval: stopping due to error: " e)
                                                     [])))))
+                                 
+                                 (when (and (not is_served?)
+                                            (> dirties.length 0))
+                                    (= *system_requires_export* true))
                                  (set_prop num_dirties_button
-                                    `innerText (+ "" dirties.length))
+                                    `innerText (cond 
+                                                  (> dirties.length 0)
+                                                  (+ "" dirties.length)
+                                                  *system_requires_export*
+                                                  "↓"
+                                                  else
+                                                  (+ "" dirties.length)))
+                                                   
                                  (cond
                                     (and (> dirties.length 0)
                                          (== num_dirties 0))
-                                     (progn
+                                    (progn
                                         (= num_dirties dirties.length)
                                         (if (not num_dirties_button.parentElement)
                                             (-> (get_by_id "page-header") `append
                                                      num_dirties_button))
                                         (addEventListener `beforeunload before_unload_listener { capture: true }))
                                      (and (== dirties.length 0)
-                                          (> num_dirties 0))
+                                          (> num_dirties 0)
+                                          (not *system_requires_export*))
                                      (progn
                                         (= num_dirties 0)
                                         (-> num_dirties_button `remove)
@@ -19970,12 +19982,14 @@
                           (and export_options.save_locally
                              (== rval true))
                           (progn
+                             (= *system_requires_export* false)
                              (set_message "Saved Locally - check your Downloads Folder"))
                           (and (not export_options.save_locally)
                                (== rval.rval "OK"))
                           (progn
                              (= app_name (last (split_by "/" rval.results.0.filename)))
                              (set_message (+ "Saved To Host - opening in browser: " (+ "/env/" app_name)))
+                             (= *system_requires_export* false)
                              (-> window `open (+ "/env/" app_name) options.application_name))
                           else
                           (progn
@@ -20027,11 +20041,13 @@
                                 (and export_options.save_locally
                                    (== rval true))
                                 (progn
+                                   (= *system_requires_export* false)
                                    (set_message "Saved Locally - check your Downloads Folder"))
                                 (and (not export_options.save_locally)
                                      (== rval.rval "OK"))
                                 (progn
                                    (= app_name (last (split_by "/" rval.results.0.filename)))
+                                   (= *system_requires_export* false)
                                    (set_message (+ "Saved To Host - opening in browser: " (+ "/env/" app_name)))
                                    (-> window `open (+ "/env/" app_name) options.application_name))
                                 else
@@ -20068,6 +20084,7 @@
        (view nil)
        (frame nil)
        (result nil))
+      
       (unless whole_application?
          (assert (is_control? layout) "export_system: invalid layout or control name provided"))
       (= view
