@@ -1,16 +1,16 @@
 :root {
-    --main-bg-color: hsl(186.46deg 28.63% 44.51%);
+    --main-bg-color: hsl(196deg 11.87% 73.44%);
     --main-color: #0a212d;
     --header-color: #f2f0eb;
     --header-bg-color: hsl(183.33deg 29.51% 23.92%);
     --app-header-color: #f2f0eb;
     --highlight-bg-color: #bc5414;
     --highlight-color: white;
-    --selected-bg-color: hsl(40deg 13% 100%);;
+    --selected-bg-color: hsl(40deg 13% 100%);
     --selected-color: darkblue;
     --control-bg-color: #e2ded4;
     --control-color: #000000;
-    --control-focused: hsl(186.15deg 22.29% 65.69%);
+    --control-focused: hsl(196.18deg 100% 40.73% / 17%);
     --control-text-input-color-bg: #FFFFFF50;
     --control-unfocused-color: #3e3232;
     --control-unfocused-bg-color: #FFFFFF10;
@@ -21,10 +21,10 @@
     --namespace-color: #ac4302;
     --log-message-bg-color: hsl(0deg 0% 100% / 36%);
     --log-result-bg-color: hsl(186.46deg 3% 73.77%);
-    --main-accent-color: hsl(186.46deg 28.63% 44.51%);
+    --main-accent-color: hsl(196deg 11.11% 73.53%);
     --main-accent-line: #00000015;
     --main-accent-line-hover: #00000025;
-    --main-control-surface-accent-color: hsl(186.46deg 22.65% 41.97%);
+    --main-control-surface-accent-color: hsl(334.83deg 100% 62.83% / 8%);
     --main-control-button-color: #cdc5b4;
     --scrollbar-thumb-color: #00000040;
     --scrollbar-track-color: #00000010;
