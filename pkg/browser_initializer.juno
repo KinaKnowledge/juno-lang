@@ -1486,7 +1486,7 @@
        (add_tab (fn (name content)
                    (progc
                       (-> tab_bar `append
-                         (li { data-tab-id: (to_key name) } name))
+                         (li { `tabindex: 0 data-tab-id: (to_key name) } name))
                       (-> content_container `append
                          (div { class: "juno-tab-content" data-tab-id: (to_key name) }
                               (cond 
@@ -1555,6 +1555,14 @@
          `click
          (fn (e)
             (activate_tab_by_source e.srcElement)))
+      
+      (attach_event_listener tab_bar
+         `keydown
+         (fn (e)
+            (progn
+               (when (or (== e.keyCode 32)
+                         (== e.keyCode 13))
+                  (activate_tab_by_source e.srcElement)))))
       
       {
          `view: view
