@@ -1793,18 +1793,17 @@
              (= control (control_for_dom_element current_elem))
              (if control
                 (cond
-                   (or (== (prop control `type) "text_editor")
-                       (== (prop control `type) "visual_repl")
-                       (== (prop control `type) "DOM_editor"))
-                   (cond
-                      (== command "cut")
-                      (-> control `cut_selection event)
-                      (== command "copy")
-                      (-> control `copy_selection event)
-                      (== command "paste")
-                      (-> control `paste_selection event))
+                   (and (== command "cut")
+                        (is_function? control.cut_selection))
+                   (-> control `cut_selection event)
+                   (and (== command "copy")
+                        (is_function? control.copy_selection))
+                   (-> control `copy_selection event)
+                   (and (== command "paste")
+                        (is_function? control.paste_selection))
+                   (-> control `paste_selection event)
                    else
-                   (log "Handle Clipboard Event" command (prop control `type)))
+                   (log "Handle Clipboard Event: found control, but no handler:" command (prop control `type)))
                 (notify "Unable to find paste target")))))
    {
      description: (+ "The `handle_clipboard_event` is setup in the `*initializer*` of the "
@@ -7576,10 +7575,12 @@
      
       (setTimeout (fn ()
                      (progn
-                         (= dims (-> frame `getBoundingClientRect))
+                        (= dims (-> frame `getBoundingClientRect))
                         (set_style [["width"  (+ "" (Math.max 300 dims.width) "px")]
                                     ["height" (+ "" (Math.max 30  dims.height) "px")]]
-                                   frame))) 10)
+                                   frame)
+                        (when (is_function? options.on_display)
+                           (-> options `on_display frame)))) 10)
       (if options.controls
          {
            `close: (fn ()
@@ -7597,9 +7598,9 @@
                      "frame includes a title bar with a close button by default.   This is a "
                      "non-modal structure, howerver by using the controls option in conjunction with "
                      "a `Promise`, evaluation of subsequent code can be prevented until the dialog is "
-                     "closed.<br><br>#### Options  <br><br>position:object -An object with up to four "
-                     "optional keys: `undefined``top`, `width`, and `height`, which values control "
-                     "the position of the box.  If a value is a string, then the value is treated "
+                     "closed.<br><br>#### Options   <br><br>position:object -An object with up to "
+                     "four optional keys: left, top, width and height, which values control the "
+                     "position of the box.  If a value is a string, then the value is treated "
                      "directly as a CSS directive, such as `45%`.  If the value is a number, it is "
                      "considered to be a pixel offset for that value.  <br>title:string -If provided, "
                      "this value will be used as the title bar.<br>style:string -Any CSS styling "
@@ -7607,12 +7608,15 @@
                      "container for the content.<br>on_close:function -When present, this function is "
                      "called when the user has initiated a close operation with the close button.  "
                      "The return value of this function is ignored and so this function is purely "
-                     "advisory.<br>controls:boolean -If true, provides an interface object to manage "
-                     "the floating div externally.  This provides a means to close the floating div "
-                     "element and retrieve the view.  By default this option is false. <br>If the "
-                     "controls option is true, then the interface object returned will have a `view` "
-                     "element value, and a `close` function which will close the window and should be "
-                     "called with no arguments.<br> ")
+                     "advisory.<br>on_display:function - This optional function is called after "
+                     "the `floating_div` has been placed into the DOM.  The top level element of the "
+                     "view is passed as an argument.<br>controls:boolean -If true, provides an "
+                     "interface object to manage the floating div externally.  This provides a means "
+                     "to close the floating div element and retrieve the view.  By default this "
+                     "option is false. <br>If the controls option is true, then the interface object "
+                     "returned will have a `view` element value, and a `close` function which will "
+                     "close the window and should be called with no arguments. ")
+
      usage: ["contents:Element" "options:object"]
      tags: ["DOM" "ui" "html" "view" "floating" "dialog" ]
      })
