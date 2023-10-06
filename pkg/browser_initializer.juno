@@ -1791,6 +1791,8 @@
              (doc_exec command))
           (progn 
              (= control (control_for_dom_element current_elem))
+             (unless control
+                (= control *last_focus*))
              (if control
                 (cond
                    (and (== command "cut")
