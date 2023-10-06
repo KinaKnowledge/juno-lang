@@ -797,25 +797,27 @@
                              (if search_mode
                                 internal_results          ;; if we found something internal, return all results
                                 (first internal_results)) ;; we are interested in the first result onlu
-                             (do
-                                (defvar external_results (get_outside_global quoted_symbol))
-                                
-                                (if external_results
-                                   (progn
-                                      (defvar detail
-                                         {
-                                           `location: "external"
-                                           `type: (subtype external_results)
-                                           `name: quoted_symbol
-                                           `namespace: "EXTERNAL"
-                                           `description: (+  "This is not a bound symbol within the Juno Environment.  "
-                                                            "If it is to be used, it is recommended to create a reference to it with "
-                                                            "`(defglobal " quoted_symbol " " quoted_symbol " { `description: \"...\" })`")
-                                           })
-                                      (if search_mode
-                                         [ detail ]
-                                         detail))
-                                   nil)))))
+                             (if (or (contains? "*" quoted_symbol)
+                                     (contains? "?" quoted_symbol))
+                                 nil
+                                 (progn
+                                    (defvar external_results (get_outside_global quoted_symbol))
+                                    (if external_results
+                                       (progn
+                                          (defvar detail
+                                             {
+                                               `location: "external"
+                                               `type: (subtype external_results)
+                                               `name: quoted_symbol
+                                               `namespace: "EXTERNAL"
+                                               `description: (+  "This is not a bound symbol within the Juno Environment.  "
+                                                                "If it is to be used, it is recommended to create a reference to it with "
+                                                                "`(defglobal " quoted_symbol " " quoted_symbol " { `description: \"...\" })`")
+                                               })
+                                          (if search_mode
+                                             [ detail ]
+                                             detail))
+                                       nil))))))
                    {
                      `description: "Given a quoted symbol returns the relevant metadata pertinent to the current namespace context."
                      `usage: ["quoted_symbol:string" "search_mode:boolean"]

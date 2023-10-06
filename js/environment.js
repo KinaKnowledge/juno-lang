@@ -1,7 +1,7 @@
 // Source: environment.lisp  
-// Build Time: 2023-09-23 07:40:21
-// Version: 2023.09.23.07.40
-export const DLISP_ENV_VERSION='2023.09.23.07.40';
+// Build Time: 2023-09-25 13:27:50
+// Version: 2023.09.25.13.27
+export const DLISP_ENV_VERSION='2023.09.25.13.27';
 
 
 
@@ -1271,30 +1271,34 @@ export async function init_dlisp(Environment)  {
                                 return await first(internal_results)
                             }
                         } else {
-                            {
-                                let external_results=await get_outside_global(quoted_symbol);
-                                ;
-                                if (check_true (external_results)){
-                                    {
-                                        let detail={
-                                            location:"external",type:await subtype(external_results),name:quoted_symbol,namespace:"EXTERNAL",description:("This is not a bound symbol within the Juno Environment.  "+ "If it is to be used, it is recommended to create a reference to it with "+ "`(defglobal "+ quoted_symbol+ " "+ quoted_symbol+ " { `description: \"...\" })`")
-                                        };
-                                        ;
-                                        if (check_true (search_mode)){
-                                            return await (async function(){
-                                                let __array_op_rval__141=detail;
-                                                 if (__array_op_rval__141 instanceof Function){
-                                                    return await __array_op_rval__141() 
-                                                } else {
-                                                    return [__array_op_rval__141]
-                                                }
-                                            })()
-                                        } else {
-                                            return detail
+                            if (check_true ((await contains_ques_("*",quoted_symbol)|| await contains_ques_("?",quoted_symbol)))){
+                                return null
+                            } else {
+                                {
+                                    let external_results=await get_outside_global(quoted_symbol);
+                                    ;
+                                    if (check_true (external_results)){
+                                        {
+                                            let detail={
+                                                location:"external",type:await subtype(external_results),name:quoted_symbol,namespace:"EXTERNAL",description:("This is not a bound symbol within the Juno Environment.  "+ "If it is to be used, it is recommended to create a reference to it with "+ "`(defglobal "+ quoted_symbol+ " "+ quoted_symbol+ " { `description: \"...\" })`")
+                                            };
+                                            ;
+                                            if (check_true (search_mode)){
+                                                return await (async function(){
+                                                    let __array_op_rval__141=detail;
+                                                     if (__array_op_rval__141 instanceof Function){
+                                                        return await __array_op_rval__141() 
+                                                    } else {
+                                                        return [__array_op_rval__141]
+                                                    }
+                                                })()
+                                            } else {
+                                                return detail
+                                            }
                                         }
+                                    } else {
+                                        return null
                                     }
-                                } else {
-                                    return null
                                 }
                             }
                         }
