@@ -2983,6 +2983,25 @@
      `tags: ["log" "console" "clear" "output" "display"]
      })
 
+(defun_sync date_to_input_format (date)
+   (if (is_date? date)
+       (+ "" (-> date `getFullYear) 
+          "-" 
+          (-> (+ "" (+ 1 (-> date `getMonth))) `padStart 2 `0) 
+          "-" 
+          (-> (+ "" (-> date `getDate)) `padStart 2 `0)
+          "T" 
+          (-> (+ "" (-> date `getHours)) `padStart 2 `0)
+          ":" 
+          (-> (+ "" (-> date `getMinutes)) `padStart 2 `0))
+          date)
+   {
+     description: (+ "Given a date object returns a string suitable for use in an input element."
+                     "If the value provided isn't a date instance, then it will just return the value.")
+     tags: [ "ui" "date" "time" "input" "parse" ]
+     usage: ["date:Date"]
+   })
+
 (defun_sync decorative_usage (symbol_data namespace suppress_type symbol_lookup)
   (let
       ((val (if (is_string? symbol_data)
