@@ -1847,7 +1847,37 @@
      usage: ["namespace:?string"]
      tags: ["documentation" "coverage" "help" "namespace" ]
    })
- 
+ (defun cksum (data algorithm)
+       (let
+      ((algorithm (or algorithm "SHA-256"))
+       (result nil)
+       (data (cond 
+                (is_string? data)
+                (-> (new TextEncoder)
+                    `encode data)
+                (== "ArrayBuffer" (sub_type data))
+                data
+                else
+                (throw RangeError "cksum: data must be string or an ArrayBuffer"))))
+      (= result (-> crypto.subtle `digest algorithm data ))
+      (if (== (sub_type result) "ArrayBuffer")
+          (join ""
+               (map (fn (b)
+                       (-> (-> b `toString 16)
+                           `padStart 2 "0"))
+                    (-> Array `from (new Uint8Array result))))
+          (throw Error "cksum: unable to digest provided data")))
+   {
+     description: (+ "The `cksum` function returns a digest string for a "
+                     "given `string` or `ArrayBuffer` .  An optional algorithm argument can be "
+                     "provided which should be one of the values allowed by "
+                     "the `SubtleCrypto` library.  These are `SHA-1` , `SHA-256` , `SHA-384` , "
+                     "and `SHA-512` .  `SHA-256` is the default, if the specific algorithm to use "
+                     "isn\'t provided.<br>Example:```(cksum \"The quick brown fox jumped over the lazy "
+                     "dog.\")```<br><br>Returns:```\"68b1282b91de2c054c36629cb8dd447f12f096d3e3c587978dc2248444633483\"```<br>")
+     usage: ["data:string|ArrayBuffer" "algorithm:string"]
+     tags: ["crypto" "digest" "checksum" "string" "ArrayBuffer"]
+   })
  (register_feature "core-ext")
   
  true
