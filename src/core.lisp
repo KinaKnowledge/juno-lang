@@ -3285,9 +3285,10 @@
                   ;(console.log "import: acc is: " (as_lisp acc))
                   `(iprogn
                       ,@acc))))
-         
+         (ends_with? ".ts" target_path)
+         (throw EvalError ".ts extension requires Deno (which wasn't detected)")
          else
-         (throw EvalError "invalid extension: needs to be .lisp, .js, .json or .juno")))
+         (throw EvalError "invalid extension: needs to be .lisp, .js, .ts (in Deno), .json or .juno")))
    { `description: (+ "Dynamically load the contents of the specified source file (including "
                       "path) into the Lisp environment in the current namespace.<br>If the file is a "
                       "Lisp source, it will be evaluated as part of the load and the final result "
