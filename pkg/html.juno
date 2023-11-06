@@ -38,8 +38,8 @@
                        `th `thead `tr
                        `button `datalist `fieldset `form `input `label `legend
                        `meter `optgroup `option `output `progress `select `textarea
-                       `details `dialog `summary 
-                       `polygon `polyline `rect `circle `ellipse `line
+                       `details `dialog `summary
+                       `polygon `polyline `rect `circle `ellipse `line `g `path
                        `slot `template ])
 
 

@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2023-09-25 13:27:50
-// Version: 2023.09.25.13.27
-export const DLISP_ENV_VERSION='2023.09.25.13.27';
+// Build Time: 2023-11-06 18:19:26
+// Version: 2023.11.06.18.19
+export const DLISP_ENV_VERSION='2023.11.06.18.19';
 
 
 
@@ -4033,8 +4033,11 @@ await Environment.set_global("import",async function(...args) {
                     }
                 } ()
             }
+        } else if (check_true (await (await Environment.get_global("ends_with?"))(".ts",target_path))) {
+            throw new EvalError(".ts extension requires Deno (which wasn't detected)");
+            
         } else {
-            throw new EvalError("invalid extension: needs to be .lisp, .js, .json or .juno");
+            throw new EvalError("invalid extension: needs to be .lisp, .js, .ts (in Deno), .json or .juno");
             
         }
     } ()
@@ -4557,16 +4560,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__313=async function(req) {
                                             {
-                                                let _expr_70245;
+                                                let _expr_1340;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_70245=await (async function(){
+                                                _expr_1340=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req,name) 
                                                 })();
-                                                req_sym=(_expr_70245 && _expr_70245["0"]);
-                                                req_ns=(_expr_70245 && _expr_70245["1"]);
-                                                explicit=(_expr_70245 && _expr_70245["2"]);
+                                                req_sym=(_expr_1340 && _expr_1340["0"]);
+                                                req_ns=(_expr_1340 && _expr_1340["1"]);
+                                                explicit=(_expr_1340 && _expr_1340["2"]);
                                                 if (check_true ((req_ns&& await (await Environment.get_global("not"))((req===symname))&& await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(req,invalids))))){
                                                     {
                                                         if (check_true (await (await Environment.get_global("not"))((req_ns===name)))){

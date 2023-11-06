@@ -6070,6 +6070,23 @@
        `tags: ["alert" "popup" "catch" "errors" "ui" "DOM"]
    })
 
+(defmacro get_file_system_root ()
+   `(if is_served?
+      (rblock (get_default [ `http_services `base_directory ]))
+      nil)
+   {
+     description: (+ "If the browser environment is running as a hosted page (served "
+                     "via `HTTP` or `HTTPS`), then this macro, when evaluated will return the root "
+                     "directory of the file service handler used to access file resources by "
+                     "Seedling.  The root directory is the highest level in the file system that is "
+                     "accessible to the service providing file support to the browser environment.  "
+                     "If the setting is `/` , then all files are available in the file system.  If "
+                     "the returned path is relative, then the highest set value is the current "
+                     "working directory of the server process.")
+     usage: []
+     tags: ["path" "server" "root" "base_directory"]
+   })
+
 (defmacro set_file_system_root (path no_warn)
    `(when is_served?
        (let
@@ -20788,7 +20805,23 @@
 
 (defun seedling_ready ()
   (progn
-      (notify (+ "Hello " *namespace* ))))
+     (if is_served? 
+        (log (div "The environment is running from a service."))
+        (log (div "The environment is running in local mode.")))
+     (when is_served?
+        (defvar click_span (span { `class: "juno-tag" } `set_file_system_root))
+        (log (div "The current file service root is: " (get_file_system_root)))
+        (log (div "Use " click_span " to change the file service root directory."))
+        (attach_event_listener click_span `click
+           (fn (e)
+              (progn
+                 (notify "clicked")
+                 (show_help_panel)
+                 ;(-> (get_control_by_name "Juno Documentation - Frame 0") `search_by_tag "set_file_system_root")
+                 ;(sleep 0.1)
+                 (-> (get_control_by_name "Juno Documentation - Frame 0") `show_documentation "set_file_system_root")
+                 ))))
+     (notify (+ "In namespace " *namespace* ))))
 
 
 (defun user/*initializer* ()
