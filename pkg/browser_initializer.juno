@@ -18694,7 +18694,55 @@
                                        (destroy_control control))])]))) 
         (make_menu elem control_menu)))))
 
-      
+(defun browser_environments ()
+   (if (and is_served?
+             (== "localhost" (resolve_path [ `location `hostname ] window)))
+      (let
+         ((envs (rblock (http/browser_environments true)))
+          (chosen_env { env: nil })
+          (ctl_panel nil)
+          (ctl (dtable
+                  (for (env envs)
+                       [env.0 env.1 (formatted_date env.2) (ago env.3)])
+                  {
+                    `columns: ["Name" "Size" "Created" "Last Accessed"]
+                    `additional_controls: [(button "Close")]
+                    `display_search: true
+                    `set_filter_mode: true
+                    `controls: true
+                    })))
+         
+         (attach_event_listener ctl.view
+            `click
+            (fn (e)
+               (cond
+                  (== "TD" e.srcElement.tagName)
+                  (progn
+                     (set_prop chosen_env
+                        `env e.srcElement.parentElement.children.0.innerText)
+                     (notify (+ "Opening: " chosen_env.env))
+                     (eval `(rblock (http/open_browser ,#chosen_env)))
+                     (destroy_control ctl_panel)))))
+         (= ctl_panel (panel "Available Environments" ctl.view))
+         (attach_event_listener ctl_panel.view
+            `keydown
+            (fn (e)
+               (progn
+                  (handle_event e)
+                  (when (== 27 e.keyCode)
+                     (destroy_control ctl_panel)))))
+         (place_control `below
+                        ctl_panel))
+      (alert_box "The browser_environments command is only available when running in a locally served mode."
+                 "The value is_served? must be true and the window.location.hostname must be localhost."))
+   {
+     description: (+ "<br><br>The `browser_environments` function opens a control that allows for the "
+                     "user to select an available browser environment and opens a browser window for "
+                     "that environment.<br>When the user selects a environment, or presses escape, "
+                     "the panel will close. ")
+     tags: ["browser" "environments" "seedling" "ui" "beta"]
+     usage: []
+     })
                                                 
 (defun app_menu (global_menu_path options)
   (let
@@ -20705,7 +20753,11 @@
        [])
     ["Open Symbol" (fn ()
                       (new_buffer))]
-    
+    (if (and is_served?
+             (== "localhost" (resolve_path [ `location `hostname ] window)))
+        ["Open Environment"
+         (fn (e) (browser_environments))]
+        [])
     (if (resolve_path [ `get ] *last_focus*) 
         ["--" nil]
         [])

@@ -1235,7 +1235,30 @@
          `base_directory base_directory)))
 
  
-
+(if_compile_time_defined `Deno
+   (defun browser_environments (details?)
+      (let
+         ((current_home (sys/cwd))
+          (stat_data nil)
+          (files (if (sys/is_dir? (+ current_home "/environments"))
+                     (sort (sys/list_files (+ current_home "/environments"))
+                           { `key: [`name ]})
+                     (throw Error (+ "Unable to find directory " current_home "/environments" )))))
+         (reduce (file files)
+            (when (and (ends_with? ".html" file.name)
+                       file.isFile)
+               (= stat_data (sys/stat (+ current_home "/environments/" file.name)))
+               (if details?
+                  [file.name stat_data.size stat_data.birthtime stat_data.mtime]
+                  file.name))))
+      {
+        description: (+ "This function returns an array containing the available browser "
+                        "environments that can be opened with the `http/open_browser` function.  If "
+                        "the `details?` argument is provided as a `true` value, then the name, size, "
+                        "create time and access times are provided. ")
+        usage: ["details?:?boolean"]
+        tags: ["environments" "ui" "open_browser" "browser" "images"]
+        }))
 
                       
 
@@ -1244,22 +1267,52 @@
       (let
          ((os (operating_system))
           (process_handle nil)
-          (paths_by_os {
-                         darwin: [ "/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome" ]
-                         })
-          (browser (or options.path_to_browser
-                       (cond
-                          (== os "darwin")
-                          "/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"
-                          (== os "linux")
-                          "/usr/bin/google-chrome"
-                          (== os "windows")
-                          (throw EvalError "Please provide the path_to_browser option.")))))
-         ;; API change into Deno v2 from Deno.run, which is to be deprecated, to Deno.Command
-         (= process_handle
-            (new Deno.Command browser {  args:["--new-window"
-                                               (+ "--app=http://localhost:" (or options.port 56432) "/env/" (or options.instance "seedling.html"))] }))
-         (-> process_handle `spawn))))
+          (env_to_start (cond
+                           options.env
+                           (if (ends_with? ".html" options.env)
+                               options.env
+                               (+ options.env ".html"))
+                           options.instance
+                           options.instance
+                           else
+                           "seedling.html"))
+          (browser (and (not options.list)
+                        (or options.path_to_browser
+                           (cond
+                              (== os "darwin")
+                              "/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"
+                              (== os "linux")
+                              "/usr/bin/google-chrome"
+                              (== os "windows")
+                              (throw EvalError "Please provide the path_to_browser option."))))))
+         (cond
+            options.list
+            (browser_environments)
+            else
+            (progn
+               ;; API change into Deno v2 from Deno.run, which is to be deprecated, to Deno.Command
+               (= process_handle
+                  (new Deno.Command browser {  args:["--new-window"
+                                                     (+ "--app=http://localhost:" (or options.port 56432) "/env/" env_to_start)] }))
+               (-> process_handle `spawn))))
+      {
+        description: (+ "The `open_browser` function opens attempts to open a standalone browser "
+                        "window connected to the juno image that called the `open_browser` command.  "
+                        "This command is useful if the juno image is running on the local computer, but "
+                        "will not work if the juno image and the browser image are on separate computers "
+                        "since it spawns a local process.<br>The default browser environment that will "
+                        "be started is the `seedling` environment.  Otherwise, use the options object to "
+                        "specify a specific browser environment to bring up. <br><br>#### Options "
+                        "<br><br>env:string - The name of the browser environment to start from "
+                        "the `environments` directory.   The file extension doesn\'t have to be "
+                        "specified.<br>list:boolean - If provided as true, the command will list the "
+                        "available browser environments which can then be referenced with "
+                        "the `env` option to start.")
+        usage: ["options:?object"]
+        tags: ["browser" "environment" "ui" "image" "images" "seedling"]
+        }))
+   
+
                        
 
 (defun enable_ui ()
