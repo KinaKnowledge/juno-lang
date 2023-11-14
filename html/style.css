@@ -2489,6 +2489,17 @@ div.juno-tab-active {
     box-shadow: 2px 3px 8px 0px #00000040;
 }
 
+.juno-button-group button {
+    min-width: 100px;
+    margin: 5px;
+    padding: 5px;
+}
+
+section.juno-button-group {
+    text-align: center;
+    margin: 5px;
+}
+
 /* Overrides - may be dealt with in a better way but for now
  * placing in the same as the main style set for easier
  * managament */
