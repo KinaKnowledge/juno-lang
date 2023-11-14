@@ -5687,6 +5687,132 @@
      tags:["events" "contextmenu" "menu" "context" "event" "DOM" "UI"]
      })
 
+(defun request_button_choice (prompt choice_text options)
+  (new Promise (fn (resolve reject)                 
+                 (let
+                     ((current_focus *last_focus*)
+                      (completed false)
+                      (button_panel (section (+ {} (if options.class 
+                                               { `class: options.class }
+                                               { `class: "juno-button-group" `style: "margin-top: 10px;" `role: "group" }))
+                                         (for (choice (or choice_text []))
+                                              (cond
+                                                 (and (is_array? choice)
+                                                      (== choice.0 "--"))
+                                                 (br)
+                                                 (== choice "--")
+                                                 (br)
+                                                 else
+                                                 (button (+ {} 
+                                                         (if (is_string? options.button_class)
+                                                             { class: options.button_class }
+                                                             {  } )
+                                                         { tabindex: 0 value: (if (is_array? choice) 
+                                                                                  (or choice.1 "nil")
+                                                                                  choice) })
+                                                      (if (is_array? choice)
+                                                          choice.0
+                                                          choice))))))
+                      (dwin (dialog { `style: "height: min-content; width: min-content;"   }
+                                    (div { `class: "juno-instructions" } prompt)
+                                    (br)
+                                    button_panel
+                                    (br)))
+                      (rval nil)
+                      (return_value (fn ()
+                                       (progn
+                                              (clean_up rval))))
+
+                      (clean_up (fn (val)
+                                    (when (not completed)
+                                        (= completed true)
+                                        (when options.on_destroy
+                                           (-> options `on_destroy))
+                                        (resolve val)
+                                        (-> dwin `remove)
+                                        (when current_focus
+                                           (set_focus_to current_focus))))))
+                     
+                     
+                     
+                     
+                     
+                     ;; don't immediately react to keyup so as not to immediately react
+                     ;; in certain scenarios
+                     (setTimeout (fn ()
+                                    (progn
+                                       (attach_event_listener dwin
+                                          `keyup
+                                          (fn (e)
+                                             (cond
+                                                (== e.key "Escape")
+                                                (progn
+                                                   (handle_event e)
+                                                   (clean_up nil)))))))
+                                 250);
+                     (attach_event_listener button_panel
+                        `click
+                        (fn (e)
+                           (let
+                              ((src e.srcElement))
+                              (handle_event e)
+                              (= rval (get_attribute src "value"))
+                              (if (== rval "nil")
+                                  (= rval nil))
+                              (return_value))))
+                     
+                     
+                     (attach_event_listener dwin
+                        `close
+                        (fn (e)
+                           (clean_up nil)))
+                     (-> juno_container
+                        `appendChild dwin)
+                     (when (is_function? dwin.showModal)
+                        (-> dwin `showModal)))))
+  {
+    description: (+ "This function will pause the flow of execution until the user makes a "
+                    "choice, which is presented as a series of buttons. If the user presses the "
+                    "Escape key, a return value of nil will be returned.  This presented choice "
+                    "dialog is useful for presenting a limited number of choices to the user, all of "
+                    "which are visible as buttons.<br>There is no "
+                    "automatic `Close` or `OK` or `Cancel` button.  These must be explicitly passed "
+                    "if they are to be a choice.<br>Choices can be passed as either an array of "
+                    "strings, or as an array of arrays.  If an array of strings, then each text "
+                    "value will be the displayed button value, and will be returned if the "
+                    "particular button is pressed.  If the choices are an array of arrays, the "
+                    "elements of the inner array define the text of the button, and the value, "
+                    "respectively.  In this case, the designated value will be returned, not the "
+                    "text.<br>If a `\"--\"` is provided in the choices argument array, then a `br` is "
+                    "inserted and a new line is started.<br><br>#### Examples <br><br>A simple "
+                    "example illustrates the function:```(request_button_choice \"Select a choice\" "
+                    "[\"Left\" \"Right\" \"Center\"])```<br><br>The above will create a dialog with three "
+                    "buttons displayed and the provided text.  Whatever button is pressed, the text "
+                    "of the button will be returned.<br>The next example shows passing the choices "
+                    "as an array of arrays, with line break indicators "
+                    "embedded.```(request_button_choice \"Select a choice.\"\n    [[\"Apply and Close\" 0 "
+                    "]\n     \"--\"\n     [\"Cancel and Close\" 1 ]\n     \"--\"\n     [\"Cancel\"]])           "
+                    "       ```<br><br>In the above example, there are 3 choices.  The `--` strings "
+                    "indicate that a new line should start before the next button.  Otherwise, the "
+                    "buttons are sequentially displayed on the line.<br><br><br>#### Options "
+                    "<br><br>class:string - The class that the internal `section` element will be "
+                    "assigned.  This is the class that contains the buttons.  By default the class "
+                    "of the `section` element is `juno-button-group` which is defined "
+                    "in `style.css` for the application.<br>button_class:string - The class to "
+                    "explicitly assign to the buttons, otherwise the buttons are not assigned a "
+                    "direct class, but inherit their style from being part of "
+                    "the `juno-button-group` class.<br>on_destroy:function -Prior to the removal and "
+                    "clean up of the dialog box and after the user has closed the dialog (either via "
+                    "the cancel or OK mechanisms), this function can be called to remove any "
+                    "resources that may have been created (such as a datalist) for the presentation "
+                    "of the dialog.  This functionality can also be done external to the "
+                    "application, but this gives an opportunity prior to the removal of the UI "
+                    "elements from the DOM for user code to process the values from the inputs. ")
+
+    usage: ["prompt:string" "type:string" "options:object"]
+    tags: ["user" "input" "request" "collect" "wait" "ui" "DOM"]
+    })
+
 (defun request_user_input (prompt type options)
   (new Promise (fn (resolve reject)                 
                  (let
@@ -16147,7 +16273,29 @@
    (fn (e)
       (display_license_info))]])
   
-                  
+ (defun set_display_name (name)
+   (aif (get_by_id "page-header")
+     (progn
+        (let
+           ((header_elem (-> it `querySelector "span.juno-header")))
+           (if header_elem
+              (progn 
+                 (set_prop header_elem
+                    `innerText (or name "Seedling"))
+                 (when (and (not (blank? name))
+                            (is_string? name))
+                    (set_default ["application" "display_name"] name))
+                 true)
+              (throw Error "set_display_name: unable to find the header span."))))
+     (throw Error "set_display_name: unable to find the page-header element."))
+   {
+     description: (+ "Given a text argument, sets the upper left corner text identifier. The "
+                     "default text is \"Seedling\". Returns true if successful, or throws an `Error` if "
+                     "unsuccessful.<br>If the provided name is a non blank string, "
+                     "the `application.display_name` default is set in `*env_config*` . ")
+     usage: ["name:string"]
+     tags: ["application" "ui" "settings" "title" "header" "name"]
+   })                 
 
 (defun tag_selector (options tags)
    (let
@@ -21026,10 +21174,10 @@
              ["Layout"
                (fn ()
                   (gen_layout_menu))])
-       
        (push $root_controls
              (app_header [(app_menu [ `*main_menu* ])]
                          { `app_title: "Seedling" }))
+       
        (setq page_frame ;; or surface which can be named in the upper right or middle
              (control_container nil {                                     
                                      `root_frame: true
@@ -21508,6 +21656,8 @@
                                source: "document"
                                args: [ ] }))))
     
+    (set_display_name (or (get_default ["application" "display_name"])
+                          (get_default ["application" "name"])))
     (try 
        (aif (-> (prop (new URL window.location) `searchParams) `get "theme")
             (when (not (blank? it))
