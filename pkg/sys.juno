@@ -554,9 +554,6 @@
              tags: ["working" "dir" "base" "environment" "current"]
          })
       
-      
-      
-   
       (unless (resolve_path [ `export `save_executable ] *env_config*)
          (set_path [ `export `save_executable ] *env_config* "bin/juno"))
       (register_feature "system")

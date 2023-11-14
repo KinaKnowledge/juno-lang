@@ -232,7 +232,10 @@
 
 (defun list_files (path)
    (let
-      ((rval (http/get (+ "/files/" path ))))
+      ((fpath (if (starts_with? "/" path)
+                  (chop_front path)
+                  path))
+       (rval (http/get (+ "/files/" fpath ))))
       (if (instanceof rval Response)
           (throw Error rval.statusText)
           (cond
