@@ -1479,7 +1479,7 @@
    (let
       ((tab_bar (ul { `class: "juno-tabs" } ))
        (content_container (div { `class: "juno-tab-content-section" } ))
-       (view (div { `style: "width: 100%; overflow: hidden; height: calc(100% - 30px);" }
+       (view (div { `style: "width: 100%; overflow: hidden; height: calc(100% - 0px);" }
                   (nav { }
                        tab_bar)
                   content_container))
