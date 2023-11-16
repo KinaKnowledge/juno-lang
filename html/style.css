@@ -2403,6 +2403,7 @@ input.juno-search:focus {
 ul.juno-tabs {
     padding-inline-start: 0px;
     padding: 0;
+    margin: 0px;
 }
 
 .juno-tabs li {
@@ -2419,16 +2420,22 @@ ul.juno-tabs {
     
 }
 
+.juno-tabs li:hover {
+    font-weight: bold;
+    background: #FFFFFF30;
+    transition: all .1s ease-in-out;
+}
+
 li.juno-tab-active {
   border-bottom: 2px solid var(--selected-color);
   font-weight: bold;
+
 }
 
 .juno-tab-content-section {
     overflow: auto;
     display: inline-block;
     width: calc(100% - 5px);
-    height: calc(100% - 50px);
 }
 
 .juno-tab-content {
