@@ -335,7 +335,7 @@ oop.inherits(Mode, TextMode);
 (function() {
 
     this.lineCommentStart = ";";
-    this.minorIndentFunctions = ["defun", "defun-sync", "defmacro", "define", "when", "let", "destructuring_bind", "while","for_each","fn","lambda","progn","do","reduce","reduce_sync"];
+    this.minorIndentFunctions = ["defun", "defun-sync", "defmacro", "define", "when", "let", "destructuring_bind", "while","for_each","fn","lambda","progn","do","reduce","reduce_sync", "defcontrol"];
     this.env = globalThis.env;  /* handle to the Juno environment */
     
     this.$toIndent = function(str) {        
