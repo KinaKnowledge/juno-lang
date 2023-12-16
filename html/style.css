@@ -2498,6 +2498,10 @@ div.juno-tab-active {
     padding: 5px;
 }
 
+.juno-strike-out {
+    text-decoration: line-through;
+}
+
 section.juno-button-group {
     text-align: center;
     margin: 5px;
