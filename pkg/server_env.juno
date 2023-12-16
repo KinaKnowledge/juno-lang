@@ -1053,6 +1053,7 @@
                                                  ((data (JSON.parse event.data))
                                                   (command (prop data `command))
                                                   (args (prop data `args))
+                                                  (last_result_symbol (prop data `last_result))
                                                   (ws_wrapper (get_wrapper_for_ws ws))
                                                   (cmd_opts (or args.1 {}))
                                                   (request_id (prop data `req_id))
@@ -1108,6 +1109,8 @@
                                                              (progn
                                                                 (= result (-> evaluator `evaluate_local args.0 { scope: { ws_id: ws_wrapper.ws_id}}  (+ {} cmd_opts { on_compilation_complete: compl_complete })))
                                                                 (vlog "ws_repl_handler: " namespace " <- " result)
+                                                                (when last_result_symbol
+                                                                   (-> evaluator `set_global last_result_symbol result))
                                                                 (send_to_ws ws
                                                                    (encode_remote_result request_id result evaluator.namespace { ws_id: ws_wrapper.ws_id })))
                                                              (progn
