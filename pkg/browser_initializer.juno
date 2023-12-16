@@ -9465,6 +9465,7 @@
      tags: [ `source `editor `open `symbol `definition ]
      usage: ["symbol:string" "namespace:?string"]
      })
+
 (defun init_mode_juno (control)
    (if control.editor
       (let
@@ -9547,7 +9548,7 @@
             {
               `enableBasicAutocompletion:  [{ identifierRegexps: [ identifier_regex ]
                                                                 getCompletions: (fn (editor session pos prefix callback)
-                                                                                   (get_juno_autocompletions editor session pos prefix callback (-> editor `symbols))) }]
+                                                                                   (get_juno_autocompletions editor session pos prefix callback (-> control `symbols))) }]
               enableLiveAutocompletion: true
               enableSnippets: true
               })
@@ -9890,9 +9891,9 @@
                                options.mode
                                (progn
                                   (-> editor.session `setMode (+ "ace/mode/" options.mode))
-                                  (-> editor `setOptions {
-                                                           `enableLiveAutocompletion: true
-                                                           `enableBasicAutocompletion: true })
+                                  ;(-> editor `setOptions {
+                                    ;                       `enableLiveAutocompletion: true
+                                   ;                        `enableBasicAutocompletion: true })
                                   ;(log "set_mode: looking for: " (+ "init_mode_" options.mode))
                                   (= mode_functions 
                                      (aif (resolve_path [ `context `scope (+ "init_mode_" options.mode) ] Environment ) 
@@ -13201,17 +13202,19 @@
 (defun visual_repl (options)
   (let
       ((options (or options {}))
+       (repl_number (inc *repl_counter*))
+       (last_result_symbol (or options.result_symbol (+ "$" repl_number)))
        (name (progn
                 (cond
                    (and options.name
                       (get_control_by_name options.name))
                    (progn
-                      (inc *repl_counter*)
-                      (+ options.name " - " *repl_counter*))
+                      (+ options.name " - " repl_number))
+                   options.name
+                   options.name
                    else
                    (progn
-                      (inc *repl_counter*)
-                      (+ "Visual REPL - " *repl_counter*)))))
+                      (+ "Visual REPL - " repl_number)))))
        (resize_observer nil)
        (search_input (input { `type: "search" `class: "juno-search" }))
        (id (or options.id (generate_id "repl")))
@@ -13230,6 +13233,7 @@
        (reopen_button (button { `title: (dtext "Connect/Disconnect") `class: "juno-button-on" style: "float: right;" `tabindex: 0 `disabled: true }
                               "-"))
        (ws_id_span (span { `title: (dtext "Server websocket ID") `class: "juno-websocket-id" `style: "padding-left: 5px; padding-right: 5px; display: inline-block; float: right;" } "-"))
+       (last_result_symbol_span (span { `title: (dtext "Last Result Symbol") `class: "juno-type-symbol juno-pointer juno-monospace" `style: "padding-left: 5px; padding-right: 5px; display: inline-block;;" } "-"))
        (set_reopen_button_state (fn (state)
                                    (cond
                                       (== state 2) ;; allow reconnect
@@ -13271,6 +13275,7 @@
                                                              title_span 
                                                              show_prototype_details_button 
                                                              namespace_span 
+                                                             last_result_symbol_span
                                                              path_span
                                                              display_mode_span 
                                                              (if options.remote_repl ws_id_span [])
@@ -13563,6 +13568,8 @@
                                                 (http/send_to_ws repl_ws
                                                                  { `command: "eval"
                                                                    `req_id: my_request_id
+                                                                   `last_result: (unless options.suppress_store_last_result
+                                                                                    last_result_symbol)
                                                                    `args: [ lisp_text opts] })
                                                 (catch Error (e)
                                                    (progn
@@ -13574,7 +13581,6 @@
                        rval)))
                                                 
        
-
        (evaluator (fn (lisp_text no_eval no_clear no_log opts)
                     (let
                         ((result nil)
@@ -13708,6 +13714,8 @@
                                               (pre ex.details.compiled))))
                                         (= result ex.details))))
                             ;(log "<-" result)
+                            (unless options.suppress_store_last_result
+                               (set_global last_result_symbol result))
                             (cond 
                                (== display_mode "juno")
                                (= result (pre { `quoted: true } (pretty_print result)))
@@ -13823,6 +13831,20 @@
                                (set_prop options.display_options `display_mode modenum)
                                (set_prop display_mode_span
                                   `innerText (-> output_control `display_mode)))))
+       (prompt_last_result_symbol_rename 
+          (fn ()
+             (aif (request_user_input (dtext "What symbol should be used for storing the last return value?")
+                                      `text
+                                      { `default_value: last_result_symbol })
+                  (progn
+                     (unless (blank? it)
+                        (set_prop options
+                           `result_symbol it)
+                        (set_prop last_result_symbol_span `innerText it)
+                        (unless (is_symbol? options.result_symbol)
+                           (set_global it nil))
+                        (= last_result_symbol options.result_symbol))))))
+       
        (menu_items (fn ()
                      [[(dtext "Clear Output Log")
                        (function ()
@@ -13841,7 +13863,7 @@
                        (function ()
                                  (toggle_prototype_detail))]
                       
-                      
+                     
                       [(if output_control.options.display_options.show_timestamps
                          (dtext "Hide Timestamps")
                          (dtext "Show Timestamps"))
@@ -13886,7 +13908,25 @@
                                                             [theme  (fn ()
                                                                       (progn
                                                                        (set_prop options `theme theme)
-                                                                       (-> input_container `set_theme theme)))])]]))
+                                                                       (-> input_container `set_theme theme)))])]
+                      [(+ (dtext "Last Result") " " "[" last_result_symbol "]" "...")
+                       [(if options.suppress_store_last_result
+                            [(+ (dtext "Store last result in") " " last_result_symbol)
+                             (fn ()
+                                (progn
+                                   (remove_class "juno-strike-out" last_result_symbol_span )
+                                   (set_prop options
+                                      `suppress_store_last_result false)))]
+                            [(+ (dtext "Do not store last result in") " " last_result_symbol)
+                             (fn ()
+                                (progn
+                                   (add_class "juno-strike-out" last_result_symbol_span )
+                                   (set_prop options
+                                      `suppress_store_last_result true)))])
+                        [(dtext "Set Symbol Name")
+                         (fn ()
+                            (prompt_last_result_symbol_rename))]]]
+                      ]))
        (initialize (fn ()
                       (when (and view.parentElement
                                  (not initialized))
@@ -13904,7 +13944,12 @@
                                        `show_timestamps: output_control.options.display_options.show_timestamps 
                                        `display_mode: (or output_control.options.display_options.display_mode 0)
                                      }))
-                         
+                         (set_prop options
+                            `result_symbol
+                            last_result_symbol)
+                         (set_prop last_result_symbol_span `innerText last_result_symbol)
+                         (when options.suppress_store_last_result
+                            (add_class "juno-strike-out" last_result_symbol_span ))
                          (if options.display_options.include_prototypes
                            (add_class "juno-button-on" show_prototype_details_button))
                          (try
@@ -13939,9 +13984,16 @@
                             `click
                             prompt_rename)
                          
+                         (attach_event_listener last_result_symbol_span
+                            `click
+                            prompt_last_result_symbol_rename)
+                         
                          (attach_event_listener view
                             `focusin
                             focus_event)
+                         
+                         (unless (is_symbol? last_result_symbol)
+                            (set_global last_result_symbol nil))
                          
                          ;; set the computed name
                          (set_prop options
@@ -14048,6 +14100,7 @@
              `prior_search_result: (fn () 
                                       (progc
                                          (-> output_control `prior_search_result)))
+             `keyword_mapper: input_container.keyword_mapper
              `rename: rename
              `destroy: destroy
              `on_hide: (fn ()
@@ -14083,7 +14136,7 @@
              `evaluate: (fn (lisp_text no_eval no_clear no_log options)
                           (evaluator lisp_text no_eval no_clear no_log options))
              })
-    intf))   
+    intf))    
 
 (defun set_repl_display_mode (mode ctl)
    (if (is_string? mode)
@@ -16284,7 +16337,10 @@
                     `innerText (or name "Seedling"))
                  (when (and (not (blank? name))
                             (is_string? name))
-                    (set_default ["application" "display_name"] name))
+                    (set_default ["application" "display_name"] name)
+                    (aif (first (get_by_tag "TITLE"))
+                         (set_prop it `innerText name)
+                         (-> (first (get_by_tag "HEAD")) `append (html/title { } name))))
                  true)
               (throw Error "set_display_name: unable to find the header span."))))
      (throw Error "set_display_name: unable to find the page-header element."))
@@ -16295,7 +16351,7 @@
                      "the `application.display_name` default is set in `*env_config*` . ")
      usage: ["name:string"]
      tags: ["application" "ui" "settings" "title" "header" "name"]
-   })                 
+     })
 
 (defun tag_selector (options tags)
    (let
@@ -21667,7 +21723,12 @@
                                 (div "Serialized Controls: ")
                                 (pre
                                    (pretty_print *serialized_controls*))))))))
-               
+    
+    (unless (get_control_by_name "Holding Tank")
+       (progn
+          (push $root_controls (control_holding_tank [] {}))
+          (get_control_by_name "Holding Tank")))
+    
     (sleep 0.1)
     (default_focus)
     ;; setup key bindings
