@@ -438,12 +438,12 @@
            })
       (kcode `next_hidden_control)
       (set_prop acc
-         `focus_ok_after_focus_change_1 (or (== (name_of (focused_control)) "Visual REPL - 1")
+         `focus_ok_after_focus_change_1 (or (== (name_of (focused_control)) "Juno REPL")
                                           (== (name_of (focused_control)) "Juno Documentation - Frame 0"))
          `num_windows_after_focus_change_1_is_2: (== 2 (length (controls_visible))))
       (kcode `next_hidden_control)
       (set_prop acc
-         `focus_ok_after_focus_change_2 (or (== (name_of (focused_control)) "Visual REPL - 1")
+         `focus_ok_after_focus_change_2 (or (== (name_of (focused_control)) "Juno REPL")
                                           (== (name_of (focused_control)) "Juno Documentation - Frame 0"))
          `num_windows_after_focus_change_2_is_2: (== 2 (length (controls_visible)))
          `last_focus_matches_layout_focus (== (focused_control) (last_focus)))
@@ -780,7 +780,7 @@
                        (validate test_name (test arg))
                        (validate test_name (test))))
                  (catch Error (e)
-                    (validate test_name { `sequence_ok: (+ "Sequence Thew Error: " e.message ) }))))
+                    (validate test_name { `sequence_ok: (+ "Sequence Threw Error: " e.message ) }))))
       (ev `(log "Ending test set ------"))
       (log "number_of_validations: " number_of_validations)
       
@@ -949,7 +949,7 @@
 ;(save_of_symbol_for_multiple_buffers)
 
 ; (make_named_layout "Validations"
-;   (system_validations {  `url: (+ "/env/seedling_build.html?theme=" (encodeURIComponent *env_config*.application.global_theme)) } )
+;   (seedling-tests/system_validations {  `url: (+ "/env/seedling_build.html?theme=" (encodeURIComponent *env_config*.application.global_theme)) } )
 ;   {
     ;  `unmounted_source: true
     ;  })
