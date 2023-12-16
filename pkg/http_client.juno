@@ -67,7 +67,7 @@
        (cond
           options.raw_response
           response
-          (== (get_content_type response) "application/json")
+          (starts_with? "application/json" (get_content_type response))
           (-> response `json)
           (starts_with? (get_content_type response) "text/")
           (-> response `text)
