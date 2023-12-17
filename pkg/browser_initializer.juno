@@ -8124,15 +8124,13 @@
                          true))
        (text_data (+ "" (-> editor.session `getTextRange (new ace.Range root_form.start_row root_form.start_col root_form.end_row root_form.end_col)) ")"))
        (tokens (reader text_data { `suppress_throw_on_error: true on_error: collect_error  } )))
-      (console.log "get_juno_autocompletions: tokens ->: " tokens) 
       (= tokens (make_autocompletion_scores (process_tree_symbols tokens prefix) sorted_symbols))
-      (console.log "get_juno_autocompletions: tokens <-: " tokens) 
       (callback null tokens))
    {
        `usage: ["editor:object" "session:object" "pos:object" "prefix:text" "callback:fn" "sorted_symbols:array"]
        `description: "Internally used by the editor for autocompletion."
        `tags: ["ace" "editor" "autocomplete" ]
-   })  
+   })
  
 (defun clone_edit_session (session)
    (let
@@ -9549,7 +9547,8 @@
             {
               `enableBasicAutocompletion:  [{ identifierRegexps: [ identifier_regex ]
                                                                 getCompletions: (fn (editor session pos prefix callback)
-                                                                                   (get_juno_autocompletions editor session pos prefix callback (-> control `symbols))) }]
+                                                                                   (get_juno_autocompletions editor session pos prefix callback (uniq (conj (-> control `symbols)
+                                                                                                                                                            (-> control `identifiers))))) }]
               enableLiveAutocompletion: true
               enableSnippets: true
               })
@@ -9746,6 +9745,14 @@
      usage: ["editor:?control"]
      tags: ["modes" "editor" "text_editor"]
    })
+
+(defun get_all_editor_tokens (editor prefix)
+   (let
+      ((text_data (if editor
+                      (or (-> editor `getValue) "")
+                      ""))
+       (scanner (new RegExp "[*A-Z+a-z$_][A-Za-z*$0-9_]{2,}" `g)))
+      (sort (uniq (each (or (scan_str scanner text_data) []) `0)))))
 
 (defun text_editor (options)
    (aif (and (not options.clone_with_editor_id)
@@ -10607,7 +10614,8 @@
                                                     
             (cached_symbols nil)
             (symbol_map nil)
-            (sorted_symbols [])
+            (sorted_symbols [])   ;; holds the symbols as determined by what is actually in the environment
+            (identifiers [])      ;; holds the identifiers as to what is in the editor itself
             (get_current_symbols (fn ()
                                     (let
                                        ((start_time (time_in_millis))
@@ -10618,6 +10626,7 @@
                                                  (-> evaluator_control `current_namespace)))
                                         (in_path nil)
                                         (search_order nil))
+                                       (log (control_name intf) "get_current_symbols: " symbol_set)
                                        (when (== intf nil)
                                           (log_error "text_editor: getting current symbols and shouldn't be since we are destroyed!"))
                                        (when (> processing_time 4000)
@@ -10635,17 +10644,18 @@
                                                              ns)))
                                                 (keys cached_symbols)))
                                           (= sorted_symbols
-                                             (flatten
-                                                (for_each (ns search_order)
-                                                   (progn
-                                                      (if (or (== ns cns)
-                                                                (== ns `core))
-                                                          (= in_path true)
-                                                          (= in_path false))
-                                                      (for_each (sym (keys (prop cached_symbols ns)))
-                                                         (if in_path
-                                                             sym
-                                                             (+ ns "/" sym))))))))
+                                             (uniq (flatten
+                                                        (for_each (ns search_order)
+                                                           (progn
+                                                              (if (or (== ns cns)
+                                                                      (== ns `core))
+                                                                  (= in_path true)
+                                                                  (= in_path false))
+                                                              (for_each (sym (keys (prop cached_symbols ns)))
+                                                                 (if in_path
+                                                                    sym
+                                                                    (+ ns "/" sym)))))))))
+                                       (= identifiers (get_all_editor_tokens editor))
                                        
                                        (when evaluator_control
                                           (set_prop ns_span
@@ -11174,6 +11184,8 @@
                 `paste_selection: paste_selection 
                 `symbols: (fn ()
                              sorted_symbols)
+                `identifiers: (fn ()
+                                 identifiers)
                 `group_name: (fn ()
                                 options.group_name)
                 `type: `text_editor
