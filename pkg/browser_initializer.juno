@@ -26,7 +26,6 @@
 
 
 
-
 (defglobal main_menu_button nil) ;; placeholders 
 (defglobal resource_loader_button nil)
 (defglobal juno_container nil)
@@ -111,8 +110,6 @@
                          "control, which uses the Ace editor.")
          tags: ["editor" "options" ]
      })
-
-
 
 
 
@@ -7437,8 +7434,8 @@
                      (-> dwin `showModal))))))
 
 
-(defun make_autocompletion_scores (analysis_object sorted_globals)
-   (let
+(defun make_autocompletion_scores (analysis_object sorted_globals sorted_identifiers)
+      (let
       ((result_set [])
        (keywords (try (compiler `[ true ] { `special_operators: true `env: Environment } )
                     (catch Error (e)
@@ -7446,17 +7443,17 @@
                           (log "error on compiler: " e.message)
                           (new Set)))))
        (included (new Set))
-       (score 0))
+       (score 100000))
       (for_each (r (sort analysis_object.allocations))
          (progn
             (-> included `add r)
             (cond
                (contains? r analysis_object.globals)
                (push result_set
-                  { `value: r `score: (inc score) `meta: "local (shadowed global)" })
+                  { `value: r `score: (dec score) `meta: "local (shadowed global)" })
                else
                (push result_set
-                  { `value: r `score: (inc score) `meta: "local" }))))
+                  { `value: r `score: (dec score) `meta: "local" }))))
       (for_each (r (sort analysis_object.symbols))
          (cond
             (contains? r analysis_object.allocations)
@@ -7465,36 +7462,41 @@
             (progn
                (-> included `add r)
                (push result_set
-                  { `value: r `score: (inc score) `meta: "local?" } ))))
+                  { `value: r `score: (dec score) `meta: "local?" } ))))
       (for_each (r (sort analysis_object.keywords))
          (progn
             (-> included `add r)
             (push result_set
-               { `value: r `score: (inc score) `meta: "keyword" })))
+               { `value: r `score: (dec score) `meta: "keyword" })))
       (for_each (r (sort analysis_object.globals))
          (progn
             (-> included `add r)
             (push result_set
-               { `value: r `score: (inc score) `meta: "global" })))
+               { `value: r `score: (dec score) `meta: "global" })))
       (for_each (r (sort analysis_object.literals))
          (progn
             (-> included `add r)
             (push result_set
-               { `value: r `score: (inc score) `meta: "literal" })))
+               { `value: r `score: (dec score) `meta: "literal" })))
       (for_each (r (sort (to_array keywords)))
          (if (not (-> included `has r))
              (progn
                 (-> included `add r)
                 (push result_set
-                   { `value: r `score: (inc score) `meta: "keyword" }))))
+                   { `value: r `score: (dec score) `meta: "keyword" }))))
       
       (for_each (r (or sorted_globals (sort (to_array (all_globals)))))
          (if (not (-> included `has r))
              (push result_set
-                { `value: r `score: (inc score) `meta: "global" })))
+                { `value: r `score: (dec score) `meta: "global" })))
+      
+      (for_each (r (or sorted_identifiers []))
+         (if (not (-> included `has r))
+             (push result_set
+                { `value: r `score: (dec score) `meta: "identifier" })))
       result_set)
    {
-       `usage: ["analysis_object:object" "sorted_globals:array"]
+       `usage: ["analysis_object:object"]
        `description: (+ "Given the output of process_tree_symbols, returns a result_set to be provided to the Ace autocomplete callback for "
                         "suggestions for autocomplete.")
        `tags: ["editor" "analysis" "autocomplete" "session" "Ace"]
@@ -8117,20 +8119,21 @@
    })
 
 
-(defun get_juno_autocompletions (editor session pos prefix callback sorted_symbols)
+(defun get_juno_autocompletions (editor session pos prefix callback sorted_symbols identifiers)
    (let
       ((root_form (select_root_form editor pos))
        (collect_error (fn (e)
                          true))
        (text_data (+ "" (-> editor.session `getTextRange (new ace.Range root_form.start_row root_form.start_col root_form.end_row root_form.end_col)) ")"))
        (tokens (reader text_data { `suppress_throw_on_error: true on_error: collect_error  } )))
-      (= tokens (make_autocompletion_scores (process_tree_symbols tokens prefix) sorted_symbols))
+      (= tokens (make_autocompletion_scores (process_tree_symbols tokens prefix) sorted_symbols identifiers))
+      ;(log "get_juno_autocompletions: tokens <-: " tokens)
       (callback null tokens))
    {
        `usage: ["editor:object" "session:object" "pos:object" "prefix:text" "callback:fn" "sorted_symbols:array"]
        `description: "Internally used by the editor for autocompletion."
        `tags: ["ace" "editor" "autocomplete" ]
-   })
+   }) 
  
 (defun clone_edit_session (session)
    (let
@@ -9547,8 +9550,7 @@
             {
               `enableBasicAutocompletion:  [{ identifierRegexps: [ identifier_regex ]
                                                                 getCompletions: (fn (editor session pos prefix callback)
-                                                                                   (get_juno_autocompletions editor session pos prefix callback (uniq (conj (-> control `symbols)
-                                                                                                                                                            (-> control `identifiers))))) }]
+                                                                                   (get_juno_autocompletions editor session pos prefix callback (-> control `symbols) (-> control `identifiers))) }]
               enableLiveAutocompletion: true
               enableSnippets: true
               })
