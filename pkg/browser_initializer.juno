@@ -9771,7 +9771,7 @@
             (buffer_commands_button (commands_button options.id))
             (evaluator_span (span { `class: "juno-evaluator" `style: "cursor: pointer" `title: (dtext "Name of the evaluator assigned to this buffer") } "-"))
             (nav_back_button (button { `title: (dtext "Step Backward In Position History") `style: "float: right" } "<"))
-            (nav_forward_button (button { `disabled: true `title: (dtext "Step Foreward In Position History") `style: "float: right" } ">"))
+            (nav_forward_button (button { `disabled: true `title: (dtext "Step Forward In Position History") `style: "float: right" } ">"))
             ;; if we have a namespace in options use that for referencing paths
             (nseval (if (not (blank? options.namespace))
                         (-> Environment `get_namespace_handle options.namespace)
