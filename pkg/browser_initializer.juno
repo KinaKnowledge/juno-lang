@@ -10626,7 +10626,7 @@
                                                  (-> evaluator_control `current_namespace)))
                                         (in_path nil)
                                         (search_order nil))
-                                       (log (control_name intf) "get_current_symbols: " symbol_set)
+                                       ;(log (control_name intf) "get_current_symbols: " symbol_set)
                                        (when (== intf nil)
                                           (log_error "text_editor: getting current symbols and shouldn't be since we are destroyed!"))
                                        (when (> processing_time 4000)
