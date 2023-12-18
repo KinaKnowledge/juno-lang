@@ -728,8 +728,8 @@
 
 (defun echo_params (request_event parameters)   
    (progn
-      (console.log "set_global_value: parameters: " parameters)
-      (console.log "set_global_value: request_event: " request_event)
+      (console.log "echo_params: parameters: " parameters)
+      (console.log "echo_params: request_event: " request_event)
       (new Response (new Blob [(JSON.stringify { "rval":"OK" "parameters": parameters })]
                          { `type: "application/json" })
            {
