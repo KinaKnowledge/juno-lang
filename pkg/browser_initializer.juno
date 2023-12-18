@@ -117,6 +117,21 @@
           `history_next_entry { win: "Ctrl-Alt-n" mac: "Ctrl-Alt-n" }                                                               
           `history_prior_entry { win: "Ctrl-Alt-p" mac: "Ctrl-Alt-p" })
 
+(defmacro with_lock ((name lock_handle) `& body_forms)
+   `(-> navigator.locks `request
+       name
+       (fn (,#lock_handle)
+          (progn
+             ,@body_forms)))
+   {
+     description: (+ "Creates a lock using the WebLock API, and with the provided body forms, "
+                     "runs those forms in an implicit `progn` block.  The final form\'s return value "
+                     "is returned when the lock completes. <br>### Example```(with_lock (lock)\n "
+                     " (do_something_1)\n  (do_something_2))\n```<br><br>In the above the return code "
+                     "from `do_something_2` is returned to the caller.<br> ")
+     usage: ["name_and_lock_symbol:array" "body_forms:array"]
+     tags: [ `execution `lock `synchronization `locking `locks]
+   })
 
 (defun_sync element_to_lisp (element options)
    (if (is_element? element)
