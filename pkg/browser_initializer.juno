@@ -133,6 +133,51 @@
      tags: [ `execution `lock `synchronization `locking `locks]
    })
 
+(defun make_icon (path_data size color width height stroke_width)
+   (let
+      ((size (or size 15))
+       (width (or width 12))
+       (height (or height 10))
+       (stroke_width (or stroke_width "1"))
+       (path_data (cond 
+                     (is_string? path_data)
+                     path_data
+                     (is_array? path_data)
+                     (join " " (flatten path_data))
+                     else
+                     "M 1 1 L 11 11 M 11 1 L 1 11"))
+       (color (or color "var(--main-color)"))
+       (vectors (svg { height: size version:"1.1" width: size viewBox:(+"0 0 " width " " height) }
+                     (path { d: path_data 
+                             fill:"transparent"
+                             stroke: color
+                             stroke-width: stroke_width
+                     } )))
+                      
+       (container (div { `style: "display: inline-block;" })))
+      (set_prop container
+         `innerHTML (prop vectors `outerHTML))
+      container)
+   {
+     `description: (+ "Given path data values, either as an array or string, produces an SVG "
+                      "based icon within a inline-block div.  Default size is 15 and default color is "
+                      "var(--main-color).<br>The values for the path data can either be in array or "
+                      "string form and should be in the form of:```directive value "
+                      "value```<br><br>Where directive is either `M` for `Move`, or `L` for `Line` and "
+                      "is then followed by numeric values signifying `x` and `y` coordinates within "
+                      "the bounding box, which has a default size of 12 wide and 10 high.  This can be "
+                      "changed via the optional `width` and `height` arguments.<br>An example that "
+                      "draws a dark blue downward arrow:```(make_icon [\"M 6 1\" \"L 6 11\" \"L 1 6\" \"M 6 "
+                      "11\" \"L 11 6\"] 15 \"darkblue\")```<br><br>The width and height are set at the "
+                      "default values, `12` and `10`, respectively.  <br>For finer control, the scale "
+                      "can be adjusted.  For example here is the same icon drawn within a 120x100 "
+                      "viewbox.  Note that the `stroke_width` parameter is specified as `10` to ensure "
+                      "that the line drawn is thick enough to be legible:```(make_icon [\"M 50 0\" \"L 50 "
+                      "100\" \"L 0 50\" \"M 50 100\" \"L 100 50\"] 15 \"darkblue\" 120 100 10)```<br><br><br> ")
+       `usage: ["path_data:array|string" "size:number|string" "color:?string" "width:?number" "height:?number" "stroke_width:?number"]
+       `tags: ["icon" "draw" "path" "svg" "ui"]
+   })
+
 (defun_sync element_to_lisp (element options)
    (if (is_element? element)
        (let
