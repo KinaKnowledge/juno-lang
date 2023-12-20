@@ -63,7 +63,7 @@
   --success-color: #19A019;
   --main-app-font:  -apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue', Helvetica, FreeSans, Arimo, "Droid Sans", Arial, sans-serif;
   --main-app-font-size: 14px;
-  --main-mono-space: "Roboto Mono", "Cascadia Mono", "Segoe UI Mono", "Ubuntu Mono", ui-monospace, "Menlo", "Monaco", "Consolas", monospace;
+  --main-mono-space: "Roboto Mono Medium", "Roboto Mono", "Cascadia Mono", "Segoe UI Mono", "Ubuntu Mono", ui-monospace, "Menlo", "Monaco", "Consolas", monospace;
   --editor-bg-color: #f6f3f1;
   --editor-text-color: #363636;
   --editor-gutter-bg-color: #e0e0e0;
@@ -1655,6 +1655,7 @@ dialog:modal {
 hr {
     border: 0;
     height: 0;
+    width: 100%;
     border-top: 1px solid rgba(0,0,0,.1);
     border-bottom: 1px solid rgba(255,255,255,.3);
 }
