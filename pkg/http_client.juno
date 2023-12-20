@@ -63,7 +63,8 @@
      })
 
 (defun response_handler (response options)
-   (if (== response.status 200)
+   (if (and (>= response.status 200)
+            (< response.status 300))
        (cond
           options.raw_response
           response
@@ -92,7 +93,7 @@
    {
      `description: ( + "Given a url string, a data object and an optional options "
                       "object, performs a POST to the provided URL, and returns "
-                      "the value of the response body if a 200 OK is received. "
+                      "the value of the response body if a [200-299] OK is received. "
                       "The response body is parsed as JSON if the content-type "
                       "returned is application/json, text if the content-type "
                       "returned starts with text.  Otherwise a blob representing "
@@ -112,7 +113,7 @@
    {
      `description: ( + "Given a url string, a data object and an optional options "
                       "object, performs a PUT to the provided URL, and returns "
-                      "the value of the response body if a 200 OK is received. "
+                      "the value of the response body if a [200-299] OK is received. "
                       "The response body is parsed as JSON if the content-type "
                       "returned is application/json, text if the content-type "
                       "returned starts with text.  Otherwise a blob representing "
