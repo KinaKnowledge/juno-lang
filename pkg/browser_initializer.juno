@@ -111,6 +111,18 @@
          tags: ["editor" "options" ]
      })
 
+(defun prefers_dark_theme? ()
+   (if (has_the_keys? [`matchMedia ] window)
+      (prop (window.matchMedia "(prefers-color-scheme: dark)") `matches)
+      nil)
+   {
+     `description: (+ "Returns `true` if the user has a dark preference set for a system color "
+                      "scheme, `false` if they don\'t. If the browser doesn\'t support the \'matchMedia\' "
+                      "function, then `nil` is returned.<br>This function takes no arguments. ")
+       `usage: []
+       `tags: ["UI" "DOM" "theme" "dark" "light"  "color" "system"]
+   })
+      
 
 
 (set_prop *key_bindings*.repl          
@@ -13486,7 +13498,7 @@
                                 (if options.remote_repl
                                    (let
                                       ((result (try
-                                                  (send_wait "(symbols_by_namespace { include_meta: true })")
+                                                  (send_wait "(symbols_by_namespace { include_meta: true })" { suppress_store_last_result: true })
                                                   (catch Error (e)
                                                      (progn
                                                         (log "ERROR on available_symbols: remote: " e)
@@ -13643,7 +13655,8 @@
                                                 (http/send_to_ws repl_ws
                                                                  { `command: "eval"
                                                                    `req_id: my_request_id
-                                                                   `last_result: (unless options.suppress_store_last_result
+                                                                   `last_result: (unless (or opts.suppress_store_last_result
+                                                                                             options.suppress_store_last_result)
                                                                                     last_result_symbol)
                                                                    `args: [ lisp_text opts] })
                                                 (catch Error (e)
@@ -19022,6 +19035,8 @@
     (setq *app_menu_control* intf)
     intf))
 
+
+
 (defun app_header (controls options)
   (let
       ((existing_header (-> document `querySelector "header"))
@@ -19057,7 +19072,106 @@
     
     intf))
 
-
+(defun theme_selection ()
+   (let
+      ((themes (keys *global_themes*))
+       (auto?  (or (get_default [ `application `color_scheme `follow_desktop_preference])
+                   false))
+       (changed? false)
+       (value_change (function (e)
+                         (let
+                            ((target (get_attribute e.srcElement "target")))
+                            (= changed? true)
+                            (set_enabled apply_button)
+                            (cond
+                               (and target
+                                    (== target `follow_desktop_preference))
+                               (set_prop edit_obj
+                                  target (prop e.srcElement `checked))
+                               target
+                               (set_prop edit_obj
+                                  target
+                                  e.srcElement.value)))))
+       (intf {})
+       (apply_changes (fn ()
+                         (progn
+                            (set_disabled apply_button)
+                            (set_default light_path edit_obj.light_theme)
+                            (set_default dark_path edit_obj.dark_theme)
+                            (set_default [ `application `color_scheme `follow_desktop_preference ]
+                                         edit_obj.follow_desktop_preference)
+                            (= changed? false)
+                            (notify (dtext "Applied Changes")))))
+       (close_win (fn ()
+                        (let
+                           ((close_it true)
+                            (choice nil))
+                           (when changed?
+                              (= choice (request_button_choice (dtext "Apply changes?")
+                                                        [(dtext "Yes")
+                                                         (dtext "No - Discard and Close")
+                                                         (dtext "Cancel")]))
+                              (cond
+                                 (== (dtext "Yes") choice)
+                                 (apply_changes)
+                                 (== (dtext "Cancel") choice)
+                                 (= close_it false)
+                                 else
+                                 nil))
+                           (when close_it
+                              (when intf
+                                 (-> intf `close))))))
+                        
+       (light_path [ `application `color_scheme `light_theme ])
+       (dark_path [ `application `color_scheme `dark_theme ])
+       (light_theme (get_default light_path))
+       (apply_button (button { `class: "juno-primary" style: "float: right;" `disabled: true } (dtext "Apply")))
+       (close_button (button { `class: "juno-secondary" style: "float: right;" } (dtext "Close")))
+       (dark_theme (get_default dark_path))
+       (edit_obj {
+           light_theme: (get_default light_path)
+           dark_theme: (get_default dark_path)
+           follow_desktop_preference: auto?
+       })
+       (view (div { `class: "juno-form" }
+                  
+                  (div { `style: "margin-bottom: 15px;"}
+                       
+                       (input (+ { `onclick: value_change `target: "follow_desktop_preference" `type: "checkbox" `style: "margin-right: 10px;"}
+                                 (if (get_default [ `application `color_scheme `follow_desktop_preference ])
+                                     { `checked: true }
+                                     {})))
+                       (dtext "Synchronize with Desktop Setting"))
+                                 
+                  (div { `class: "juno-form-data" `style: "margin-bottom: 15px;"}
+                       (label { } "Light Theme")
+                       (select { `target: "light_theme" `onchange: value_change }
+                               (for (theme themes)
+                                    (if (== theme light_theme)
+                                        (option { `selected: true } theme)
+                                        (option theme)))))
+                  (div { `class: "juno-form-data" `style: "margin-bottom: 25px;"}
+                       (label "Dark Theme")
+                       (select { `target: "dark_theme" `onchange: value_change }
+                               (for (theme themes)
+                                    (if (== theme dark_theme)
+                                        (option { `selected: true } theme)
+                                        (option theme)))))
+                  (div {   `style: "display: inline-block; "} 
+                       close_button
+                       apply_button)
+                  )))
+      (= intf 
+         (floating_div view
+                    { title: "Theme Settings" controls: true }
+                    ))
+      (attach_event_listener close_button
+         `click
+         close_win)
+      (attach_event_listener apply_button
+         `click
+         apply_changes)
+      true))
 
 
 (defun build_starter_environment (opts)
@@ -21131,6 +21245,31 @@
              (monitor_control_tree)))  ]])))
 
 
+(defun system_theme_change_event_handler (e)
+   (progn
+      (when (get_default [ `application `color_scheme `follow_desktop_preference ])
+         (if e.matches
+            (aif (get_default [ `application `color_scheme `dark_theme])
+                 (set_global_theme it))
+            (aif (get_default [ `application `color_scheme `light_theme])
+                 (set_global_theme it)))))
+   {
+       description: "Called by the matchMedia event handler to handle an OS theme change based on the user's preferences."
+       usage: [ "e:Event" ]
+       tags: ["system" "event" "handler" "theme" "listener"]
+   })
+
+(defun install_color_scheme_detector ()
+   (let
+      ((handler system_theme_change_event_handler))
+      (if (eq nil (resolve_path [`application `color_scheme ] *env_config*))
+          (set_default [ `application `color_scheme ]
+                       { follow_desktop_preference: true
+                         dark_theme: `cobalt
+                         light_theme: `juno_light }))
+      (javascript "window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',handler)")))
+
+
 ;; seedling_ready is called when the IDE is fully loaded.
 ;; you can put your custom startup code in here
 
@@ -21279,6 +21418,16 @@
             `append (div "ERROR: unable to find juno_container mounted"))
         (throw Error "Juno Container isn't mounted: unable to find juno_container"))
         
+    (install_color_scheme_detector)
+    (when (get_default ["application" "color_scheme" "follow_desktop_preference" ])
+       (cond 
+          (prefers_dark_theme?)
+          (aif (get_default ["application" "color_scheme" "dark_theme" ])
+               (set_global_theme it))
+          else
+          (aif (get_default ["application" "color_scheme" "light_theme" ])
+               (set_global_theme it))))
+    
     
     (set_prop *formatting_rules*
        `allocating_forms {
