@@ -32,8 +32,7 @@
                (eval `(defglobal ,#(+ "$" (-> (prop scripts idx) `getAttribute `id)) ,#(prop scripts idx)))))
            (range scripts.length)))
     (aif (-> document `querySelector "#juno-loading-message")
-         (-> it `remove))
-    ))
+         (-> it `remove))))
 
 
 (defun $set_global_theme (theme_name options)
