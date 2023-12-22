@@ -16414,15 +16414,22 @@
    (fn (e)
       (display_license_info))]])
   
- (defun set_display_name (name)
+ (defun set_display_name (name no_menu_bar_title)
    (aif (get_by_id "page-header")
      (progn
         (let
            ((header_elem (-> it `querySelector "span.juno-header")))
            (if header_elem
               (progn 
-                 (set_prop header_elem
-                    `innerText (or name "Seedling"))
+                 (if no_menu_bar_title
+                    (progn
+                       (set_prop header_elem
+                          `innerText "")
+                       (add_class "juno-display-none" header_elem))
+                    (progn
+                       (remove_class "juno-display-none" header_elem)
+                       (set_prop header_elem
+                          `innerText (or name "Seedling"))))
                  (when (and (not (blank? name))
                             (is_string? name))
                     (set_default ["application" "display_name"] name)
@@ -16436,8 +16443,12 @@
      description: (+ "Given a text argument, sets the upper left corner text identifier. The "
                      "default text is \"Seedling\". Returns true if successful, or throws an `Error` if "
                      "unsuccessful.<br>If the provided name is a non blank string, "
-                     "the `application.display_name` default is set in `*env_config*` . ")
-     usage: ["name:string"]
+                     "the `application.display_name` default is set in `*env_config*` . <br>If "
+                     "the `no_menu_bar_title` argument is `true` then the title of the application "
+                     "will be removed from the menu bar and will not show, shifting the menu bar "
+                     "elements toward the left. ")
+
+     usage: ["name:string" "no_menu_bar_title:boolean"]
      tags: ["application" "ui" "settings" "title" "header" "name"]
      })
 
