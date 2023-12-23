@@ -8731,7 +8731,7 @@
                       "string, sets the controls title and name, which can be used to reference the "
                       "specific instance of the control.   This function will handle name collisions "
                       "by appending a numeric value to the end of the string if a control with the "
-                      "same name already exists.<br>set_title:string - Given a string, sets the title "
+                      "same name already exists.<br>set_title:string -Given a string, sets the title "
                       "bar only but doesn\'t rename the actual control.  Note that if using this "
                       "function to set the displayed text on the title bar, as opposed to set_name, "
                       "the other displayed references to the control in the application will still be "
@@ -8758,9 +8758,11 @@
                       "that should return an array containing pairs of [menu_text menu_function] that "
                       "implement any command functionality for the menu.<br>on_destroy:function -When "
                       "the control receives a destroy call, this user provided function will be called "
-                      "with the self object.<br>on_initialize:function -Upon initialization, this "
-                      "function will be called with the self object. It should be expected that the "
-                      "initialization should be called only once for a control "
+                      "with the self object.  NOTE: This function should return the self object to "
+                      "complete the destruction process.  If `nil` or other non-true value is "
+                      "returned, the function will not be destroyed.<br>on_initialize:function -Upon "
+                      "initialization, this function will be called with the self object. It should be "
+                      "expected that the initialization should be called only once for a control "
                       "lifespan.<br>to_json:function -This synchronous function call can be used to "
                       "provide a customization hook for the control.  The return value must be a "
                       "structure that can be serialized into JSON form.<br>The final object, "
@@ -8775,6 +8777,7 @@
                       "the top of the control, set this to true.<br>frame_style:string -Any custom "
                       "style attributes to apply to the control frame.  These should be formatted in "
                       "the CSS manner: eg.  \"overflow: hidden;\" ")
+
        `usage: ["name:symbol" "control_arguments:array" "allocations:array" "control_options:object"]
        `tags: ["control" "define" "controls" "ui"]
    })
@@ -13234,9 +13237,12 @@
      `tags: ["system" "server" "current" "directory" "working" "folder"]
    })
 
-(defmacro stat_file (path)
-   `(if is_served?
-       (rblock (sys/stat ,#path))
+(defun stat_file (path)
+   (if is_served?
+      (try 
+         (eval `(rblock (sys/stat ,#path)))
+         (catch Error (e)
+            (throw e)))
        "Remote evaluator not available")
    {
      `description: (+ "Given a string based path that is accessible to the server process, "
