@@ -3594,21 +3594,25 @@
    (if (prop *global_themes* theme_name)
        (let
           ((head_elem (-> document `querySelector "head"))
-           (existing (get_by_id "juno-css-theme")))
+           (existing (get_by_id "juno-css-theme"))
+           (is_editor_theme? (contains? theme_name (get_default [ `editor `themes ]))))
           (if existing
                (-> existing `remove))
           (-> head_elem `append
               (style { `id: "juno-css-theme" `type: "text/css" }
                (prop *global_themes* theme_name)) )
           (set_path [ `application `global_theme ] *env_config* theme_name)
-          (when (and (not options.suppress_set_sub_theme)
+          (if (and (not options.suppress_set_sub_theme)
                      (contains? theme_name (get_default [ `editor `themes ])))
-             (set_path [ `editor `default_theme ] *env_config* theme_name))
+              (set_path [ `editor `default_theme ] *env_config* theme_name)
+              (set_path [ `editor `default_theme ] *env_config* "juno_light")) ;; this inherits the global theme
           ;; unless we are told not to, set any controls to the theme
           (unless options.suppress_cascade
               (for_each (control (current_controls))
                         (when (is_function? control.set_theme)
-                          (-> control `set_theme theme_name))))
+                          (-> control `set_theme (if is_editor_theme?
+                                                     theme_name
+                                                     "juno_light")))))
           true)
        (throw ReferenceError "Invalid theme name provided"))
    { `description: (+ "Sets the global theme to the named theme.  Global themes "
