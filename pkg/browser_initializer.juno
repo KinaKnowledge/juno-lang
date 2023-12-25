@@ -5356,7 +5356,8 @@
           (let
               ((text menu_details.text)
                (kcode (or menu_details.keycode ""))
-               (view (li {  `class: "pure-list-item"                                         
+               (view (li {  `class: "pure-list-item" 
+                           `tabindex: 0
                           `style: (+ (if (> args.length 0)
                                          "position: relative;"
                                          "")
