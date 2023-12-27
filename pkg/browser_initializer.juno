@@ -6319,31 +6319,7 @@
 
 
 
-(defun base_directory ()
-   (if is_served?
-      (let
-         ((base_dir (or (prop (http/get "/base_directory")
-                              `data)
-                        (throw Error "get_theme_files: cannot determine base_directory")))
-          (base base_dir.base)
-          (wd base_dir.cwd))
-         (cond
-            (starts_with? "." base)
-            ""
-            (and (starts_with? "/" base)
-                 (starts_with? base wd))
-            wd
-            else
-            (progn
-               (log "condition: base: " base "cwd: " wd)
-               wd)))
-      nil)
-   {
-     description: (+ "<br><br>Returns the directory of the server installation, regardless of the "
-                     "current root directory.  This function takes no arguments and only is "
-                     "applicable when the application is currently hosted.  Otherwise nil returned. ")
-     usage: []
-     tags: ["base" "directory" "folder" "home" "server" "installation" "instance" "filesystem" "file"] })
+
 
 
 ;; -- Control Events --------
@@ -6634,7 +6610,8 @@
 (defun save_event_handler (event_obj)
    (alert_on_error "Unable to save"
        (let
-          ((control (get_control_by_id event_obj.source))
+          ((control (or (get_control_by_id event_obj.source)
+                        event_obj.source_control))
            (pathname (when control
                         control.options.path))
            (nseval (if (not (blank? control.options.path_namespace))
@@ -6675,10 +6652,13 @@
                                
            (publish_results (fn (results_obj)
                                (let
-                                  ((controls_to_notify (get_editors_for_path control.options.path)))
+                                  ((controls_to_notify (aif event_obj.source_control
+                                                            [ it ]
+                                                            (get_editors_for_path control.options.path))))
                                   (for_each (ctl controls_to_notify)
                                      (-> ctl `on_save_complete { `command: "save_complete" `source: control.options.id args: [ results_obj ] }))))))
-          
+          (when (> __VERBOSITY__ 0)
+             (log "save_event_handler: -> " event_obj))
           ;; validate we have what we need 
           (cond
              (eq nil control)
