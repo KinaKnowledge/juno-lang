@@ -1296,7 +1296,15 @@
                ;; API change into Deno v2 from Deno.run, which is to be deprecated, to Deno.Command
                (= process_handle
                   (new Deno.Command browser {  args:["--new-window"
-                                                     (+ "--app=http://localhost:" (or options.port 56432) "/env/" env_to_start)] }))
+                                                     (+ "--app=http://localhost:" (or options.port 56432) "/env/" env_to_start "?app_mode=true"
+                                                        (cond
+                                                           (is_object? options.args)
+                                                           (join "&"
+                                                              (conj [""]
+                                                                    (for ((key value) (pairs options.args))
+                                                                         (+ (encodeURIComponent key) "=" (encodeURIComponent value)))))
+                                                           else
+                                                           ""))] }))
                (-> process_handle `spawn))))
       {
         description: (+ "The `open_browser` function opens attempts to open a standalone browser "
