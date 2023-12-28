@@ -123,7 +123,26 @@
        `tags: ["UI" "DOM" "theme" "dark" "light"  "color" "system"]
    })
       
-
+(defun get_app_args ()
+   (let
+      ((params (prop (new URL window.location) `searchParams))
+       (args {}))
+      (try
+         (for_with (key (-> params `keys))
+            (set_prop
+               args
+               key (-> params `get key)))
+         (catch Error (e)
+            nil))
+      args)
+   {
+     description: (+ "Called with no arguments, returns the parameters of the URI of the "
+                     "browser environment in an object form if possible.  Otherwise an empty object "
+                     "is returned.  If the parameters are not in a `key=value` format, then the "
+                     "result is an empty object or keys with empty values.")
+     usage: []
+     tags: ["arguments" "args" "parameters" "URI" "search" "params" "browser" ]
+   })
 
 (set_prop *key_bindings*.repl          
           `history_next_entry { win: "Ctrl-Alt-n" mac: "Ctrl-Alt-n" }                                                               
@@ -6610,8 +6629,8 @@
 (defun save_event_handler (event_obj)
    (alert_on_error "Unable to save"
        (let
-          ((control (or (get_control_by_id event_obj.source)
-                        event_obj.source_control))
+          ((control (or event_obj.source_control
+                        (get_control_by_id event_obj.source)))
            (pathname (when control
                         control.options.path))
            (nseval (if (not (blank? control.options.path_namespace))
@@ -21700,7 +21719,7 @@
                                                     }
                   "evaluate_and_append_at_point" {
                                                    mac: "Command-Shift-R"
-                                                   win: "Alt-R"
+                                                   win: "Ctrl-Alt-R"
                                                    description: "Evaluate the selected text, or text prior to the form and append with the results if not nil"
                                                    exec: (fn ()
                                                             (evaluate_and_replace_at_point { `append: true }))
