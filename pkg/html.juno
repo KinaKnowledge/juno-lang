@@ -475,7 +475,16 @@
      `usage: ["varname:string"]
      `tags: ["CSS" "html" "variable" "UI"]
    })
+
+(defun set_css_var (varname value)
+   (-> document.documentElement.style `setProperty varname value)
+   {
+       description: "Given a variable name, and a value, sets the variable value within CSS."
+       usage: ["varname:string", "value:string"]
+       tags: ["CSS", "UI", "ui" "DOM" "set" "variable" "value"]
+   })
    
+
 (defun_sync is_node_list? (item)
    (instanceof item NodeList)
    {
