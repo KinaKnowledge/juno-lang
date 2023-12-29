@@ -21299,6 +21299,28 @@
             (progn
              (monitor_control_tree)))  ]])))
 
+(defun standard_error_notifier (event)
+   (progn
+      (log_error (+ (if event.args.1
+                        (+ event.args.1 ":")
+                        "Error: "))
+                 (or event.args.0 "An error event was reported, but the information was malformed."))
+      (alert_box (+ "Error" (if event.args.1
+                                (+ ": " event.args.1)
+                                ""))
+                 (or event.args.0 "An error event was reported, but the information was malformed.")))
+   {
+     `description: (+ "This function is the standard registered error notification function, "
+                      "which by defaults pops up an alert box and logs the error as received via "
+                      "the `log_error` facility.  The event should be in the following format:```{ "
+                      "source: nil \n  command: \"notify_error\"\n  args: [ \"error message in the first "
+                      "position\" \"title or prefix in the second\" ] "
+                      "}```<br><br>The `standard_error_notifier` can be re-defined, or the event "
+                      "itself can be re-registered to a different function. The function ID it is "
+                      "registered under is: `standard_error_notifier` .<br>")
+     `tags: ["error" "notification" "event" "dispatch" "register" "handler" ]
+     `usage: ["event:object"]
+     })
 
 (defun system_theme_change_event_handler (e)
    (progn
@@ -21324,6 +21346,15 @@
                          light_theme: `juno_light }))
       (javascript "window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',handler)")))
 
+(defun adjust_for_display_density ()
+   (when (> window.devicePixelRatio 1.3)
+      (set_css_var "--main-app-font"
+         (join ","
+            (for (face (each (split_by "," (get_css_var "--main-app-font")) trim))
+                 (if (or (== face "'Segoe UI'")
+                         (== face "Segoe UI"))
+                     "Segoe UI Medium"
+                     face))))))
 
 ;; seedling_ready is called when the IDE is fully loaded.
 ;; you can put your custom startup code in here
@@ -22049,7 +22080,12 @@
                                args: [ ] }))))
     
     (set_display_name (or (get_default ["application" "display_name"])
-                          (get_default ["application" "name"])))
+                          (get_default ["application" "name"]))
+                      (and (== globalThis.navigator.platform "Win32")
+                           (== (prop (get_app_args) `app_mode) "true")))
+    
+    (adjust_for_display_density)
+    
     (try 
        (aif (-> (prop (new URL window.location) `searchParams) `get "theme")
             (when (not (blank? it))
@@ -22074,7 +22110,13 @@
                     (progn
                        (log "window.onmessage: received invalid message: " e)))))))
                        
-   
+    (try
+       (register_event_handler nil "notify_error"
+                               "standard_error_notifier"
+                               standard_error_notifier)
+       (catch Error (e)
+          (console.log e.message)))
+    
     (dispatch_event { command: "complete" source: "initializer" args: [ (current_namespace) ] })
     (try
        (aif (get_default [ `application `on_ready ] )
