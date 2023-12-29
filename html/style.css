@@ -35,6 +35,7 @@
   --value-modified-color: #016783;
   --matching-paren-color: #ffeb00;
   --matching-paren-outline-color: #b6a800;
+  --tag-color: #005273;
   --scrollbar-thumb-color: inherit;
   --scrollbar-track-color: inherit;
   --link-color: inherit;
@@ -96,6 +97,7 @@
   --editor-heading-color: #B8012D;
   --editor-heading-bg-color: rgba(191,97,51,0.051);
   --editor-list-color: #8F5B26;
+  --editor-tag-color: #005273;
 }
 
 
@@ -2251,7 +2253,7 @@ span.juno-tag {
     padding-top: 2px;
     padding-left: 5px;
     padding-right: 5px;
-    color: var(--value-modified-color);
+    color: var(--tag-color);
     display: inline-block;
     border: 1px solid var(--main-accent-line-hover);
     transition: all .1s ease-in-out;
