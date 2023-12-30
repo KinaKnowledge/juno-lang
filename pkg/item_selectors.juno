@@ -1,0 +1,299 @@
+
+;; Item Selectors - Individual Lists or a pick selector with two columns in which to move items back and forth.
+;; Installs into the current namespace
+
+
+
+(create_css_entry ".juno-item-selector"
+   [["margin-block-start" "0px"]
+    ["color" "var(--control-text-color-bg)"]
+    ["padding" "5px"]])
+
+(create_css_entry ".juno-item-selector li"
+   [ ["border-bottom" "1px dotted var(--main-accent-line-hover)"]
+     ["cursor" "pointer"]])
+
+(create_css_entry ".juno-item-selector li:hover"
+   [["background" "#FFFFFF20"]])
+
+(create_css_entry ".juno-item-selector li.juno-selected:hover"
+      [["background" "var(--selected-bg-color)"]])
+
+(defun item_selector (item_array options)
+   (let
+      ((items (if (is_array? item_array)
+                  [] ;; place holder until set_items is called below
+                  (throw Error  "item_selection requires an array of values")))
+       (options (or options {}))
+       (identifier (or options.identifier
+                       (gen_id "item_selector")))
+       (pre_selected (cond
+                        (is_array? options.selected)
+                        options.selected
+                        options.selected
+                        [options.selected]
+                        else
+                        []))
+                                
+       (idx -1)
+       (selected_values (fn ()
+                           (reduce (item (-> view `querySelectorAll ".juno-selected"))
+                                (when (is_element? item)
+                                   (get_attribute item `value)))))
+       (click_handler (fn (e)
+                         (let 
+                            ((elem e.srcElement)
+                             (value (get_attribute elem `value))
+                             (selected_idx (parseInt (get_attribute elem `idx))))
+                            (when (not (== e.srcElement.tagName "UL"))
+                               (unless options.allow_multiselect
+                                  (for (result (-> view `querySelectorAll ".juno-selected"))
+                                       (when (is_element? result)
+                                          (remove_class "juno-selected" result))))
+                               (if (has_class? "juno-selected" elem)
+                                   (remove_class "juno-selected" elem)
+                                   (add_class "juno-selected" elem))
+                               (when (is_function? options.on_select)
+                                  (-> options `on_select { value: value
+                                                           selected: (selected_values)
+                                                           value_selected: (contains? value (selected_values))
+                                                           index: selected_idx
+                                                           identifier: identifier
+                                                           event: e }
+                                    ))))))
+       (reset_selection (fn ()
+                           (for (result (-> view `querySelectorAll ".juno-selected"))
+                                (when (is_element? result)
+                                   (remove_class "juno-selected" result)))))
+       (set_items (fn (item_set)
+                     (when (is_array? item_set)
+                        (= items item_set)
+                        (apply replace_items
+                           (for (item items)
+                                (inc idx)
+                                (cond
+                                   (is_array? item)
+                                   (li (+ { idx: idx value: item.1 tabindex: 0 }
+                                          ;; if we have specified a class for the parent, don't put the default styling
+                                          { }  ;; the css should have the parent class specify the child li css
+                                          { class: (+ (if options.class
+                                                          ""
+                                                          "juno-list-item")
+                                                      (if (contains? item.1 pre_selected)
+                                                          " juno-selected"
+                                                          ""))
+                                                  idx: idx })
+                                       item.0)
+                                   (is_string? item)
+                                   (li (+ { idx: idx value: item tabindex: 0 }
+                                          (if options.class ;; if we have specified a class for the parent, don't put the default styling
+                                             { }  ;; the css should have the parent class specify the child li css
+                                             { class: (+ (if options.class
+                                                             ""
+                                                             "juno-list-item")
+                                                         (if (contains? item pre_selected)
+                                                             " juno-selected"
+                                                             ""))
+                                                     idx: idx }))
+                                       item)))))))
+       (view (ul (+ {} 
+                    (if (is_string? options.class)
+                       { class: options.class }
+                       { class: "juno-item-selector" }))))
+       (replace_items (bind view.replaceChildren view)))
+      (set_items item_array)
+      (attach_event_listener view
+         `keyup
+         (fn (e)
+            (progn
+               (cond
+                  (or (== e.keyCode 13)
+                      (== e.keyCode 32))
+                  (progn
+                     (handle_event e)
+                     (click_handler e))))))
+      (attach_event_listener view
+         `click
+         click_handler)
+      (if options.controls
+         {
+           `view: view
+           `set: (fn (items)
+                    (set_items items))
+           `get: (fn ()
+                    (selected_values))
+           `reset_selection: reset_selection
+                    
+           }
+         view))
+   {
+     description: (+ "The `item_selector` function takes an array of items and an options "
+                     "object for specifying behaviors for the constructed element.  It returns "
+                     "an `Element` of type `ul` containing the values as `li` elements.  The returned "
+                     "value can be directly attached to the DOM.<br>The array of items can either be "
+                     "a series of values, or an array containing the display value in position 0 and "
+                     "the actual value to be used in position 1.  <br>When an item is selected or "
+                     "de-selected, an optional function provided as `on_select` is called, and an "
+                     "object containing the state of the element is provided as an argument.  The "
+                     "object has the following key/values.<br><br>#### Event object provided to the "
+                     "callback  `on_select`  function   <br><br>value:* -The value of the item which "
+                     "was just clicked<br>value_selected:boolean -This will be `true` if the value "
+                     "was just selected, or `false` if the value was de-selected.<br>selected:array "
+                     "-This will contain the array of every selected value in "
+                     "the `item_selector` element.<br>index:integer -The index of the selected "
+                     "item<br>event:Event -The `PointerEvent` that caused the selection or "
+                     "de-selection.<br>identifier:string - If provided with an identifier string as "
+                     "in `options` , this string will be provided as the value for this key, "
+                     "otherwise a generated unique identifier is provided.<br><br>#### Options for "
+                     "the  `item_selector`    <br><br>on_select:function -A function that is called "
+                     "with the event object as an argument.  This is the primary means in which the "
+                     "state of the `item_selector` control is determined.<br>selected:array -An array "
+                     "value of items that are to be pre-selected.  Values in the provided item_array "
+                     "that match a value in this array will be presented as selected when the element "
+                     "is first drawn.<br>allow_multiselect:boolean -If `true` , "
+                     "the `item_selector` will allow multiple values to be selected at any "
+                     "time.  <br>class:string -If a class name is provided, the `item_selector` will "
+                     "use this as the top level class for the `ul` object.  <br>controls:boolean "
+                     "-If `true` an interface is returned with a `view` and several control functions "
+                     "described below.<br>identifier:string - If provided, this will be the string "
+                     "value used in the `identifier` key for the selection event objects.<br><br>#### "
+                     "Interface  <br><br>get:function -Get the currently selected items from "
+                     "the `item_selector` .<br>set:function -Given a new item list, the displayed "
+                     "item list is rebuilt with the provided values.  If an empty array is given, all "
+                     "values are removed.  The return value is the number of items now displayed in "
+                     "the item selector.<br>view:Element -the element to be attached to the DOM tree. ")
+     usage: ["item_array:array" "options:object"]
+     tags: ["UI" "DOM" "array" "selection" "selector" "element" "list"]
+     })
+
+
+(defun pick_selector (item_list1 item_list2 options)
+   (let
+      ((options (or options {}))
+       (callback options.on_select)
+       (on_selection (fn (selection_event)
+                             (let
+                                ((source selection_event.identifier))
+                                (cond
+                                   (and (== source "left")
+                                        (> (length selection_event.selected) 0))
+                                   (set_enabled move_right_button)
+                                   (and (== source "left")
+                                        (== (length selection_event.selected) 0))
+                                   (set_disabled move_right_button)
+                                   (and (== source "right")
+                                        (> (length selection_event.selected) 0))
+                                   (set_enabled move_left_button)
+                                   (and (== source "right")
+                                        (== (length selection_event.selected) 0))
+                                   (set_disabled move_left_button))
+                                (if (== source `left)
+                                    (-> right_selector `reset_selection)
+                                    (-> left_selector `reset_selection))
+                                    
+                                (callback selection_event))))
+       (left_selector nil)
+       (right_selector nil)
+       (observer_callback (fn (mutation_list observer)
+                             (console.log mutation_list)))
+       (move_right_button (button { `style: "margin-top: 25px;" disabled: true }">"))
+       (move_left_button  (button { `style: "margin-top: 25px;" disabled: true }  "<"))
+       (observer nil)
+       (handle_event (fn (e)
+                        (let
+                           ((src e.srcElement)
+                            (validated? nil)
+                            (left_selected (-> left_selector `get))
+                            (right_selected (-> right_selector `get)))
+                           
+                           (cond
+                              (and (== src move_right_button)
+                                   (> left_selected.length 0))
+                              (progn
+                                 (if options.on_validate
+                                     (= validated? (-> options `on_validate
+                                                       {
+                                                         identifier: "left"
+                                                         selected: left_selected
+                                                         }))
+                                     (= validated? true))
+                                 (when validated?
+                                    (for (item left_selected)
+                                         (push item_list2
+                                            item))
+                                    (= item_list1
+                                       (remove_if (function (item)
+                                                     (contains? item left_selected))
+                                                  (clone item_list1)))
+                                    (set_disabled move_right_button move_right_button)
+                                    (-> left_selector `set item_list1)
+                                    (-> right_selector `set item_list2)))
+                              (and (== src move_left_button)
+                                   (> right_selected.length 0))
+                              (progn
+                                 (if options.on_validate
+                                    (= validated? (-> options `on_validate
+                                                      {
+                                                        identifier: "right"
+                                                        selected: right_selected
+                                                        }))
+                                     (= validated? true))
+                                 (when validated?
+                                    (for (item right_selected)
+                                         (push item_list1
+                                            item))
+                                    (= item_list2
+                                       (reduce (item item_list2)
+                                          (when (not (contains? item right_selected))
+                                             item)))
+                                    (set_disabled move_left_button move_right_button)
+                                    (-> left_selector `set item_list1)
+                                    (-> right_selector `set item_list2)))))))
+       (view nil))
+      (= options
+         (+ options
+            { on_select: on_selection 
+              controls: true }))
+     
+      (= left_selector (item_selector item_list1 (+ {} options { identifier: "left" })))
+      (= right_selector (item_selector item_list2 (+ {} options { identifier: "right" })))
+      (= view
+         (div { `style: "display: flex; height: inherit;" }
+            (div { `style: "overflow: hidden; height: 100%; flex: 1;" }
+                 (if options.left_title
+                    (div { } options.left_title)
+                    [])
+                 (div { `style: "overflow: auto; height: calc(100% - 30px); background: var(--control-text-input-color-bg);" }
+                      left_selector.view))
+            (div { style: "position: relative;" }
+                 (br)
+                 move_right_button
+                 (br)
+                 move_left_button)
+            (div { `style: "overflow: hidden; height: 100%; flex: 1;" }
+                 (if options.right_title
+                    (div { } options.right_title)
+                    [])
+                 (div { `style: "overflow: auto; height: calc(100% - 30px); background: var(--control-text-input-color-bg)" }
+                      right_selector.view))))
+      (attach_event_listener view
+         `click
+         handle_event)
+      (= observer (new MutationObserver observer_callback))
+      (-> observer `observe view { attributes: true childList: true subtree: true })
+      {
+        view: view
+        get_items: (fn (side)
+                      (if (== side 0)
+                          (-> left_selector `get)
+                          (-> right_selector `get)))
+        set_items: (fn (side items)
+                      (if (== side 0)
+                          (-> left_selector `set items)
+                          (-> right_selector `set items)))
+          
+        })
+   {
+     description: nil
+     })
+

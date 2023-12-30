@@ -1,0 +1,1110 @@
+;; Theme Editor Package 
+;; will load up under user
+
+(import "/pkg/item_selectors.juno")
+
+(defun base_directory ()
+   (if is_served?
+      (let
+         ((base_dir (or (prop (http/get "/base_directory")
+                              `data)
+                        (throw Error "get_theme_files: cannot determine base_directory")))
+          (base base_dir.base)
+          (wd base_dir.cwd))
+         (cond
+            (starts_with? "." base)
+            ""
+            (and (starts_with? "/" base)
+                 (starts_with? base wd))
+            wd
+            else
+            (progn
+               (log "condition: base: " base "cwd: " wd)
+               wd)))
+      nil)
+   {
+     description: (+ "<br><br>Returns the directory of the server installation, regardless of the "
+                     "current root directory.  This function takes no arguments and only is "
+                     "applicable when the application is currently hosted.  Otherwise nil returned. ")
+     usage: []
+     tags: ["base" "directory" "folder" "home" "server" "installation" "instance" "filesystem" "file"] })
+
+(defun theme_files ()
+   (if is_served?
+      (let
+         ((files (http/list_files (normalize_file_path (+ "html/themes")))))
+         (reduce (file (or files []))
+            (if (and (ends_with? ".css" (lowercase file.name))
+                     (not (== "style.css" (lowercase file.name))))
+                file.name)))
+      []))
+
+(defun current_theme ()
+   (get_default [ `application `global_theme ]))
+
+(defun available_themes (alternate_theme_dir)
+   (let
+      ((theme_path "html/themes/")
+       (theme_dir (if (is_string? alternate_theme_dir)
+                      alternate_theme_dir
+                      (normalize_file_path theme_path)))
+       (themes nil))
+      (progc
+         (= themes
+            (reduce (item (http/list_files theme_dir))
+               (when (and item.isFile
+                          (ends_with? ".css" (lowercase item.name)))
+                  (-> item.name `substr 0 (- item.name.length 4)))))
+         (sort themes)))
+   {
+     description: (+ "By default, this function takes no input and returns the existing "
+                     "themes that are installed in the Juno server instance the browser environment "
+                     "is connected to.  If provided an alternative theme directory, will attempt to "
+                     "list the theme files found there.  Theme files are essentially CSS files with "
+                     "named variables specifying specific value.  If a file in the directory doesn\'t "
+                     "end with \".css\" (case doesn\'t matter), it will not register as a theme and will "
+                     "not be returned.  Themes returned are the filename without the extension and "
+                     "parent directory.<br> ")
+     usage: ["alternate_theme_dir:?string"]
+     tags:["theme" "existing" "index" "listing" "themes"]
+   })
+
+(defun theme_file_for_name (theme_name)
+   (let
+      ((theme_path (+ (normalize_file_path "html/themes") "/" theme_name ".css"))
+       (exists? nil))
+      (try
+         (progn
+            (= exists? (stat_file theme_path)))
+         (catch Error (e)
+            nil)) ;; doesn't exist
+      (if exists?
+         theme_path
+         nil)))
+
+            
+      
+       
+
+(defun clone_theme (source_theme target_theme)
+   (if is_served?
+       (let
+          ((success nil)
+           (source_file (normalize_file_path (+ "html/themes/" source_theme ".css")))
+           (source_status (try 
+                             (stat_file source_file)
+                             (catch Error (e)
+                                (progn
+                                   nil))))
+           (target_file (normalize_file_path (+ "html/themes/" target_theme ".css")))
+           (target_status (try 
+                             (stat_file target_file)
+                             (catch Error (e)
+                                (progn
+                                   nil)))))
+         (cond
+            target_status
+            (progn
+               (throw Error "clone_theme: target theme already exists!"))
+            source_status
+            (progn
+               (log "copying: " source_file "->" target_file)
+               (try 
+                  (= success (eval `(rblock (sys/copy_file ,#source_file ,#target_file))))
+                  (catch Error (e)
+                     (log "unable to perform copy from " source_file "to: " target_file)))
+               (log "success is: " success)
+               success)
+            else
+            (throw Error "clone_theme: source theme not found")))
+       (throw Error "clone_theme: hosted mode required"))
+    {
+      `description: (+ "Given a source theme name as a string, and a target name as a string, "
+                       "copies the necessary files and will return `true` if successful.  Otherwise "
+                       "an `Error` will be thrown with the error message with the problem.   If the "
+                       "target theme already exists, the command will fail with an `Error` .  If the "
+                       "source theme assets aren\'t found, the function will fail with "
+                       "an `Error` indicating that the theme to clone wasn\'t found.<br> ")
+      usage: ["source_theme:string" "starget_theme:string"]
+      tags: ["theme" "copy" "clone" "ui" "themes"]
+    })
+
+(defun load_theme (theme_name)
+   (if (is_string? theme_name)
+       (let
+          ((as_installed (prop *global_themes* theme_name))
+           (theme_file (and (prop (or (file_status (normalize_file_path (+ "html/themes/" theme_name ".css"))) {}) `isFile)
+                            (+ "html/themes/" theme_name ".css")))
+           (theme_data nil)
+           (load_theme_file_to_environment (fn ()
+                                              (progn
+                                                 (set_prop *global_themes*
+                                                   theme_name
+                                                   theme_data)
+                                                 
+                                                 (dispatch_event
+                                                    {
+                                                      command: "load_theme"
+                                                      source: nil
+                                                      args: [ theme_name ]
+                                                      })
+                                                 true)))
+                                                 
+           (active_theme (current_theme))
+           (already_installed false))
+          (log "loading theme: " theme_file)
+          (if theme_file
+             (progc
+                (= theme_data
+                   (read_text_file theme_file))
+                (= already_installed
+                   (or (and (not (eq nil as_installed))
+                            (== theme_data as_installed))
+                       false))
+                (if (and (not already_installed)
+                         (is_string? theme_data))
+                    (load_theme_file_to_environment)
+                    false))
+             (throw Error (+ "load_theme: missing theme File: " theme_name))))
+       (throw Error (+ "load_theme: missing theme as argument"))))
+ 
+(defun unload_theme (theme_name)
+   (cond 
+      (and (is_string? theme_name)
+           (prop *global_themes* theme_name)
+           (== (get_default [ "application" "global_theme" ]) theme_name))
+      (progn
+         (dispatch_event { `command: "notify_error" 
+                           `source: nil
+                           `args: [ "attempt to unload active theme" "unload_theme"] })
+         false)
+      (and (is_string? theme_name)
+           (== theme_name "juno_light"))
+      (dispatch_event { command: "notify_error"
+                        source: nil
+                        args: [ "cannot unload the juno_light theme, which is the base theme" "unload_theme"] })
+      (and (is_string? theme_name)
+           (prop *global_themes* theme_name))
+      (progn
+         (delete_prop *global_themes* theme_name)
+         (dispatch_event { command: "unload_theme"
+                           source: nil
+                           args: [ theme_name ] })
+          true)
+      else
+      (progn
+         (dispatch_event { `command: "notify_error" 
+                           `source: nil
+                           `args: [  "invalid theme provided" "unload_theme"] })
+         false)))
+
+(defun theme_loader (on_select on_refresh)
+   (let
+      ((ps nil)
+       (installed_themes (fn () 
+                            (sort (keys *global_themes*))))
+       (available_not_installed 
+          (fn ()
+             (sort (reduce (theme (available_themes))
+                   (unless (prop *global_themes* theme)
+                      theme)))))
+       (view nil)
+       (refresh (fn ()
+                   (when ps
+                      (-> ps `set_items 0 (available_not_installed))
+                      (-> ps `set_items 1 (installed_themes))
+                      (when on_refresh
+                         (on_refresh intf)))))
+       (intf {}))
+      (= ps
+         (pick_selector
+            (available_not_installed)
+            (installed_themes)
+            {
+                left_title: [(dtext "Available (Not Installed)")]
+                right_title: [(dtext "Installed Themes") ]
+                allow_multiselect: false
+                on_validate: (fn (event)
+                                (cond 
+                                   (and (== event.identifier "right")
+                                        (== (dtext "Yes")
+                                            (request_button_choice (if (> event.selected.length 1)
+                                                                       (+ "Unload" " " event.selected.length " " "themes" "?" )
+                                                                       (+ (dtext "Unload theme") " " event.selected.0 "?"))
+                                                                   [(dtext "No - Cancel")
+                                                                    (dtext "Yes")])))
+                                   (progn
+                                      (unload_theme (resolve_path [ `selected 0 ] event)))
+                                   (== event.identifier "left")
+                                   (aif (resolve_path [ `selected 0 ] event)
+                                        (progn
+                                           (load_theme it)
+                                           true)
+                                        false)
+                                   else
+                                   false))
+                on_select: (fn (obj)
+                              (when on_select 
+                                 (on_select obj)))
+            }))
+      (= view
+         (div { style: "height: calc(100% - 1px)" }
+             ps.view))
+      (set_prop intf
+         `view view
+         `refresh (fn ()
+                     (refresh)))
+      intf))
+ 
+;(remove_event_handler nil "notify_error" "standard_error_notifier")
+
+(defglobal *css_theme_var*
+   [  `--main-bg-color `--main-color `--header-color `--header-bg-color
+      `--highlight-bg-color
+      `--highlight-color
+      `--selected-bg-color
+      `--selected-color
+      `--control-bg-color
+      `--control-color
+      `--control-text-input-color-bg
+      `--control-text-input-color
+      `--control-focused
+      `--control-unfocused-color
+      `--control-disabled-bg-color
+      `--control-disabled-color
+      `--control-readonly-color
+      `--log-message-bg-color
+      `--log-result-bg-color
+      `--button-hover-bg-color
+      `--identification-bg-color
+      `--app-header-color
+      `--namespace-color
+      `--main-accent-color
+      `--main-accent-line
+      `--main-accent-line-hover
+      `--main-control-surface-accent-color
+      `--main-control-button-color
+      `--value-modified-color
+      `--matching-paren-color
+      `--matching-paren-outline-color
+      `--scrollbar-thumb-color
+      `--scrollbar-track-color
+      `--link-color
+      `--link-visited-color
+      `--link-bg-color
+      `--link-visited-bg-color
+      `--tag-color
+      `--type-number-color
+      `--type-date-color
+      `--type-boolean-color
+      `--type-string-color
+      `--type-function-color
+      `--type-asyncfunction-color
+      `--type-null-color
+      `--type-undefined-color
+      `--type-symbol-color
+      `--type-error-color
+      `--type-array-color
+      `--type-path-color
+      `--type-key-color
+      `--type-regexp-color
+      `--type-code-color
+      `--value-focus-color
+      `--mode-color
+      `--primary-action-bg-color
+      `--primary-action-color
+      `--success-color
+      `--main-app-font
+      `--main-app-font-size
+      `--main-mono-space
+      `--editor-bg-color
+      `--editor-text-color
+      `--editor-gutter-bg-color
+      `--editor-gutter-color
+      `--editor-cursor-color
+      `--editor-selected-bg-color
+      `--editor-selected-word-bg-color
+      `--editor-step-bg-color
+      `--editor-active-line-bg
+      `--editor-active-line-gutter-bg-color
+      `--editor-invisible-color
+      `--editor-keyword-color
+      `--editor-identifier-color
+      `--editor-constant-color
+      `--editor-numeric-color
+      `--editor-support-color
+      `--editor-function-color
+      `--editor-asyncfunction-color
+      `--editor-string-color
+      `--editor-constant-color
+      `--editor-variable-color
+      `--editor-comment-color
+      `--editor-storage-color
+      `--editor-illegal-color
+      `--editor-illegal-bg-color
+      `--editor-deprecated-color
+      `--editor-deprecated-bg-color
+      `--editor-regex-color
+      `--editor-regex-bg-color
+      `--editor-heading-color
+      `--editor-heading-bg-color
+      `--editor-list-color
+      `--editor-tag-color
+    ])
+
+(defun parse_theme_data (theme_text)
+   (let
+      ((lines (each (split_by "\n" theme_text) trim))
+       (vars_and_values [])
+       (output [])
+       (comps []))
+      (for (line lines)
+           (when (starts_with? "--" line)
+              (= comps (each (split_by ":" (first (split_by ";" line))) trim))
+              (push output comps)))
+      output))
+   
+(defun theme_text_from_pairs (theme_data)
+   (+ ":root {\n    "
+      (join "\n    "
+         (reduce (vals theme_data)
+            (when vals.2
+              (+ "" vals.0 ": " vals.1 ";"))))
+      "\n}\n"))
+         
+(defun add_missing_theme_data (theme_pairs)
+   (let
+      ((current_vars (to_object theme_pairs))
+       (theme_data []))
+      (for_each (var_name *css_theme_var*)
+         (aif (prop current_vars var_name)
+              (push theme_data [var_name it true])
+              (push theme_data [var_name (get_css_var var_name) false] )))
+      theme_data))
+
+(remove_css_entry ".juno-theme-editor tr.disabled")
+(create_css_entry "table.juno-theme-editor"
+   [["width" "100%"]
+    ["min-width" "450px"]
+    ["padding" "0px"]])
+(create_css_entry ".juno-theme-editor th"
+   [["padding" "5px"]])
+(create_css_entry ".juno-theme-editor td:nth-child(1)"
+      [["text-align" "right"]
+       ["padding-right" "20px"]])
+(create_css_entry ".juno-theme-editor tbody td"
+   [["font-family" "var(--main-mono-space)"]
+    ["padding" "5px"]
+    ["border-bottom" "1px solid var(--main-accent-line)"]])
+
+
+(create_css_entry ".juno-theme-editor span.color-swatch"
+   [["display" "inline-block"]
+    ["width" "50px"]
+    ["height" "1em"]
+    ["margin-right" "15px"]
+    ["float" "right"]
+    ["box-shadow" "0px 0px 4px 0px #00000010"]])
+
+(create_css_entry ".juno-theme-editor input.color-swatch"
+   [["width" "calc(100% - 120px);"]])
+
+(create_css_entry ".juno-theme-editor .disabled"
+   [["opacity" "0.4"]])
+
+(defun color_picker (value attach_to_elem?)
+   (new Promise 
+      (fn (resolve)
+         (let
+            ((color_picker_input (input { style: "" type: `color value: value })))
+            (attach_event_listener color_picker_input
+               `change
+               (fn (e)
+                  (progn
+                     (log "color_picker change value: " e.srcElement.value color_picker_input.value)
+                     (when (is_element? attach_to_elem?)
+                        (-> color_picker_input `remove))
+                     (resolve color_picker_input.value))))
+            (attach_event_listener color_picker_input
+               `blur
+               (fn (e)
+                  (progn
+                     (when (is_element? attach_to_elem?)
+                        (-> color_picker_input `remove))
+                     (resolve color_picker_input.value))))
+            (when (is_element? attach_to_elem?)
+               (-> attach_to_elem? `append color_picker_input))
+            (sleep 0.05)
+            (-> color_picker_input `click)))))
+      
+(defun set_global_theme (theme_name options)
+   (if (prop *global_themes* theme_name)
+       (let
+          ((head_elem (-> document `querySelector "head"))
+           (existing (get_by_id "juno-css-theme"))
+           (is_editor_theme? (contains? theme_name (get_default [ `editor `themes ]))))
+          (if existing
+               (-> existing `remove))
+          (-> head_elem `append
+              (style { `id: "juno-css-theme" `type: "text/css" }
+               (prop *global_themes* theme_name)) )
+          (set_path [ `application `global_theme ] *env_config* theme_name)
+          (if (and (not options.suppress_set_sub_theme)
+                     (contains? theme_name (get_default [ `editor `themes ])))
+              (set_path [ `editor `default_theme ] *env_config* theme_name)
+              (set_path [ `editor `default_theme ] *env_config* "juno_light")) ;; this inherits the global theme
+          ;; unless we are told not to, set any controls to the theme
+          (unless options.suppress_cascade
+              (for_each (control (current_controls))
+                        (when (is_function? control.set_theme)
+                          (-> control `set_theme (if is_editor_theme?
+                                                     theme_name
+                                                     "juno_light")))))
+          true)
+       (throw ReferenceError "Invalid theme name provided"))
+   { `description: (+ "Sets the global theme to the named theme.  Global themes "
+                      "values are looked for in *global_themes*.  If a key is found "
+                      "in that object, the theme is installed, and the *env_config* "
+                      "value is updated to reflect this choice.  Additionally, if an "
+                      "editor theme is found with the same name, the default editor "
+                      "theme is set as well.  Editor themes are found in `*env_config*` "
+                      "under `[ \"editor\" \"themes\" ]`. <br><br>"
+                      "Options are as follows:<br>"
+                      "suppress_set_sub_theme:boolean:false:If true, individual control "
+                      "themes such as the editor theme setting will not be set as part "
+                      "the global theme and will retain their existing settings and "
+                      "defaults.<br>"
+                      "suppress_cascade:boolean:false:If this value is true, the application "
+                      "theme will change, but controls will not be told about it and will "
+                      "retain their current settings as they are instantiated with.")
+     `tags: ["themes" "environment" "color" "settings"]
+     `usage: ["theme_name:string" "options:object"] })
+
+
+(defcontrol theme_editor ()
+   ((test_theme_button (button { `tabindex: 0 } "Test Mode"))
+    (save_theme_button (button { `tabindex: 0 disabled: true } "Save"))
+    (filter_input (input { style: "margin-top: -4px; width: 30%; float: right; " `type: "search" `placeholder: (dtext "Filter By") } ""))
+    (in_test? false)
+    (theme_to_edit options.theme)
+    (theme_name (span { `style: "margin-left: 20px; font-weight: bold;margin-right: 20px; display: inline-block;" } theme_to_edit))
+    (theme_file (normalize_file_path (+ "html/themes/" theme_to_edit ".css")))
+    (theme_file_exists nil)
+    (theme_data [])
+    (is_dirty? false)
+    (current_selected_theme (current_theme))
+    (variable_table_body (tbody))
+    (no_includes (new Set))
+    (variable_table (table { `class: "juno-theme-editor" }
+                       variable_table_body))
+    (mview (div { style: "height: 100%; overflow: hidden" }
+                (div { style: "min-width: 450px; background: #00000010; display: block; padding: 5px; height: 1.2em;" }
+                     theme_name test_theme_button save_theme_button filter_input)
+                (div { `style: "height: calc(100% - 50px); width: 100%; overflow: scroll;" }
+                     variable_table)))
+    (handle_click (fn (elem)
+                     (when (and (== elem.tagName "SPAN")
+                                (has_class? "color-swatch" elem)
+                                (not (get_attribute elem "disabled")))
+                        (let
+                           ((css_var (get_attribute elem "css_var"))
+                            (value (value_for_css_var css_var)))
+                           (log "elem is: "elem.tagName elem.outerHTML)
+                           (set_value_for_css_var css_var (color_picker value elem) (not (-> no_includes `has css_var)))))))
+    (value_for_css_var (fn (css_var)
+                          (let
+                             ((val nil))
+                             (for ((varname value in_theme?) theme_data)
+                                  (when (== varname css_var)
+                                      (= val value)
+                                      (break)))
+                             val)))
+    (set_value_for_css_var (fn (css_var new_value enabled?)
+                          (let
+                             ((found_var nil)
+                              (idx 0))
+                             (for ((varname value in_theme?) theme_data)
+                                  (when (== varname css_var)
+                                      (= found_var css_var)
+                                      (break))
+                                  (inc idx))
+                             (log "set_value_for_css_var: idx: " idx found_var css_var new_value)
+                             (when (not (== new_value (value_for_css_var css_var)))
+                                (set_needs_save))
+                             (cond 
+                                found_var
+                                (progn
+                                   (set_path [ idx 1 ] theme_data new_value)
+                                   (set_path [ idx 2 ] theme_data enabled?)
+                                   (for (elem (or (-> variable_table_body `querySelectorAll (+"[css_var='"css_var"']"))
+                                                  []))
+                                        (progn
+                                           (when (is_element? elem)
+                                              (cond
+                                                 (== elem.tagName "INPUT")
+                                                 (set_prop elem
+                                                    `value
+                                                    new_value)
+                                                 (== elem.tagName "SPAN")
+                                                 (progn
+                                                    (set_style [["background" new_value]] elem)))))))
+                                else
+                                (progn
+                                   (alert_box "Variable Not Found"
+                                              (+ "The variable " css_var " wasn't found."))))
+                             (defglobal *theme_data* theme_data)
+                             (if in_test?
+                                (run_theme_test))
+                             (log "set theme data")
+                             new_value)))
+    (set_needs_save (fn ()
+                       (progn
+                          (= is_dirty? true)
+                          (set_enabled save_theme_button)
+                          (add_class "juno-needs-save" title_span))))
+    (handle_key_change (fn (elem event)
+                      (cond
+                         (and (== elem.tagName "INPUT")
+                              (not (== elem.type "color"))
+                              (not (== elem.type "checkbox")))     
+                         (let
+                            ((new_value elem.value)
+                             (css_var (get_attribute elem "css_var"))
+                             (swatch (prop elem `nextElementSibling)))
+                            (log "handle_key_change: new_value: " new_value)
+                            (set_value_for_css_var css_var new_value (not (-> no_includes `has css_var))))
+                         (and (== elem.tagName "INPUT")
+                              (== elem.type "checkbox"))
+                         (progn
+                            (log "checked: " (prop elem "checked"))
+                            (defvar css_var (get_attribute elem "css_var"))
+                            (set_needs_save)
+                            (if (prop elem "checked")
+                                (progn
+                                   (-> no_includes `delete css_var)
+                                   (remove_class "disabled" elem.parentElement))
+                                (progn
+                                   (-> no_includes `add css_var)
+                                   (add_class "disabled" elem.parentElement )))
+                            (log "no_includes: " (to_array no_includes) )
+                            (set_value_for_css_var css_var (value_for_css_var css_var) (not (-> no_includes `has css_var)))
+                            (for (item (-> variable_table_body `querySelectorAll (+"[css_var='"css_var"']")))
+                                 (when (and (is_element? item)
+                                            (not (== item.type "checkbox")))
+                                    (if (prop elem "checked")
+                                        (set_enabled item)
+                                        (set_disabled item)))))
+                              
+                         (and (== elem.tagName "SPAN")
+                              (== event.keyCode 13))
+                         (let
+                             ((css_var (get_attribute elem "css_var"))
+                              (value (value_for_css_var css_var)))
+                            (log "color: " css_var value)))))
+    (search (fn (text)
+               (cond 
+                  (== text "")
+                  (progn
+                     (for (item (or (-> variable_table_body `querySelectorAll "tr.juno-display-none") []))
+                          (when (is_element? item)
+                             (remove_class "juno-display-none" item))))
+                  (> text.length 1)
+                  (progn
+                     (for (item (or (-> variable_table_body `querySelectorAll "tr") []))
+                          (when (and (> item.children.length 0)
+                                     (not (contains? text item.children.0.innerText)))
+                             (add_class "juno-display-none" item)))))))
+    (run_theme_test (fn ()
+                       (let
+                          ((theme_text (theme_text_from_pairs theme_data)))
+                          ;; make sure we don't set the actual theme to the test theme
+                          (= current_selected_theme
+                             (if (== (current_theme) "testing_theme")
+                                 current_selected_theme
+                                 (current_theme)))
+                          (set_prop *global_themes*
+                             "testing_theme"
+                             theme_text)
+                          (= in_test? true)
+                          
+                          (set_global_theme "testing_theme")
+                          
+                          (add_class "juno-button-on" test_theme_button)
+                          (set_prop test_theme_button
+                             `innerText "Stop Test"))))
+    (test_theme (fn ()
+                   (progn
+                      (log "test_theme: " in_test?)
+                      (if in_test?
+                         (progn
+                            (set_global_theme current_selected_theme)
+                            (set_prop test_theme_button
+                               `innerText
+                               "Test Mode")
+                            (delete_prop *global_themes*
+                               "testing_theme")
+                            (remove_class "juno-button-on" test_theme_button)
+                            (= in_test? false))
+                         (run_theme_test)))))
+                  
+    (on_initialize (fn (self)
+                      (progn
+                         (= theme_file_exists 
+                            (try
+                               (stat_file theme_file)
+                               (catch Error (e)
+                                  false)))
+                         (when is_served?
+                            (log "theme_file: " theme_file)
+                            (set_prop options
+                               `filename (if (starts_with? "/" theme_file)
+                                             (chop_front theme_file)
+                                             theme_file)
+                               `path
+                               (conj  [ "filesystem" ] 
+                                     (reduce (comp (split_by "/" theme_file))
+                                        (unless (blank? comp)
+                                           comp))))
+                                                    
+                            (log "options.path: " options.path))
+                         (= theme_data (add_missing_theme_data (parse_theme_data (read_text_file theme_file))))
+                         
+                         (for ((css_var value in_theme?) theme_data)
+                              (-> variable_table_body
+                                 `append (tr  
+                                            (td (+ { value: css_var }
+                                                   (if in_theme? 
+                                                      {}
+                                                      { class: "disabled" }))
+                                                (input (+ { `css_var: css_var `type: "checkbox"`placeholder: "Include In Theme File?" `style: "float: left;"}
+                                                          (if in_theme?
+                                                             { checked: true }
+                                                             {})))
+                                                (if (starts_with? "--" css_var)
+                                                    (-> css_var `substr 2)
+                                                    css_var))
+                                                         
+                                            (td { } 
+                                                (input (+ { tabindex: 0 class: "color-swatch" value: value css_var: css_var }
+                                                          (if in_theme? 
+                                                             {}
+                                                             { disabled: true })))
+                                                (span (+ { `type: `color css_var: css_var value: value tabindex: 0 class: "color-swatch"  `style: (+ "background: " value ";") }
+                                                         (if in_theme? 
+                                                            {}
+                                                            { class: "disabled" }))
+                                                      "")))))
+                         
+                         (when options.controller
+                            (= controller
+                               options.controller))
+                         (log "theme_editor: controller: " controller)
+                         (attach_event_listener variable_table_body
+                            `change
+                            (fn (e)
+                               (progn
+                                  (handle_event e)
+                                  (handle_key_change e.srcElement e))))
+                         (attach_event_listener variable_table_body
+                            `click
+                            (fn (e)
+                               (handle_click e.srcElement)))
+                         (attach_event_listener save_theme_button
+                            `click
+                            (fn (e)
+                               (progn
+                                  (log "theme_editor: saving: " controller)
+                                  (if controller
+                                     (aif (get_control_by_id controller)
+                                          (-> it `request_save)
+                                          (log "theme_editor: error: specified controller not found."))
+                                     (request_save)))))
+                         (attach_event_listener test_theme_button
+                            `click
+                            (fn (e)
+                               (test_theme)))
+                         (attach_event_listener filter_input
+                            `keyup
+                            (fn (e)
+                               (search e.srcElement.value)))
+                         (attach_event_listener filter_input
+                            `search
+                            (fn (e)
+                               (when (blank? e.srcElement.value) ;; only use the clear event since we act on key up to search
+                                  (search e.srcElement.value))))
+                         
+                         (log "theme_editor: " name "initialized")
+                         self)))
+    (on_destroy (fn (self)
+                   (progn
+                      (log "theme_editor: destroy")
+                      (if in_test?
+                         (set_global_theme current_selected_theme))
+                      (delete_prop *global_themes*
+                         "testing_theme"))))
+    (controller nil)
+    (needs_save? (fn ()
+                    is_dirty?))
+    (request_save (fn ()
+                     (progn
+                        (set_prop *global_themes*
+                           theme_to_edit
+                           (theme_text_from_pairs theme_data))
+                        (log (div { } "theme_editor: requesting save for " (span { `style: "color: yellow; background: darkblue;" } theme_to_edit)) controller)
+                        (if is_served?
+                           (progn
+                              (try 
+                                 (save_event_handler { command: "save_request" 
+                                                       source_control: self
+                                                       args: [{ path: options.path }] })
+                                 (catch Error (e)
+                                    (progn
+                                       (log "error on save")
+                                       (alert_box "Error: " e.message)))))
+                           (progn
+                              (= is_dirty? false)
+                              (remove_class "juno-needs-save" title_span))))))
+                           
+    (menu_items (fn ()
+                   [["Save Theme" request_save]
+                    ["Test Theme" test_theme]]))
+    (save_complete (fn (event_obj)
+                      (progn
+                         (log "save_complete: " event_obj)
+                         (= is_dirty? false)
+                         (remove_class "juno-needs-save" title_span)
+                         (set_disabled save_theme_button)
+                         true)))
+    ;(control_bar_elements [ test_theme_button save_theme_button])
+    (get_theme (fn ()
+            (theme_text_from_pairs theme_data)))
+    (render (fn ()
+               (when initialized
+                  mview))))
+    {
+            control_bar: false
+            expose: [[`needs_save? needs_save?]
+                     [`request_save request_save]
+                     [`theme_name (fn ()
+                                     theme_to_edit)]
+                     [`on_save_complete save_complete]
+                     [`editor {}]
+                     [`save request_save]
+                     [`get get_theme]]
+    })
+                          
+
+
+(defcontrol theme_selector_control ()
+   ((themes (keys *global_themes*))
+    (auto?  (or (get_default [ `application `color_scheme `follow_desktop_preference])
+                false))
+    (changed? false)
+    (edit_theme_button (button { style: "margin-left: 15px; ;min-width: 50px;" disabled: true } (dtext "Edit")))
+    (new_theme_button (button { style: "margin-left: 25px; ;min-width: 50px; " target: "create_theme" } (dtext "Copy To New")))
+    (remove_theme_button (button { style: "float: right; min-width: 50px; " disabled: true } (dtext "Remove")))
+    (value_change (function (e)
+                     (let
+                        ((target (get_attribute e.srcElement "target")))
+                        (= changed? true)
+                        (cond
+                           (and target
+                              (== target `follow_desktop_preference))
+                           (progn
+                              (set_prop edit_obj
+                                 target (prop e.srcElement `checked))
+                              (if edit_obj.follow_desktop_preference
+                                 (set_enabled selector_light selector_dark)
+                                 (progn
+                                    (set_disabled selector_light selector_dark)
+                                    ;(apply set_disabled [ selector_light selector_dark ])
+                                    )))
+                           target
+                           (set_prop edit_obj
+                              target
+                              e.srcElement.value))
+                        (apply_changes))))
+    (intf {})
+    (apply_changes (fn ()
+                      (progn
+                         (set_default light_path edit_obj.light_theme)
+                         (set_default dark_path edit_obj.dark_theme)
+                         (set_default [ `application `color_scheme `follow_desktop_preference ]
+                                      edit_obj.follow_desktop_preference)
+                         (= changed? false))))
+    (close_win (fn ()
+                  (let
+                     ((close_it true)
+                      (choice nil))
+                     (destroy_control self))))
+    (editable_theme nil)
+    (on_select (fn (obj)
+                  (progn
+                     (log "theme_manager: on_select: " obj)
+                     (cond
+                        (== obj.selected.length 1)
+                        (progn
+                           (set_enabled edit_theme_button new_theme_button remove_theme_button)
+                           (= editable_theme obj.value)
+                           (set_prop edit_theme_button
+                              `innerText
+                              (dtext "Edit")))
+                        (> obj.selected.length 1)
+                        (progn
+                           (= editable_theme nil)
+                           (set_disabled edit_theme_button new_theme_button remove_theme_button)
+                           (set_prop edit_theme_button
+                              `innerText
+                              "Multiple Selected"))
+                        else
+                        (progn
+                           (= editable_theme nil)
+                           (set_disabled edit_theme_button new_theme_button remove_theme_button)
+                           (set_prop edit_theme_button
+                              `innerText
+                              (dtext "Edit")))))))
+    (on_refresh (fn (obj)
+                   (progn
+                      (= editable_theme nil)
+                      (set_disabled edit_theme_button new_theme_button remove_theme_button))))
+    (light_path [ `application `color_scheme `light_theme ])
+    (dark_path [ `application `color_scheme `dark_theme ])
+    (selector_light nil)
+    (selector_dark nil)
+    (light_theme (get_default light_path))
+    (close_button (button { `class: "juno-secondary" style: "float: right;" } (dtext "Close")))
+    (dark_theme (get_default dark_path))
+    (current_theme_selector (select { `target: "current_theme"
+                                   `onchange: (fn (e)
+                                                 (set_global_theme e.srcElement.value)) }))
+    (edit_obj {
+                light_theme: (get_default light_path)
+                dark_theme: (get_default dark_path)
+                follow_desktop_preference: auto?
+                })
+    (theme_loader_controller (theme_loader on_select on_refresh))
+    (mview (div { `style: "overflow: hidden; height: calc(100% - 5px); position: relative;" }
+               (div { class: "juno-form" style: "overflow: auto; height: calc(100% - 100px); min-width: 400px;"}
+                    (div { `style: "line-height: 1.5em;margin-bottom: 20px; padding-top: 10px;" }
+                         "Changes to the current global theme will take place immediately.")
+                    (div { `class: "juno-form-data" `style: "margin-bottom: 15px;" }
+                         (label "Current Theme")
+                         current_theme_selector)
+                    (hr)
+                    (div { `style: "line-height: 1.5em;margin-bottom: 20px;  padding-top: 10px;" }
+                         "To match your desktop settings for light and dark modes, enable synchronization with desktop setting. "
+                         "These changes trigger when the desktop setting changes.")
+                    (label { `target: "follow_desktop_preference_parent" `style: "margin-bottom: 15px;"}
+                           
+                           (input (+ { `onclick: value_change `target: "follow_desktop_preference" `type: "checkbox" `style: "margin-right: 10px;"}
+                                     (if auto?
+                                        { `checked: true }
+                                        {})))
+                           (dtext "Synchronize with Desktop Setting"))
+                    
+                    (div { `class: "juno-form-data" `style: "margin-bottom: 15px;"}
+                         (label { } "Light Theme")
+                         (= selector_light
+                            (select (+ { `target: "light_theme" `onchange: value_change  }
+                                       (if (not auto?)
+                                           { `disabled: true }
+                                           {})))))
+                    (div { `class: "juno-form-data" `style: "margin-bottom: 25px;"}
+                         (label "Dark Theme")
+                         (= selector_dark
+                            (select (+ { `target: "dark_theme" `onchange: value_change }
+                                       (if (not auto?)
+                                           { `disabled: true }
+                                           {})))))
+                    (hr)
+                    (div { class: "juno-form-data" `style: "margin-bottom: 25px; height: calc(100% - 400px);"}
+                         (div { `style: "line-height: 1.5em;padding-bottom: 10px;  padding-top: 10px;" }
+                              "Themes can be created, modified and removed.  To add a theme, click the 'New' button. To modify or remove an existing theme, click on the theme below." ; ⋯
+                              (div { `style: "height: 10px" })
+                              new_theme_button
+                              edit_theme_button
+                              remove_theme_button)
+                         (hr)
+                         theme_loader_controller.view))
+               
+               (div {   `style: "position: absolute; bottom: 35px; right: 20px; width: 100%; display: inline-block; "}
+                    close_button)))
+    (sview (split_view_vertical mview (div { } "Nothing Open") { ratio: 0.4 }))
+    (refresh_available_themes
+       (fn ()
+          (progn
+             (= themes (keys *global_themes*))
+             (defvar `current (current_theme))
+             (set_disabled edit_theme_button new_theme_button remove_theme_button)
+             (for (selector [current_theme_selector selector_dark selector_light])
+                  (-> selector `replaceChildren))
+             (for (theme themes)
+                  (-> current_theme_selector `append 
+                     (if (== theme current)
+                         (option { `selected: true } theme)
+                         (option theme))))
+             (for (theme themes)
+                  (-> selector_dark `append 
+                     (if (== theme dark_theme)
+                         (option { `selected: true } theme)
+                         (option theme))))
+             (for (theme themes)
+                  (-> selector_light `append 
+                     (if (== theme light_theme)
+                         (option { `selected: true } theme)
+                         (option theme)))))))
+    (current_theme_editor nil)
+    (render (fn ()
+               sview.view))
+    (start_clone (fn ()
+                    (when editable_theme
+                       (let
+                          ((existing (each (available_themes) lowercase))
+                           (new_theme_name (request_user_input (dtext "Please enter a name for your new theme.")
+                                                               "text"
+                                                               {
+                                                                   validator: (fn (v)
+                                                                                    (not (contains? (lowercase v) existing)))
+                                                               })))
+                          (when (is_string? new_theme_name)
+                             (log "calling clone_theme")
+                             (alert_on_error "Unable to perform copy operation"
+                                (when (clone_theme editable_theme new_theme_name)
+                                   (-> theme_loader_controller `refresh))))))))
+    (remove_theme (fn (theme_to_remove)
+                     (when (request_button_choice (+ (dtext "Permanently remove this theme from the system?")
+                                                     " "
+                                                     theme_to_remove)
+                                                  [["Yes - remove it" 1 ]
+                                                   ["Cancel"]])
+                        (alert_on_error "Unable to remove the current theme"
+                                        (aif (theme_file_for_name theme_to_remove)
+                                             (progn
+                                                (log "remove: " (eval `(rblock (sys/delete_file ,#it))))
+                                                (-> theme_loader_controller `refresh))
+                                             (throw "The theme doesn't exist"))))))
+    (request_save
+          (fn ()
+             (when current_theme_editor
+                (log "theme_selection: requesting save")
+                
+                (-> current_theme_editor `request_save options.id))))
+    (on_hide (fn ()
+                (progn
+                   (log "on_hide called!"))))
+    (on_initialize (fn (self)
+                      (progn
+                         (log "theme_selection: id: " id)
+                         (attach_event_listener edit_theme_button
+                            `click
+                            (fn (e)
+                               (progn
+                                  (cond
+                                     (get_control_by_name "Theme Editor")
+                                     (progn
+                                        (notify "Theme Editor Already Opened"))
+                                     editable_theme
+                                     (progn
+                                        (when current_theme_editor
+                                           (-> current_theme_editor `on_destroy))
+                                        (-> sview `set_show_second_panel true)
+                                        (-> sview `set_content 1 (= current_theme_editor (theme_editor { theme:  editable_theme }))))
+                                     else
+                                     nil))))
+                         (attach_event_listener close_button
+                            `click
+                            close_win)
+                         
+                         (register_event_handler nil "load_theme" 
+                                                 (+ "load-" options.id) 
+                                                 (fn (obj)
+                                                    (progn
+                                                       (log "loaded theme: " obj)
+                                                       (refresh_available_themes))))
+                         (register_event_handler nil "unload_theme"
+                                                 (+ "unload-" options.id)
+                                                 (fn (obj)
+                                                    (progn
+                                                       (log "unloaded theme: "obj)
+                                                       (refresh_available_themes))))
+                         (attach_event_listener new_theme_button
+                                                 `click
+                                                 (fn (e)
+                                                    (progn
+                                                       (handle_event e)
+                                                       (start_clone))))
+                         (attach_event_listener remove_theme_button
+                            `click
+                            (fn (e)
+                               (progn
+                                  (handle_event e)
+                                  (cond
+                                     (and (is_control? current_theme_editor)
+                                          (== (-> current_theme_editor `theme_name) editable_theme))
+                                     (alert_box (dtext "This theme cannot be removed as it is open in the theme editor."))
+                                     (and (== (current_theme) editable_theme))
+                                     (alert_box (dtext "This theme cannot be removed as it is the current theme."))
+                                     else
+                                     (remove_theme editable_theme)))))
+                                                       
+                         (set_title "Themes")
+                         (refresh_available_themes)
+                         (-> sview `initialize)
+                         (-> sview `set_show_second_panel false)
+                         (register_event_handler nil "theme_change" options.id (fn (event_obj)
+                                                                                  (log "theme_selection: received event: " event_obj)))
+                         (log "theme_selection control initialized"))))
+    (on_destroy (fn (self)
+                   (progn
+                      (log "theme_selector_control: destroy")
+                      (remove_event_handler nil "load_theme" (+ "load-" options.id))
+                      (remove_event_handler nil "unload_theme" (+ "unload-" options.id))
+                      (when current_theme_editor
+                           (-> current_theme_editor `on_destroy))
+                      true))))
+   {
+       `control_bar: true
+       `controls: (fn ()
+                     (-> sview `controls))
+       `expose: [[ `on_hide on_hide ]
+                 [ `request_save request_save ]
+                 [`get (fn ()
+                          (if current_theme_editor
+                             (progn
+                                (log "theme_selection: getting theme")
+                                (-> current_theme_editor `get))
+                             nil))]
+                 [ `on_save_complete (fn (arg)
+                                        (progc
+                                           (log "theme_selection: on_save_complete: " arg current_theme_editor.on_save_complete)
+                                           (if current_theme_editor
+                                              (-> current_theme_editor `on_save_complete arg)))) ]
+                 [ `save (fn (arg)
+                            (if current_theme_editor
+                               (-> current_theme_editor `request_save arg))) ]
+                 [ `needs_save? (fn ()
+                                   (if current_theme_editor
+                                      (-> current_theme_editor `needs_save?)
+                                      false)) ]
+                 [`can_hide? (fn () ;; we don't need to persist (hide) - just destroy when user is done
+                                false)]]
+   })
+
+(defun theme_selection ()
+   (if (== (length (prop (controls_by_type) "theme_selector_control")) 0)
+       (progn 
+          (place_control `right (theme_selector_control))
+          true)
+       (let
+          ((ctl (first (prop (controls_by_type) "theme_selector_control"))))
+          (unless (set_focus_to ctl)
+             (show_control ctl))
+          false)))
+
+ (register_feature "theme_manager")
+;(log (div { } "To start this control, call (theme_selection)"))
+
+;; TO START:
+;(theme_selection)
+
+
