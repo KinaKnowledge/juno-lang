@@ -4451,7 +4451,7 @@
                              exec: (eval `(fn ()
                                              (switch_to_new_layout ,#layout_name)))
                              mac: (+ "Command-" layout_number)
-                             win: (+ "Alt-" layout_number)
+                             win: (+ "Ctrl-" layout_number)
                              })
           
           (push $root_controls
@@ -19127,106 +19127,7 @@
     
     intf))
 
-(defun theme_selection ()
-   (let
-      ((themes (keys *global_themes*))
-       (auto?  (or (get_default [ `application `color_scheme `follow_desktop_preference])
-                   false))
-       (changed? false)
-       (value_change (function (e)
-                         (let
-                            ((target (get_attribute e.srcElement "target")))
-                            (= changed? true)
-                            (set_enabled apply_button)
-                            (cond
-                               (and target
-                                    (== target `follow_desktop_preference))
-                               (set_prop edit_obj
-                                  target (prop e.srcElement `checked))
-                               target
-                               (set_prop edit_obj
-                                  target
-                                  e.srcElement.value)))))
-       (intf {})
-       (apply_changes (fn ()
-                         (progn
-                            (set_disabled apply_button)
-                            (set_default light_path edit_obj.light_theme)
-                            (set_default dark_path edit_obj.dark_theme)
-                            (set_default [ `application `color_scheme `follow_desktop_preference ]
-                                         edit_obj.follow_desktop_preference)
-                            (= changed? false)
-                            (notify (dtext "Applied Changes")))))
-       (close_win (fn ()
-                        (let
-                           ((close_it true)
-                            (choice nil))
-                           (when changed?
-                              (= choice (request_button_choice (dtext "Apply changes?")
-                                                        [(dtext "Yes")
-                                                         (dtext "No - Discard and Close")
-                                                         (dtext "Cancel")]))
-                              (cond
-                                 (== (dtext "Yes") choice)
-                                 (apply_changes)
-                                 (== (dtext "Cancel") choice)
-                                 (= close_it false)
-                                 else
-                                 nil))
-                           (when close_it
-                              (when intf
-                                 (-> intf `close))))))
-                        
-       (light_path [ `application `color_scheme `light_theme ])
-       (dark_path [ `application `color_scheme `dark_theme ])
-       (light_theme (get_default light_path))
-       (apply_button (button { `class: "juno-primary" style: "float: right;" `disabled: true } (dtext "Apply")))
-       (close_button (button { `class: "juno-secondary" style: "float: right;" } (dtext "Close")))
-       (dark_theme (get_default dark_path))
-       (edit_obj {
-           light_theme: (get_default light_path)
-           dark_theme: (get_default dark_path)
-           follow_desktop_preference: auto?
-       })
-       (view (div { `class: "juno-form" }
-                  
-                  (div { `style: "margin-bottom: 15px;"}
-                       
-                       (input (+ { `onclick: value_change `target: "follow_desktop_preference" `type: "checkbox" `style: "margin-right: 10px;"}
-                                 (if (get_default [ `application `color_scheme `follow_desktop_preference ])
-                                     { `checked: true }
-                                     {})))
-                       (dtext "Synchronize with Desktop Setting"))
-                                 
-                  (div { `class: "juno-form-data" `style: "margin-bottom: 15px;"}
-                       (label { } "Light Theme")
-                       (select { `target: "light_theme" `onchange: value_change }
-                               (for (theme themes)
-                                    (if (== theme light_theme)
-                                        (option { `selected: true } theme)
-                                        (option theme)))))
-                  (div { `class: "juno-form-data" `style: "margin-bottom: 25px;"}
-                       (label "Dark Theme")
-                       (select { `target: "dark_theme" `onchange: value_change }
-                               (for (theme themes)
-                                    (if (== theme dark_theme)
-                                        (option { `selected: true } theme)
-                                        (option theme)))))
-                  (div {   `style: "display: inline-block; "} 
-                       close_button
-                       apply_button)
-                  )))
-      (= intf 
-         (floating_div view
-                    { title: "Theme Settings" controls: true }
-                    ))
-      (attach_event_listener close_button
-         `click
-         close_win)
-      (attach_event_listener apply_button
-         `click
-         apply_changes)
-      true))
+
 
 
 (defun build_starter_environment (opts)
@@ -21119,9 +21020,26 @@
        ["--" nil]
        [])
     (if *global_themes*
-       ["Set Global Theme" (for_each (theme_name (keys *global_themes*))
-                              [theme_name (fn ()
-                                             (set_global_theme theme_name))])]
+       ["Set Global Theme" (conj (cond 
+                                     (and is_served?
+                                        (is_symbol? `theme_selection))
+                                     [["Open Theme Manager" (fn ()
+                                                               (eval (quote (theme_selection))))]
+                                      ["--"]]
+                                     is_served?
+                                     [["Import Theme Manager"
+                                       (fn ()
+                                          (alert_on_error (dtext "The theme_manager package wasn't able to be loaded.")
+                                                          (progn
+                                                             (import "/pkg/theme_manager.juno")
+                                                             (eval (quote (theme_selection)))
+                                                             )))]
+                                      ["--"]]
+                                     else
+                                     [])
+                                 (for_each (theme_name (keys *global_themes*))
+                                    [theme_name (fn ()
+                                                   (set_global_theme theme_name))]))]
        [])
     [(dtext "Quit") (fn () (window.close))]]);
 
@@ -21342,7 +21260,7 @@
       (if (eq nil (resolve_path [`application `color_scheme ] *env_config*))
           (set_default [ `application `color_scheme ]
                        { follow_desktop_preference: true
-                         dark_theme: `cobalt
+                         dark_theme: `dark_grey
                          light_theme: `juno_light }))
       (javascript "window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',handler)")))
 
