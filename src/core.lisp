@@ -3224,6 +3224,7 @@
        (target_symbols (if (> args.length 1)
                            args.0))
        (target_path nil)
+       (in_browser? (not (contains? "Deno" navigator.userAgent)))
        (acc []))
       (cond
          ;; are we using network resources?
@@ -3237,7 +3238,7 @@
                                (starts_with? "/" filespec)
                                (new URL (+ "" (prop location `origin) filespec))
                                else
-                               (new URL (+ "" (prop location `href) "/" filespec))))
+                               (new URL (+ "" (prop location `origin) "/" filespec))))
             (setq target_path url_comps.pathname))
          (is_symbol? "read_text_file")
          (progn
