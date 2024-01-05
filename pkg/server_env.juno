@@ -1269,6 +1269,9 @@
    (defun open_browser (options)
       (let
          ((os (operating_system))
+          (prefix_args (if (== os "windows")
+                           ["/C" "start" (or options.path_to_browser "chrome")]
+                           []))
           (process_handle nil)
           (env_to_start (cond
                            options.env
@@ -1279,15 +1282,18 @@
                            options.instance
                            else
                            "seedling.html"))
-          (browser (and (not options.list)
-                        (or options.path_to_browser
-                           (cond
+          (browser (cond
+                      options.list
+                      nil
+                      (not (== os "windows"))
+                      (or options.path_to_browser
+                         (cond
                               (== os "darwin")
                               "/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome"
-                              (== os "linux")
-                              "/usr/bin/google-chrome"
-                              (== os "windows")
-                              (throw EvalError "Please provide the path_to_browser option."))))))
+                              else
+                              "/usr/bin/google-chrome"))
+                      (== os "windows")
+                      "cmd.exe")))
          (cond
             options.list
             (browser_environments)
@@ -1295,16 +1301,17 @@
             (progn
                ;; API change into Deno v2 from Deno.run, which is to be deprecated, to Deno.Command
                (= process_handle
-                  (new Deno.Command browser {  args:["--new-window"
-                                                     (+ "--app=http://localhost:" (or options.port 56432) "/env/" env_to_start "?app_mode=true"
-                                                        (cond
-                                                           (is_object? options.args)
-                                                           (join "&"
-                                                              (conj [""]
-                                                                    (for ((key value) (pairs options.args))
-                                                                         (+ (encodeURIComponent key) "=" (encodeURIComponent value)))))
-                                                           else
-                                                           ""))] }))
+                  (new Deno.Command browser {  args:(conj prefix_args
+                                                          ["--new-window"
+                                                           (+ "--app=http://localhost:" (or options.port 56432) "/env/" env_to_start "?app_mode=true"
+                                                              (cond
+                                                                 (is_object? options.args)
+                                                                 (join "&"
+                                                                    (conj [""]
+                                                                          (for ((key value) (pairs options.args))
+                                                                               (+ (encodeURIComponent key) "=" (encodeURIComponent value)))))
+                                                                 else
+                                                                 ""))]) }))
                (-> process_handle `spawn))))
       {
         description: (+ "The `open_browser` function opens attempts to open a standalone browser "
