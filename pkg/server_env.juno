@@ -1274,6 +1274,10 @@
                            ["/C" "start" (or options.path_to_browser "chrome")]
                            []))
           (process_handle nil)
+          (protocol (if (or options.use_TLS
+                            (get_default "http_services.use_TLS"))
+                        "https"
+                        "http"))
           (listen_port (or options.port (get_default [ `http_services `port ])))
           (env_to_start (cond
                            options.env
@@ -1305,7 +1309,7 @@
                (= process_handle
                   (new Deno.Command browser {  args:(conj prefix_args
                                                           ["--new-window"
-                                                           (+ "--app=http://localhost:" listen_port "/env/" env_to_start "?app_mode=true"
+                                                           (+ "--app=" protocol  "://localhost:" listen_port "/env/" env_to_start "?app_mode=true"
                                                               (cond
                                                                  (is_object? options.args)
                                                                  (join "&"
@@ -1389,19 +1393,30 @@
 
 (defun start (options)
   (let
-     ((options (or options {
-         hostname: (or (get_default [`http_services `address]) "localhost")
-         }))
-      (listen_port (or options.port (get_default [ `http_services `port ]))))
-     (if (and (or options.certFile options.cert)  
-              (or options.key options.keyFile))
-        (if (and (not (blank? temp_cert))
-                 (not (blank? temp_key)))
+     ((options (clone (or options {
+                                    hostname: (or (get_default [`http_services `address]) "localhost")
+                                    })))
+      (listen_port (or options.port (get_default [ `http_services `port ])))
+      (use_TLS (or options.use_TLS
+                   (get_default [ `http_services `use_TLS] false)))
+      (cert_file (or options.certFile (get_default [ `http_services `cert_file ])))
+      (key_file (or options.keyFile (get_default [ `http_services `key_file ])))
+      (cert (unless cert_file 
+               (get_default [ `http_services `cert ] temp_cert)))
+      (key (unless key_file
+              (get_default [ `http_services `key ] temp_key))))
+     
+     (set_prop options
+        `use_TLS use_TLS
+        `certFile cert_file
+        `keyFile key_file
+        `cert cert
+        `key key)
+          
+     (when (and use_TLS
+                (or (== cert temp_cert)
+                    (== key temp_key)))
             (progn
-               (set_prop options
-                  `use_TLS true
-                  `cert temp_cert
-                  `key temp_key)
                (log "")
                (log " -- NOTICE ------------ ")
                (log "Starting the server with a temporary certificate for initial usage. ")
@@ -1409,7 +1424,7 @@
                (log "You should replace the temporary certificates with permanent")
                (log "certificates and use the `certFile` and `keyFile` options with ")
                (log "(http/start) for long term https use.")
-               (log ""))))
+               (log "")))
                
    (when (== listen_port 0)
       (aif (find_open_port 32768)
