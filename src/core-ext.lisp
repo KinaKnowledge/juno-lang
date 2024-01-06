@@ -1140,18 +1140,20 @@
  
     
     (defun has_the_keys? (key_list obj)
-        (let 
-            ((`is_fit   true))
-            (do 
-                (for_each (`item key_list)
-                 (setq is_fit (and (or (resolve_path item obj) false) is_fit)))
-                is_fit))
-            {
-             "usage":["key_list:list" "object_to_check:object"]
-             "description":"Given a provided key_list, validate that each listed key or dotted-path-notation value exist in the object."
-             "example":[
-                        [`(has_the_keys? ["type" "values.sub_transaction_id" ] { `type: "Transaction" `group: "Receivables" `values:{ `sub_transaction_id: 1242424 } } ) true ]]
-             })
+       (let
+          ((`is_fit true))
+          (for_each (`item key_list)
+             (if is_fit
+                (setq is_fit (if (== (resolve_path item obj) undefined)
+                                 false
+                                 is_fit))))
+          is_fit)
+       {
+         "usage":["key_list:list" "object_to_check:object"]
+         "description":"Given a provided key_list, validate that all listed keys (either direct or dotted-path-notation) value exist in the object."
+         "example":[
+                    [`(has_the_keys? ["type" "values.sub_transaction_id" ] { `type: "Transaction" `group: "Receivables" `values:{ `sub_transaction_id: 1242424 } } ) true ]]
+         })
     
     
 
