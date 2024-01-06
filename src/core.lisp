@@ -4368,6 +4368,22 @@
      `usage: ["line_number:integer" "get_line:function"]
    })
 
+(defun has_the_keys? (key_list obj)
+   (let
+      ((`is_fit true))
+      (for_each (`item key_list)
+         (if is_fit
+            (setq is_fit (if (== (resolve_path item obj) undefined)
+                             false
+                             is_fit))))
+      is_fit)
+   {
+     "usage":["key_list:list" "object_to_check:object"]
+     "description":"Given a provided key_list, validate that all listed keys (either direct or dotted-path-notation) value exist in the object."
+     "example":[
+                [`(has_the_keys? ["type" "values.sub_transaction_id" ] { `type: "Transaction" `group: "Receivables" `values:{ `sub_transaction_id: 1242424 } } ) true ]]
+     })
+
 (defmacro set_default (path value)
   (let
      ((real_path (cond 
@@ -4416,9 +4432,12 @@
                          else
                          (throw TypeError "get_default: key must be an array or string")))
        (entry_exists? (has_the_keys? [ (last path_to_value) ] 
-                                     (resolve_path (but_last path_to_value) *env_config*))))
+                                     (if (> path_to_value.length 1)
+                                         (resolve_path (but_last path_to_value) *env_config*)
+                                         *env_config*))))
    (if entry_exists?
-      (resolve_multi_path path_to_value *env_config*)
+      (progn
+         (resolve_multi_path path_to_value *env_config*))
       (or alt_val nil)))
       
    {
