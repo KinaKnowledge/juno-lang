@@ -1036,7 +1036,7 @@
                                               (set_prop *active_websockets*
                                                     ws_wrapper.ws_id
                                                     ws_wrapper)
-                                              (console.log "on_open: event: " event)
+                                              ;(console.log "on_open: event: " event)
                                               (vlog "ws_repl_handler: new open request: default namespace: " (or options.namespace "user"))
                                               
                                               (vlog "ws_repl_handler: sending namespace information packet")
@@ -1172,8 +1172,9 @@
       (set_prop *env_config* `http_services {
                                               `listen_on_start: false
                                               }))
-   (set_path [ `http_services `port ] *env_config* 56432)
-   (set_path [ `http_services `base_directory ] *env_config* "./"))
+   (set_default `http_services.port 56432)  ;; default port to listen on
+   (set_default `http_services.address `localhost) ;; default address
+   (set_default `http_services.base_directory "./"))
    
 
 (defun set_file_system_root (path_to_base_dir)
@@ -1273,6 +1274,7 @@
                            ["/C" "start" (or options.path_to_browser "chrome")]
                            []))
           (process_handle nil)
+          (listen_port (or options.port (get_default [ `http_services `port ])))
           (env_to_start (cond
                            options.env
                            (if (ends_with? ".html" options.env)
@@ -1299,11 +1301,11 @@
             (browser_environments)
             else
             (progn
-               ;; API change into Deno v2 from Deno.run, which is to be deprecated, to Deno.Command
+               (log "browser starting targeting port: " listen_port)
                (= process_handle
                   (new Deno.Command browser {  args:(conj prefix_args
                                                           ["--new-window"
-                                                           (+ "--app=http://localhost:" (or options.port 56432) "/env/" env_to_start "?app_mode=true"
+                                                           (+ "--app=http://localhost:" listen_port "/env/" env_to_start "?app_mode=true"
                                                               (cond
                                                                  (is_object? options.args)
                                                                  (join "&"
@@ -1346,11 +1348,51 @@
                                                              (-> LZString `decompressFromBase64 *user_interface*))
                                                           "text/html"))))
 
+(defun find_open_port (min_port_num max_attempts)
+   (let
+      ((port 0)
+       (min_port_num (or min_port_num 32768))
+       (listener nil)
+       (max_attempts (or max_attempts 1000))
+       (port_range (- 65535 min_port_num))
+       (attempt 0))
+      (while (and (== listener nil)
+                  (< attempt max_attempts))
+         (progn
+            (inc attempt)
+            (= port (+ min_port_num (random_int port_range)))
+            (when (> __VERBOSITY__ 0)
+               (log "find_open_port: checking port: " port))
+            (try
+               (= listener (-> Deno `listen { port: port `hostname: "localhost" } ))
+               (catch Error (e)
+                  (progn
+                     (= listener nil))))
+            (when (and (> __VERBOSITY__ 0)
+                       listener)
+                  (log "find_open_port: found open port: " port))))
+      (when listener
+         (-> listener `close))
+      (if listener
+         port
+         nil))
+   {
+     description: (+ "Given a lower bound for the port number as `min_port_num`, searches "
+                     "randomly for an open port between the lower bound value and the upper "
+                     "limit, `65535`.   If provided with a `max_attempts` argument, the system will "
+                     "attempt up to the value specified by `max_attempts`, or if not specified, 1000 "
+                     "times, before failing. If the system fails to find a port, the returned port "
+                     "value is `nil`. ")
+     usage: ["min_port_num:?number" "max_attempts:?number" ]
+     tags: ["port" "listen" "ip" "net"]
+   })
+
 (defun start (options)
   (let
      ((options (or options {
-         hostname: `localhost
-     })))
+         hostname: (or (get_default [`http_services `address]) "localhost")
+         }))
+      (listen_port (or options.port (get_default [ `http_services `port ]))))
      (if (and (or options.certFile options.cert)  
               (or options.key options.keyFile))
         (if (and (not (blank? temp_cert))
@@ -1369,8 +1411,16 @@
                (log "(http/start) for long term https use.")
                (log ""))))
                
-       
-   (env_bank (or options.port (get_default [ `http_services `port ]))
+   (when (== listen_port 0)
+      (aif (find_open_port 32768)
+           (progn
+              (set_default [ `http_services `port ] it)
+              (= listen_port it))
+           (progn
+              (= listen_port it)
+              (throw Error "Unable to find an open listening port."))))
+           
+   (env_bank listen_port
              (or options.base_directory (get_default [ `http_services `base_directory ] *env_config*) "./")
              options)))
 
