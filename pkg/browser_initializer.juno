@@ -6306,25 +6306,26 @@
      tags: ["path" "server" "root" "base_directory"]
    })
 
-(defmacro set_file_system_root (path no_warn)
-   `(when is_served?
-       (let
-          ((ctls (reduce (ctl (all_editor_controls))
-                          (if (and (prop ctl `save)
-                                   (prop ctl.options `filename))
-                              ctl))))
+(defun set_file_system_root (path no_warn)
+   (when is_served?
+      (let
+         ((ctls (reduce (ctl (all_editor_controls))
+                   (if (and (prop ctl `save)
+                            (prop ctl.options `filename))
+                       ctl))))
           (declare (function dispatch_event)
                    (global dispatch_event))
           (if (> (length ctls)
                  0)
-              (alert_box (dtext "Set System Root")
+              (unless no_warn
+                 (alert_box (dtext "Set System Root")
                          (div { } (dtext "The following controls must be closed prior to proceeding with this operation.")
                               (ol
                                  (for_each (ctl ctls)
-                                    (li ctl.options.name))))))
-          (rblock
-             (http/set_file_system_root ,#path))
-          (dispatch_event { `command: "change_file_system_root" source: nil args:(list ,#path) } )))
+                                    (li ctl.options.name)))))))
+          (eval `(rblock
+                   (http/set_file_system_root ,#path)))
+          (dispatch_event { `command: "change_file_system_root" source: nil args:(list path) } )))
    {
      description: (+ "If the browser environment is hosted (as determined "
                      "by `is_served?` being `true` ), then the provided `path` argument will be set "
@@ -21027,13 +21028,12 @@
                                                                (eval (quote (theme_selection))))]
                                       ["--"]]
                                      is_served?
-                                     [["Import Theme Manager"
+                                     [["Import and Open Theme Manager"
                                        (fn ()
-                                          (alert_on_error (dtext "The theme_manager package wasn't able to be loaded.")
-                                                          (progn
-                                                             (import "/pkg/theme_manager.juno")
-                                                             (eval (quote (theme_selection)))
-                                                             )))]
+                                          (activity_box { `style:  "width: 200px; height: 50px;" }
+                                                        (set_content (dtext "Loading the theme_manager"))
+                                                        (import "/pkg/theme_manager.juno")
+                                                        (eval (quote (theme_selection)))))]
                                       ["--"]]
                                      else
                                      [])
