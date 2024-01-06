@@ -3,12 +3,14 @@
 
 (import "/pkg/item_selectors.juno")
 
+
+
 (defun base_directory ()
    (if is_served?
       (let
          ((base_dir (or (prop (http/get "/base_directory")
                               `data)
-                        (throw Error "get_theme_files: cannot determine base_directory")))
+                        (throw Error "base_directory: cannot determine base_directory")))
           (base base_dir.base)
           (wd base_dir.cwd))
          (cond
@@ -23,7 +25,7 @@
                wd)))
       nil)
    {
-     description: (+ "<br><br>Returns the directory of the server installation, regardless of the "
+     description: (+ "Returns the directory of the server installation, regardless of the "
                      "current root directory.  This function takes no arguments and only is "
                      "applicable when the application is currently hosted.  Otherwise nil returned. ")
      usage: []
@@ -488,7 +490,7 @@
     (in_test? false)
     (theme_to_edit options.theme)
     (theme_name (span { `style: "margin-left: 20px; font-weight: bold;margin-right: 20px; display: inline-block;" } theme_to_edit))
-    (theme_file (normalize_file_path (+ "html/themes/" theme_to_edit ".css")))
+    (theme_file (+ "html/themes/" theme_to_edit ".css"))
     (theme_file_exists nil)
     (theme_data [])
     (is_dirty? false)
@@ -665,9 +667,10 @@
                                      (reduce (comp (split_by "/" theme_file))
                                         (unless (blank? comp)
                                            comp))))
+                            (= theme_file options.filename)
                                                     
                             (log "options.path: " options.path))
-                         (= theme_data (add_missing_theme_data (parse_theme_data (read_text_file theme_file))))
+                         (= theme_data (add_missing_theme_data (parse_theme_data (read_text_file options.filename))))
                          
                          (for ((css_var value in_theme?) theme_data)
                               (-> variable_table_body
