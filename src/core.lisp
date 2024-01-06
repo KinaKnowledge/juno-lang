@@ -4407,10 +4407,20 @@
   })
 
 (defun get_default (key alt_val)
-   (if (is_array? key)
-       (or (resolve_multi_path key *env_config*)
-            alt_val)
-       (throw TypeError "get_default: key must be an array"))
+   (let
+      ((path_to_value (cond
+                         (is_string? key)
+                         (split_by "." key)
+                         (is_array? key)
+                         key
+                         else
+                         (throw TypeError "get_default: key must be an array or string")))
+       (entry_exists? (has_the_keys? [ (last path_to_value) ] 
+                                     (resolve_path (but_last path_to_value) *env_config*))))
+   (if entry_exists?
+      (resolve_multi_path path_to_value *env_config*)
+      (or alt_val nil)))
+      
    {
      description: (+ "Given a path (array form) to a key in `*env_config*` , returns the "
                      "value at the path.  If the value cannot be found, will return `undefined`.  If "
