@@ -39,7 +39,7 @@ var JunoHighlightRules = function() {
 			  'fetch_text import system_date_format system_date_formatter tzoffset date_components '+
 			  'formatted_date *LANGUAGE* dtext nth use_symbols use_unique_symbols compiler '+
 			  'read_text_file readline_mod streams repl set_repl repl_config $ $$ $$$ '+
-			  'prop set_prop Environment push pop list ');
+			  'prop set_prop Environment push pop list nonsense');
 
     var keywords = ('throw try defvar typeof instanceof == < > <= >= eq return yield jslambda cond apply ' +
 		    'defglobal do fn if let new function progn javascript catch evaluate eval call -> import '+
