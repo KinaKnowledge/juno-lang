@@ -22,7 +22,8 @@
                                   ice: (read_text_file "html/themes/ice.css")
                                   cobalt: (read_text_file "html/themes/cobalt.css")
                                   dark_grey: (read_text_file "html/themes/dark_grey.css")
-                                  idle_fingers: (read_text_file "html/themes/idle_fingers.css")})
+                                  idle_fingers: (read_text_file "html/themes/idle_fingers.css")
+                                  dark_was_the_night: (read_text_file "html/themes/dark_was_the_night.css") })
 (defglobal core/browser_initializer ((quote quote) (LZString.compressToBase64 (read_text_file "pkg/browser_initializer.juno"))))
 (defglobal core/browser_repl_package ((quote quote) (read_text_file "pkg/browser_workspace.juno")))
 
