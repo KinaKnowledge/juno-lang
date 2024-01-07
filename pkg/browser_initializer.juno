@@ -122,8 +122,19 @@
        `usage: []
        `tags: ["UI" "DOM" "theme" "dark" "light"  "color" "system"]
    })
-      
-(defun get_app_args ()
+
+(defun_sync core/hostname ()
+   location.hostname
+   {
+     description: (+ "If the client is being served via service, as opposed to running "
+                     "locally as a file in the browser, this will return the name of the host that is "
+                     "named in the `hostname` field of the `location` object of the browser "
+                     "environment.  If not served this function will return `nil`. ")
+     usage: []
+     tags: ["browser" "location" "hostname" "server" "remte" "url" "uri"]
+   })
+
+(defun_sync get_app_args ()
    (let
       ((params (prop (new URL window.location) `searchParams))
        (args {}))
@@ -142,6 +153,31 @@
                      "result is an empty object or keys with empty values.")
      usage: []
      tags: ["arguments" "args" "parameters" "URI" "search" "params" "browser" ]
+   })
+
+(defun_sync host_details ()
+   (+ (or (get_app_args) 
+          {})
+      {
+        hostname: location.hostname
+        port: (if location.port
+                 (parseInt location.port)
+                 nil)
+        origin: location.origin
+        protocol: location.protocol
+        pathname: location.pathname
+        app_mode: (if (== "true" (prop (get_app_args) "app_mode"))
+                      true
+                      false)
+        })
+   {
+     description: (+ "Returns an object containing service location and application arguments "
+                     "of the current browser environment.  The returned object will contain the "
+                     "hostname, port, origin, protocol, pathname, if the environment is running in "
+                     "app_mode, and other arguments provided to the running environment via the URI "
+                     "which started it. ")
+     usage: []
+     tags: ["browser" "location" "hostname" "server" "remte" "url" "uri" "arguments" "args"]
    })
 
 (set_prop *key_bindings*.repl          
@@ -16340,8 +16376,8 @@
                 (div { `style: "margin-bottom: 5px;" } "MIT License")
                 (div { `style: "margin-bottom: 10px;" } "For license details see Help->Licenses")
                 (div { `style: "padding-top: 5px; padding-bottom: 5px;" }
-                     
-                     (online_learning_resource_elems))))))
+                     (online_learning_resource_elems))
+                ))))
                 
                 
 
