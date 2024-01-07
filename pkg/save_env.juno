@@ -37,7 +37,8 @@
             (if options.on_environment_ready
                (defglobal core/*on_environment_ready* options.on_environment_ready)
                (defun core/*on_environment_ready* () (progn (repl nil nil { `use_console: true }))))
-            
+            (when (is_string? options.save_as)
+               (set_default "export.save_path" options.save_as))
             (set_prop rval
                       `js (core/save_env {
                                            save_as: options.save_as

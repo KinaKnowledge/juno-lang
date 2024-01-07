@@ -1,7 +1,7 @@
 // Source: environment.lisp  
-// Build Time: 2024-01-06 08:27:19
-// Version: 2024.01.06.08.27
-export const DLISP_ENV_VERSION='2024.01.06.08.27';
+// Build Time: 2024-01-07 09:34:28
+// Version: 2024.01.07.09.34
+export const DLISP_ENV_VERSION='2024.01.07.09.34';
 
 
 
@@ -1963,7 +1963,7 @@ export async function init_dlisp(Environment)  {
                                     }return __array__218;
                                      
                                 })();
-                                await (await get_global("console.log"))("load_pends: ",from_namespace,"->",acc);
+                                await console.log("load_pends: ",from_namespace,"->",acc);
                                 (await Environment.eval(await async function(){
                                     return acc
                                 }(),null));
@@ -2154,7 +2154,7 @@ export async function init_dlisp(Environment)  {
                                             {
                                                 let message=("Error: set_global: "+ _star_namespace_star_+ "symbol name: "+ refname+ ": "+ e.message);
                                                 ;
-                                                 ( get_global("console.error"))(message,[]);
+                                                 console.error(message,[]);
                                                   (function(){
                                                     e["message"]=message;
                                                     return e;
@@ -2294,7 +2294,7 @@ export async function init_dlisp(Environment)  {
                                                                 }
                                                             } else {
                                                                 {
-                                                                     ( get_global("console.warn"))("get_global: condition fall through: ",comps);
+                                                                     console.warn("get_global: condition fall through: ",comps);
                                                                     return NOT_FOUND
                                                                 }
                                                             }
@@ -2561,7 +2561,7 @@ export async function init_dlisp(Environment)  {
                                                     }
                                                 })()
                                             } else {
-                                                await (await get_global("console.error"))("Compilation Error: ",error_data)
+                                                await console.error("Compilation Error: ",error_data)
                                             };
                                             compiled=await (async function(){
                                                  return [{
@@ -2842,7 +2842,7 @@ export async function init_dlisp(Environment)  {
                                                             return [__array_op_rval__277,e]
                                                         }
                                                     })()==="SyntaxError")&& (opts.log_errors|| (Environment.context.scope.__VERBOSITY__>4))))){
-                                                        await (await get_global("console.log"))(compiled['1'])
+                                                        await console.log(compiled['1'])
                                                     };
                                                     if (check_true (opts.error_report)){
                                                         {
@@ -2996,7 +2996,7 @@ export async function init_dlisp(Environment)  {
                             }
                         } else {
                             {
-                                await (await get_global("console.error"))("Invalid compiler function: invalid operators returned. Not installing.");
+                                await console.error("Invalid compiler function: invalid operators returned. Not installing.");
                                 throw new EvalError("Invalid compiler function");
                                 
                             }
@@ -3121,7 +3121,7 @@ export async function init_dlisp(Environment)  {
                                                 }
                                             } else {
                                                 {
-                                                    await (await get_global("console.error"))("ENV: couldn't create the child environment. Received: ",child_env);
+                                                    await console.error("ENV: couldn't create the child environment. Received: ",child_env);
                                                     throw new EvalError(("unable to create namespace "+ name));
                                                     
                                                 }
@@ -3250,7 +3250,7 @@ export async function init_dlisp(Environment)  {
                                 if (__exception__304 instanceof Error) {
                                     let e=__exception__304;
                                     {
-                                        await (await get_global("console.error"))("ERROR: ",e)
+                                        await console.error("ERROR: ",e)
                                     }
                                 }
                             };
@@ -4585,7 +4585,7 @@ export async function init_dlisp(Environment)  {
                     word_as_number=await Number(word);
                     if (check_true (debugmode)){
                         {
-                            await (await Environment.get_global("console.log"))("process_word: ",word,word_as_number,backtick_mode)
+                            await console.log("process_word: ",word,word_as_number,backtick_mode)
                         }
                     };
                     return await async function(){
@@ -4709,7 +4709,7 @@ export async function init_dlisp(Environment)  {
                             };
                             if (check_true (debugmode)){
                                 {
-                                    await (await Environment.get_global("console.log"))(_depth,"  ",c," ",next_c," ",mode,"",escape_mode," ",await (await Environment.get_global("as_lisp"))(acc),await (await Environment.get_global("as_lisp"))(word_acc),(acc && acc.length),(cpath).join("."))
+                                    await console.log(_depth,"  ",c," ",next_c," ",mode,"",escape_mode," ",await (await Environment.get_global("as_lisp"))(acc),await (await Environment.get_global("as_lisp"))(word_acc),(acc && acc.length),(cpath).join("."))
                                 }
                             };
                             await async function(){
@@ -5014,14 +5014,14 @@ export async function init_dlisp(Environment)  {
                 };
                 if (check_true (debugmode)){
                     {
-                        await (await Environment.get_global("console.log"))("read->",in_buffer);
-                        await (await Environment.get_global("console.log"))("D  CHAR NC "," M","ESC","ACC","WORDACC","ACCL")
+                        await console.log("read->",in_buffer);
+                        await console.log("D  CHAR NC "," M","ESC","ACC","WORDACC","ACCL")
                     }
                 };
                 output_structure=await read_block(0,ctx);
                 if (check_true (debugmode)){
                     {
-                        await (await Environment.get_global("console.log"))("read<-",await (async function(){
+                        await console.log("read<-",await (async function(){
                              return await clone(output_structure) 
                         })())
                     }
@@ -5469,7 +5469,7 @@ export async function init_dlisp(Environment)  {
                                                         let e=__exception__410;
                                                         {
                                                             {
-                                                                return await (await get_global("console.error"))("core environment cannot initialize: ",symname,"error:",e)
+                                                                return await console.error("core environment cannot initialize: ",symname,"error:",e)
                                                             }
                                                         }
                                                     }
@@ -5605,7 +5605,7 @@ export async function init_dlisp(Environment)  {
                                                                                         if (__exception__430 instanceof Error) {
                                                                                             let e=__exception__430;
                                                                                             {
-                                                                                                return await (await get_global("console.error"))("env: unable to evaluate: symbol: ",symset['0'],e)
+                                                                                                return await console.error("env: unable to evaluate: symbol: ",symset['0'],e)
                                                                                             }
                                                                                         }
                                                                                     }
@@ -5653,7 +5653,7 @@ export async function init_dlisp(Environment)  {
                                                         if (__exception__421 instanceof Error) {
                                                             let e=__exception__421;
                                                             {
-                                                                return await (await get_global("console.error"))("env: unable to load namespace: ",await (async function(){
+                                                                return await console.error("env: unable to load namespace: ",await (async function(){
                                                                      return await (async function(){
                                                                         let __array_op_rval__434=clone;
                                                                          if (__array_op_rval__434 instanceof Function){

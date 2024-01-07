@@ -1,7 +1,7 @@
 // Source: compiler.lisp  
-// Build Time: 2024-01-06 08:27:19
-// Version: 2024.01.06.08.27
-export const DLISP_ENV_VERSION='2024.01.06.08.27';
+// Build Time: 2024-01-07 09:34:28
+// Version: 2024.01.07.09.34
+export const DLISP_ENV_VERSION='2024.01.07.09.34';
 
 
 
@@ -324,7 +324,7 @@ return await (async function() {
                             }
                         })());
                         __target_arg__9.unshift(__pre_arg__10);
-                        return ((await Environment.get_global("console.log"))).apply(this,__target_arg__9)
+                        return (console.log).apply(this,__target_arg__9)
                     })()
                 }
             }
@@ -676,7 +676,7 @@ return await (async function() {
             quiet_mode=await (async function(){
                 if (check_true ((opts && opts["quiet_mode"]))){
                     {
-                        log=(await Environment.get_global("console.log"));
+                        log=console.log;
                         return true
                     }
                 } else {
@@ -803,8 +803,8 @@ return await (async function() {
                 })();
                 if (check_true (await verbosity(ctx))){
                     {
-                        await (await Environment.get_global("console.log"))("build_anon_function: -> body: ",body);
-                        await (await Environment.get_global("console.log"))("build_anon_function: -> args: ",args)
+                        await console.log("build_anon_function: -> body: ",body);
+                        await console.log("build_anon_function: -> args: ",args)
                     }
                 };
                 if (check_true ((args instanceof Array))){
@@ -959,7 +959,7 @@ return await (async function() {
                 declared_type_value=null;
                 if (check_true ((null==ctx))){
                     {
-                        await (await Environment.get_global("console.error"))("get_ctx_val: undefined/nil ctx passed.")
+                        await console.error("get_ctx_val: undefined/nil ctx passed.")
                     }
                 };
                 return await async function(){
@@ -1369,7 +1369,7 @@ return await (async function() {
                         {
                             if (check_true (await verbosity(ctx))){
                                 {
-                                    await (await Environment.get_global("console.warn"))("source_from_tokens: unable to determine source path from: ",await (async function(){
+                                    await console.warn("source_from_tokens: unable to determine source path from: ",await (async function(){
                                          return await (async function(){
                                             let __array_op_rval__45=clone;
                                              if (__array_op_rval__45 instanceof Function){
@@ -1595,7 +1595,7 @@ return await (async function() {
                             let e=__exception__50;
                             {
                                 {
-                                    await (await Environment.get_global("console.warn"))("compiler: cannot tokenize: ",obj,e);
+                                    await console.warn("compiler: cannot tokenize: ",obj,e);
                                     ser="{}"
                                 }
                             }
@@ -1694,7 +1694,7 @@ return await (async function() {
                 ;
                 if (check_true ((null==ctx))){
                     {
-                        await (await Environment.get_global("console.error"))("tokenize: nil ctx passed: ",await (async function(){
+                        await console.error("tokenize: nil ctx passed: ",await (async function(){
                              return await (async function(){
                                 let __array_op_rval__55=clone;
                                  if (__array_op_rval__55 instanceof Function){
@@ -1783,7 +1783,7 @@ return await (async function() {
                                                         return e;
                                                         
                                                     }();
-                                                    await (await Environment.get_global("console.error"))(is_error);
+                                                    await console.error(is_error);
                                                     debugger;
                                                     ;
                                                     throw e;
@@ -2236,7 +2236,7 @@ return await (async function() {
             compile_elem=async function(token,ctx) {
                 let rval;
                 rval=null;
-                await (await Environment.get_global("console.warn"))("compile_elem - deprecated: check call: ",token);
+                await console.warn("compile_elem - deprecated: check call: ",token);
                 if (check_true ((await is_complex_ques_((token && token["val"]))|| (((token && token["val"]) instanceof Array)&& ((token && token["val"] && token["val"]["0"] && token["val"]["0"]["name"])==="if"))))){
                     rval=await compile_wrapper_fn(token,ctx)
                 } else {
@@ -2399,7 +2399,7 @@ return await (async function() {
                 ;
                 if (check_true (await verbosity(ctx))){
                     {
-                        await (await Environment.get_global("console.log"))("compile_typeof -> ",tokens)
+                        await console.log("compile_typeof -> ",tokens)
                     }
                 };
                 if (check_true (((tokens && tokens.length)<2))){
@@ -2732,7 +2732,7 @@ return await (async function() {
                                         await set_ctx(ctx,"__TOP_LEVEL__",true);
                                         if (check_true (await verbosity(ctx))){
                                             {
-                                                await (await Environment.get_global("console.log"))("");
+                                                await console.log("");
                                                 await top_level_log((""+ idx+ "/"+ num_non_return_statements),"->",await (await Environment.get_global("as_lisp"))(lisp_tree[idx]))
                                             }
                                         };
@@ -4186,9 +4186,9 @@ return await (async function() {
                 await async function(){
                     if (check_true ((await not((fn_opts && fn_opts["arrow"]))&& await not((fn_opts && fn_opts["generator"]))&& ((completion_scope && completion_scope["completion_records"] && completion_scope["completion_records"]["length"])===0)))) {
                         {
-                            await (await Environment.get_global("console.error"))("internal compile error: no completion records for callable");
-                            await (await Environment.get_global("console.log"))("error provoking source: ",await source_from_tokens(tokens,expanded_tree,true));
-                            await (await Environment.get_global("console.log"))("output: ",acc);
+                            await console.error("internal compile error: no completion records for callable");
+                            await console.log("error provoking source: ",await source_from_tokens(tokens,expanded_tree,true));
+                            await console.log("output: ",acc);
                             let internal_syntax_error=new SyntaxError("internal compile error: no completion records for callable");
                             ;
                             throw internal_syntax_error;
@@ -6023,7 +6023,7 @@ return await (async function() {
                         }
                     } () 
                 })())|| "");
-                await (await Environment.get_global("console.warn"))("DEPRECATION: check_needs_wrap called: ",stmts);
+                await console.warn("DEPRECATION: check_needs_wrap called: ",stmts);
                 return await async function(){
                     if (check_true (await contains_ques_("block",fst))) {
                         return true
@@ -6623,8 +6623,8 @@ return await (async function() {
                                         let e=__exception__414;
                                         {
                                             {
-                                                await (await Environment.get_global("console.error"))("compiler: wrap_and_run: caught error on constructing new async_function");
-                                                await (await Environment.get_global("console.error"))("compiler: wrap_and_run: ",assembled);
+                                                await console.error("compiler: wrap_and_run: caught error on constructing new async_function");
+                                                await console.error("compiler: wrap_and_run: ",assembled);
                                                 throw e;
                                                 
                                             }
@@ -6657,7 +6657,7 @@ return await (async function() {
                             let e=__exception__411;
                             {
                                 {
-                                    await (await Environment.get_global("console.log"))("compiler: wrap_and_run: caught error on evaluation: ",(e && e.message));
+                                    await console.log("compiler: wrap_and_run: caught error on evaluation: ",(e && e.message));
                                     if (check_true (await (await Environment.get_global("resolve_path"))(["context","scope","*on_compiler_eval_error*"],Environment) instanceof Function)){
                                         result=await (async function(){
                                              return [await (await Environment.get_global("resolve_path"))(["context","scope","*on_compiler_eval_error*"],Environment),e,assembled] 
@@ -7124,7 +7124,7 @@ return await (async function() {
                 ;
                 if (check_true (await verbosity(ctx))){
                     {
-                        await (await Environment.get_global("console.log"))("compile_while: ",await source_from_tokens(tokens,expanded_tree))
+                        await console.log("compile_while: ",await source_from_tokens(tokens,expanded_tree))
                     }
                 };
                 await set_new_completion_scope(ctx);
@@ -9698,5 +9698,5 @@ return await (async function() {
     }
 }
 },{
-    requires:["console","take","is_array?","is_string?","is_function?","get_object_path","is_object?","blank?","delete_prop","scan_str","keys","is_element?","chop","as_lisp","resolve_path","push","split_by","safe_access","expand_dot_accessor","pairs","pop","assert","rest","setf_ctx","prepend","ends_with?","range","join","path_to_js_syntax","get_outside_global","to_array","bind_function","each","read_lisp","warn","make_set","truncate","sleep"],externals:["clone","LispSyntaxError","Object","Set","Function","AsyncFunction","Array","Boolean","SyntaxError","TypeError","RegExp","Error","JSON","ReferenceError","EvalError","subtype","String","parseInt","isNaN","globalThis","Math","check_true"],source_name:"compiler.lisp"
+    requires:["take","is_array?","is_string?","is_function?","get_object_path","is_object?","blank?","delete_prop","scan_str","keys","is_element?","chop","as_lisp","resolve_path","push","split_by","safe_access","expand_dot_accessor","pairs","pop","assert","rest","setf_ctx","prepend","ends_with?","range","join","path_to_js_syntax","get_outside_global","to_array","bind_function","each","read_lisp","warn","make_set","truncate","sleep"],externals:["clone","LispSyntaxError","console","Object","Set","Function","AsyncFunction","Array","Boolean","SyntaxError","TypeError","RegExp","Error","JSON","ReferenceError","EvalError","subtype","String","parseInt","isNaN","globalThis","Math","check_true"],source_name:"compiler.lisp"
 })} 
