@@ -20,8 +20,9 @@
 ;; they are of the form [regex_match route_handler_function]
 
 
-(defvalue *http_routes*
-   [])
+(defglobal *http_routes* [])
+;(defvalue *http_routes*
+ ;  [])
 
 
 ;; for debugging purposes..will be removed
@@ -559,32 +560,37 @@
      })
                  
 
-(defmacro file_spooler (base_directory)
-   `(fn (request_event request_parameters) 
-       (let
-          ((filepath request_parameters.path)
-           (file nil)
-           (absolute_path (+ ,#base_directory "/" filepath))
-           (descriptor nil)
-           (entries [])
-           (readable_stream nil))         
-          (try
-            (progn
-               (= descriptor (Deno.stat absolute_path))
-               (cond 
-                  descriptor.isFile
-                  (progn
-                     (= file (-> Deno `open absolute_path { read: true }))
-                     (= readable_stream file.readable)
-                     (new Response readable_stream))
-                  descriptor.isDirectory
-                  (progn
-                     (for_with (entry (Deno.readDir absolute_path))
-                        (push entries entry))
-                     (new Response (json_response { `rval: "OK" `entries: entries })))))
-             (catch Error (e)
-                (progn
-                   (new Response "404 Not Found" { status: 404 }))))))
+
+(defun file_spooler (file_base_dir)
+   (fn (request_event request_parameters) 
+             (let
+                ((filepath request_parameters.path)
+                 (file nil)
+                 (_bd file_base_dir)
+                 (absolute_path nil)
+                 (descriptor nil)
+                 (entries [])
+                 (readable_stream nil))
+                (console.log "file_spooler: file_base_dir: " _bd  "file_path: " filepath)
+                (= absolute_path (+ _bd "/" filepath))
+                (try
+                   (progn
+                      (= descriptor (Deno.stat absolute_path))
+                      (cond
+                         descriptor.isFile
+                         (progn
+                            (= file (-> Deno `open absolute_path { read: true }))
+                            (= readable_stream file.readable)
+                            (new Response readable_stream))
+                         descriptor.isDirectory
+                         (progn
+                            (for_with (entry (Deno.readDir absolute_path))
+                               (push entries entry))
+                            (new Response (json_response { `rval: "OK" `entries: entries })))))
+                   (catch Error (e)
+                      (progn
+                         (console.log "request for: " (+ _bd filepath))
+                         (new Response "404 Not Found" { status: 404 }))))))
    {
        `description: (+ "Creates an HTTP file streamer bound to the provided base_directory. The "
                         "macro returns a function that can be used as a route handler.  To do so, "
@@ -593,6 +599,7 @@
        `usage: ["base_directory:string"]
        `tags: ["http" "route_handler" "file" "spool"]
    })
+
 
 
 
@@ -665,11 +672,11 @@
        `tags: ["http" "route_handler" "file" "spool" "content" ]
    })
 
-(defun http_file_server (port base_directory options)
+(defun http_file_server (port file_base_dir options)
    (if (and (is_number? port)
-            (is_string? base_directory))
+            (is_string? file_base_dir))
        (let
-          ((service_route (add_http_route "GET" (or options.service_path "/files") (file_spooler base_directory)))
+          ((service_route (add_http_route "GET" (or options.service_path "/files") (file_spooler file_base_dir)))
            (server nil)
            (ctl nil)
            (on_response (fn (request_event response)
@@ -701,14 +708,14 @@
                     `control
                     (serve_using_handler server default_handler options)
                     `service_path (or options.service_path "/files")
-                    `base_directory base_directory)
+                    `base_directory file_base_dir)
                  (console.log "*http_file_server*.controller established as the control function.")
                  *http_file_server*)
               (progn
                  (console.error "Cannot add the service route: " service_route ", server not started."))))
        (throw TypeError "http_file_server requires port and base_directory"))
    {
-       `usage: ["port:number" "base_directory:string" "options:?object"]
+       `usage: ["port:number" "file_base_dir:string" "options:?object"]
        `description: (+ "Simple file server that adds a route under /files to *http_routes* "
                         "for GET requests.  Provide a base directory to act as the root "
                         "directory for the service.  Options is an object that contains<br>"
@@ -1196,47 +1203,51 @@
          
          
    
+
 (defun env_bank (port base_directory options)
-   (let
-      ((server nil)
-       (on_response (fn (request_event response)
-                           (progn
-                              ;(console.log "response:" response.status response.headers response)
-                              (= $request request_event)
-                              (= $response response)
-                              (push *env_bank*.log
-                                    {
-                                      `request_time: (time_in_millis)
-                                      `request_url: request_event.request.url
-                                      `request_method: response.service_parameters.method
-                                      `response_code: response.status
-                                      `file_sent: response.service_parameters.path
-                                      })
-                              (when (> (length *env_bank*.log)
-                                       *env_bank*.log_length)
-                                 (take *env_bank*.log))
-                              true))))
-      
-     (add_http_route "GET" "/env" (file_spooler (+ base_directory "/environments")))
-     (add_http_route "GET" "/files" (file_spooler base_directory))
+  (let
+     ((server nil)
+      (base_dir base_directory)
+      (options options)
+      (env_place (+ base_dir "/environments"))
+      (on_response (fn (request_event response)
+                      (progn
+                         ;(console.log "response:" response.status response.headers response)
+                         (= $request request_event)
+                         (= $response response)
+                         (push *env_bank*.log
+                            {
+                              `request_time: (time_in_millis)
+                              `request_url: request_event.request.url
+                              `request_method: response.service_parameters.method
+                              `response_code: response.status
+                              `file_sent: response.service_parameters.path
+                              })
+                         (when (> (length *env_bank*.log)
+                                  *env_bank*.log_length)
+                            (take *env_bank*.log))
+                         true))))
+     
+     (add_http_route "GET" "/env" (file_spooler env_place))
+     (add_http_route "GET" "/files" (file_spooler base_dir))
      (add_http_route "GET" "/base_directory" base_directory_handler)
      (add_http_route "POST" "/echo_params"
                      echo_params)
      (add_http_route "POST" "/save_file"
-                     (save_file_handler base_directory))
+                     (save_file_handler base_dir))
      (add_http_route "GET" "/connect_repl"
                      ws_repl_handler)
-     (add_http_route "GET" "/pkg" (file_spooler (+ base_directory "/pkg")))
-      (if (eq nil options)
-          (= options {}))
-      (set_prop options
-         `on_response
-         on_response)
-      (= server (create_http_server port options))
-      (set_prop *env_bank*
-         `control (serve_using_handler server default_handler options)
-         `service_path "/env"
-         `base_directory base_directory)))
+     (add_http_route "GET" "/pkg" (file_spooler (+ base_dir "/pkg")))
+     (if (eq nil options)
+         (= options {}))
+     (set_prop options
+        `on_response
+        on_response)
+     (= server (create_http_server port options))
+     (set_prop *env_bank*
+        `control (serve_using_handler server default_handler options)
+        `service_path "/env"
+        `base_directory base_dir)))
 
  
 (if_compile_time_defined `Deno
@@ -1436,7 +1447,7 @@
               (throw Error "Unable to find an open listening port."))))
            
    (env_bank listen_port
-             (or options.base_directory (get_default [ `http_services `base_directory ] *env_config*) "./")
+             (or options.base_directory (get_default [ `http_services `base_directory ]) "./")
              options)))
 
 
@@ -1450,7 +1461,9 @@
 (defun *on_serialization* ()
    (progn
       (console.log "http: running preserialization")
-      (defglobal *http_routes_storage* (reader (as_lisp *http_routes*)))))
+      
+      ;(defglobal *http_routes_storage* (reader (as_lisp *http_routes*)))
+      ))
 
 
 ;; ----- Logging setup for connected REPLS ----
@@ -1507,9 +1520,10 @@
 
 (defun *initializer* ()
    (progn
-      (= *http_routes* *http_routes_storage*)
+      (= *http_routes* [])
       (undefine `*http_routes_storage*)
       (= core/log core/logger)
+      
       (if (resolve_path [ `http_services `listen_on_start ] *env_config*)
           (http/start))))
 
