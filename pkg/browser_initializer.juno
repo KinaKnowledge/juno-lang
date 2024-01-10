@@ -20789,8 +20789,8 @@
                           (if (and (is_object? result)
                                    result.success)
                               (progn
-                                 (rblock
-                                    (sys/delete_file "working/image.js"))
+                                 ;(rblock
+                                  ;  (sys/delete_file "working/image.js"))
                                  (if (== options.save_location "Downloads Folder")
                                      (progn
                                         (-> window `open (+ "/files/" save_opts.emit_as))
