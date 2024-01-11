@@ -571,7 +571,8 @@
                  (descriptor nil)
                  (entries [])
                  (readable_stream nil))
-                (console.log "file_spooler: file_base_dir: " _bd  "file_path: " filepath)
+                (when (> __VERBOSITY__ 0)
+                   (console.log "file_spooler: file_base_dir: " _bd  "file_path: " filepath))
                 (= absolute_path (+ _bd "/" filepath))
                 (try
                    (progn
@@ -589,7 +590,8 @@
                             (new Response (json_response { `rval: "OK" `entries: entries })))))
                    (catch Error (e)
                       (progn
-                         (console.log "request for: " (+ _bd filepath))
+                         (when (> __VERBOSITY__ 0)
+                            (console.log "file_spooler: Not found (404) request for: " (+ _bd filepath)))
                          (new Response "404 Not Found" { status: 404 }))))))
    {
        `description: (+ "Creates an HTTP file streamer bound to the provided base_directory. The "
