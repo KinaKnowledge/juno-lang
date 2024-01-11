@@ -1,0 +1,60 @@
+;; SQLite Package
+
+(when (not (contains? "sqlite" (namespaces)))
+   (create_namespace "sqlite")
+   (register_feature "sqlite"))
+
+(declare (namespace sqlite))
+
+(import (SQLite) "https://deno.land/x/sqlite/mod.ts")
+;(defglobal DB (prop SQLite `DB))
+
+(defun open_db (path_to_db)
+   (progn
+      (new SQLite.DB path_to_db)))
+
+(defun db_exec (db_handle sql_text)
+   (-> db_handle `execute sql_text))
+
+(defun db_query (db_handle sql_text bindings)
+   (-> db_handle `query sql_text bindings))
+
+(defun close_db (db_handle)
+   (-> db_handle `close))
+
+(defun tables (db_handle)
+   (sort (flatten (db_query db_handle "select name from sqlite_master WHERE type='table'"))))
+
+(defun describe_db (db_handle)
+   (db_query db_handle "select * from sqlite_master"))
+
+(defun table_info (db_handle table_name)
+   (db_query db_handle (+ "PRAGMA table_info(\"" table_name "\")")))
+
+(defun columns_for_table (db_handle table_name)
+   (each (table_info (db_handle table_name))
+         1))
+
+(defmacro with_db ((db_handle db_file_name) `& body_forms)
+   `(let
+       ((,#db_handle (sqlite/open_db ,#db_file_name))
+        (db_ex (fn (`& args)
+                    (apply sqlite/db_exec ,#db_handle args)))
+        (sql (fn (`& args)
+                (apply sqlite/db_query ,#db_handle args)))
+        (_rval_ nil)
+        (error nil))
+       (if db.isClosed
+          (throw Error "unable to open database")
+          (progn
+             (try
+                (= _rval_ 
+                   (progn
+                      ,@body_forms))
+                (catch Error (e)
+                   (progn
+                      (= error e))))
+             (sqlite/close_db ,#db_handle)
+             (if error
+                (throw error)
+                _rval_)))))
