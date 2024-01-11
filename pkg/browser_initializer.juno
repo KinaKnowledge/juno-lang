@@ -21316,7 +21316,12 @@
 (defun seedling_ready ()
   (progn
      (if is_served? 
-        (log (div "The environment is running from a service."))
+        (log (div "The environment is running from a service:"
+                  (span { `style: "padding-left: 10px; color: var(--type-function-color)" }
+                       (try
+                          (rblock *env_config*.build)
+                          (catch Error (e)
+                             "Not Identified")))))
         (log (div "The environment is running in local mode.")))
      (when is_served?
         (defvar click_span (span { `class: "juno-tag" } `set_file_system_root))
