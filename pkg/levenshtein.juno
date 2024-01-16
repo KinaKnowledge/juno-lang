@@ -44,6 +44,8 @@ SOFTWARE." })
 
 ;; js-levenshtein
 (defun_sync dist (a b)
+   (let
+      ((_min (get_global "_min")))
    (javascript "if (a === b) {return 0;    }    
    if (a.length > b.length) {var tmp = a;a = b;b = tmp;    }    
   var la = a.length;    var lb = b.length;    
@@ -90,7 +92,7 @@ for (y = 0; y < len; y += 2) {
 }    
 
   }    
-  return dd;"))
+  return dd;")))
 ;; rosetta code
 (defun_sync dist2 (a b)
   (javascript "var t = [], u, i, j, m = a.length, n = b.length;if (!m) { return n; }
