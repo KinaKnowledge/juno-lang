@@ -21303,13 +21303,14 @@
 (defun adjust_for_display_density ()
    (let
       ((hi_dpi? (> window.devicePixelRatio (or (get_default `application.fonts.device_pixel_ratio_threshold 1.3))))
+       (replacer (new RegExp "[\"']" `g))
        (lookup (if hi_dpi? ;; build the lookup object based on whether the display is currently hi dpi
                    (to_object (get_default `application.fonts.dpi_map))
                    (to_object (map reverse (get_default `application.fonts.dpi_map))))))
-      
       (set_css_var "--main-app-font"  ;; if we find a face from the css var in the lookup, replace it with the value
          (join ","
             (for (face (each (split_by "," (get_css_var "--main-app-font")) trim))
+                 (= face (replace replacer "" face))
                  (aif (prop lookup face)
                       it
                       face))))
