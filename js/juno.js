@@ -7,9 +7,9 @@ import * as path_module from 'https://deno.land/std@0.110.0/path/mod.ts'
 export const path=path_module;
 
 
-// Build Time: 2024-01-11 05:27:43
-// Version: 2024.01.11.05.27
-export const DLISP_ENV_VERSION='2024.01.11.05.27';
+// Build Time: 2024-01-23 05:29:03
+// Version: 2024.01.23.05.29
+export const DLISP_ENV_VERSION='2024.01.23.05.29';
 
 
 
@@ -3891,7 +3891,7 @@ export async function init_dlisp(Environment)  {
 },config:{
     export:{
         save_path:"js/juno.js",default_namespace:"user",include_source:false,save_executable:"bin/juno"
-    },features:["compiler","repl","io","Deno","build-tools","core-ext","system","http_server","http_client","*env_skeleton*"],build:"2024.01.11.05.27",imports:await ( async function(){
+    },features:["compiler","repl","io","Deno","build-tools","core-ext","system","http_server","http_client","*env_skeleton*"],build:"2024.01.23.05.28",imports:await ( async function(){
         let __obj__304=new Object();
         __obj__304["core/readline_mod"]={
             symbol:"readline_mod",namespace:"core",location:"https://deno.land/x/readline/mod.ts"
@@ -5771,7 +5771,7 @@ export async function init_dlisp(Environment)  {
                                     }
                                 })()
                             }
-                        };__obj__1["*env_config*"]={export:{save_path:"js/juno.js",default_namespace:"user",include_source:false,save_executable:"bin/juno"},features:["compiler","repl","io","Deno","build-tools","core-ext","system","http_server","http_client","*env_skeleton*"],build:"2024.01.11.05.27",imports:await ( async function(){let __obj__2=new Object();__obj__2["core/readline_mod"]={symbol:"readline_mod",namespace:"core",location:"https://deno.land/x/readline/mod.ts"};__obj__2["core/streams"]={symbol:"streams",namespace:"core",location:"https://deno.land/std@0.170.0/streams/conversion.ts"};__obj__2["user/path"]={symbol:"path",namespace:"user",location:"https://deno.land/std@0.110.0/path/mod.ts"};return __obj__2;})(),repl:new Object(),http_services:{listen_on_start:false,port:56432,address:"localhost",base_directory:"./"}};__obj__1["create_namespace"]=async function(name,options,defer_initialization) {
+                        };__obj__1["*env_config*"]={export:{save_path:"js/juno.js",default_namespace:"user",include_source:false,save_executable:"bin/juno"},features:["compiler","repl","io","Deno","build-tools","core-ext","system","http_server","http_client","*env_skeleton*"],build:"2024.01.23.05.28",imports:await ( async function(){let __obj__2=new Object();__obj__2["core/readline_mod"]={symbol:"readline_mod",namespace:"core",location:"https://deno.land/x/readline/mod.ts"};__obj__2["core/streams"]={symbol:"streams",namespace:"core",location:"https://deno.land/std@0.170.0/streams/conversion.ts"};__obj__2["user/path"]={symbol:"path",namespace:"user",location:"https://deno.land/std@0.110.0/path/mod.ts"};return __obj__2;})(),repl:new Object(),http_services:{listen_on_start:false,port:56432,address:"localhost",base_directory:"./"}};__obj__1["create_namespace"]=async function(name,options,defer_initialization) {
                                 return await async function(){
                                     if (check_true (await not((name instanceof String || typeof name==='string')))) {
                                         throw new TypeError("namespace name must be a string");
@@ -12191,16 +12191,16 @@ return await (async function() {
                                     return await (async function() {
                                         let __for_body__313=async function(req) {
                                             {
-                                                let _expr_66573;
+                                                let _expr_54865;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_66573=await (async function(){
+                                                _expr_54865=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req,name) 
                                                 })();
-                                                req_sym=(_expr_66573 && _expr_66573["0"]);
-                                                req_ns=(_expr_66573 && _expr_66573["1"]);
-                                                explicit=(_expr_66573 && _expr_66573["2"]);
+                                                req_sym=(_expr_54865 && _expr_54865["0"]);
+                                                req_ns=(_expr_54865 && _expr_54865["1"]);
+                                                explicit=(_expr_54865 && _expr_54865["2"]);
                                                 if (check_true ((req_ns&& await (await Environment.get_global("not"))((req===symname))&& await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(req,invalids))))){
                                                     {
                                                         if (check_true (await (await Environment.get_global("not"))((req_ns===name)))){
