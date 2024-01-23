@@ -5411,6 +5411,7 @@
         (fn (idx menu_details `& args)
           (let
               ((text menu_details.text)
+               (os (get_operating_platform)) ;; os could've changed due to rehydration
                (kcode (or menu_details.keycode ""))
                (view (li {  `class: "pure-list-item" 
                            `tabindex: 0
