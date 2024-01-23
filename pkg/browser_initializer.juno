@@ -79,6 +79,7 @@
 
 (defparameter *build_window* nil) ;; handle to the build window
 (defparameter *system_requires_export* false)
+(defparameter *dpi_change_listener* nil)
 
 (defvalue *ace_option_description*
    { editor: {
@@ -21326,6 +21327,33 @@
      tags: [ "ui" "dpi" "UI" "DOM" "resolution" "display" "density" "font" "css"]
      })
 
+(defun dpi_change_listener ()
+   (let
+      ((media_query_string nil)
+       (media nil))
+      ;(declare (function *dpi_change_listener*))
+      (progc
+         (when *dpi_change_listener*
+            (*dpi_change_listener*))
+         (= media_query_string
+            (+ "(resolution: " window.devicePixelRatio "dppx)"))
+         (= media (matchMedia media_query_string))
+         (-> media `addEventListener "change" dpi_change_listener)
+         (= *dpi_change_listener*
+            (fn ()
+               (-> media `removeEventListener "change", dpi_change_listener)))
+         (dispatch_event { `command: "dpi_change"
+                           `source: "dpi_change_listener"
+                           `args: [ window.devicePixelRatio ] })
+         (adjust_for_display_density)
+         true))
+   {
+       description: (+ "Installed at boot, listens for media change events on " 
+                       "resolution dppx, and calls the adjust for display density function.")
+       usage: []
+       tags: [ `dpi `UI `display `density ]
+   })
+
 ;; seedling_ready is called when the IDE is fully loaded.
 ;; you can put your custom startup code in here
 
@@ -22091,7 +22119,7 @@
                                standard_error_notifier)
        (catch Error (e)
           (console.log e.message)))
-    
+    (dpi_change_listener)
     (dispatch_event { command: "complete" source: "initializer" args: [ (current_namespace) ] })
     (try
        (aif (get_default [ `application `on_ready ] )
