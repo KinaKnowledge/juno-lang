@@ -62,7 +62,7 @@
   --primary-action-bg-color: #0278e7;
   --primary-action-color: #FFFFFF;
   --success-color: #19A019;
-  --main-app-font:  -apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue', Helvetica, FreeSans, Arimo, "Droid Sans", Arial, sans-serif;
+  --main-app-font:  -apple-system,BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", "Helvetica", "FreeSans", "Arimo", "Droid Sans", "Arial", sans-serif;
   --main-app-font-size: 14px;
   --main-mono-space: "Roboto Mono Medium", "Roboto Mono", "Cascadia Mono", "Segoe UI Mono", "Ubuntu Mono", ui-monospace, "Menlo", "Monaco", "Consolas", monospace;
   --editor-bg-color: #f6f3f1;
