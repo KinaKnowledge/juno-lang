@@ -57,7 +57,7 @@
     --primary-action-bg-color: #0278e7;
     --primary-action-color: #FFFFFF;
     --success-color: #19A019;
-    --editor-bg-color: #505050;
+    --editor-bg-color: var(--control-bg-color);
     --editor-text-color: #FFFFFF;
     --editor-gutter-bg-color: #606060;
     --editor-gutter-color: #D0D0D0;
