@@ -20370,46 +20370,57 @@
       ((cancel_button (button { `style: "float: right" }  (dtext "Close")))
        (orig_options options)
        (whole_application? (if (== layout_name nil)
-                              true
-                              false))
+                               true
+                               false))
        (export_button (button (if whole_application?
                                   (dtext "Save Image")
                                   (dtext "Export"))))
        (array_to_keyed_booleans (fn (items init_state)
-                                  (if (is_array? items)
-                                      (to_object
-                                         (for_each (item items)
-                                            [item (or init_state false)])))))
+                                   (if (is_array? items)
+                                       (to_object
+                                          (for_each (item items)
+                                             [item (or init_state false)])))))
        (embedded_scripts (array_to_keyed_booleans (reduce (embeded_id (embedded_script_ids))
-                                           (unless (or (== embeded_id "juno-core")
-                                                       (== embeded_id "lz_string"))
-                                              embeded_id))
-                                        true))
+                                                     (unless (or (== embeded_id "juno-core")
+                                                                 (== embeded_id "lz_string"))
+                                                        embeded_id))
+                                                  true))
        (embedded_styles (array_to_keyed_booleans (reduce (embeded_id (embedded_style_ids))
-                                           (unless (or (== embeded_id "juno-css")
-                                                       (== embeded_id "juno-css-theme"))
-                                              embeded_id))
-                                        true))
+                                                    (unless (or (== embeded_id "juno-css")
+                                                                (== embeded_id "juno-css-theme"))
+                                                       embeded_id))
+                                                 true))
        (assets_elem nil)
        (export_options nil)
        (copy_button (button { `title: "Copy as a quoted form that can be reused in other code" } (dtext "Copy Code")))
        (status_elem (div { `style: "border: 2px inset #FFFFFF; padding: 8px; background: #FFFFFF20; font-weight: bold; margin-bottom: 20px;margin-top: 10px;" } (dtext "Ready")))
+       (dcomps (date_components (new Date)))
+       (version_tag (join "." [ dcomps.year dcomps.month dcomps.day dcomps.hour dcomps.minute ]))
+       (get_app_name (fn ()
+                        (+ (if whole_application?
+                               options.application_name
+                               (or layout_name "unnamed_layout"))
+                           (if options.date_stamp
+                              (+ "." version_tag)
+                              ""))))
+       
        (options (+ {}
                    (if whole_application?
-                         {}
-                         { include_container: true })
+                      {}
+                      { include_container: true })
                    {
                      keep_text_editor_content: (if is_served?
                                                   false
                                                   true)
+                     date_stamp: (get_default `application.append_date_stamp)
                      application_name: (if whole_application?
                                           *env_config*.application.name
-                                          (or layout_name ""))
+                                          (or layout_name "layout"))
                      save_location: (if is_served?
-                                      "Server"
-                                      "Local To This Computer")
+                                       "Server"
+                                       "Local To This Computer")
                      output_as: "Multi-line Lisp" }
-                     options))  ;; if supplied options, use them as defaults                          
+                   options)) ;; if supplied options, use them as defaults
        (check_all_assets_button (button { } "Check All"))
        (uncheck_all_assets_button (button { } "Uncheck All"))
        (set_busy (fn (message)
@@ -20426,20 +20437,20 @@
                            (set_enabled cancel_button export_button copy_button)))))
        (set_message (fn (message)
                        (if (is_string? message)
-                        (progn
-                           (log "export_system: " message)
-                           (set_prop status_elem
-                              `innerHTML
-                              message)))))
+                           (progn
+                              (log "export_system: " message)
+                              (set_prop status_elem
+                                 `innerHTML
+                                 message)))))
        (check_all_assets (fn (state)
                             (progn
                                (try
                                   (for_each (elem (-> assets_elem `querySelectorAll "input"))
                                      (when (is_element? elem)
                                         (if (or (and (== state false`)
-                                                       elem.checked)
-                                                  (and (== state true)
-                                                       (not elem.checked)))
+                                                     elem.checked)
+                                                (and (== state true)
+                                                     (not elem.checked)))
                                             (-> elem `click))))
                                   (catch Error (e)
                                      (log "Error: " e))))))
@@ -20453,7 +20464,7 @@
                        (sleep 0.1)
                        (= export_options
                           {
-                            `save_prefix: options.application_name
+                            `save_prefix: (get_app_name)
                             `shake_tree: false
                             `keep_text_editor_content: options.keep_text_editor_content
                             `save_locally: (if (== "Local To This Computer" options.save_location)
@@ -20476,15 +20487,15 @@
                              (= app_name (last (split_by "/" rval.results.0.filename)))
                              (set_message (+ "Saved To Host - opening in browser: " (+ "/env/" app_name)))
                              (= *system_requires_export* false)
-                             (-> window `open (+ "/env/" app_name) options.application_name))
+                             (-> window `open (+ "/env/" app_name) (get_app_name)))
                           else
                           (progn
                              (set_prop status_elem
                                 `innerHTML
                                 (+ "ERROR: " (or rval.message "Check system repl for return value")))))
                        (log "export_system: result: " rval))))
-                       
-                       
+       
+       
        (save_as_app (fn ()
                        (when (not (blank? options.application_name))
                           (let
@@ -20496,19 +20507,19 @@
                                 {
                                   `no_header: true
                                   `do_not_include_scripts: (reduce (emset (pairs embedded_scripts))
-                                                                (destructuring_bind (script_name is_wanted)
-                                                                   emset
-                                                                   (unless (or is_wanted
-                                                                               (== script_name "juno-core")
-                                                                               (== script_name "lz_string"))
-                                                                      script_name)))
-                                   `do_not_include_styles: (reduce (emset (pairs embedded_styles))
-                                                                (destructuring_bind (script_name is_wanted)
-                                                                   emset
-                                                                   (unless (or is_wanted
-                                                                               (== script_name "juno-core")
-                                                                               (== script_name "lz_string"))
-                                                                      script_name)))
+                                                              (destructuring_bind (script_name is_wanted)
+                                                                 emset
+                                                                 (unless (or is_wanted
+                                                                             (== script_name "juno-core")
+                                                                             (== script_name "lz_string"))
+                                                                    script_name)))
+                                  `do_not_include_styles: (reduce (emset (pairs embedded_styles))
+                                                             (destructuring_bind (script_name is_wanted)
+                                                                emset
+                                                                (unless (or is_wanted
+                                                                            (== script_name "juno-core")
+                                                                            (== script_name "lz_string"))
+                                                                   script_name)))
                                   `initializer_symbol: `layout_initializer
                                   `save_prefix: options.application_name
                                   `keep_text_editor_content: options.keep_text_editor_content
@@ -20535,12 +20546,12 @@
                                    (= app_name (last (split_by "/" rval.results.0.filename)))
                                    (= *system_requires_export* false)
                                    (set_message (+ "Saved To Host - opening in browser: " (+ "/env/" app_name)))
-                                   (-> window `open (+ "/env/" app_name) options.application_name))
+                                   (-> window `open (+ "/env/" app_name) (get_app_name)))
                                 else
-                                 (progn
-                                    (set_prop status_elem
-                                       `innerHTML
-                                       (+ "ERROR: " (or rval.message "Check system repl for return value")))))
+                                (progn
+                                   (set_prop status_elem
+                                      `innerHTML
+                                      (+ "ERROR: " (or rval.message "Check system repl for return value")))))
                              (log "export_system: result: " rval)))))
        (resolver nil)
        (handle_event (fn (e)
@@ -20574,72 +20585,75 @@
       (unless whole_application?
          (assert (is_control? layout) "export_system: invalid layout or control name provided"))
       (= view
-                (div { `class: "juno-form" `style: "flex-grow: 1; "}
-                     (if whole_application?
-                        (h4 *env_config*.application.name)
-                        (h4 (+ "Layout: " layout_name)))
-                     (if whole_application?
-                        (dtext "Save the current global state of the IDE with the settings below.")
-                        (dtext "You can export the layout as usable code, or save the layout as an application."))
-                     (br)
-                     (br)
-                     (div { `class: "juno-form-data" `style: "flex-grow: 1; "}
-                          (div { `style: "flex-grow: 0;"  }
-                               (value_to_dom options
-                                        { editable: true
-                                          disable_object_toggle: true
-                                          pretty_keys: true
-                                          expand_all: true
-                                          paths: {
-                                                   output_as: {
-                                                                values: (if whole_application?
-                                                                           ["HTML Page"]
-                                                                           ["Formatted Lisp"
-                                                                            "Single-line Lisp"
-                                                                            "Formatted JSON"
-                                                                            "Single-line JSON"])
-                                                                           }
-                                                   save_location: {
-                                                       values: (if is_served?
-                                                                  [ "Server" "Local To This Computer"]
-                                                                  ["Local to This Computer"])
-                                                   }
+         (div { `class: "juno-form" `style: "flex-grow: 1; "}
+              (if whole_application?
+                 (h4 *env_config*.application.name)
+                 (h4 (+ "Layout: " layout_name)))
+              (if whole_application?
+                 (dtext "Save the current global state of the IDE with the settings below.")
+                 (dtext "You can export the layout as usable code, or save the layout as an application."))
+              (br)
+              (br)
+              (div { `class: "juno-form-data" `style: "flex-grow: 1; "}
+                   (div { `style: "flex-grow: 0;"  }
+                        (value_to_dom options
+                                      { editable: true
+                                        disable_object_toggle: true
+                                        pretty_keys: true
+                                        expand_all: true
+                                        paths: {
+                                                 application_name: {
+                                                                     style:
+                                                                     }
+                                                 output_as: {
+                                                              values: (if whole_application?
+                                                                         ["HTML Page"]
+                                                                         ["Formatted Lisp"
+                                                                          "Single-line Lisp"
+                                                                          "Formatted JSON"
+                                                                          "Single-line JSON"])
+                                                              }
+                                                 save_location: {
+                                                                  values: (if is_served?
+                                                                             [ "Server" "Local To This Computer"]
+                                                                             ["Local to This Computer"])
+                                                                  }
                                                  }
-                                          }))
-                          (hr { `style: "width: 100%" } )
-                          (h4 { `style: "flex-grow: 0;" } "DOM Resident Assets")
-                          (if whole_application?
-                             (div { `style: "flex-grow: 0;" } 
-                                  (div "Since the whole IDE state is being saved, the below scripts and styles are included with the full IDE export.")
-                                  (div "No tree shaking will occur."))
-                             (div { `style: "flex-grow: 0;" } "Checked items will be included in the emitted page."
-                                  (div { `style: "display: inline-block;"} check_all_assets_button uncheck_all_assets_button)))
-                          (= assets_elem
-                             (div { `style: "margin-top: 3px; justify-content: stretch; flex-grow: 2; flex-shrink: 2; flex-basis: 150px; overflow: scroll;" }
-                               (div { `style: "display: flex; align-items: stretch; justify-content: stretch; flex-direction: row;" }
-                                    (div { `style: "flex-grow: 1;margin-top: 3px; background: #FFFFFF10; ; padding: 5px; " }
-                                         (div { `style: "font-weight: bold;" } "Scripts")
-                                            (value_to_dom embedded_scripts
-                                                       { editable: (not whole_application?)
-                                                         disable_object_toggle: true
-                                                         pretty_keys: true
-                                                         expand_all: true
-                                                         }))
-                                    (div { `style: "flex-grow: 1;  margin-top: 3px; background: #FFFFFF10;; padding: 5px; " }
-                                         (div { `style: "font-weight: bold;"} "Styles")
-                                         (value_to_dom embedded_styles
-                                                       { editable:  (not whole_application?)
-                                                         disable_object_toggle: true
-                                                         pretty_keys: true
-                                                         expand_all: true
-                                                         })))))
-                          status_elem
-                          (div
-                             export_button
-                             (if whole_application?
-                                []
-                                copy_button)
-                             cancel_button))))
+                                        }))
+                   (hr { `style: "width: 100%" } )
+                   (h4 { `style: "flex-grow: 0;" } "DOM Resident Assets")
+                   (if whole_application?
+                      (div { `style: "flex-grow: 0;" }
+                           (div "Since the whole IDE state is being saved, the below scripts and styles are included with the full IDE export.")
+                           (div "No tree shaking will occur."))
+                      (div { `style: "flex-grow: 0;" } "Checked items will be included in the emitted page."
+                           (div { `style: "display: inline-block;"} check_all_assets_button uncheck_all_assets_button)))
+                   (= assets_elem
+                      (div { `style: "margin-top: 3px; justify-content: stretch; flex-grow: 2; flex-shrink: 2; flex-basis: 150px; overflow: scroll;" }
+                           (div { `style: "display: flex; align-items: stretch; justify-content: stretch; flex-direction: row;" }
+                                (div { `style: "flex-grow: 1;margin-top: 3px; background: #FFFFFF10; ; padding: 5px; " }
+                                     (div { `style: "font-weight: bold;" } "Scripts")
+                                     (value_to_dom embedded_scripts
+                                                   { editable: (not whole_application?)
+                                                              disable_object_toggle: true
+                                                              pretty_keys: true
+                                                              expand_all: true
+                                                              }))
+                                (div { `style: "flex-grow: 1;  margin-top: 3px; background: #FFFFFF10;; padding: 5px; " }
+                                     (div { `style: "font-weight: bold;"} "Styles")
+                                     (value_to_dom embedded_styles
+                                                   { editable:  (not whole_application?)
+                                                              disable_object_toggle: true
+                                                              pretty_keys: true
+                                                              expand_all: true
+                                                              })))))
+                   status_elem
+                   (div
+                      export_button
+                      (if whole_application?
+                         []
+                         copy_button)
+                      cancel_button))))
       (attach_event_listener view
          `click
          handle_event)
@@ -20662,9 +20676,9 @@
                                                        (resolver nil))
                                           controls: true
                                           position: {
-                                              left: 10
-                                              top: 10
-                                          }
+                                                      left: 10
+                                                      top: 10
+                                                      }
                                           }))
                   (attach_event_listener frame.view
                      `keydown
@@ -20678,8 +20692,8 @@
                   (focus_to (first (-> view `querySelectorAll "input")))
                   ))))
       
-     
-      result)) 
+      
+      result))
   
 (defun export_remote_system (options)
    (if is_served?
