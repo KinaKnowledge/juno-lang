@@ -21607,12 +21607,12 @@
 
        
        (set_prop *key_bindings*.global
-                 "open_new_buffer" { win: "Command-Enter"
+                 "open_new_buffer" { win: "Alt-Shift-Enter"
                                      mac: "Command-Enter"
                                      description: "New Juno Buffer"
                                      exec: (fn () (new_buffer { content: "" type: "juno" }))
                                     }
-                 "open_new_text_buffer" { win: "Command-Shift-Enter"
+                 "open_new_text_buffer" { win: "Ctrl-Alt-Enter"
                                      mac: "Command-Shift-Enter"
                                      description: "New Juno Text Buffer"
                                      exec: (fn () (new_buffer { content: "" type: "text" }))
