@@ -7930,6 +7930,75 @@
      usage: ["contents:Element" "options:object"]
      tags: ["DOM" "ui" "html" "view" "floating" "dialog" ]
      })
+(defun progress_bar (options)
+   (let
+      ((pbr (progress (or options {})))
+       (set_value (fn (v)
+                     (set_prop pbr `value v))))
+      {
+          `view: pbr
+          `set_value: set_value
+      })
+   {
+     description: (+ "This function, which takes an optional object which can specify initial "
+                      "value, class, or style settings, returns an object with a `view` element and "
+                      "a `set_value` function.  The `view` can be embedded in the DOM, and "
+                      "the `set_value` can be used to pass a number between 0 and 1 to indicate the "
+                      "amount of progress against the represented goal. ")
+     tags: [`progress `ui `DOM]
+     usage: ["options:?object"]
+   })
+
+(defun show_progress_popup(options)
+   (let
+      ((pbr (progress_bar (+ {
+                               `style: "width: 100%;"
+                               }
+                            options)))
+       (display_text
+          (div { style: "margin-bottom: 5px;" } (or options.header "")))
+       (dwin (floating_div
+                (div { `style: "padding: 10px;" }
+                   display_text
+                   pbr.view)
+                (+ {
+                     controls: true
+                     }
+                  options))))
+      {
+        set_value: (fn (v)
+                      (-> pbr `set_value v))
+        set_text: (fn (text)
+                     (set_prop display_text
+                        `innerHTML
+                        text))
+        close: (fn ()
+                  (progn
+                     (-> dwin `close)
+                     true)) })
+   {
+     description: (+ "When called, creates and displays a floating, non-modal popup window "
+                     "that shows a progress bar with an optional title and header.<br>A handle "
+                     "interface object is returned with methods for setting the value of the progress "
+                     "bar with values between 0 and 1, inclusive, which correlates to the displayed "
+                     "progress position.  If no initial value is provided, a \"busy\" type of progress "
+                     "bar is displayed, indicating activity, but without showing relative progress as "
+                     "no value has been set.<br><br>#### Options  <br><br>title:string -The text that "
+                     "will appear in the title bar of the popup window.<br>header:string -The text "
+                     "that is displayed above the progress bar to provide context into the current "
+                     "activity.<br>value:number -A value between 0 and 1 indicating how much progress "
+                     "to display in the progress bar.<br>Additionally the options object is passed to "
+                     "both the `progress_bar` and the `floating_div` and so the options of those "
+                     "functions can be used as additional parameters in this function.  For "
+                     "additional information see those function\'s documentation.<br><br>#### "
+                     "Interface  <br><br>close:functon - Call this function to close the "
+                     "popup.<br>set_value: function - Call this function with a single numeric "
+                     "argument as the work progresses with values between 0 and 1 to update the "
+                     "progress bar\'s displayed position.  <br>set_text: function - When provided a "
+                     "text string, this value will be displayed in the header text position. ")
+     usage:["options:object"]
+     tags: ["dom" "progress" "popup" "dialog" "UI" ]
+     })
 
 (defun monitor_control_tree ()
    (let
