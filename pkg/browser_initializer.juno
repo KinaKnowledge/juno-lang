@@ -21399,6 +21399,13 @@
                  (aif (prop lookup face)
                       it
                       face))))
+      
+      ;; in some cases we can have weird scroll behavior for scrollTop 
+      ;; these are precautionary
+      (set_prop (get_by_id "juno_container")
+                `scrollTop 0)
+      (set_prop (get_by_id "body")
+                `scrollTop 0)
       true)
    { description: (+ "This function, which takes no arguments, checks the window object\'s "
                      "devicePixelRatio, and if determined to have a ratio greater "
