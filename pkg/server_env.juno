@@ -560,6 +560,13 @@
      })
                  
 
+(defun content_type_for_path (path)
+    (when (ends_with? ".js" path)
+        "application/javascript"))
+
+(defun response_opts (filepath)
+  (let ((opts  { `headers: {`content-type: (content_type_for_path filepath) }}))
+    opts))
 
 (defun file_spooler (file_base_dir)
    (fn (request_event request_parameters) 
@@ -582,7 +589,7 @@
                          (progn
                             (= file (-> Deno `open absolute_path { read: true }))
                             (= readable_stream file.readable)
-                            (new Response readable_stream))
+                            (new Response readable_stream (response_opts filepath)))
                          descriptor.isDirectory
                          (progn
                             (for_with (entry (Deno.readDir absolute_path))
