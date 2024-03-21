@@ -2920,7 +2920,8 @@
        (in_edit? false)
        (edit_active_cell_init 
           (fn ()
-             (when (not in_edit?)
+             (when (and (not options.read_only)
+                        (not in_edit?))
                 (let
                    ((elem (aif (get_active_cell)
                                (get_element_by_abs_path it)))
@@ -5244,6 +5245,7 @@
                                        }
                            defaults: state.defaults
                            scale: state.render_scale
+                           read_only: (or options.read_only false)
                            }
                         (if options.on_redraw
                            { on_redraw: options.on_redraw }
@@ -5613,8 +5615,13 @@
     (handle_table_event (fn (event intf)
                            (let
                               ((currently_selected nil)
+                               (platform (get_operating_platform))
+                               (mod_key (if (== platform "mac")
+                                            event.browser_event.metaKey
+                                            event.browser_event.ctrlKey))
                                (current_active (-> table_view `get_active_cell))
                                (state (-> table_view `get_state)))
+                              ;(log "table-event: " event.browser_event)
                               (cond
                                  (== event.type "set_active_cell")
                                  (progn
@@ -5628,7 +5635,7 @@
                                     (progn
                                        
                                        (if (and (== event.browser_event.shiftKey false)
-                                                (== event.browser_event.metaKey false)
+                                                (== mod_key false)
                                                 (not event.all_cells)
                                                 (not (is_active_cell_click? event)))
                                            (-> table_view `clear_selection))
@@ -5637,7 +5644,7 @@
                                                (not (blank? event.column_id)))
                                           (progn
                                              (= currently_selected (flatten (each (-> table_view `get_selected_range true) `1)))
-                                             (if (and event.browser_event.metaKey
+                                             (if (and mod_key
                                                       (contains? event.column_id currently_selected))
                                                  (-> table_view `remove_selection [ "*" event.column_id ])
                                                  (-> table_view `add_selection [ "*" event.column_id ] event.browser_event.shiftKey)))
@@ -5645,7 +5652,7 @@
                                                (not (blank? event.row_id)))
                                           (progn
                                              (= currently_selected (flatten (-> table_view `get_selected_range true)))
-                                             (if (and event.browser_event.metaKey
+                                             (if (and mod_key
                                                       (contains? event.row_id currently_selected))
                                                 (-> table_view `remove_selection [ event.row_id ])
                                                 (-> table_view `add_selection [ event.row_id ] event.browser_event.shiftKey)))
@@ -5656,9 +5663,17 @@
                                                  (-> table_view `edit_active_cell)
                                                  (-> table_view `add_selection [ event.row_id event.column_id ] event.browser_event.shiftKey)))
                                           event.all_cells
-                                          (select_all)))
+                                          (select_all))
+                                       (when (is_function? options.on_select)
+                                          (-> options `on_select event table_view)))
                                     (catch Error (e)
                                        (log_error e.message e)))
+                                 (and options.on_viewport_change
+                                    (== event.type "viewport_change"))
+                                 (progn
+                                    (when (is_function? options.on_viewport_change)
+                                       (-> options `on_viewport_change event table_view)))
+                                 
                                  (== event.type "move_to_search_result")
                                  (progn
                                     (update_search_position))
@@ -5667,8 +5682,7 @@
                                     (progn
                                        (handle_table_key_navigation table_view event))
                                     (catch Error (e)
-                                       (log_error e.message e)))
-                                 )
+                                       (log_error e.message e))))
                               (active_filters)
                               (setTimeout (fn ()
                                              (update_current_num_rows_view))
@@ -5903,9 +5917,13 @@
                                         id: tbl_id
                                         }
                                        { scale: scale }
+                                       { grid: (or options.grid false) }
                                        { stripes: (or options.stripes false) }
                                        (if options.columns
                                           { `columns: options.columns }
+                                          {})
+                                        (if options.read_only
+                                          { `read_only: options.read_only }
                                           {})
                                        (if options.fixed_width
                                           { `fixed_width: true }
@@ -6016,6 +6034,8 @@
     {
         control_bar: true
         expose: [[ `set set ]
+                 [ `get (fn (meta?)
+                           (-> table_view `get meta?))]
                  [ `undo undo ]
                  [ `copy_selection copy_selection]
                  [ `paste_selection paste_selection ]
@@ -6030,4 +6050,3 @@
 
 true
 ;(run)
-
