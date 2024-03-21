@@ -546,6 +546,42 @@
            tags: ["temp" "directory" "filesystem" "tmp"]
          })
          
+      
+      (defmacro with_file ((fhandle filename opts) `& body_forms)
+         `(let
+             ((_open_opts (if (is_object? ,#opts)
+                              ,#opts
+                              { `read: true }))
+              (_error_ nil)
+              (_rval_ nil)
+              (,#fhandle (-> Deno `open ,#filename _open_opts)))
+             (try
+                (= _rval_
+                   (progn
+                      ,@body_forms))
+                (catch Error (e)
+                   (progn
+                      (= _error_ e))))
+             (-> ,#fhandle `close)
+             (if _error_
+                (throw _error_)
+                _rval_))
+         {
+           description: (+ "The `with_output_file` macro creates a scope with an allocated "
+                           "file handle specified in the `fhandle` argument. The fhandle is attached "
+                           "to the specified file, along with an options object containing the parameters "
+                           "with which to open the file. The options are passed to the "
+                           "`Deno.open` call.  The provided body forms are then executed, with the "
+                           "file handle in scope.  Once the forms complete, or an error occurs, the "
+                           "macro takes care of closing the file handle and returning the final "
+                           "return value of the body forms, as in `progn`, or if an error occurred, "
+                           "rethrows the error.<br><br>
+                           The params are provided in a first argument array as  (fhandle fname options)")
+           usage: ["params:array" "body_forms"]
+           tags: ["file" "IO" "filesystem" "open" "close"]
+         })
+
+      
       (defun cwd ()
          (-> Deno `cwd)
          {

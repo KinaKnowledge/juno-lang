@@ -1475,6 +1475,12 @@
       ))
 
 
+;; if there is a local.juno in the current working directory load it - similar to an environment file
+(defun check_and_import_local_env_file ()
+   (if (and (prop (permissions) `read)
+         (sys/is_file? "./local.juno"))
+       (import "./local.juno")))
+
 ;; ----- Logging setup for connected REPLS ----
 
 ;; Keep a list of interested parties to log messages 
@@ -1532,7 +1538,7 @@
       (= *http_routes* [])
       (undefine `*http_routes_storage*)
       (= core/log core/logger)
-      
+      (check_and_import_local_env_file)
       (if (resolve_path [ `http_services `listen_on_start ] *env_config*)
           (http/start))))
 

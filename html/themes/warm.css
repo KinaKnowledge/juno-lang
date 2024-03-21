@@ -10,8 +10,8 @@
     --control-text-input-color-bg: #FFFFFF50;
     --control-focused: #ede9de;
     --control-unfocused-color: #0000009e;
-    --control-disabled-bg-color: #eaeded;
-    --control-disabled-color: #cad2d3;
+    --control-disabled-bg-color: #e1e0da;
+    --control-disabled-color: #949899;
     --control-readonly-color: #777;
     --log-message-bg-color: hsl(44deg 26% 83%);
     --log-result-bg-color: hsl(44deg 26% 83%);

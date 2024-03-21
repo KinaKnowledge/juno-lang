@@ -1522,93 +1522,140 @@
        (escaped 0)
        (in_quotes 0)
        (ccode nil)
+       (next_ccode nil)
        (last_ccode nil)
        (acc [])
+       (c nil)
+       (num_lines 0)
+       (idx -1)
+       (split_buf (split_by "" text))
        (rval []))
-      (for (c (split_by "" text))
-           (= ccode (-> c `charCodeAt 0))
-           ;(log c ccode escaped in_quotes)
-           (cond 
-              ;; determine if we have to switch modes...
-              
-              (== ccode 92) ;; the backward slash character encountered 
-              (= escaped 2)
-              
-              (and (== ccode 34)      ;; a quote
-                   (== escaped 0)     ;; not escaped 
-                   (== in_quotes 0))  ;; and not in quotes 
-              (progn
-                 (when (> acc.length 0)
-                    (push rval { type: in_quotes
-                                 text: (join "" acc) } ))
-                 (= acc [])
-                 (= in_quotes 1))     ;; enter quote mode 1
-              
-              (and (== ccode 34)      ;; a quote...
-                   (== escaped 0)     ;; not escaped..
-                   (== in_quotes 1))  ;; and in quotes, 
-              (progn
-                 (push rval { type: in_quotes
-                              text: (join "" acc) }) ;; so push the accumulator into the return structure
-                 (= acc [])                ;; reset the accumulator 
-                 (= in_quotes 0))                ;; and leave quote mode
-              
-              (and (== ccode 39)     ;; a single quote... 
-                   (== escaped 0)    ;; not escaped...
-                   (== in_quotes 0)) ;; and not in quotes...
-              (progn
-                 (when (> acc.length 0) ;; if we have accumulated characters...
-                    (push rval { type: in_quotes
-                                 text: (join "" acc) })) ;; place the accumulator into the return structure
-                 (= acc [])    ;; and reset it
-                 (= in_quotes 2))     ;; enter quote mode 2
-              
-              (and (== ccode 39)     ;; in quote mode 2
-                   (== escaped 0)    ;; not escaped
-                   (== in_quotes 2)) ;; and in quote mode 2 
-              (progn 
-                 (push rval { type: in_quotes
-                              text: (join "" acc) }) ;; push the accumulator into the return structure
-                 (= acc [])    ;; reset the accumulator
-                 (= in_quotes 0))    ;; and leave quote mode
-              
-              (and (== in_quotes 0) ;; if not in quotes`
-                   (== ccode 13))   ;; and we have a carriage_return (part of a crlf sequence)
-              nil                   ;; discard
-              (and (== in_quotes 0)
-                   (== ccode 10))
-              (progn
-                 (when (> acc.length 0)
-                    (push rval { type: in_quotes
-                                 text: (join "" acc) }))
-                 (push rval { type: 10
-                              text: c })
-                 (= acc []))
+      (when (is_object? options.state)
+         (= rval options.state.remaining)
+         (= in_quotes options.state.in_quotes)
+         (= last_ccode options.state.last_ccode)
+         (= escaped options.state.escaped))
+      ;(when (not (== in_quotes 0))
+         ;(log "start in quotes: " (first rval))
+     (push acc
+        (or (prop (pop rval) `text)
+            ""))
+     
+      (when (is_array? split_buf)
+         (while (and (< idx split_buf.length)    ;; while our index is less than the length
+                     (prop split_buf (+ idx 1))) ;; and we still have data at the next point (which we should)
+            (progn
+               (inc idx)                         ;; increase our index
+               (= c (prop split_buf idx))        ;; get the character 
+               (= ccode (-> c `charCodeAt 0))    ;; get the ASCII code point value 
+               (= next_ccode (aif (prop split_buf (+ idx 1)) ;; and the next code point value 
+                                  (-> it `charCodeAt 0)
+                                  0))
+               
+               (when options.debug
+                  (log "tokenize: " idx " c: " c ccode next_ccode in_quotes escaped acc))
+               (cond
+                  ;; determine if we have to switch modes...
                   
-              (and (== c delimiter)
-                   (== in_quotes 0)
-                   (== escaped 0))
-              (progn
-                 (unless (and (== acc.length 0)
-                              (or (== last_ccode 34)
-                                  (== last_ccode 39)))
-                    (push rval { type: in_quotes
-                                 text: (join "" acc) }))
-                 (= acc []))
-              
-              
-              
-              (> escaped 0)
-              (dec escaped)
-              
-              else
-              (push acc c))
-           (= last_ccode ccode))
-              
-      (if (> acc.length 0)
-          (push rval { type: in_quotes
-                       text: (join "" acc) }))
-      rval)
+                  (== ccode 92) ;; the backward slash character encountered
+                  (= escaped 2)
+                  
+                  (and (== ccode 34)      ;; a quote
+                       (== escaped 0)     ;; not escaped
+                       (== in_quotes 0))  ;; and not in quotes
+                  (progn
+                     (when (> acc.length 0)
+                        (push rval { type: in_quotes
+                                     text: (join "" acc) } ))
+                     (= acc [])
+                     (= in_quotes 1))     ;; enter quote mode 1
+                  
+                  (and (== ccode 34)
+                       (== next_ccode 34)
+                       (== in_quotes 1)
+                       (== escaped 0))
+                  (progn
+                     (= escaped 1)
+                     (push acc c))
+                  
+                  (and (== ccode 34)      ;; a quote...
+                       (== escaped 0)     ;; not escaped..
+                       (== in_quotes 1))  ;; and in quotes,
+                  (progn
+                     (push rval { type: in_quotes
+                                  text: (join "" acc) }) ;; so push the contents of the accumulator into the return structure
+                     (= acc [])                ;; reset the accumulator
+                     (= in_quotes 0))                ;; and leave quote mode
+                  
+                  (and options.single_quotes_are_quotes
+                     (== ccode 39)     ;; a single quote...
+                     (== escaped 0)    ;; not escaped...
+                     (== in_quotes 0)) ;; and not in quotes...
+                  (progn
+                     (when (> acc.length 0) ;; if we have accumulated characters...
+                        (push rval { type: in_quotes
+                                     text: (join "" acc) })) ;; place the contents of the accumulator into the return structure
+                     (= acc [])    ;; and reset it
+                     (= in_quotes 2))     ;; enter quote mode 2
+                  
+                  (and (== ccode 39)     ;; in quote mode 2
+                       (== escaped 0)    ;; not escaped
+                       (== in_quotes 2)) ;; and in quote mode 2
+                  (progn
+                     (push rval { type: in_quotes
+                                  text: (join "" acc) }) ;; push the accumulator contents into the return structure
+                     (= acc [])    ;; reset the accumulator
+                     (= in_quotes 0))    ;; and leave quote mode
+                  
+                  (and (== in_quotes 0) ;; if not in quotes`
+                       (== ccode 13))   ;; and we have a carriage_return (part of a crlf sequence)
+                  nil                   ;; discard
+                  
+                  (and (== in_quotes 0) ;; not in quote mode
+                       (== ccode 10))   ;; and a new line encountered
+                  (progn
+                     (when (> acc.length 0) ;; if we have something in our accumulator,
+                        (push rval { type: in_quotes   ;;  then push its contents into the return structure
+                                     text: (join "" acc) }))
+                     (if options.on_line_end
+                        (progn
+                           (inc num_lines)
+                           (-> options `on_line_end rval)
+                           (= rval []))
+                        (progn
+                           (push rval { type: 10
+                                        text: c })))
+                     (= acc []))
+                  
+                  (and (== c delimiter)  ;; the current char is a delimiter
+                       (== in_quotes 0)  ;; and we are not in quotes?
+                       (== escaped 0))   ;; not escaped
+                  (progn
+                     (unless (and (== acc.length 0) ;; if we have contents in our accumulator
+                                  (or (== last_ccode 34) ;; and not a last code point value of a single or double quote
+                                      (== last_ccode 39)))
+                        (push rval { type: in_quotes
+                                     text: (join "" acc) }))  ;; push in the accumulator 
+                     (= acc []))         ;; ... and reset it 
+                  
+                  (> escaped 0) ;; if we are escaped, decrease
+                  (dec escaped)
+                  
+                  else   ;; if we made it here, add the character to our accumulator 
+                  (push acc c))
+               (= last_ccode ccode)))
+         
+         (when (> acc.length 0)
+             (push rval { type: in_quotes
+                          text: (join "" acc) })))
+      (if options.on_line_end
+         {
+           `remaining: rval
+           `in_quotes: in_quotes
+           `escaped: escaped
+           `last_ccode: last_ccode
+           }
+         rval))
    {
      description: (+ "The `tokenize_delimited_text` function takes text as a `string` input, and "
                      "an optional `options` object.    The text is processed, and split into tokens "

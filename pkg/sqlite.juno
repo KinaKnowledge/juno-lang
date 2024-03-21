@@ -30,7 +30,7 @@
 (declare (namespace sqlite))
 
 (import (SQLite) "https://deno.land/x/sqlite/mod.ts")
-
+(import (path) "https://deno.land/std@0.110.0/path/mod.ts")
 
 (defun open_db (path_to_db)
    (progn
@@ -81,3 +81,230 @@
              (if error
                 (throw error)
                 _rval_)))))
+
+(defun read_file_as_chunks (fname chunk_function)
+   (progn
+      (log "read_file_as_chunks: -> " fname)
+      (if (and (is_string? fname)
+               (is_function? chunk_function))
+          (let
+             ((file (-> Deno `open fname { read: true }))
+              (readable_stream nil)
+              (buffer {
+                        `done: false
+                        })
+              (bytes_read 0)
+              (text_decoder (new TextDecoder))
+              (rval true)
+              (count 0))
+             (declare (function chunk_function))
+             (= readable_stream (-> file.readable `getReader))
+             ;(log "FILE RESOURCE ID:  " file.rid)
+             (try
+                (while (and (not buffer.done)
+                            (== rval true))
+                   (progn
+                      (inc count)
+                      (= buffer (-> readable_stream `read))
+                      
+                      (when buffer.value
+                         (inc bytes_read buffer.value.length))
+                      (= rval (chunk_function (-> text_decoder `decode buffer.value)
+                                              count))
+                      (if buffer.done
+                         (log "stream is complete: marked as done: rval is: " rval))))
+                (catch Error (e)
+                   "ERROR: read_file_as_chunks: " e.message))
+             (try
+                (-> file `close)
+                (catch Error (e)
+                   true))
+             count)
+          (throw "read_file_as_chunks: invalid arguments: need filename and chunk function which returns true for each chunk"))))
+
+(defun aggregate_lines (filename tally_function test? limit)
+   (let
+      ((acc [])
+       (line_acc [])
+       (chunks [])
+       (bytes_processed 0)
+       (headers [])
+       (state nil)
+       (tokens_processed 0)
+       (not_got_headers true)
+       (limit (or limit 2))
+       (line_count 0))
+      (read_file_as_chunks filename
+           (fn (data chunk_num)
+              (progn
+                 (if (is_number? data.length)
+                     (inc bytes_processed data.length)
+                     (log "chunker: data complete: " data.length data))
+                 (if test?
+                    (log "chunker: chunk #: " chunk_num "bytes_processed: " bytes_processed data.length "STATE: " state))
+                 (= state
+                    (tokenize_delimited_text data
+                                          {
+                                            state: (clone state)
+                                            on_line_end: (fn (tokens)
+                                                            (progn
+                                                               (cond
+                                                                  not_got_headers
+                                                                  (progn
+                                                                     (= not_got_headers false)
+                                                                     (= headers (map (fn (v) (to_key v))
+                                                                                     (each tokens `text)))
+                                                                     (when test?
+                                                                        (log "headers: " tokens)))
+                                                                  else
+                                                                  (progn
+                                                                     ;(when test?
+                                                                       ; (log "on_line_end: " (to_object (pairs_from_list (interlace headers (each tokens `text))))))
+                                                                     (when tally_function
+                                                                        (tally_function (to_object (pairs_from_list (interlace headers (each tokens `text))))))))))
+                                                                        
+                                                                       
+                                            }))
+                 ;(log "state: " state)
+                 (if test?
+                    (< chunk_num limit)
+                    true)
+                 )))))
+ 
+(defun aggregate_lines_complete (filename tally_function test?)
+   (let
+      ((acc [])
+       (line_acc [])
+       (chunks [])
+       (bytes_processed 0)
+       (headers [])
+       (state nil)
+       (tokens_processed 0)
+       (not_got_headers true)
+       (data (read_text_file filename))
+       (line_count 0))
+      (= state
+         (tokenize_delimited_text data
+            {
+              state: (clone state)
+              on_line_end: (fn (tokens)
+                              (progn
+                                 (cond
+                                    not_got_headers
+                                    (progn
+                                       (log "first tokens: " (first tokens) "text: " (length (prop (first tokens) `text)) (-> (prop (first tokens) `text) `charCodeAt 0))
+                                       (when (and (== (prop (first tokens) `text) ""))
+                                           (log "empty token found")
+                                           (take tokens))
+                                       (= not_got_headers false)
+                                       (= headers (each tokens `text))
+                                       (when test?
+                                          (log "headers: " tokens)))
+                                    else
+                                    (progn
+                                       (when tally_function
+                                          (tally_function (to_object (pairs_from_list (interlace headers (each tokens `text))))))))))
+                                                                        
+              
+              }))
+      state))
+
+
+;; function to load a csv file to the database
+
+(defun load_csv_to_db (csv_file db_file test? options)
+   (let
+      ((columns [])
+       (db nil)
+       (count 0)
+       (acc [])
+       (fpath nil)
+       (invalids (new RegExp "[\\-& \"\']" `g))
+       (table_name nil)
+       (aggregator (if options.large_file
+                       aggregate_lines
+                       aggregate_lines_complete))
+       (ddl nil)
+       (tally_count 0))
+      (unless (and (is_string? csv_file)
+                   (is_string? db_file))
+         (throw "load_csv_to_db: invalid arguments"))
+      ;; inspect the first set of records
+      (log "inspecting: " csv_file)
+      (log "test_mode: " (or test? false))
+      (aggregator csv_file
+                  (function (obj)
+                     (push acc obj))
+                  true)
+         
+      (if (== acc.length 0)
+          (throw Error (+ "load_csv_to_db: unable to find rows in the file " csv_file)))
+      (= columns (each (keys (first acc)) to_key))
+      (log "columns are: " columns)
+      (= fpath (path.parse csv_file))
+      (= table_name
+         (cond
+            (is_string? options.table_name)
+            options.table_name
+            else
+            (replace invalids "" (lowercase fpath.name))))
+      (log "table is: " table_name)
+      (= db (sqlite/open_db db_file))
+      (if db.isClosed
+         (throw Error (+ "load_csv_to_db: unable to open the specified database file " db_file)))
+      (= ddl
+         (+ "CREATE TABLE IF NOT EXISTS " table_name " (\n"
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,\n"
+            (join ",\n"
+               (for (cname columns)
+                    (+ cname " TEXT")))
+            ")"))
+      (sqlite/db_exec db ddl)
+      (unless (contains? table_name (sqlite/tables db))
+         (throw Error (+ "load_csv_to_db: couldn't find or create the table " table_name  " in the database.")))
+      
+      (if (is_array? options.indexes)
+          (for (column_name options.indexes)
+               (sqlite/db_exec db (+ "CREATE INDEX IF NOT EXISTS " column_name "_index ON " table_name "(" column_name ")"))))
+      
+      (unless options.append
+         (sqlite/db_exec db (+ "DELETE FROM " table_name)))
+      (try
+         (when (contains? table_name (sqlite/tables db))
+            (aggregator csv_file
+                        (fn (obj)
+                           (try
+                              (progn
+                                 (when (and test?
+                                            (< tally_count 3))
+                                    (log (+ "INSERT INTO " table_name
+                                            "(" (join ", " columns) ")"
+                                            "VALUES "
+                                            "(" (join "," (for (placeholder (range columns.length))
+                                                               "?")) ")")
+                                         (for (column columns)
+                                              (prop obj column))))
+                                 (sqlite/db_query db
+                                                  (+ "INSERT INTO " table_name
+                                                     "(" (join ", " columns) ")"
+                                                     "VALUES "
+                                                     "(" (join "," (for (placeholder (range columns.length))
+                                                                        "?")) ")")
+                                                  (for (column columns)
+                                                       (prop obj column)))
+                                 (inc tally_count)
+                                 (when (== (% tally_count 100) 0)
+                                    (log csv_file "# records inserted: " tally_count)))
+                              (catch Error (e)
+                                 (progn
+                                    (log "load_csv_to_db: Unable to insert record: " e.message obj)
+                                    (when test?
+                                       (throw e))))))
+                             test?
+                             (if test?
+                                (or options.limit 2))))
+         (catch Error (e)
+            (log "ERROR: caught error in aggregate lines: " e.message e)))
+      (sqlite/close_db db)
+      (log "total # records inserted: " tally_count)
+      true))

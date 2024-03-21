@@ -1,5 +1,5 @@
 ; Seedling IDE Consolidated Source File
-; Copyright (c) 2022-2023, Kina, LLC
+; Copyright (c) 2022-2024, Kina, LLC
 ; 🌱
 
 ; Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -1102,6 +1102,7 @@
                                         else
                                         (= center_pos (/ view.offsetHeight 2))))  ;; default is 50% 0.5
                                   (when (and (== drag_status nil)
+                                             (not options.hide_second_panel)
                                              (or (isNaN options.ratio)
                                                  (isNaN center_pos)))
                                      (log "split_view_horizontal: options.ratio is NaN: " options.ratio "center_pos: " center_pos)
@@ -1135,6 +1136,12 @@
                                   (set_style [["height" (+ "" center_height "px") ]] center_divider)
                                   (set_style [["height" (+ (- view.offsetHeight center_height center_pos 0) "px") ]]
                                              bottom_container)
+                                  (set_prop top_container
+                                     `scrollTop 0)
+                                  (set_prop bottom_container
+                                     `scrollTop 0)
+                                  (set_prop view
+                                     `scrollTop 0)
                                   (cond
                                      (and (not options.ratio_locked)
                                           last_set_ratio)
@@ -1187,7 +1194,7 @@
                         (= parent_view view.parentElement)
                         (-> resize_observer `observe view.parentElement)
                         (perform_resize)
-                        (console.log "split_view_horizontal initialized: " initialized)
+                        ;(log "split_view_horizontal initialized: " initialized)
                         (when content_a.initialize
                           (-> content_a `initialize))
                         (when content_b.initialize
@@ -9717,7 +9724,7 @@
           (identifier_regex (new RegExp "[A-Za-z*+0-9_\\$\\u00A2-\\uFFFF]+"))
           (jump_to_local_definition  (fn (symbol)
                                         (when (is_string? symbol)
-                                           (= evaluator_control (-> control `get_evaluator))
+                                           (= evaluator_control (-> control `get_evaluator_control))
                                            (when (or symbol_map_dirty?
                                                      (eq nil symbol_map))
                                               (= symbol_map (symbol_map_for_buffer (or control.options.filename control.options.path) (-> control `get)))
@@ -11475,6 +11482,8 @@
                 `set_evaluator_control: set_evaluator_control
                 `get_evaluator: (fn ()
                                    evaluator)
+                `get_evaluator_control: (fn ()
+                                           evaluator_control)
                 `evaluate_selection: (fn ()
                                        (evaluate_selection editor))
                 `needs_save?: (fn ()
@@ -16442,7 +16451,7 @@
       (when switch_to_repl?
          (show_control *system_repl*))
       (log (div { `style: "padding: 5px; font-family: var(--main-app-font);" }
-                (div { `style: "margin-bottom: 10px;font-size: 1.2em; font-weight: bold;" } "Seedling IDE - (c) 2023 Kina" (a { `style: "padding-left: 10px;"  href:"https://kinaknowledge.com" target: "_blank" } "kinaknowledge.com"))
+                (div { `style: "margin-bottom: 10px;font-size: 1.2em; font-weight: bold;" } "Seedling IDE - (c) 2024 Kina" (a { `style: "padding-left: 10px;"  href:"https://kinaknowledge.com" target: "_blank" } "kinaknowledge.com"))
                 (div { `style: "margin-bottom: 5px;" } "Build: " Environment.build_version)
                 (div { `style: "margin-bottom: 5px;" } "MIT License")
                 (div { `style: "margin-bottom: 10px;" } "For license details see Help->Licenses")
