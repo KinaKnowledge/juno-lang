@@ -2435,6 +2435,7 @@ li.juno-tab-active {
     overflow: auto;
     display: inline-block;
     width: calc(100% - 5px);
+    height: calc(100% - 40px);
 }
 
 .juno-tab-content {
@@ -2445,6 +2446,7 @@ li.juno-tab-active {
 div.juno-tab-active {
   display: block;
   opacity: 1;
+  height: calc(100% - 35px);
 }
 
 .juno-lower-left-expander {
