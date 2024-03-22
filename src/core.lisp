@@ -4021,6 +4021,67 @@
      tags: ["iteration" "for" "loop" "iterator" "collection" ]
    })
 
+(defmacro reduce_async ((elem item_list) form)
+    `(let
+        ((__collector [])
+         (__result nil)
+         (__action (fn (,@elem)
+                         ,#form)))
+      (declare (function __action))                     
+      (for_each (__item ,#item_list)
+         (do
+             (= __result (__action __item))
+             (if __result
+                 (push __collector __result))))
+      __collector)
+  {
+      description: (+ "Provided a first argument as a list which contains a binding variable name and a list, " 
+                      "returns a list of all non-null return values that result from the evaluation of the second list.")
+      usage: ["allocator:array" "forms:*"]
+      tags: [`filter `remove `select `list `array]
+   })
+
+(defmacro reduce ((symbol_list array_ref) `& body_forms)
+   (let
+      ((sym_list symbol_list))
+      (if (is_array? sym_list)
+          `(reduce_async (_pset ,#array_ref)
+              (destructuring_bind ,#sym_list
+                 _pset
+                 ,@body_forms))
+          `(reduce_async (,#sym_list ,#array_ref)
+              (progn
+                 ,@body_forms))))
+   {
+     description: (+ "The reduce macro provides a facility for looping through arrays, "
+                      "destructuring their contents into local symbols that can be used in a block.  "
+                      "The `reduce` macro is a higher level construct than the `reduce_base` function, as it "
+                      "allows for multiple symbols to be mapped into the contents iteratively, vs. "
+                      "for_each allowing only a single symbol to be bound to each top level element in "
+                      "the provided array.<br>The symbol_list is provided as the lambda list to a "
+                      "`destructuring_bind` if multiple symbols are provided, otherwise, if only a "
+                      "single variable is provided, the `for` macro will convert to  a for_each call, "
+                      "with the `body_forms` enclosed in a `progn` block.  <br><br>#### Examples "
+                      "<br><br>An example of a multiple bindings is below.  The values of `positions` "
+                      "are mapped (destructured) into x, y, w and h, respectively, each iteration "
+                      "through the loop mapping to the next structured element of the array:```(let\n "
+                      "((positions\n      [[[1 2] [5 3]]\n       [[6 3] [10 2]]]))\n  (for ([[x y] [w h]] "
+                      "positions)\n       (log \"x,y,w,h=\" x y w h)\n       (+ \"\" x \",\" y \"+\"  w \",\" h "
+                      ")))```<br><br>Upon evaluation the log output is as follows:```\"x,y,w,h=\" 1 2 5 "
+                      "3```<br>```\"x,y,w,h=\" 6 3 10 2```<br><br>The results returned from the "
+                      "call:```[\"1,2+5,3\"\n \"6,3+10,2\"]```<br><br>Notice that the `for` body is wrapped "
+                      "in an explicit `progn` such that the last value is accumulated and returned "
+                      "from the `for` operation.<br>An example of single bindings, which essentially "
+                      "transforms into a `for_each` call with an implicit `progn` around the body "
+                      "forms.  This form is essentially a convenience call around `for_each`.  ```(for "
+                      "(x [1 2 3])\n     (log \"x is: \" x) \n     (+ x 2))```<br><br>Both the log form "
+                      "and the final body form `(+ x 2)` are the body forms and will be evaluated in "
+                      "sequence, the final form results accumulating to be returned to the "
+                      "caller.<br>Log output from the above:```\"x is: \" 1\n\"x is: \" 2\n\"x is: \" "
+                      "3```<br><br>Return value:```[3 4 5]```<br>")
+     usage: ["allocations_and_values:array" "body_forms:*"]
+     tags: [`iteration `loop `for `array `destructuring ]
+   })
 
 
 (defun_sync word_wrap (text ncols)
