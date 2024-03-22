@@ -1,7 +1,7 @@
 // Source: core.lisp  
-// Build Time: 2024-03-20 11:26:58
-// Version: 2024.03.20.11.26
-export const DLISP_ENV_VERSION='2024.03.20.11.26';
+// Build Time: 2024-03-22 06:46:32
+// Version: 2024.03.22.06.46
+export const DLISP_ENV_VERSION='2024.03.22.06.46';
 
 
 
@@ -2383,40 +2383,42 @@ await Environment.set_global("each",async function(items,property) {
                 __collector=[];
                 __result=null;
                 __action=async function(item) {
-                    let nl=[];
-                    ;
-                    await (async function() {
-                        let __for_body__167=async function(p) {
-                            return await async function(){
-                                if (check_true ((p instanceof Array))) {
-                                    return (nl).push(await (await Environment.get_global("resolve_path"))(p,item))
-                                } else if (check_true (p instanceof Function)) {
-                                    return (nl).push(await (async function(){
-                                        let __array_op_rval__169=p;
-                                         if (__array_op_rval__169 instanceof Function){
-                                            return await __array_op_rval__169(item) 
-                                        } else {
-                                            return [__array_op_rval__169,item]
-                                        }
-                                    })())
-                                } else {
-                                    return (nl).push(item[p])
+                    {
+                        let nl=[];
+                        ;
+                        await (async function() {
+                            let __for_body__167=async function(p) {
+                                return await async function(){
+                                    if (check_true ((p instanceof Array))) {
+                                        return (nl).push(await (await Environment.get_global("resolve_path"))(p,item))
+                                    } else if (check_true (p instanceof Function)) {
+                                        return (nl).push(await (async function(){
+                                            let __array_op_rval__169=p;
+                                             if (__array_op_rval__169 instanceof Function){
+                                                return await __array_op_rval__169(item) 
+                                            } else {
+                                                return [__array_op_rval__169,item]
+                                            }
+                                        })())
+                                    } else {
+                                        return (nl).push(item[p])
+                                    }
+                                } ()
+                            };
+                            let __array__168=[],__elements__166=property;
+                            let __BREAK__FLAG__=false;
+                            for(let __iter__165 in __elements__166) {
+                                __array__168.push(await __for_body__167(__elements__166[__iter__165]));
+                                if(__BREAK__FLAG__) {
+                                     __array__168.pop();
+                                    break;
+                                    
                                 }
-                            } ()
-                        };
-                        let __array__168=[],__elements__166=property;
-                        let __BREAK__FLAG__=false;
-                        for(let __iter__165 in __elements__166) {
-                            __array__168.push(await __for_body__167(__elements__166[__iter__165]));
-                            if(__BREAK__FLAG__) {
-                                 __array__168.pop();
-                                break;
-                                
-                            }
-                        }return __array__168;
-                         
-                    })();
-                    return nl
+                            }return __array__168;
+                             
+                        })();
+                        return nl
+                    }
                 };
                 ;
                 await (async function() {
@@ -4395,13 +4397,15 @@ await Environment.set_global("common_symbols",async function() {
         __collector=[];
         __result=null;
         __action=async function(pset) {
-            let symname;
-            let count;
-            symname=(pset && pset["0"]);
-            count=(pset && pset["1"]);
-            if (check_true ((count===ns_total))){
-                {
-                    return symname
+            {
+                let symname;
+                let count;
+                symname=(pset && pset["0"]);
+                count=(pset && pset["1"]);
+                if (check_true ((count===ns_total))){
+                    {
+                        return symname
+                    }
                 }
             }
         };
@@ -4562,16 +4566,16 @@ await Environment.set_global("sort_dependencies",async function() {
                                     return await (async function() {
                                         let __for_body__313=async function(req) {
                                             {
-                                                let _expr_80686;
+                                                let _expr_50742;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_80686=await (async function(){
+                                                _expr_50742=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req,name) 
                                                 })();
-                                                req_sym=(_expr_80686 && _expr_80686["0"]);
-                                                req_ns=(_expr_80686 && _expr_80686["1"]);
-                                                explicit=(_expr_80686 && _expr_80686["2"]);
+                                                req_sym=(_expr_50742 && _expr_50742["0"]);
+                                                req_ns=(_expr_50742 && _expr_50742["1"]);
+                                                explicit=(_expr_50742 && _expr_50742["2"]);
                                                 if (check_true ((req_ns&& await (await Environment.get_global("not"))((req===symname))&& await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(req,invalids))))){
                                                     {
                                                         if (check_true (await (await Environment.get_global("not"))((req_ns===name)))){
@@ -5010,23 +5014,25 @@ await Environment.set_global("symbols_by_namespace",async function(options) {
                                                 __collector=[];
                                                 __result=null;
                                                 __action=async function(pset) {
-                                                    let name;
-                                                    let val;
-                                                    name=(pset && pset["0"]);
-                                                    val=(pset && pset["1"]);
-                                                    if (check_true (await (async function(){
-                                                        let __array_op_rval__353=(options && options["filter_by"]);
-                                                         if (__array_op_rval__353 instanceof Function){
-                                                            return await __array_op_rval__353(name,{
-                                                                type:await (await Environment.get_global("sub_type"))(val)
-                                                            }) 
-                                                        } else {
-                                                            return [__array_op_rval__353,name,{
-                                                                type:await (await Environment.get_global("sub_type"))(val)
-                                                            }]
+                                                    {
+                                                        let name;
+                                                        let val;
+                                                        name=(pset && pset["0"]);
+                                                        val=(pset && pset["1"]);
+                                                        if (check_true (await (async function(){
+                                                            let __array_op_rval__353=(options && options["filter_by"]);
+                                                             if (__array_op_rval__353 instanceof Function){
+                                                                return await __array_op_rval__353(name,{
+                                                                    type:await (await Environment.get_global("sub_type"))(val)
+                                                                }) 
+                                                            } else {
+                                                                return [__array_op_rval__353,name,{
+                                                                    type:await (await Environment.get_global("sub_type"))(val)
+                                                                }]
+                                                            }
+                                                        })())){
+                                                            return name
                                                         }
-                                                    })())){
-                                                        return name
                                                     }
                                                 };
                                                 ;
@@ -5071,23 +5077,25 @@ await Environment.set_global("symbols_by_namespace",async function(options) {
                                                 __collector=[];
                                                 __result=null;
                                                 __action=async function(pset) {
-                                                    let name;
-                                                    let val;
-                                                    name=(pset && pset["0"]);
-                                                    val=(pset && pset["1"]);
-                                                    if (check_true (await (async function(){
-                                                        let __array_op_rval__353=(options && options["filter_by"]);
-                                                         if (__array_op_rval__353 instanceof Function){
-                                                            return await __array_op_rval__353(name,{
-                                                                type:await (await Environment.get_global("sub_type"))(val)
-                                                            }) 
-                                                        } else {
-                                                            return [__array_op_rval__353,name,{
-                                                                type:await (await Environment.get_global("sub_type"))(val)
-                                                            }]
+                                                    {
+                                                        let name;
+                                                        let val;
+                                                        name=(pset && pset["0"]);
+                                                        val=(pset && pset["1"]);
+                                                        if (check_true (await (async function(){
+                                                            let __array_op_rval__353=(options && options["filter_by"]);
+                                                             if (__array_op_rval__353 instanceof Function){
+                                                                return await __array_op_rval__353(name,{
+                                                                    type:await (await Environment.get_global("sub_type"))(val)
+                                                                }) 
+                                                            } else {
+                                                                return [__array_op_rval__353,name,{
+                                                                    type:await (await Environment.get_global("sub_type"))(val)
+                                                                }]
+                                                            }
+                                                        })())){
+                                                            return name
                                                         }
-                                                    })())){
-                                                        return name
                                                     }
                                                 };
                                                 ;
@@ -5524,6 +5532,36 @@ await Environment.set_global("for_items",async function(...args) {
     return ["=:let",[["=:__collection",collection]],["=:for_each",["=:__idx",["=:range","=:__collection.length"]],["=:progn",["=:defvar",iteration_symbol,["=:->","=:__collection","item","=:__idx"]],].concat(body_forms)]]
 },{ "eval_when":{ "compile_time":true
 },"name":"for_items","macro":true,"fn_args":"[(iteration_symbol collection) \"&\" body_forms]","description":["=:+","The `for_items` macro takes a collection, checks the length property ","and then iterates through the collection assigning each value in the collection ","to the provided iterator symbol.  The behavior is similar to `for_each` where ","the final result of the body forms is accumulated and returned as an ","array.  <br>The `for_items` macro provides a `progn` wrapper around the body ","forms so it is not required to provide a block specifier in the body forms ","provided.<br> "],"usage":["allocation_and_collection:array","body:array"],"tags":["iteration","for","loop","iterator","collection"],"requires":["slice"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","navigator","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+});
+await Environment.set_global("reduce_async",async function(...args) {
+    let elem;
+    let item_list;
+    let form;
+    elem=(args && args["0"] && args["0"]["0"]);
+    item_list=(args && args["0"] && args["0"]["1"]);
+    form=(args && args["1"]);
+    return ["=:let",[["=:__collector",[]],["=:__result","=:nil"],["=:__action",["=:fn",[].concat(elem),form]]],["=:declare",["=:function","=:__action"]],["=:for_each",["=:__item",item_list],["=:do",["=:=","=:__result",["=:__action","=:__item"]],["=:if","=:__result",["=:push","=:__collector","=:__result"]]]],"=:__collector"]
+},{ "eval_when":{ "compile_time":true
+},"name":"reduce_async","macro":true,"fn_args":"[(elem item_list) form]","description":["=:+","Provided a first argument as a list which contains a binding variable name and a list, ","returns a list of all non-null return values that result from the evaluation of the second list."],"usage":["allocator:array","forms:*"],"tags":["filter","remove","select","list","array"],"requires":[],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","navigator","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
+});
+await Environment.set_global("reduce",async function(...args) {
+    let symbol_list;
+    let array_ref;
+    let body_forms;
+    symbol_list=(args && args["0"] && args["0"]["0"]);
+    array_ref=(args && args["0"] && args["0"]["1"]);
+    body_forms=await (await Environment.get_global("slice"))(args,1);
+    {
+        let sym_list;
+        sym_list=symbol_list;
+        if (check_true ((sym_list instanceof Array))){
+            return ["=:reduce_async",["=:_pset",array_ref],["=:destructuring_bind",sym_list,"=:_pset",].concat(body_forms)]
+        } else {
+            return ["=:reduce_async",[sym_list,array_ref],["=:progn",].concat(body_forms)]
+        }
+    }
+},{ "eval_when":{ "compile_time":true
+},"name":"reduce","macro":true,"fn_args":"[(symbol_list array_ref) \"&\" body_forms]","description":["=:+","The reduce macro provides a facility for looping through arrays, ","destructuring their contents into local symbols that can be used in a block.  ","The `reduce` macro is a higher level construct than the `reduce_base` function, as it ","allows for multiple symbols to be mapped into the contents iteratively, vs. ","for_each allowing only a single symbol to be bound to each top level element in ","the provided array.<br>The symbol_list is provided as the lambda list to a ","`destructuring_bind` if multiple symbols are provided, otherwise, if only a ","single variable is provided, the `for` macro will convert to  a for_each call, ","with the `body_forms` enclosed in a `progn` block.  <br><br>#### Examples ","<br><br>An example of a multiple bindings is below.  The values of `positions` ","are mapped (destructured) into x, y, w and h, respectively, each iteration ","through the loop mapping to the next structured element of the array:```(let\n ","((positions\n      [[[1 2] [5 3]]\n       [[6 3] [10 2]]]))\n  (for ([[x y] [w h]] ","positions)\n       (log \"x,y,w,h=\" x y w h)\n       (+ \"\" x \",\" y \"+\"  w \",\" h ",")))```<br><br>Upon evaluation the log output is as follows:```\"x,y,w,h=\" 1 2 5 ","3```<br>```\"x,y,w,h=\" 6 3 10 2```<br><br>The results returned from the ","call:```[\"1,2+5,3\"\n \"6,3+10,2\"]```<br><br>Notice that the `for` body is wrapped ","in an explicit `progn` such that the last value is accumulated and returned ","from the `for` operation.<br>An example of single bindings, which essentially ","transforms into a `for_each` call with an implicit `progn` around the body ","forms.  This form is essentially a convenience call around `for_each`.  ```(for ","(x [1 2 3])\n     (log \"x is: \" x) \n     (+ x 2))```<br><br>Both the log form ","and the final body form `(+ x 2)` are the body forms and will be evaluated in ","sequence, the final form results accumulating to be returned to the ","caller.<br>Log output from the above:```\"x is: \" 1\n\"x is: \" 2\n\"x is: \" ","3```<br><br>Return value:```[3 4 5]```<br>"],"usage":["allocations_and_values:array","body_forms:*"],"tags":["iteration","loop","for","array","destructuring"],"requires":["slice","is_array?"],"externals":["Error","SyntaxError","Array","ReferenceError","Set","Object","TypeError","clone","RangeError","Math","parseInt","console","subtype","TextEncoder","TextDecoder","Uint8Array","RegExp","String","isNaN","Function","LispSyntaxError","window","Blob","fetch","EvalError","navigator","URL","Intl","Date","Deno","Promise","setTimeout"],"source_name":"core.lisp"
 });
 await (async function(){
     return  Environment.set_global("word_wrap",function(text,ncols) {

@@ -1,7 +1,7 @@
 // Source: environment.lisp  
-// Build Time: 2024-03-20 11:26:58
-// Version: 2024.03.20.11.26
-export const DLISP_ENV_VERSION='2024.03.20.11.26';
+// Build Time: 2024-03-22 06:46:32
+// Version: 2024.03.22.06.46
+export const DLISP_ENV_VERSION='2024.03.22.06.46';
 
 
 
@@ -3493,145 +3493,147 @@ export async function init_dlisp(Environment)  {
                         __collector=[];
                         __result=null;
                         __action=async function(symset) {
-                            return await async function(){
-                                if (check_true ((options&& options.no_compiler&& (symset['0']==="compiler")))) {
-                                    return null
-                                } else if (check_true (await starts_with_ques_("$",symset['0']))) {
-                                    return null
-                                } else if (check_true ((await resolve_path(await (async function(){
-                                    let __array_op_rval__337=symset['0'];
-                                     if (__array_op_rval__337 instanceof Function){
-                                        return await __array_op_rval__337("serialize_with_image") 
-                                    } else {
-                                        return [__array_op_rval__337,"serialize_with_image"]
-                                    }
-                                })(),Environment.definitions)===false))) {
-                                    return null
-                                } else if (check_true ((options&& options.do_not_include&& await contains_ques_(symset['0'],options.do_not_include)))) {
-                                    return null
-                                } else if (check_true ((symset['0']==="*env_skeleton*"))) {
-                                    return await (async function(){
-                                        let __array_op_rval__338=symset['0'];
-                                         if (__array_op_rval__338 instanceof Function){
-                                            return await __array_op_rval__338(await (async function(){
-                                                 return ["=:quotel",Environment.global_ctx.scope["*env_skeleton*"]] 
-                                            })()) 
+                            {
+                                return await async function(){
+                                    if (check_true ((options&& options.no_compiler&& (symset['0']==="compiler")))) {
+                                        return null
+                                    } else if (check_true (await starts_with_ques_("$",symset['0']))) {
+                                        return null
+                                    } else if (check_true ((await resolve_path(await (async function(){
+                                        let __array_op_rval__337=symset['0'];
+                                         if (__array_op_rval__337 instanceof Function){
+                                            return await __array_op_rval__337("serialize_with_image") 
                                         } else {
-                                            return [__array_op_rval__338,await (async function(){
-                                                 return ["=:quotel",Environment.global_ctx.scope["*env_skeleton*"]] 
-                                            })()]
+                                            return [__array_op_rval__337,"serialize_with_image"]
                                         }
-                                    })()
-                                } else if (check_true (await resolve_path(await (async function(){
-                                    let __array_op_rval__339=symset['0'];
-                                     if (__array_op_rval__339 instanceof Function){
-                                        return await __array_op_rval__339("initializer") 
-                                    } else {
-                                        return [__array_op_rval__339,"initializer"]
-                                    }
-                                })(),Environment.definitions))) {
-                                    {
+                                    })(),Environment.definitions)===false))) {
+                                        return null
+                                    } else if (check_true ((options&& options.do_not_include&& await contains_ques_(symset['0'],options.do_not_include)))) {
+                                        return null
+                                    } else if (check_true ((symset['0']==="*env_skeleton*"))) {
                                         return await (async function(){
-                                            let __array_op_rval__340=symset['0'];
-                                             if (__array_op_rval__340 instanceof Function){
-                                                return await __array_op_rval__340(await (async function(){
-                                                     return ["=:quotel","placeholder"] 
+                                            let __array_op_rval__338=symset['0'];
+                                             if (__array_op_rval__338 instanceof Function){
+                                                return await __array_op_rval__338(await (async function(){
+                                                     return ["=:quotel",Environment.global_ctx.scope["*env_skeleton*"]] 
                                                 })()) 
                                             } else {
-                                                return [__array_op_rval__340,await (async function(){
-                                                     return ["=:quotel","placeholder"] 
+                                                return [__array_op_rval__338,await (async function(){
+                                                     return ["=:quotel",Environment.global_ctx.scope["*env_skeleton*"]] 
                                                 })()]
                                             }
                                         })()
-                                    }
-                                } else if (check_true (await (async function(){
-                                     return await is_regex_ques_(symset['1']) 
-                                })())) {
-                                    return await (async function(){
-                                        let __array_op_rval__341=symset['0'];
-                                         if (__array_op_rval__341 instanceof Function){
-                                            return await __array_op_rval__341(await (async function(){
-                                                 return ["=:javascript",await (async function(){
-                                                     return ("/"+ await add(symset['1'].source)+ "/"+ symset['1'].flags) 
-                                                })()] 
-                                            })()) 
+                                    } else if (check_true (await resolve_path(await (async function(){
+                                        let __array_op_rval__339=symset['0'];
+                                         if (__array_op_rval__339 instanceof Function){
+                                            return await __array_op_rval__339("initializer") 
                                         } else {
-                                            return [__array_op_rval__341,await (async function(){
-                                                 return ["=:javascript",await (async function(){
-                                                     return ("/"+ await add(symset['1'].source)+ "/"+ symset['1'].flags) 
-                                                })()] 
-                                            })()]
+                                            return [__array_op_rval__339,"initializer"]
                                         }
-                                    })()
-                                } else if (check_true (await is_date_ques_(symset['1']))) {
-                                    return await (async function(){
-                                        let __array_op_rval__342=symset['0'];
-                                         if (__array_op_rval__342 instanceof Function){
-                                            return await __array_op_rval__342(await (async function(){
-                                                 return ["=:javascript",await (async function(){
-                                                     return ("new Date(\""+ await add(await symset['1']["toJSON"](),"\")")) 
-                                                })()] 
-                                            })()) 
-                                        } else {
-                                            return [__array_op_rval__342,await (async function(){
-                                                 return ["=:javascript",await (async function(){
-                                                     return ("new Date(\""+ await add(await symset['1']["toJSON"](),"\")")) 
-                                                })()] 
-                                            })()]
+                                    })(),Environment.definitions))) {
+                                        {
+                                            return await (async function(){
+                                                let __array_op_rval__340=symset['0'];
+                                                 if (__array_op_rval__340 instanceof Function){
+                                                    return await __array_op_rval__340(await (async function(){
+                                                         return ["=:quotel","placeholder"] 
+                                                    })()) 
+                                                } else {
+                                                    return [__array_op_rval__340,await (async function(){
+                                                         return ["=:quotel","placeholder"] 
+                                                    })()]
+                                                }
+                                            })()
                                         }
-                                    })()
-                                } else if (check_true ((null===symset['1']))) {
-                                    return await (async function(){
-                                        let __array_op_rval__343=symset['0'];
-                                         if (__array_op_rval__343 instanceof Function){
-                                            return await __array_op_rval__343(await (async function(){
-                                                 return "=:nil" 
-                                            })()) 
-                                        } else {
-                                            return [__array_op_rval__343,await (async function(){
-                                                 return "=:nil" 
-                                            })()]
-                                        }
-                                    })()
-                                } else if (check_true ((undefined===symset['1']))) {
-                                    return await (async function(){
-                                        let __array_op_rval__344=symset['0'];
-                                         if (__array_op_rval__344 instanceof Function){
-                                            return await __array_op_rval__344(await (async function(){
-                                                 return "=:undefined" 
-                                            })()) 
-                                        } else {
-                                            return [__array_op_rval__344,await (async function(){
-                                                 return "=:undefined" 
-                                            })()]
-                                        }
-                                    })()
-                                } else if (check_true ((symset['1'] instanceof String || typeof symset['1']==='string'))) {
-                                    {
+                                    } else if (check_true (await (async function(){
+                                         return await is_regex_ques_(symset['1']) 
+                                    })())) {
                                         return await (async function(){
-                                            let __array_op_rval__345=symset['0'];
-                                             if (__array_op_rval__345 instanceof Function){
-                                                return await __array_op_rval__345(await (async function(){
-                                                     return await (await get_global("env_encode_string"))(symset['1']) 
+                                            let __array_op_rval__341=symset['0'];
+                                             if (__array_op_rval__341 instanceof Function){
+                                                return await __array_op_rval__341(await (async function(){
+                                                     return ["=:javascript",await (async function(){
+                                                         return ("/"+ await add(symset['1'].source)+ "/"+ symset['1'].flags) 
+                                                    })()] 
                                                 })()) 
                                             } else {
-                                                return [__array_op_rval__345,await (async function(){
-                                                     return await (await get_global("env_encode_string"))(symset['1']) 
+                                                return [__array_op_rval__341,await (async function(){
+                                                     return ["=:javascript",await (async function(){
+                                                         return ("/"+ await add(symset['1'].source)+ "/"+ symset['1'].flags) 
+                                                    })()] 
                                                 })()]
                                             }
                                         })()
-                                    }
-                                } else {
-                                    return await (async function(){
-                                        let __array_op_rval__346=symset['0'];
-                                         if (__array_op_rval__346 instanceof Function){
-                                            return await __array_op_rval__346(symset['1']) 
-                                        } else {
-                                            return [__array_op_rval__346,symset['1']]
+                                    } else if (check_true (await is_date_ques_(symset['1']))) {
+                                        return await (async function(){
+                                            let __array_op_rval__342=symset['0'];
+                                             if (__array_op_rval__342 instanceof Function){
+                                                return await __array_op_rval__342(await (async function(){
+                                                     return ["=:javascript",await (async function(){
+                                                         return ("new Date(\""+ await add(await symset['1']["toJSON"](),"\")")) 
+                                                    })()] 
+                                                })()) 
+                                            } else {
+                                                return [__array_op_rval__342,await (async function(){
+                                                     return ["=:javascript",await (async function(){
+                                                         return ("new Date(\""+ await add(await symset['1']["toJSON"](),"\")")) 
+                                                    })()] 
+                                                })()]
+                                            }
+                                        })()
+                                    } else if (check_true ((null===symset['1']))) {
+                                        return await (async function(){
+                                            let __array_op_rval__343=symset['0'];
+                                             if (__array_op_rval__343 instanceof Function){
+                                                return await __array_op_rval__343(await (async function(){
+                                                     return "=:nil" 
+                                                })()) 
+                                            } else {
+                                                return [__array_op_rval__343,await (async function(){
+                                                     return "=:nil" 
+                                                })()]
+                                            }
+                                        })()
+                                    } else if (check_true ((undefined===symset['1']))) {
+                                        return await (async function(){
+                                            let __array_op_rval__344=symset['0'];
+                                             if (__array_op_rval__344 instanceof Function){
+                                                return await __array_op_rval__344(await (async function(){
+                                                     return "=:undefined" 
+                                                })()) 
+                                            } else {
+                                                return [__array_op_rval__344,await (async function(){
+                                                     return "=:undefined" 
+                                                })()]
+                                            }
+                                        })()
+                                    } else if (check_true ((symset['1'] instanceof String || typeof symset['1']==='string'))) {
+                                        {
+                                            return await (async function(){
+                                                let __array_op_rval__345=symset['0'];
+                                                 if (__array_op_rval__345 instanceof Function){
+                                                    return await __array_op_rval__345(await (async function(){
+                                                         return await (await get_global("env_encode_string"))(symset['1']) 
+                                                    })()) 
+                                                } else {
+                                                    return [__array_op_rval__345,await (async function(){
+                                                         return await (await get_global("env_encode_string"))(symset['1']) 
+                                                    })()]
+                                                }
+                                            })()
                                         }
-                                    })()
-                                }
-                            } ()
+                                    } else {
+                                        return await (async function(){
+                                            let __array_op_rval__346=symset['0'];
+                                             if (__array_op_rval__346 instanceof Function){
+                                                return await __array_op_rval__346(symset['1']) 
+                                            } else {
+                                                return [__array_op_rval__346,symset['1']]
+                                            }
+                                        })()
+                                    }
+                                } ()
+                            }
                         };
                         ;
                         await (async function() {
@@ -3884,18 +3886,20 @@ export async function init_dlisp(Environment)  {
                                                             };
                                                             let ____action__366= async function(){
                                                                 return async function(symbol) {
-                                                                    return await async function(){
-                                                                        if (check_true (await contains_ques_("/",symbol))) {
-                                                                            {
-                                                                                comps=(symbol).split("/");
-                                                                                if (check_true ((comps['0']===child['0']))){
-                                                                                    return comps['1']
+                                                                    {
+                                                                        return await async function(){
+                                                                            if (check_true (await contains_ques_("/",symbol))) {
+                                                                                {
+                                                                                    comps=(symbol).split("/");
+                                                                                    if (check_true ((comps['0']===child['0']))){
+                                                                                        return comps['1']
+                                                                                    }
                                                                                 }
+                                                                            } else {
+                                                                                return symbol
                                                                             }
-                                                                        } else {
-                                                                            return symbol
-                                                                        }
-                                                                    } ()
+                                                                        } ()
+                                                                    }
                                                                 }
                                                             };
                                                             {
