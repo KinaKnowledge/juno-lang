@@ -14215,7 +14215,9 @@
                          
                          (set_prop reopen_button
                             `innerHTML
-                            "&#9211;")
+                            (if (== (get_operating_platform) "win")
+                                (dtext "Connect")
+                                "&#9211;"))
                          (attach_event_listener reopen_button
                             `click
                             (fn (e)
@@ -20786,6 +20788,7 @@
                                              (for_each (item items)
                                                 [item (or init_state false)])))))
           (export_options nil)
+          (ui_environments (conj [""] (rblock (http/browser_environments))))
           (arch (if (== remote_os "darwin")
                     (chop (rblock (prop (sys/system "uname -p") `stdout)))
                     nil))
@@ -20811,6 +20814,7 @@
           (options (+ {}
                       {
                         emit_as: (or env_config.export.save_executable "Unknown")
+                        embed_user_interface: ""
                         save_location: (if is_served?
                                           "Server"
                                           "Downloads Folder")
@@ -20851,6 +20855,7 @@
                                   ))
                     (js_image_result nil)
                     (result nil))
+                   
                    (if (blank? save_opts.emit_as)
                        (alert_box "Invalid Name" "The emitted executable must have a name.")
                        (progn
@@ -20862,6 +20867,10 @@
                                       (not (ends_with? ".exe" save_opts.emit_as)))
                                  (set_prop save_opts
                                     `emit_as (+ save_opts.emit_as ".exe"))))
+                          (set_message (+ "Embedding UI: " save_opts.embed_user_interface))
+                          (unless (blank? save_opts.embed_user_interface)
+                             (eval `(rblock (http/enable_ui ,#(to_object [[`environment_file (+ "" save_opts.embed_user_interface) ]
+                                                                          [`open_browser_on_start true ]])))))
                           (log "Save Options: " save_opts)
                           (set_message (+"Saving System into " save_opts.save_location))
                           (try
@@ -20929,6 +20938,9 @@
                                            pretty_keys: true
                                            expand_all: true
                                            paths: {
+                                                    embed_user_interface: {
+                                                        values: ui_environments
+                                                    }
                                                     target_architecture: {
                                                                            values: target_architectures}
                                                     save_location: {
