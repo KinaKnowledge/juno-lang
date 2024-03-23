@@ -142,7 +142,9 @@
       ]
 ))
 
+;; Placeholder symbol for an embedded user interface
 
+(defglobal *user_interface* "")
 
 (defun add_http_route (method path_specifier route_handler)
    (if (and (is_string? method)
@@ -1247,6 +1249,11 @@
      (add_http_route "GET" "/connect_repl"
                      ws_repl_handler)
      (add_http_route "GET" "/pkg" (file_spooler (+ base_dir "/pkg")))
+     (if (and (is_string? *user_interface*)
+              (not (blank? *user_interface*)))
+         (add_http_route "GET" "/ui" (content_spooler_with_type (fn ()
+                                                                   (-> LZString `decompressFromBase64 *user_interface*))
+                                                                "text/html")))
      (if (eq nil options)
          (= options {}))
      (set_prop options
@@ -1329,7 +1336,11 @@
                (= process_handle
                   (new Deno.Command browser {  args:(conj prefix_args
                                                           ["--new-window"
-                                                           (+ "--app=" protocol  "://localhost:" listen_port "/env/" env_to_start "?app_mode=true"
+                                                           (+ "--app=" protocol  "://localhost:" listen_port 
+                                                              (if options.use_ui
+                                                                 "/ui"
+                                                                 (+ "/env/" env_to_start))
+                                                              "?app_mode=true"
                                                               (cond
                                                                  (is_object? options.args)
                                                                  (join "&"
@@ -1347,30 +1358,73 @@
                         "since it spawns a local process.<br>The default browser environment that will "
                         "be started is the `seedling` environment.  Otherwise, use the options object to "
                         "specify a specific browser environment to bring up. <br><br>#### Options "
-                        "<br><br>env:string - The name of the browser environment to start from "
+                        "<br><br>env:string -The name of the browser environment to start from "
                         "the `environments` directory.   The file extension doesn\'t have to be "
-                        "specified.<br>list:boolean - If provided as true, the command will list the "
+                        "specified.<br>list:boolean -If provided as true, the command will list the "
                         "available browser environments which can then be referenced with "
-                        "the `env` option to start.")
+                        "the `env` option to start.<br>use_ui:boolean - If set to true, will attempt to "
+                        "serve the embedded ui in the image (as set by "
+                        "the `embed_ui_environment` function).  This will serve the UI interface that is "
+                        "stored in the *user_interface* global value. ")
+
         usage: ["options:?object"]
         tags: ["browser" "environment" "ui" "image" "images" "seedling"]
         }))
    
 
-                       
+(defun embed_ui_environment (ui_environment_file)
+   (if (is_string? ui_environment_file)
+       (let
+          ((env_file_path (+ "" (sys/cwd) "/environments/" ui_environment_file)))
+          (log "embed_ui_environment: setting ui file: " env_file_path)
+          (unless (ends_with? ".html" env_file_path)
+             (= env_file_path (+ env_file_path ".html")))
+          (if (sys/is_file? env_file_path)
+              (progn
+                 (= *user_interface*
+                    (-> LZString `compressToBase64 (read_text_file env_file_path)))
+                 (log "*user_interface* loaded, size: " (length *user_interface*))
+                 true)
+              (progn
+                 (log "embed_ui_environment: file not found: " env_file_path)
+                 (throw Error (+ "embed_ui_environment: file " env_file_path " not found.")))))
+       (throw Error (+ "embed_ui_environment: invalid/missing file argument - must be string"))))
 
-(defun enable_ui ()
+(defun enable_ui (options)
    (progn
       (declare (string *user_interface*)
                (global *user_interface*)
                (object LZString)
                (global LZString))
-      (unless (is_symbol? `*user_interface*)
-         (defglobal `*user_interface*
-            (-> LZString `compressToBase64 (read_text_file "./environments/seedling.html"))))
-   (add_http_route "GET" "/ui" (content_spooler_with_type (fn ()
+      (if options.environment_file
+         (embed_ui_environment options.environment_file)
+         (embed_ui_environment "seedling/html"))
+      (add_http_route "GET" "/ui" (content_spooler_with_type (fn ()
                                                              (-> LZString `decompressFromBase64 *user_interface*))
-                                                          "text/html"))))
+                                                             "text/html"))
+      (set_default `http_services.listen_on_start true)
+      (when options.open_browser_on_start
+         (set_default `http_services.open_browser_on_start true))
+      (log "enable_ui: options: " options)
+      true)
+   {
+     description: (+ "The function `enable_ui` sets up the system to serve a default user "
+                     "interface automatically on start up.  It does this by embedding the designated "
+                     "HTML environment (or the Seedling environment by default) into the server lisp "
+                     "image in the `*user_interface*` global variable in the `http` namespace.  "
+                     "Options allow for the specification of the interface file, and whether to open "
+                     "a browser in an application mode on startup.  This function is useful when "
+                     "packaging a lisp image for distribution as an application.<br><br>### Options "
+                     "<br><br>environment_file:string - The name of the environment file "
+                     "in `/environments` subfolder to be used as the interface.  This file will be "
+                     "read into the `*user_interface*` global variable and stored in the image.  If "
+                     "changes are made to the UI environment file, it will need to be re-embedded "
+                     "using the `embed_ui_environment` function. <br>open_browser_on_start:boolean - "
+                     "If true, when the server environment is started, it will attempt to open the "
+                     "browser in app mode, using the `http/open_browser` command. ")
+     usage: ["options:object"]
+     tags: ["embedding" "ui" "environment" "http"]
+   })
 
 (defun find_open_port (min_port_num max_attempts)
    (let
@@ -1540,7 +1594,10 @@
       (= core/log core/logger)
       (check_and_import_local_env_file)
       (if (resolve_path [ `http_services `listen_on_start ] *env_config*)
-          (http/start))))
+          (http/start))
+      (if (resolve_path [ `http_services `open_browser_on_start ] *env_config*)
+          (http/open_browser { use_ui: true }))))
+      
 
 (register_feature "http_server")
 (import "pkg/http_client.juno")
