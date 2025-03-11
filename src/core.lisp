@@ -3170,24 +3170,26 @@
    })
                        
 (defglobal document (new Object))
-(defun save_locally (fname data content_type)
-     (if (prop window `document)
-       (let
-           ((blob (new Blob [ data ] { type: content_type }))
-            (elem (-> (prop window `document) `createElement `a))
-            (dbody (prop document `body)))
-         (declare (object dbody))
-         (set_prop elem
-                   `href
-                   (-> window.URL `createObjectURL blob)
-                   `download
-                   fname)
-         (-> dbody `appendChild elem)
-         (-> elem `click)
-         (-> dbody `removeChild elem)
-         true)
-       false)
-     {
+
+(if_compile_time_defined `window
+  (defun save_locally (fname data content_type)
+    (if (prop window `document)
+	(let
+            ((blob (new Blob [ data ] { type: content_type }))
+             (elem (-> (prop window `document) `createElement `a))
+             (dbody (prop document `body)))
+          (declare (object dbody))
+          (set_prop elem
+                    `href
+                    (-> window.URL `createObjectURL blob)
+                    `download
+                    fname)
+          (-> dbody `appendChild elem)
+          (-> elem `click)
+          (-> dbody `removeChild elem)
+          true)
+      false)
+  {
       `description: (+ "Provided a filename, a data buffer, and a MIME type, such as \"text/javascript\", "
                        "triggers a browser download of the provided data with the filename.  Depending "
                        "on the browser configuration, the data will be saved to the configured "
@@ -3195,6 +3197,7 @@
       `usage: [ "filename:string" "data:*" "content_type:string" ]
       `tags: [ "save" "download" "browser" ]
       })
+  false)
 (undefine `document)
 
 
