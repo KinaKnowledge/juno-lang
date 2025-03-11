@@ -280,6 +280,11 @@
                                    `include_source: include_source
                                    `build_headers: build_headers })
       
+      (compile_file (source_path "repl.lisp") nil
+                    { `output_file: (output_path "repl.js")
+                                   `include_source: include_source
+                                   `build_headers: build_headers })
+      
       (compile_file (source_path "environment.lisp") "init_dlisp"
                     { `output_file: (output_path "environment.js")
                                    `include_source: include_source
