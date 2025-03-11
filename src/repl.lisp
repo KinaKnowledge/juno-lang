@@ -2,20 +2,20 @@
 ;; Establishes a REPL mechanism that can be bound to an input and output stream
 ;; (requires Deno readline and streams)
 
-(import (readline_mod) "https://deno.land/x/readline/mod.ts")
-(import (streams) "https://deno.land/std@0.170.0/streams/conversion.ts")
+; (import (readline_mod) "https://deno.land/x/readline/mod.ts")
+;(import (streams) "https://deno.land/std@0.170.0/streams/conversion.ts")
 
 (defun repl (instream outstream opts)
    (let
       ((buffer nil)
        (lines [])
+       (bytes_read 1)
+       (read_buf (new Uint8Array 1024))
        (raw_mode (either opts.raw
                          (resolve_path [ `repl `raw_mode ] *env_config*)
                          false))
-       
        (use_console (or opts.use_console false))
        (clean_input true)
-       (generator readline_mod.readline)
        (instream (or instream Deno.stdin))
        (outstream (or outstream Deno.stdout))
        (td (new TextDecoder))
@@ -44,7 +44,10 @@
                      (-> te `encode (subprompt_text))))
        
        (sigint_message (-> te `encode (either opts.sigint_message "\nsigint: input canceled. type ctrl-d to exit.\n")))
-       (write streams.writeAllSync)
+       (write (function (stream output)
+			(-> stream `writeSync output)))
+       (l nil)
+       (chunk (new Uint8Array 1024))
        (sigint_handler (function ()
                           (progn
                              (write outstream sigint_message)
@@ -64,7 +67,7 @@
       
       (declare (function write)
                (include not))
-      
+      (defglobal *repl_run* true)
       (defglobal $ nil)
       (defglobal $$ nil)
       (defglobal $$$ nil)
@@ -77,9 +80,11 @@
       (if (not raw_mode)
           (write outstream (prompt)))
       (try
-         (for_with (`l (generator instream))
+         (while (> bytes_read 0)
             (progn
-               (= l (-> td `decode l))
+               (= bytes_read (-> Deno.stdin `read chunk))
+               ;; we need to truncate the line read to the actual byte count
+               (= l (-> (-> td `decode chunk) `substring 0 bytes_read))              
                (try
                   (progn
                      (= clean_input true)
@@ -142,7 +147,8 @@
                         (when (not raw_mode)
                            (write outstream (prompt))))))))
          (catch Error (e)
-            (console.error "REPL: " e))))
+            (console.error "REPL: " e)))
+      true)
    {
      `description: (+ "Implements a Read-Eval-Print for Juno.  This function takes "
                       "an input stream, an output stream, and an optional options object "
