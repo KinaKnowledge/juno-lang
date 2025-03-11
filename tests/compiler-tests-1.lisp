@@ -762,15 +762,15 @@
     "SyntaxError caught: i is 3!"
     "nested try catch hierarchy - inner catch"]
     
-    [ "(fn () (+ \"\" (new Date 2022 2)))"
+    [ "(fn () (+ \"\" (new String \"Hello\")))"
     []
-    "Tue Mar 01 2022 00:00:00 GMT-0500 (Eastern Standard Time)"
+    "Hello"
     "new with simple arguments"
     ]
-    [ "(fn (y) (+ \"\" (new Date (do (+ 1 y))
-                               2)))"
-    [2019]
-    "Sun Mar 01 2020 00:00:00 GMT-0500 (Eastern Standard Time)"
+    [ "(fn (y) (+ \"\" (new String (+ \"\" (do (+ 1 y))
+                               2))))"
+    [3]
+    "42"
     "new with a complex argument and simple argument."
     ]
     [ "(fn (x)
@@ -866,13 +866,13 @@
     [ "(fn (abc)
              { 
                `name: \"Bob\"
-               `birthdate: (+ \"\" (new Date 2010 6 1))
-               `form: (do
+               `age: (+ 20 22)
+               `form: (progn
                           (= abc (* abc 10))
                           (+ abc 10))
                       })"
     [10]
-    {"name":"Bob" "birthdate":"Thu Jul 01 2010 00:00:00 GMT-0400 (Eastern Daylight Time)" "form":110}
+    {"name":"Bob" "age":42 "form":110}
     "object literal with evaluated values"]
     
     [ "(do `(list ,@(1 2 3)))"
@@ -2028,8 +2028,9 @@
      []
      9
      "javascript operator with embedded lisp compilation and block tokens"]
-   ["(let
+     ["(let
         ((cc (dynamic_import \"./compiler.js\")))
+        (console.log \"Imported.\")
         (defglobal `init_compiler cc.init_compiler)
         (is_function? init_compiler))"
     []
