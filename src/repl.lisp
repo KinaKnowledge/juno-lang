@@ -1,9 +1,5 @@
 ;; JUNO Simple Read Eval Print Loop (REPL)
 ;; Establishes a REPL mechanism that can be bound to an input and output stream
-;; (requires Deno readline and streams)
-
-; (import (readline_mod) "https://deno.land/x/readline/mod.ts")
-;(import (streams) "https://deno.land/std@0.170.0/streams/conversion.ts")
 
 (defun repl (instream outstream opts)
    (let
@@ -72,7 +68,7 @@
       (defglobal $$ nil)
       (defglobal $$$ nil)
       (if (== outstream Deno.stdout)
-          (console.log "\nJuno" Environment.build_version " (c) 2023, Kina, LLC"))
+          (console.log "\nJuno" Environment.build_version " (c) 2023-2025 Kina, LLC"))
       (try
          (Deno.addSignalListener `SIGINT sigint_handler)
          (catch Error (e)
