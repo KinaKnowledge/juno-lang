@@ -1,5 +1,5 @@
 // DLisp Environment Setup for Deno environments
-// (c) 2022 Kina, LLC
+// (c) 2022,2024,2025 Kina, LLC
 
 // This code assumes a fully compiled environment is already made and available in Javascript
 
