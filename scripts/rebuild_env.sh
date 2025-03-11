@@ -1,15 +1,29 @@
 #!/usr/bin/env bash
 # Juno Environment Build for Unix
-# (c) 2023 Kina
+# (c) 2023,2024,2025 Kina
 # MIT License
 
 if [ -f "./BUILD_DATE.txt" ]; then 
    echo "Removing Build time stamp."
    rm "./BUILD_DATE.txt"
 fi
-   
+
+if [ "$1" == "-?" ]; then
+    echo "usage: `basename $0` [path_to_lisp]"
+    exit 0;
+fi
+
+
+if [ -z "$1" ]; then
+    LISP=lib/juno
+else
+    LISP=$1
+fi
+
+
+
 # Rebuild the core environment
-cat <<EOI | lib/juno
+cat <<EOI | $LISP
 (import "src/base-io.lisp")
 (import "src/build-tools.lisp")
 (rebuild_env)
@@ -18,14 +32,14 @@ EOI
 # Run Tests
 echo
 echo "Running compiler tests.."
-cat <<EOI | lib/juno
+cat <<EOI | $LISP
 (import "src/base-io.lisp")
 (import "tests/package.juno")
 (tests/report_tests)
 EOI
 
 # Build Binary Version for the Architecture
-cat <<EOI | lib/juno
+cat <<EOI | $LISP
 (try 
   (progn
     (declare (function save_environment)
@@ -36,7 +50,7 @@ cat <<EOI | lib/juno
     (import "pkg/server_env.juno")
     (import "pkg/lz-string.juno")
     (import "pkg/sys.juno")
-    (import "pkg/save_env.juno")
+    (import "pkg/save_env.juno")    
     (log "loaded: " (namespaces) *env_config*)
     (save_environment { compile: true emit_as: "bin/build.tmp" } )
     (exit 0))
@@ -52,7 +66,7 @@ if [ $? -ne 0 ];then
 fi
 
 echo "verifying juno.js"
-cat <<EOI | lib/juno js/juno.js
+cat <<EOI | $LISP js/juno.js
   *env_config*
   (write_text_file "./BUILD_DATE.txt" (prop *env_config* "build"))
 EOI
