@@ -3,9 +3,9 @@ import * as path_module from 'https://deno.land/std@0.110.0/path/mod.ts'
 export const path=path_module;
 
 
-// Build Time: 2025-03-11 11:50:54
-// Version: 2025.03.11.11.50
-export const DLISP_ENV_VERSION='2025.03.11.11.50';
+// Build Time: 2025-03-13 05:29:35
+// Version: 2025.03.13.05.29
+export const DLISP_ENV_VERSION='2025.03.13.05.29';
 
 
 
@@ -3886,7 +3886,7 @@ export async function init_dlisp(Environment)  {
 },config:{
     export:{
         save_path:"js/juno.js",default_namespace:"user",include_source:false,save_executable:"bin/juno"
-    },features:["compiler","repl","io","Deno","build-tools","core-ext","system","http_server","http_client","*env_skeleton*"],build:"2025.03.11.11.50",imports:await ( async function(){
+    },features:["compiler","repl","io","Deno","build-tools","core-ext","system","http_server","http_client","*env_skeleton*"],build:"2025.03.13.05.29",imports:await ( async function(){
         let __obj__304=new Object();
         __obj__304["user/path"]={
             symbol:"path",namespace:"user",location:"https://deno.land/std@0.110.0/path/mod.ts"
@@ -4688,9 +4688,11 @@ export async function init_dlisp(Environment)  {
                         let min_length;
                         let rlength_args;
                         let rval;
-                        min_length=await min_value(await (async function(){
-                             return await map(length,args) 
-                        })());
+                        min_length=await (async function(){
+                             return await min_value(await (async function(){
+                                 return await map(length,args) 
+                            })()) 
+                        })();
                         rlength_args=await range(await length(args));
                         rval=[];
                         await (async function() {
@@ -5756,7 +5758,7 @@ export async function init_dlisp(Environment)  {
                                     }
                                 })()
                             }
-                        };__obj__1["*env_config*"]={export:{save_path:"js/juno.js",default_namespace:"user",include_source:false,save_executable:"bin/juno"},features:["compiler","repl","io","Deno","build-tools","core-ext","system","http_server","http_client","*env_skeleton*"],build:"2025.03.11.11.50",imports:await ( async function(){let __obj__2=new Object();__obj__2["user/path"]={symbol:"path",namespace:"user",location:"https://deno.land/std@0.110.0/path/mod.ts"};return __obj__2;})(),repl:new Object(),http_services:{listen_on_start:false,port:56432,address:"localhost",base_directory:"./"}};__obj__1["create_namespace"]=async function(name,options,defer_initialization) {
+                        };__obj__1["*env_config*"]={export:{save_path:"js/juno.js",default_namespace:"user",include_source:false,save_executable:"bin/juno"},features:["compiler","repl","io","Deno","build-tools","core-ext","system","http_server","http_client","*env_skeleton*"],build:"2025.03.13.05.29",imports:await ( async function(){let __obj__2=new Object();__obj__2["user/path"]={symbol:"path",namespace:"user",location:"https://deno.land/std@0.110.0/path/mod.ts"};return __obj__2;})(),repl:new Object(),http_services:{listen_on_start:false,port:56432,address:"localhost",base_directory:"./"}};__obj__1["create_namespace"]=async function(name,options,defer_initialization) {
                                 return await async function(){
                                     if (check_true (await not((name instanceof String || typeof name==='string')))) {
                                         throw new TypeError("namespace name must be a string");
@@ -12147,16 +12149,16 @@ return await (async function() {
                                     return await (async function() {
                                         let __for_body__310=async function(req) {
                                             {
-                                                let _expr_28996;
+                                                let _expr_29150;
                                                 let req_sym;
                                                 let req_ns;
                                                 let explicit;
-                                                _expr_28996=await (async function(){
+                                                _expr_29150=await (async function(){
                                                      return await (await Environment.get_global("decomp_symbol"))(req,name) 
                                                 })();
-                                                req_sym=(_expr_28996 && _expr_28996["0"]);
-                                                req_ns=(_expr_28996 && _expr_28996["1"]);
-                                                explicit=(_expr_28996 && _expr_28996["2"]);
+                                                req_sym=(_expr_29150 && _expr_29150["0"]);
+                                                req_ns=(_expr_29150 && _expr_29150["1"]);
+                                                explicit=(_expr_29150 && _expr_29150["2"]);
                                                 if (check_true ((req_ns&& await (await Environment.get_global("not"))((req===symname))&& await (await Environment.get_global("not"))(await (await Environment.get_global("contains?"))(req,invalids))))){
                                                     {
                                                         if (check_true (await (await Environment.get_global("not"))((req_ns===name)))){
@@ -24278,7 +24280,7 @@ return await (async function() {
             requires:[],externals:["Uint8Array","Deno","TextDecoder","TextEncoder","prompt","JSON","console","Error","LispSyntaxError"],source_name:"./src/repl.lisp"
         });
         if (check_true ((outstream===Deno.stdout))){
-            await console.log("\nJuno",Environment.build_version," (c) 2023, Kina, LLC")
+            await console.log("\nJuno",Environment.build_version," (c) 2023-2025 Kina, LLC")
         };
         try {
             await Deno.addSignalListener("SIGINT",sigint_handler)

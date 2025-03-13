@@ -1,5 +1,5 @@
 ;; Kina Server - Core - Expanded
-;; (c) 2019 Kina, LLC
+;; (c) 2019-2025 Kina, LLC
 ;; All Rights Reserved
  
 (progn

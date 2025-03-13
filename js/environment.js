@@ -1,7 +1,7 @@
 // Source: environment.lisp  
-// Build Time: 2025-03-11 11:50:42
-// Version: 2025.03.11.11.50
-export const DLISP_ENV_VERSION='2025.03.11.11.50';
+// Build Time: 2025-03-13 05:29:27
+// Version: 2025.03.13.05.29
+export const DLISP_ENV_VERSION='2025.03.13.05.29';
 
 
 
@@ -1614,9 +1614,11 @@ export async function init_dlisp(Environment)  {
                         let min_length;
                         let rlength_args;
                         let rval;
-                        min_length=await min_value(await (async function(){
-                             return await map(length,args) 
-                        })());
+                        min_length=await (async function(){
+                             return await min_value(await (async function(){
+                                 return await map(length,args) 
+                            })()) 
+                        })();
                         rlength_args=await range(await length(args));
                         rval=[];
                         await (async function() {
@@ -3564,7 +3566,9 @@ export async function init_dlisp(Environment)  {
                                                 })()]
                                             }
                                         })()
-                                    } else if (check_true (await is_date_ques_(symset['1']))) {
+                                    } else if (check_true (await (async function(){
+                                         return await is_date_ques_(symset['1']) 
+                                    })())) {
                                         return await (async function(){
                                             let __array_op_rval__342=symset['0'];
                                              if (__array_op_rval__342 instanceof Function){

@@ -22,7 +22,7 @@ fi
 
 
 
-# Rebuild the core environment
+# Rebuild the core environment for testing
 cat <<EOI | $LISP
 (import "src/base-io.lisp")
 (import "src/build-tools.lisp")
@@ -37,6 +37,8 @@ cat <<EOI | $LISP
 (import "tests/package.juno")
 (tests/report_tests)
 EOI
+
+
 
 # Build Binary Version for the Architecture
 cat <<EOI | $LISP
