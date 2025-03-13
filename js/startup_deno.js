@@ -45,6 +45,7 @@ try {
   //await env.evaluate("(defun load-file (filename) (progn (evaluate (read_text_file filename))))",null, opts)
   
   await env.evaluate ("(import \"./src/repl.lisp\")",null, opts)
+  await env.evaluate ("(import \"./src/core-ext.lisp\")",null,opts)
   //await env.evaluate ("(import \"./doc/help.lisp\")")
   await env.evaluate ("(create_namespace `user)")
   await env.evaluate ("(set_namespace `user)")
